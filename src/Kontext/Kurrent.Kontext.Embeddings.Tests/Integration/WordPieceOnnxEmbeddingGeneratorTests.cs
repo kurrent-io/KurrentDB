@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.Tests;
 
@@ -13,7 +14,7 @@ namespace Kurrent.Kontext.Embeddings.Tests;
 /// </summary>
 [Category("Integration")]
 public class WordPieceOnnxEmbeddingGeneratorTests {
-	static IEmbeddingGenerator<string, Embedding<float>> _generator = null!;
+	static EmbeddingGenerator _generator = null!;
 	static EmbeddingService _prototype = null!;
 
 	[Before(Class)]

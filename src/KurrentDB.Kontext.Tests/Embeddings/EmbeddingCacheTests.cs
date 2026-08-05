@@ -8,6 +8,7 @@ using KurrentDB.Kontext.Workspaces.Registry;
 using KurrentDB.Kontext.Workspaces.Runtime;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Tests.Embeddings;
 
@@ -18,7 +19,7 @@ public class EmbeddingCacheTests {
 	static ReadOnlyMemory<string> Streams(params string[] streams) => streams;
 	static ReadOnlyMemory<IndexKind> Kinds(params IndexKind[] kinds) => kinds;
 
-	sealed class CountingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+	sealed class CountingGenerator : EmbeddingGenerator {
 		public int CallCount;
 		public int TextCount;
 
@@ -398,7 +399,7 @@ public class EmbeddingCacheTests {
 		await Assert.That(h.Generator.CallCount).IsEqualTo(1);
 	}
 
-	sealed class BlockingGenerator(Task gate) : IEmbeddingGenerator<string, Embedding<float>> {
+	sealed class BlockingGenerator(Task gate) : EmbeddingGenerator {
 		public int CallCount;
 		public int TotalTextCount;
 

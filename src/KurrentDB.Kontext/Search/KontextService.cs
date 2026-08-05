@@ -14,6 +14,7 @@ using KurrentDB.Kontext.Workspaces;
 using KurrentDB.Kontext.Workspaces.Registry;
 using KurrentDB.LogCommon;
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Search;
 
@@ -43,7 +44,7 @@ public class KontextService : IKontextService {
 	readonly IReadIndex<string> _readIndex;
 	readonly Retriever _retriever;
 	readonly WorkspaceRegistry _workspaces;
-	readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
+	readonly EmbeddingGenerator _embeddingGenerator;
 	readonly IReranker _reranker;
 	readonly NounPhraseExtractor _npe;
 	readonly KontextReadySignal _ready;
@@ -54,7 +55,7 @@ public class KontextService : IKontextService {
 		IReadIndex<string> readIndex,
 		Retriever retriever,
 		WorkspaceRegistry workspaces,
-		IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+		EmbeddingGenerator embeddingGenerator,
 		IReranker reranker,
 		NounPhraseExtractor npe,
 		KontextReadySignal ready) {

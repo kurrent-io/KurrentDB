@@ -15,6 +15,7 @@ namespace DuckLance.Tests.Storage;
 /// </summary>
 [NotInParallel]
 [LanceRequired]
+[Category("Storage")]
 public class DuckDBQuackConnectionManagerTests {
     const string ServerUri = "quack:localhost";
     const string Token     = "s3kret-quack-token";
@@ -29,7 +30,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_SelectLiteral_ReturnsScalar() {
+    public async ValueTask query_async_select_literal_returns_scalar() {
         using var fixture = await QuackServerFixture.StartAsync();
         using var manager = new DuckDBQuackConnectionManager(ServerUri, Token);
 
@@ -45,7 +46,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_ServerSideLanceSearch_WithEncodedVector_ReturnsOracleDistances() {
+    public async ValueTask query_async_server_side_lance_search_with_encoded_vector_returns_oracle_distances() {
         using var fixture = await QuackServerFixture.StartAsync();
         using var manager = new DuckDBQuackConnectionManager(ServerUri, Token);
 
@@ -73,7 +74,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_InjectionAttempt_IsContained_TableSurvives() {
+    public async ValueTask query_async_injection_attempt_is_contained_table_survives() {
         using var fixture = await QuackServerFixture.StartAsync();
         using var manager = new DuckDBQuackConnectionManager(ServerUri, Token);
 
@@ -95,7 +96,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task ExecuteNonQueryAsync_ServerSideMergeUpsert_IsVisibleAfterwards() {
+    public async ValueTask execute_non_query_async_server_side_merge_upsert_is_visible_afterwards() {
         using var fixture = await QuackServerFixture.StartAsync();
         using var manager = new DuckDBQuackConnectionManager(ServerUri, Token);
 
@@ -127,7 +128,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_WrongToken_SurfacesAuthenticationError() {
+    public async ValueTask query_async_wrong_token_surfaces_authentication_error() {
         using var fixture    = await QuackServerFixture.StartAsync();
         using var badManager = new DuckDBQuackConnectionManager(ServerUri, "not-the-right-token");
 
@@ -149,7 +150,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_TypeFidelity_ListAndVectorRoundTrip() {
+    public async ValueTask query_async_type_fidelity_list_and_vector_round_trip() {
         using var fixture = await QuackServerFixture.StartAsync();
         using var manager = new DuckDBQuackConnectionManager(ServerUri, Token);
 
@@ -168,7 +169,7 @@ public class DuckDBQuackConnectionManagerTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task QueryAsync_AfterDispose_ThrowsObjectDisposed() {
+    public async ValueTask query_async_after_dispose_throws_object_disposed() {
         using var fixture = await QuackServerFixture.StartAsync();
         var       manager = new DuckDBQuackConnectionManager(ServerUri, Token);
         manager.Dispose();

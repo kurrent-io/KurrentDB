@@ -9,6 +9,7 @@ namespace DuckLance.Tests.Storage;
 /// Pure unit tests for <see cref="DuckDBSqlComposer"/>: the CRUD SQL statements composed from a
 /// <see cref="CollectionModel"/>. No DuckDB connection is used; every test asserts the exact SQL text.
 /// </summary>
+[Category("Storage")]
 public class DuckDBSqlComposerTests {
     // The canonical 5-property model used by the golden oracle: key id, data category (string),
     // data tags (List<string>), data content (string), vector vec (dim 4).
@@ -21,7 +22,7 @@ public class DuckDBSqlComposerTests {
             new VectorStoreVectorProperty("vec", typeof(ReadOnlyMemory<float>), 4));
 
     [Test]
-    public async Task BuildMergeUpsertSql_Produces_The_Golden_Oracle_Statement() {
+    public async ValueTask build_merge_upsert_sql_produces_the_golden_oracle_statement() {
         var sql = DuckDBSqlComposer.BuildMergeUpsertSql("ns.main.vs_docs", CanonicalModel());
 
         await Assert
@@ -37,7 +38,7 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildMergeUpsertManySql_TwoRows_Produces_The_Golden_Oracle_Statement() {
+    public async ValueTask build_merge_upsert_many_sql_two_rows_produces_the_golden_oracle_statement() {
         var sql = DuckDBSqlComposer.BuildMergeUpsertManySql("ns.main.vs_docs", CanonicalModel(), 2);
 
         // One VALUES row per record, each projecting one placeholder per property (vectors/list-typed data wrapped
@@ -55,7 +56,7 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildMergeUpsertManySql_SingleRow_Emits_One_Values_Row() {
+    public async ValueTask build_merge_upsert_many_sql_single_row_emits_one_values_row() {
         var sql = DuckDBSqlComposer.BuildMergeUpsertManySql("ns.main.vs_docs", CanonicalModel(), 1);
 
         await Assert
@@ -71,7 +72,7 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildMergeUpsertManySql_Uses_StorageName_Overrides() {
+    public async ValueTask build_merge_upsert_many_sql_uses_storage_name_overrides() {
         var model = BuildModel(
             new VectorStoreKeyProperty("Id", typeof(string)) { StorageName                       = "id_col" },
             new VectorStoreDataProperty("Category", typeof(string)) { StorageName                = "cat_col" },
@@ -92,27 +93,27 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildMergeUpsertManySql_RowCountBelowOne_Throws() =>
+    public async ValueTask build_merge_upsert_many_sql_row_count_below_one_throws() =>
         await Assert
             .That(() => DuckDBSqlComposer.BuildMergeUpsertManySql("ns.main.vs_docs", CanonicalModel(), 0))
             .Throws<ArgumentOutOfRangeException>();
 
     [Test]
-    public async Task BuildSelectByKeySql_IncludeVectors_Emits_Vector_Column() {
+    public async ValueTask build_select_by_key_sql_include_vectors_emits_vector_column() {
         var sql = DuckDBSqlComposer.BuildSelectByKeySql("ns.main.vs_docs", CanonicalModel(), true);
 
         await Assert.That(sql).IsEqualTo("SELECT id, category, tags, content, vec FROM ns.main.vs_docs WHERE id = ?");
     }
 
     [Test]
-    public async Task BuildSelectByKeySql_WithoutVectors_Omits_Vector_Column() {
+    public async ValueTask build_select_by_key_sql_without_vectors_omits_vector_column() {
         var sql = DuckDBSqlComposer.BuildSelectByKeySql("ns.main.vs_docs", CanonicalModel(), false);
 
         await Assert.That(sql).IsEqualTo("SELECT id, category, tags, content FROM ns.main.vs_docs WHERE id = ?");
     }
 
     [Test]
-    public async Task BuildSelectByKeysSql_IncludeVectors_Emits_In_List() {
+    public async ValueTask build_select_by_keys_sql_include_vectors_emits_in_list() {
         var sql = DuckDBSqlComposer.BuildSelectByKeysSql(
             "ns.main.vs_docs", CanonicalModel(), true,
             3);
@@ -121,7 +122,7 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildSelectByKeysSql_WithoutVectors_Omits_Vector_Column() {
+    public async ValueTask build_select_by_keys_sql_without_vectors_omits_vector_column() {
         var sql = DuckDBSqlComposer.BuildSelectByKeysSql(
             "ns.main.vs_docs", CanonicalModel(), false,
             3);
@@ -130,14 +131,14 @@ public class DuckDBSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildDeleteByKeySql_Filters_On_Key() {
+    public async ValueTask build_delete_by_key_sql_filters_on_key() {
         var sql = DuckDBSqlComposer.BuildDeleteByKeySql("ns.main.vs_docs", CanonicalModel());
 
         await Assert.That(sql).IsEqualTo("DELETE FROM ns.main.vs_docs WHERE id = ?");
     }
 
     [Test]
-    public async Task BuildDeleteByKeysSql_Filters_On_Key_In_List() {
+    public async ValueTask build_delete_by_keys_sql_filters_on_key_in_list() {
         var sql = DuckDBSqlComposer.BuildDeleteByKeysSql("ns.main.vs_docs", CanonicalModel(), 3);
 
         await Assert.That(sql).IsEqualTo("DELETE FROM ns.main.vs_docs WHERE id IN (?, ?, ?)");
@@ -145,7 +146,7 @@ public class DuckDBSqlComposerTests {
 
     // A model whose data property carries a StorageName override must be referenced by storage name in SQL.
     [Test]
-    public async Task Composer_Uses_StorageName_Overrides() {
+    public async ValueTask composer_uses_storage_name_overrides() {
         var model = BuildModel(
             new VectorStoreKeyProperty("Id", typeof(string)) { StorageName                       = "id_col" },
             new VectorStoreDataProperty("Category", typeof(string)) { StorageName                = "cat_col" },

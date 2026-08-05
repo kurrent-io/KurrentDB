@@ -19,27 +19,28 @@ namespace DuckLance.Tests.Indexing;
 /// Microsoft.Extensions.VectorData's <see cref="IndexKind"/>/<see cref="DistanceFunction"/> constants onto
 /// Lance's <c>USING</c> index type, <c>metric_type</c>, PQ-family membership, and <c>num_sub_vectors</c>.
 /// </summary>
+[Category("Indexing")]
 public class DuckDBIndexKindMapperTests {
     // --- GetLanceIndexType ---
 
     [Test]
-    public async Task GetLanceIndexType_Null_ReturnsIvfPq() => await Assert.That(DuckDBIndexKindMapper.GetLanceIndexType(null)).IsEqualTo("IVF_PQ");
+    public async ValueTask get_lance_index_type_null_returns_ivf_pq() => await Assert.That(DuckDBIndexKindMapper.GetLanceIndexType(null)).IsEqualTo("IVF_PQ");
 
     [Test]
     [Arguments(IndexKind.Dynamic, "IVF_PQ")]
     [Arguments(IndexKind.QuantizedFlat, "IVF_PQ")]
     [Arguments(IndexKind.IvfFlat, "IVF_FLAT")]
     [Arguments(IndexKind.Hnsw, "IVF_HNSW_PQ")]
-    public async Task GetLanceIndexType_KnownKinds_MapsToExpectedType(string indexKind, string expected) =>
+    public async ValueTask get_lance_index_type_known_kinds_maps_to_expected_type(string indexKind, string expected) =>
         await Assert.That(DuckDBIndexKindMapper.GetLanceIndexType(indexKind)).IsEqualTo(expected);
 
     [Test]
-    public async Task GetLanceIndexType_Flat_ReturnsNull() => await Assert.That(DuckDBIndexKindMapper.GetLanceIndexType(IndexKind.Flat)).IsNull();
+    public async ValueTask get_lance_index_type_flat_returns_null() => await Assert.That(DuckDBIndexKindMapper.GetLanceIndexType(IndexKind.Flat)).IsNull();
 
     [Test]
     [Arguments(IndexKind.DiskAnn)]
     [Arguments("garbage")]
-    public async Task GetLanceIndexType_UnsupportedKinds_ThrowsNotSupportedException(string indexKind) =>
+    public async ValueTask get_lance_index_type_unsupported_kinds_throws_not_supported_exception(string indexKind) =>
         await Assert
             .That(() => DuckDBIndexKindMapper.GetLanceIndexType(indexKind))
             .Throws<NotSupportedException>()
@@ -48,14 +49,14 @@ public class DuckDBIndexKindMapperTests {
     // --- GetLanceMetric ---
 
     [Test]
-    public async Task GetLanceMetric_Null_ReturnsCosine() => await Assert.That(DuckDBIndexKindMapper.GetLanceMetric(null)).IsEqualTo("cosine");
+    public async ValueTask get_lance_metric_null_returns_cosine() => await Assert.That(DuckDBIndexKindMapper.GetLanceMetric(null)).IsEqualTo("cosine");
 
     [Test]
     [Arguments(DistanceFunction.CosineDistance, "cosine")]
     [Arguments(DistanceFunction.CosineSimilarity, "cosine")]
     [Arguments(DistanceFunction.DotProductSimilarity, "dot")]
     [Arguments(DistanceFunction.EuclideanSquaredDistance, "l2")]
-    public async Task GetLanceMetric_KnownFunctions_MapsToExpectedMetric(string distanceFunction, string expected) =>
+    public async ValueTask get_lance_metric_known_functions_maps_to_expected_metric(string distanceFunction, string expected) =>
         await Assert.That(DuckDBIndexKindMapper.GetLanceMetric(distanceFunction)).IsEqualTo(expected);
 
     [Test]
@@ -64,7 +65,7 @@ public class DuckDBIndexKindMapperTests {
     [Arguments(DistanceFunction.HammingDistance)]
     [Arguments(DistanceFunction.ManhattanDistance)]
     [Arguments("garbage")]
-    public async Task GetLanceMetric_UnsupportedFunctions_ThrowsNotSupportedException(string distanceFunction) =>
+    public async ValueTask get_lance_metric_unsupported_functions_throws_not_supported_exception(string distanceFunction) =>
         await Assert
             .That(() => DuckDBIndexKindMapper.GetLanceMetric(distanceFunction))
             .Throws<NotSupportedException>()
@@ -73,18 +74,18 @@ public class DuckDBIndexKindMapperTests {
     // --- IsPqFamily ---
 
     [Test]
-    public async Task IsPqFamily_Null_IsTrue() => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(null)).IsTrue();
+    public async ValueTask is_pq_family_null_is_true() => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(null)).IsTrue();
 
     [Test]
     [Arguments(IndexKind.Dynamic)]
     [Arguments(IndexKind.QuantizedFlat)]
     [Arguments(IndexKind.Hnsw)]
-    public async Task IsPqFamily_PqFamilyKinds_IsTrue(string indexKind) => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(indexKind)).IsTrue();
+    public async ValueTask is_pq_family_pq_family_kinds_is_true(string indexKind) => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(indexKind)).IsTrue();
 
     [Test]
     [Arguments(IndexKind.Flat)]
     [Arguments(IndexKind.IvfFlat)]
-    public async Task IsPqFamily_NonPqFamilyKinds_IsFalse(string indexKind) => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(indexKind)).IsFalse();
+    public async ValueTask is_pq_family_non_pq_family_kinds_is_false(string indexKind) => await Assert.That(DuckDBIndexKindMapper.IsPqFamily(indexKind)).IsFalse();
 
     // --- GetNumSubVectors ---
 
@@ -97,7 +98,7 @@ public class DuckDBIndexKindMapperTests {
     [Arguments(384, 16)]
     [Arguments(768, 16)]
     [Arguments(1536, 16)]
-    public async Task GetNumSubVectors_ReturnsLargestDivisorAtMost16(int dimensions, int expected) =>
+    public async ValueTask get_num_sub_vectors_returns_largest_divisor_at_most_16(int dimensions, int expected) =>
         await Assert.That(DuckDBIndexKindMapper.GetNumSubVectors(dimensions)).IsEqualTo(expected);
 }
 
@@ -107,13 +108,14 @@ public class DuckDBIndexKindMapperTests {
 /// <c>lance</c> extension anywhere in this class (the <c>ParseShowIndexes_...</c> test below uses a
 /// plain in-memory DuckDB literal SELECT), so none of these tests need <see cref="LanceRequiredAttribute"/>.
 /// </summary>
+[Category("Indexing")]
 public class DuckDBIndexBuilderTests {
     const string DatasetPath = "/data/x.lance";
 
     // --- BuildVectorIndexSql ---
 
     [Test]
-    public async Task BuildVectorIndexSql_Dim4CosineHnsw_ProducesGoldenStatement() {
+    public async ValueTask build_vector_index_sql_dim_4_cosine_hnsw_produces_golden_statement() {
         var vec = BuildVectorProperty(
             "vec", 4, IndexKind.Hnsw,
             DistanceFunction.CosineDistance);
@@ -128,7 +130,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildVectorIndexSql_IvfFlat_OmitsPqParams() {
+    public async ValueTask build_vector_index_sql_ivf_flat_omits_pq_params() {
         var vec = BuildVectorProperty(
             "vec", 4, IndexKind.IvfFlat,
             DistanceFunction.CosineDistance);
@@ -139,7 +141,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildVectorIndexSql_Flat_ReturnsNull() {
+    public async ValueTask build_vector_index_sql_flat_returns_null() {
         var vec = BuildVectorProperty(
             "vec", 4, IndexKind.Flat,
             DistanceFunction.CosineDistance);
@@ -148,7 +150,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildVectorIndexSql_NullIndexKindAndDistanceFunction_UsesDynamicDefaultAndCosine() {
+    public async ValueTask build_vector_index_sql_null_index_kind_and_distance_function_uses_dynamic_default_and_cosine() {
         var vec = BuildVectorProperty(
             "vec", 768, null,
             null);
@@ -163,7 +165,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildVectorIndexSql_QuantizedFlat_ProducesIvfPqStatement() {
+    public async ValueTask build_vector_index_sql_quantized_flat_produces_ivf_pq_statement() {
         var vec = BuildVectorProperty(
             "vec", 12, IndexKind.QuantizedFlat,
             null);
@@ -178,7 +180,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildVectorIndexSql_PathWithQuote_IsEscaped() {
+    public async ValueTask build_vector_index_sql_path_with_quote_is_escaped() {
         var vec = BuildVectorProperty(
             "vec", 4, IndexKind.IvfFlat,
             DistanceFunction.CosineDistance);
@@ -191,7 +193,7 @@ public class DuckDBIndexBuilderTests {
     // --- BuildScalarIndexSqls ---
 
     [Test]
-    public async Task BuildScalarIndexSqls_IsIndexed_ScalarType_UsesBtree() {
+    public async ValueTask build_scalar_index_sqls_is_indexed_scalar_type_uses_btree() {
         var property = BuildDataProperty(
             "category", typeof(string), true,
             false);
@@ -205,7 +207,7 @@ public class DuckDBIndexBuilderTests {
     [Test]
     [Arguments(typeof(List<string>))]
     [Arguments(typeof(string[]))]
-    public async Task BuildScalarIndexSqls_IsIndexed_StringListType_UsesLabelList(Type type) {
+    public async ValueTask build_scalar_index_sqls_is_indexed_string_list_type_uses_label_list(Type type) {
         var property = BuildDataProperty(
             "tags", type, true,
             false);
@@ -217,7 +219,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildScalarIndexSqls_IsFullTextIndexed_UsesInverted() {
+    public async ValueTask build_scalar_index_sqls_is_full_text_indexed_uses_inverted() {
         var property = BuildDataProperty(
             "content", typeof(string), false,
             true);
@@ -229,7 +231,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildScalarIndexSqls_BothIndexedAndFullText_ReturnsBothStatements() {
+    public async ValueTask build_scalar_index_sqls_both_indexed_and_full_text_returns_both_statements() {
         var property = BuildDataProperty(
             "content", typeof(string), true,
             true);
@@ -245,7 +247,7 @@ public class DuckDBIndexBuilderTests {
     }
 
     [Test]
-    public async Task BuildScalarIndexSqls_NeitherIndexedNorFullText_ReturnsNoStatements() {
+    public async ValueTask build_scalar_index_sqls_neither_indexed_nor_full_text_returns_no_statements() {
         var property = BuildDataProperty(
             "plain", typeof(string), false,
             false);
@@ -258,7 +260,7 @@ public class DuckDBIndexBuilderTests {
     // --- ParseShowIndexes ---
 
     [Test]
-    public async Task ParseShowIndexes_ParsesTheValidatedFiveColumnShape() {
+    public async ValueTask parse_show_indexes_parses_the_validated_five_column_shape() {
         await using DuckDBConnection connection = new("DataSource=:memory:");
         await connection.OpenAsync();
 
@@ -348,9 +350,10 @@ public class DuckDBIndexBuilderTests {
 /// <see cref="LanceRequiredAttribute"/>.
 /// </summary>
 [LanceRequired]
+[Category("Indexing")]
 public class DuckDBIndexingIntegrationTests {
     [Test]
-    public async Task BuildVectorIndexSql_EachIndexKind_CreatesTheExpectedLanceIndexType() {
+    public async ValueTask build_vector_index_sql_each_index_kind_creates_the_expected_lance_index_type() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -413,7 +416,7 @@ public class DuckDBIndexingIntegrationTests {
     }
 
     [Test]
-    public async Task BuildScalarIndexSqls_EachScalarProperty_AreCreatedAutomatically() {
+    public async ValueTask build_scalar_index_sqls_each_scalar_property_are_created_automatically() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -619,6 +622,7 @@ public class DuckDBIndexingIntegrationTests {
 /// </para>
 /// </remarks>
 [LanceRequired]
+[Category("Indexing")]
 public class DuckDBEmptyDatasetVectorIndexProbeTests {
     /// <summary>
     /// The verbatim Lance error fragment observed for every empty-dataset <c>IVF_PQ</c> creation attempt below,
@@ -630,7 +634,7 @@ public class DuckDBEmptyDatasetVectorIndexProbeTests {
         "Creating empty vector indices with train=False is not yet implemented";
 
     [Test]
-    public async Task CreateIvfPqIndex_OnEmptyDataset_WithTrainFalse_FailsAsNotYetImplemented() {
+    public async ValueTask create_ivf_pq_index_on_empty_dataset_with_train_false_fails_as_not_yet_implemented() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -656,7 +660,7 @@ public class DuckDBEmptyDatasetVectorIndexProbeTests {
     }
 
     [Test]
-    public async Task CreateIvfPqIndex_OnEmptyDataset_WithTrainingFalse_FailsIdenticallyToTrainFalse() {
+    public async ValueTask create_ivf_pq_index_on_empty_dataset_with_training_false_fails_identically_to_train_false() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -682,7 +686,7 @@ public class DuckDBEmptyDatasetVectorIndexProbeTests {
     }
 
     [Test]
-    public async Task CreateIvfPqIndex_OnEmptyDataset_WithNoTrainParam_FailsIdenticallyToTrainFalse() {
+    public async ValueTask create_ivf_pq_index_on_empty_dataset_with_no_train_param_fails_identically_to_train_false() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -708,7 +712,7 @@ public class DuckDBEmptyDatasetVectorIndexProbeTests {
     }
 
     [Test]
-    public async Task CreateScalarIndexes_OnEmptyDataset_AllSucceedWithZeroRowsIndexed() {
+    public async ValueTask create_scalar_indexes_on_empty_dataset_all_succeed_with_zero_rows_indexed() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

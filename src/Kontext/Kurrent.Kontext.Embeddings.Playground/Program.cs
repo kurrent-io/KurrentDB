@@ -42,7 +42,8 @@ using Kurrent.Kontext.Embeddings.WordPieceOnnx;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Kurrent.Kontext.Embeddings.Prototype;  // ModelManager, EmbeddingService (Path A)
 using Kurrent.Kontext.Models;                // KontextModelsAssembly (embedded-resource marker)
-using Microsoft.Extensions.AI;               // IEmbeddingGenerator<string, Embedding<float>>
+using Microsoft.Extensions.AI;               // EmbeddingGenerator
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 using Microsoft.Extensions.Logging;
 
 // ---------------------------------------------------------------------------
@@ -557,7 +558,7 @@ if (hasD && refVecs is not null)
 // ===========================================================================
 
 // Runs a whole input set through a generator and captures each vector by its source text.
-static async Task<Dictionary<string, float[]>> EmbedAllAsync(IEmbeddingGenerator<string, Embedding<float>> generator, string[] inputs) {
+static async Task<Dictionary<string, float[]>> EmbedAllAsync(EmbeddingGenerator generator, string[] inputs) {
 	var generated = await generator.GenerateAsync(inputs);
 	var vectors = new Dictionary<string, float[]>(inputs.Length);
 	for (var i = 0; i < inputs.Length; i++)

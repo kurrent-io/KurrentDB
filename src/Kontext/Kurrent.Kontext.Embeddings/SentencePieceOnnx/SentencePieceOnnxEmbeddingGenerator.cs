@@ -4,6 +4,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.Tokenizers;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 
@@ -15,7 +16,7 @@ namespace Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 /// pooling mode from <see cref="SentencePieceOnnxOptions"/>. Verified bit-exact against a transformers.js
 /// reference for multilingual-e5-small.
 /// </summary>
-public sealed class SentencePieceOnnxEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+public sealed class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 	const string ProviderName = "kontext-sentencepiece-onnx";
 	const string DefaultModelId = "multilingual-e5-small";
 

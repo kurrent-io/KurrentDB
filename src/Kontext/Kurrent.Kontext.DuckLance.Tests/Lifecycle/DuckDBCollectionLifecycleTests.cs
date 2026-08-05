@@ -11,9 +11,10 @@ namespace DuckLance.Tests.Lifecycle;
 /// test drives a real DuckDB + <c>lance</c> connection against a temporary storage directory.
 /// </summary>
 [LanceRequired]
+[Category("Lifecycle")]
 public class DuckDBCollectionLifecycleTests {
     [Test]
-    public async Task EnsureCollectionExistsAsync_CreatesCollection_WhenAbsent() {
+    public async ValueTask ensure_collection_exists_async_creates_collection_when_absent() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -44,7 +45,7 @@ public class DuckDBCollectionLifecycleTests {
     }
 
     [Test]
-    public async Task EnsureCollectionExistsAsync_CalledTwice_IsIdempotent() {
+    public async ValueTask ensure_collection_exists_async_called_twice_is_idempotent() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -63,7 +64,7 @@ public class DuckDBCollectionLifecycleTests {
     }
 
     [Test]
-    public async Task EnsureCollectionExistsAsync_DifferentSchema_ThrowsVectorStoreException() {
+    public async ValueTask ensure_collection_exists_async_different_schema_throws_vector_store_exception() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -87,7 +88,7 @@ public class DuckDBCollectionLifecycleTests {
     }
 
     [Test]
-    public async Task EnsureCollectionDeletedAsync_RemovesCollection_AndIsIdempotent() {
+    public async ValueTask ensure_collection_deleted_async_removes_collection_and_is_idempotent() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -121,7 +122,7 @@ public class DuckDBCollectionLifecycleTests {
     /// Two stores over separate database directories don't collide.
     /// </summary>
     [Test]
-    public async Task TwoStoresOverSeparateDatabaseDirectories_DontCollide() {
+    public async ValueTask two_stores_over_separate_database_directories_dont_collide() {
         var                dir    = CreateTempStorageDir();
         DuckDBVectorStore? storeA = null;
         DuckDBVectorStore? storeB = null;
@@ -163,7 +164,7 @@ public class DuckDBCollectionLifecycleTests {
     }
 
     [Test]
-    public async Task Store_CollectionExistsAsync_ReflectsCollectionLifecycle() {
+    public async ValueTask store_collection_exists_async_reflects_collection_lifecycle() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

@@ -29,6 +29,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext;
 
@@ -78,7 +79,7 @@ public static class KontextServiceCollectionExtensions {
 				sp.GetRequiredService<StoreRegistry<IFtsStore>>(),
 				sp.GetRequiredService<StoreRegistry<IVectorStore>>()),
 			sp.GetRequiredService<WorkspaceRegistry>(),
-			sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
+			sp.GetRequiredService<EmbeddingGenerator>(),
 			sp.GetRequiredService<CrossEncoderService>(),
 			sp.GetRequiredService<NounPhraseExtractor>(),
 			sp.GetRequiredService<KontextReadySignal>()));

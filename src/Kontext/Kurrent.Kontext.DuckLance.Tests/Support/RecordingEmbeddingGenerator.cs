@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace DuckLance.Tests.Support;
 
@@ -10,7 +11,7 @@ namespace DuckLance.Tests.Support;
 /// generator — see <see cref="EmbeddingModelFixture"/>): that rule proves generation end-to-end,
 /// while these unit tests prove the codec's call topology, which a real model cannot make observable.
 /// </summary>
-public sealed class RecordingEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+public sealed class RecordingEmbeddingGenerator : EmbeddingGenerator {
     /// <summary>Every call's inputs, in call order.</summary>
     public List<string[]> Calls { get; } = [];
 

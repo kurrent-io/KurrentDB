@@ -4,6 +4,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Indexing;
 
@@ -19,7 +20,7 @@ public record VectorIndexMetadata(
 	[property: JsonPropertyName("dimensions")] int Dimensions) {
 
 	public static async Task<VectorIndexMetadata> LoadOrProbeAsync(
-		IEmbeddingGenerator<string, Embedding<float>> generator, string provider, string cachePath,
+		EmbeddingGenerator generator, string provider, string cachePath,
 		CancellationToken ct) {
 		var model = ModelOf(generator);
 
@@ -40,7 +41,7 @@ public record VectorIndexMetadata(
 	}
 
 	public static async Task<VectorIndexMetadata> ProbeAsync(
-		IEmbeddingGenerator<string, Embedding<float>> generator, string provider, CancellationToken ct) {
+		EmbeddingGenerator generator, string provider, CancellationToken ct) {
 		var model = ModelOf(generator);
 
 		Embedding<float> probe;
@@ -62,7 +63,7 @@ public record VectorIndexMetadata(
 		return new VectorIndexMetadata(provider, model, probe.Vector.Length);
 	}
 
-	static string? ModelOf(IEmbeddingGenerator<string, Embedding<float>> generator) {
+	static string? ModelOf(EmbeddingGenerator generator) {
 		var meta = generator.GetService(typeof(EmbeddingGeneratorMetadata)) as EmbeddingGeneratorMetadata;
 		return string.IsNullOrEmpty(meta?.DefaultModelId) ? null : meta.DefaultModelId;
 	}

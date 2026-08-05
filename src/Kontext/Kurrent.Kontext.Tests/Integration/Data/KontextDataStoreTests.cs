@@ -5,6 +5,7 @@ using DuckDB.NET.Data;
 using Google.Protobuf;
 using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -62,7 +63,7 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act + Assert — missing is null; retracted and superseded still come back.
+		// Act + Assert
 		await Assert.That(await store.GetAsync("no-such-memory")).IsNull();
 		await Assert.That((await store.GetAsync("m3"))!.RetractedAt).IsNotNull();
 
@@ -92,13 +93,13 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — no filters, default sort (retained at), newest first.
+		// Act
 		var memories = await store.ListAsync(
 				[], [], Contracts.RecollectSort.RetainedAt,
 				Contracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
-		// Assert — m3 is retracted and hidden; m4 is superseded and stays.
+		// Assert
 		await Assert.That(memories.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m1", "m5"], CollectionOrdering.Matching);
 	}
 
@@ -109,7 +110,7 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act + Assert — any-of types: 1 or 3 (retracted m3 stays hidden even though its type matches).
+		// Act + Assert
 		var byTypes = await store.ListAsync(
 				[], [(Contracts.MemoryType)1, (Contracts.MemoryType)3],
 				Contracts.RecollectSort.RetainedAt, Contracts.SortDirection.Descending, 10)
@@ -133,7 +134,7 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act + Assert — importance ascending.
+		// Act + Assert
 		var byImportance = await store.ListAsync(
 				[], [], Contracts.RecollectSort.Importance,
 				Contracts.SortDirection.Ascending, 10)
@@ -152,7 +153,7 @@ public class KontextDataStoreTests {
 
 	[Test]
 	public async ValueTask lineage_returns_the_whole_family_from_any_member_in_chronological_order() {
-		// Arrange — the family: L4 (living head) replaced L3, which had consolidated L1 and L2.
+		// Arrange
 		using var dir   = new TempDir();
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
@@ -161,13 +162,12 @@ public class KontextDataStoreTests {
 
 		var expected = new List<string> { "L1", "L2", "L3", "L4" };
 
-		// Act — start the walk at a leaf, in the middle, and at the head.
+		// Act
 		var fromLeaf   = await store.GetLineageAsync("L1").ToListAsync();
 		var fromMiddle = await store.GetLineageAsync("L3").ToListAsync();
 		var fromHead   = await store.GetLineageAsync("L4").ToListAsync();
 
-		// Assert — same family, same chronological order, no matter where the walk starts —
-		// and the unrelated m1–m5 rows never leak in.
+		// Assert
 		await Assert.That(fromLeaf.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
 		await Assert.That(fromMiddle.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
 		await Assert.That(fromHead.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
@@ -180,7 +180,7 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act + Assert — m1 has no supersession edges at all: a family of one.
+		// Act + Assert
 		var alone = await store.GetLineageAsync("m1").ToListAsync();
 
 		await Assert.That(alone.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m1"], CollectionOrdering.Matching);
@@ -191,9 +191,7 @@ public class KontextDataStoreTests {
 
 	[Test]
 	public async ValueTask lineage_keeps_the_up_chain_when_the_successor_has_a_one_sided_edge() {
-		// Arrange — the seed's m4 says "superseded_by m2", but m2's supersedes list is empty:
-		// a one-sided edge. The walk runs on the superseded_by column alone (in both
-		// directions), so the incomplete supersedes ARRAY cannot lose m4 from its own family.
+		// Arrange
 		using var dir   = new TempDir();
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
@@ -201,21 +199,20 @@ public class KontextDataStoreTests {
 		// Act
 		var family = await store.GetLineageAsync("m4").ToListAsync();
 
-		// Assert — m4 (retained earlier), then m2.
+		// Assert
 		await Assert.That(family.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m4", "m2"], CollectionOrdering.Matching);
 	}
 
 	[Test]
 	public async ValueTask list_by_importance_breaks_ties_by_last_access_in_the_same_direction() {
-		// Arrange — m1, m6, m7 all share importance 3; inside that tie group only last access
-		// differs: m6 (Base+50h) > m1 (Base+30h) > m7 (Base+10h).
+		// Arrange
 		using var dir   = new TempDir();
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
 		SeedTieRows(pool);
 
-		// Act — the same list both ways.
+		// Act
 		var best = await store.ListAsync(
 				[], [], Contracts.RecollectSort.Importance,
 				Contracts.SortDirection.Descending, 10)
@@ -226,24 +223,21 @@ public class KontextDataStoreTests {
 				Contracts.SortDirection.Ascending, 10)
 			.ToListAsync();
 
-		// Assert — descending: most important first, and inside the importance-3 tie the most
-		// recently USED first. Ascending flips the tie-break too: least important, longest
-		// untouched first — the eviction sweep.
+		// Assert
 		await Assert.That(best.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m5", "m6", "m1", "m7", "m4", "m2"], CollectionOrdering.Matching);
 		await Assert.That(evict.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m7", "m1", "m6", "m5"], CollectionOrdering.Matching);
 	}
 
 	[Test]
 	public async ValueTask list_settles_exact_ties_deterministically_by_memory_id() {
-		// Arrange — m6 and m7 share the exact same retained_at instant, so the sort key alone
-		// cannot order them.
+		// Arrange
 		using var dir   = new TempDir();
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
 		SeedTieRows(pool);
 
-		// Act — the identical call twice.
+		// Act
 		var first = await store.ListAsync(
 				[], [], Contracts.RecollectSort.RetainedAt,
 				Contracts.SortDirection.Descending, 10)
@@ -254,8 +248,7 @@ public class KontextDataStoreTests {
 				Contracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
-		// Assert — memory_id settles the m6/m7 tie the same way every time: without it the
-		// engine may order rows inside a tie group differently between two identical calls.
+		// Assert
 		var expected = new List<string> { "m6", "m7", "m2", "m4", "m1", "m5" };
 
 		await Assert.That(first.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
@@ -269,14 +262,13 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — the query vector sits on m1's axis; alpha 1 ignores keywords entirely.
+		// Act
 		var hits = await store.SearchAsync(
 				"anything", [1f, 0f, 0f, 0f], [],
 				new() { Alpha = 1, Limit = 2 })
 			.ToListAsync();
 
-		// Assert — m1 exactly on the axis, m5 right next to it; scores descend, and the per-leg
-		// diagnostics ride along: an exact match has vector distance 0.
+		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
 		await Assert.That(hits[0].HybridScore!.Value).IsGreaterThanOrEqualTo(hits[1].HybridScore!.Value);
 		await Assert.That(hits[0].VectorDistance!.Value).IsEqualTo(0);
@@ -290,14 +282,13 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — the vector deliberately points at m1, but alpha 0 means only keywords count.
+		// Act
 		var hits = await store.SearchAsync(
 				"projector checkpoint format", [1f, 0f, 0f, 0f], [],
 				new() { Alpha = 0, Limit = 1 })
 			.ToListAsync();
 
-		// Assert — the keyword leg wins: m2 despite the m1-pointing vector, and its BM25 score
-		// is a real positive relevance.
+		// Assert
 		await Assert.That(hits.Count).IsEqualTo(1);
 		await Assert.That(hits[0].Memory.MemoryId).IsEqualTo("m2");
 		await Assert.That(hits[0].KeywordScore!.Value).IsGreaterThan(0);
@@ -310,11 +301,11 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — each query aims straight at the hidden row: its unique word AND its vector axis.
+		// Act
 		var zebra  = await store.SearchAsync("zebra", [0f, 0f, 1f, 0f], []).ToListAsync();
 		var quokka = await store.SearchAsync("quokka", [0f, 0f, 0f, 1f], []).ToListAsync();
 
-		// Assert — m3 is retracted, m4 superseded; recall never sees either.
+		// Assert
 		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
@@ -326,14 +317,13 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — K = 1 alone would keep only the vector-closest candidate (m2, which lacks the
-		// tag); the store must raise the pool to the table size so tagged rows still surface.
+		// Act
 		var hits = await store.SearchAsync(
 				"anything", [0f, 1f, 0f, 0f], [Tag("team", "blue")],
 				new() { K = 1, Limit = 10 })
 			.ToListAsync();
 
-		// Assert — exactly the non-hidden team:blue rows (m4 has the tag but is superseded).
+		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).Order().ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
 	}
 
@@ -344,11 +334,10 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — pure vector mode: the query vector sits exactly on m1's axis, m5 right next to it.
+		// Act
 		var hits = await store.SearchAsync([1f, 0f, 0f, 0f], [], new() { Limit = 2 }).ToListAsync();
 
-		// Assert — nearest first (_distance ascending): the exact match at distance 0, and the
-		// scores this mode never produces stay null.
+		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
 		await Assert.That(hits[0].VectorDistance!.Value).IsEqualTo(0);
 		await Assert.That(hits[1].VectorDistance!.Value).IsGreaterThan(0);
@@ -363,11 +352,11 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — each query vector aims straight at a hidden row's axis.
+		// Act
 		var zebra  = await store.SearchAsync([0f, 0f, 1f, 0f], []).ToListAsync();
 		var quokka = await store.SearchAsync([0f, 0f, 0f, 1f], []).ToListAsync();
 
-		// Assert — m3 is retracted, m4 superseded; recall never sees either.
+		// Assert
 		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
@@ -379,11 +368,10 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — K = 1 alone would keep only the vector-closest candidate (m2, which lacks the
-		// tag); the store must raise the pool to the table size so tagged rows still surface.
+		// Act
 		var hits = await store.SearchAsync([0f, 1f, 0f, 0f], [Tag("team", "blue")], new() { K = 1, Limit = 10 }).ToListAsync();
 
-		// Assert — exactly the non-hidden team:blue rows (m4 has the tag but is superseded).
+		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).Order().ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
 	}
 
@@ -394,13 +382,10 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — pure keyword mode: no vector anywhere near this call. The options type is spelled
-		// out because a bare new() would make the call ambiguous with the hybrid overload
-		// (target-typed new converts to anything during overload resolution).
+		// Act
 		var hits = await store.SearchAsync("projector checkpoint format", [], new FullTextSearchOptions { Limit = 1 }).ToListAsync();
 
-		// Assert — the BM25 winner with a real positive relevance, and the scores this mode
-		// never produces stay null.
+		// Assert
 		await Assert.That(hits.Count).IsEqualTo(1);
 		await Assert.That(hits[0].Memory.MemoryId).IsEqualTo("m2");
 		await Assert.That(hits[0].KeywordScore!.Value).IsGreaterThan(0);
@@ -415,18 +400,18 @@ public class KontextDataStoreTests {
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
 
-		// Act — each query aims straight at a hidden row's unique word.
+		// Act
 		var zebra  = await store.SearchAsync("zebra", []).ToListAsync();
 		var quokka = await store.SearchAsync("quokka", []).ToListAsync();
 
-		// Assert — m3 is retracted, m4 superseded; recall never sees either.
+		// Assert
 		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
 
 	[Test]
 	public async ValueTask search_finds_the_exact_match_through_a_trained_ivf_hnsw_pq_index() {
-		// Arrange — 5 seeded rows + 300 fillers crosses the ~256-row index training floor.
+		// Arrange
 		using var dir   = new TempDir();
 		using var pool  = NewPool(dir.Path);
 		var       store = await Seed(pool);
@@ -449,15 +434,13 @@ public class KontextDataStoreTests {
 
 		await Assert.That(indexes).Contains("vec_idx");
 
-		// Act — pure vector search for m1's EXACT vector, now answered through the ANN index.
+		// Act
 		var hits = await store.SearchAsync(
 				"anything", [1f, 0f, 0f, 0f], [],
 				new() { Alpha = 1, Limit = 1 })
 			.ToListAsync();
 
-		// Assert — top-1 only, on purpose: refine_factor re-ranks with exact distances, so a
-		// distance-0 match cannot lose. ANN flakiness lives in near-tie membership at the MARGINS
-		// of the top-k; asserting the exact-match winner keeps this test out of that class.
+		// Assert
 		await Assert.That(hits[0].Memory.MemoryId).IsEqualTo("m1");
 
 		// The optional knobs must be accepted by the engine: nprobs bounds the IVF probe count,
@@ -491,12 +474,11 @@ public class KontextDataStoreTests {
 
 		var schema = NewSchema(pool);
 
-		// Act — twice on purpose: bootstrap runs on every host start and must be re-runnable.
+		// Act
 		await schema.CreateAsync();
 		await schema.CreateAsync();
 
-		// Assert — every eager index exists; the vector index does not (empty table sits far
-		// below the training floor).
+		// Assert
 		var indexes = await schema.ListIndexesAsync();
 
 		await Assert.That(indexes).Contains("content_fts");
@@ -508,7 +490,7 @@ public class KontextDataStoreTests {
 
 	[Test]
 	public async ValueTask schema_vector_index_waits_for_the_training_floor() {
-		// Arrange — five seeded rows: far below the ~256-row training floor.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -519,8 +501,7 @@ public class KontextDataStoreTests {
 		// Act
 		var ready = await schema.EnsureVectorIndexAsync();
 
-		// Assert — honestly reported as not created; search stays correct meanwhile because
-		// below the floor vector search is an exact brute-force scan.
+		// Assert
 		await Assert.That(ready).IsFalse();
 		await Assert.That(await schema.ListIndexesAsync()).DoesNotContain("vec_idx");
 	}
@@ -790,23 +771,6 @@ public class KontextDataStoreTests {
 	// Dimension 4 matches the literal 4-dim vectors every test seeds.
 	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
 
-	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
-	sealed class TempDir : IDisposable {
-		public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "kontext-datastore-v2-tests", Guid.NewGuid().ToString("N"));
-
-		public TempDir() => Directory.CreateDirectory(Path);
-
-		public void Dispose() {
-			try {
-				if (Directory.Exists(Path))
-					Directory.Delete(Path, recursive: true);
-			} catch (IOException) {
-				// Best-effort cleanup; a lingering native handle must not fail the test.
-			} catch (UnauthorizedAccessException) {
-				// Best-effort cleanup.
-			}
-		}
-	}
 
 	#endregion // Test Infrastructure
 }

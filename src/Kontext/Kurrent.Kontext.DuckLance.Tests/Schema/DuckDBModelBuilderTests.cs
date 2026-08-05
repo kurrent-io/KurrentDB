@@ -8,6 +8,7 @@ namespace DuckLance.Tests.Schema;
 /// Unit tests for <see cref="DuckDBModelBuilder"/> schema validation: key/data/vector type support,
 /// dimension and storage-name gating, and definition-driven (dynamic) builds.
 /// </summary>
+[Category("Schema")]
 public class DuckDBModelBuilderTests {
     static CollectionModel Build<TRecord>(Type keyType) =>
         new DuckDBModelBuilder().Build(
@@ -16,7 +17,7 @@ public class DuckDBModelBuilderTests {
 
     // 1. Valid model builds.
     [Test]
-    public async Task ValidRecord_Builds_WithExpectedPropertyShape() {
+    public async ValueTask valid_record_builds_with_expected_property_shape() {
         var model = Build<ValidRecord>(typeof(string));
 
         await Assert.That(model.KeyProperties.Count).IsEqualTo(1);
@@ -28,21 +29,21 @@ public class DuckDBModelBuilderTests {
 
     // 2. Non-string key rejected.
     [Test]
-    public async Task IntKey_Throws_NotSupported() =>
+    public async ValueTask int_key_throws_not_supported() =>
         await Assert
             .That(() => { Build<IntKeyRecord>(typeof(int)); })
             .Throws<NotSupportedException>()
             .WithMessageContaining("string");
 
     [Test]
-    public async Task LongKey_Throws_NotSupported() =>
+    public async ValueTask long_key_throws_not_supported() =>
         await Assert
             .That(() => { Build<LongKeyRecord>(typeof(long)); })
             .Throws<NotSupportedException>()
             .WithMessageContaining("string");
 
     [Test]
-    public async Task GuidKey_Throws_NotSupported() =>
+    public async ValueTask guid_key_throws_not_supported() =>
         await Assert
             .That(() => { Build<GuidKeyRecord>(typeof(Guid)); })
             .Throws<NotSupportedException>()
@@ -52,21 +53,21 @@ public class DuckDBModelBuilderTests {
     // embedding-generation error ("... isn't supported by your provider ..."), so the message states the type
     // is not supported and names the offending type rather than enumerating the provider's supported vector types.
     [Test]
-    public async Task ReadOnlyMemoryDoubleVector_Throws() =>
+    public async ValueTask read_only_memory_double_vector_throws() =>
         await Assert
             .That(() => { Build<RomDoubleVectorRecord>(typeof(string)); })
             .Throws<Exception>()
             .WithMessageContaining("ReadOnlyMemory<double>");
 
     [Test]
-    public async Task DoubleArrayVector_Throws() =>
+    public async ValueTask double_array_vector_throws() =>
         await Assert
             .That(() => { Build<DoubleArrayVectorRecord>(typeof(string)); })
             .Throws<Exception>()
             .WithMessageContaining("isn't supported");
 
     [Test]
-    public async Task ListFloatVector_Throws() =>
+    public async ValueTask list_float_vector_throws() =>
         await Assert
             .That(() => { Build<ListFloatVectorRecord>(typeof(string)); })
             .Throws<Exception>()
@@ -75,14 +76,14 @@ public class DuckDBModelBuilderTests {
     // 4. Bad dimension rejected. Rejected by the MEVD abstractions layer (VectorStoreVectorProperty), which
     // throws ArgumentOutOfRangeException "Dimensions must be greater than zero" at Build time.
     [Test]
-    public async Task ZeroDimensionVector_Throws_MentioningDimension() =>
+    public async ValueTask zero_dimension_vector_throws_mentioning_dimension() =>
         await Assert
             .That(() => { Build<ZeroDimRecord>(typeof(string)); })
             .Throws<ArgumentOutOfRangeException>()
             .WithMessageContaining("Dimensions");
 
     [Test]
-    public async Task NegativeDimensionVector_Throws_MentioningDimension() =>
+    public async ValueTask negative_dimension_vector_throws_mentioning_dimension() =>
         await Assert
             .That(() => { Build<NegativeDimRecord>(typeof(string)); })
             .Throws<ArgumentOutOfRangeException>()
@@ -90,21 +91,21 @@ public class DuckDBModelBuilderTests {
 
     // 5. Unsupported data type rejected, naming supported types (message embeds DuckDBModelBuilder.SupportedDataTypes).
     [Test]
-    public async Task TimeSpanData_Throws_NamingSupportedTypes() =>
+    public async ValueTask time_span_data_throws_naming_supported_types() =>
         await Assert
             .That(() => { Build<TimeSpanDataRecord>(typeof(string)); })
             .Throws<Exception>()
             .WithMessageContaining("DateTimeOffset");
 
     [Test]
-    public async Task GuidData_Throws_NamingSupportedTypes() =>
+    public async ValueTask guid_data_throws_naming_supported_types() =>
         await Assert
             .That(() => { Build<GuidDataRecord>(typeof(string)); })
             .Throws<Exception>()
             .WithMessageContaining("DateTimeOffset");
 
     [Test]
-    public async Task NestedPocoData_Throws_NamingSupportedTypes() =>
+    public async ValueTask nested_poco_data_throws_naming_supported_types() =>
         await Assert
             .That(() => { Build<NestedPocoDataRecord>(typeof(string)); })
             .Throws<Exception>()
@@ -112,7 +113,7 @@ public class DuckDBModelBuilderTests {
 
     // 6. StorageName override honored.
     [Test]
-    public async Task StorageNameOverride_IsHonored() {
+    public async ValueTask storage_name_override_is_honored() {
         var model = Build<StorageNameOverrideRecord>(typeof(string));
 
         var category = model.DataProperties.Single(p => p.ModelName == "Category");
@@ -124,7 +125,7 @@ public class DuckDBModelBuilderTests {
     // against extension build 533e0ee): DELETE ... WHERE Id = ? silently matches zero rows, while lowercase
     // `id` works. DuckDBModelBuilder.Customize() unconditionally lowercases every StorageName to sidestep this.
     [Test]
-    public async Task DefaultStorageNames_AreLowercased() {
+    public async ValueTask default_storage_names_are_lowercased() {
         var model = Build<ValidRecord>(typeof(string));
 
         await Assert.That(model.KeyProperty.StorageName).IsEqualTo("id");
@@ -143,7 +144,7 @@ public class DuckDBModelBuilderTests {
 
     // 6b. Case normalization: an explicit mixed-case StorageName override is also lowercased.
     [Test]
-    public async Task ExplicitMixedCaseStorageName_IsNormalizedToLowercase() {
+    public async ValueTask explicit_mixed_case_storage_name_is_normalized_to_lowercase() {
         var model = Build<MixedCaseStorageNameRecord>(typeof(string));
 
         var category = model.DataProperties.Single(p => p.ModelName == "Category");
@@ -152,7 +153,7 @@ public class DuckDBModelBuilderTests {
 
     // 6c. Case-only storage-name collisions are rejected, naming both colliding model properties.
     [Test]
-    public async Task CaseOnlyStorageNameCollision_Throws_ArgumentException_NamingBothProperties() =>
+    public async ValueTask case_only_storage_name_collision_throws_argument_exception_naming_both_properties() =>
         await Assert
             .That(() => { Build<CaseOnlyCollisionRecord>(typeof(string)); })
             .Throws<ArgumentException>()
@@ -162,26 +163,26 @@ public class DuckDBModelBuilderTests {
 
     // 7. Malicious StorageName rejected by our storage-name gate.
     [Test]
-    public async Task StorageNameWithSpace_Throws_ArgumentException() =>
+    public async ValueTask storage_name_with_space_throws_argument_exception() =>
         await Assert
             .That(() => { Build<SpaceStorageNameRecord>(typeof(string)); })
             .Throws<ArgumentException>();
 
     [Test]
-    public async Task StorageNameWithSqlInjection_Throws_ArgumentException() =>
+    public async ValueTask storage_name_with_sql_injection_throws_argument_exception() =>
         await Assert
             .That(() => { Build<DropTableStorageNameRecord>(typeof(string)); })
             .Throws<ArgumentException>();
 
     [Test]
-    public async Task StorageNameWithQuote_Throws_ArgumentException() =>
+    public async ValueTask storage_name_with_quote_throws_argument_exception() =>
         await Assert
             .That(() => { Build<QuoteStorageNameRecord>(typeof(string)); })
             .Throws<ArgumentException>();
 
     // 8. Definition-as-source-of-truth (dynamic build).
     [Test]
-    public async Task BuildDynamic_ValidDefinition_Builds() {
+    public async ValueTask build_dynamic_valid_definition_builds() {
         VectorStoreCollectionDefinition definition = new() {
             Properties = [
                 new VectorStoreKeyProperty("Id", typeof(string)),
@@ -199,7 +200,7 @@ public class DuckDBModelBuilderTests {
     }
 
     [Test]
-    public async Task BuildDynamic_IntKeyDefinition_Throws() {
+    public async ValueTask build_dynamic_int_key_definition_throws() {
         VectorStoreCollectionDefinition definition = new() {
             Properties = [
                 new VectorStoreKeyProperty("Id", typeof(int)),
@@ -215,7 +216,7 @@ public class DuckDBModelBuilderTests {
 
     // 9. Multiple vector properties accepted (SupportsMultipleVectors = true).
     [Test]
-    public async Task MultipleVectors_Build_WithDistinctDimensions() {
+    public async ValueTask multiple_vectors_build_with_distinct_dimensions() {
         var model = Build<MultiVectorRecord>(typeof(string));
 
         await Assert.That(model.VectorProperties.Count).IsEqualTo(2);

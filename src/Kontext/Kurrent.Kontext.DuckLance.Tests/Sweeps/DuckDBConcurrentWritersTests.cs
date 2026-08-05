@@ -88,9 +88,10 @@ namespace DuckLance.Tests.Sweeps;
 /// </para>
 /// </remarks>
 [LanceRequired]
+[Category("Sweeps")]
 public class DuckDBConcurrentWritersTests {
     [Test]
-    public async Task DisjointConcurrentUpserts_ThroughBothStores_AreAllRetrievableFromBothStoresAfterward() {
+    public async ValueTask disjoint_concurrent_upserts_through_both_stores_are_all_retrievable_from_both_stores_afterward() {
         var                dir    = CreateTempStorageDir();
         DuckDBVectorStore? storeA = null;
         DuckDBVectorStore? storeB = null;
@@ -160,7 +161,7 @@ public class DuckDBConcurrentWritersTests {
     /// caller-side handling.
     /// </remarks>
     [Test]
-    public async Task SameKeyConcurrentContention_ResolvesToOneOfTheTwoLastWrittenCandidates_NoCorruptionNoException() {
+    public async ValueTask same_key_concurrent_contention_resolves_to_one_of_the_two_last_written_candidates_no_corruption_no_exception() {
         var                dir    = CreateTempStorageDir();
         DuckDBVectorStore? storeA = null;
         DuckDBVectorStore? storeB = null;

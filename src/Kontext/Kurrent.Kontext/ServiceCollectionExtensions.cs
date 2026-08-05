@@ -8,6 +8,7 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
+using Kurrent.Kontext.Retrieval;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -20,27 +21,33 @@ public static class KontextServiceCollectionExtensions {
         /// decorator, and <see cref="IKontextMemory"/> itself. Both edges build on this and it is idempotent,
         /// so registering both edges is safe. The host must supply the <c>KontextConnectionPool</c> the
         /// read model queries through. <paramref name="configure"/> tunes <see cref="KontextMemoryOptions"/>;
-        /// when omitted, defaults apply.
+        /// when omitted, defaults apply. <paramref name="retrieval"/> composes the recall pipeline in
+        /// place of the default one — see <see cref="KontextRetrievalServiceCollectionExtensions.AddKontextRetrieval"/>.
         /// </summary>
-        public IServiceCollection AddKontext(Action<KontextMemoryOptions>? configure = null) {
+        public IServiceCollection AddKontext(
+            Action<KontextMemoryOptions>? configure = null,
+            Action<KontextRetrieverBuilder, IServiceProvider>? retrieval = null
+        ) {
             if (configure is not null) {
                 var options = new KontextMemoryOptions();
                 configure(options);
                 services.TryAddSingleton(options);
             }
 
-            services.AddCore();
+            services.AddCore(retrieval);
             services.AddGrpcEdge();
             services.AddMcpEdge();
             return services;
         }
 
-        IServiceCollection AddCore() {
+        IServiceCollection AddCore(Action<KontextRetrieverBuilder, IServiceProvider>? retrieval) {
             // The store is the projector-owned READ model over the lance table; the host
             // supplies the KontextConnectionPool it queries through. Registered as its own
             // singleton so future components (retrieval pipelines, maintenance) can share it.
             services.TryAddSingleton(sp => new KontextDataStore(
                 sp.GetRequiredService<KontextConnectionPool>()));
+
+            services.AddKontextRetrieval(retrieval);
 
             services.TryAddSingleton<KontextMemory>();
 

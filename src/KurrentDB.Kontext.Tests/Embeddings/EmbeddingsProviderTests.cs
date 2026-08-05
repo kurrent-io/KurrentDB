@@ -7,16 +7,17 @@ using Kurrent.Kontext.Embeddings.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Tests.Embeddings;
 
 public class EmbeddingsProviderTests {
 	// The provider extensions validate and build the client lazily inside the DI factory, so a missing
 	// required field surfaces when the generator is resolved, not when it is registered.
-	static IEmbeddingGenerator<string, Embedding<float>> Resolve(Action<IServiceCollection> register) {
+	static EmbeddingGenerator Resolve(Action<IServiceCollection> register) {
 		var services = new ServiceCollection();
 		register(services);
-		return services.BuildServiceProvider().GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+		return services.BuildServiceProvider().GetRequiredService<EmbeddingGenerator>();
 	}
 
 	// -------- Required fields --------
@@ -71,7 +72,7 @@ public class EmbeddingsProviderTests {
 		await Assert.That(GetMetadata(generator).DefaultModelId).IsEqualTo("nomic-embed-text");
 	}
 
-	static EmbeddingGeneratorMetadata GetMetadata(IEmbeddingGenerator<string, Embedding<float>> g) =>
+	static EmbeddingGeneratorMetadata GetMetadata(EmbeddingGenerator g) =>
 		(EmbeddingGeneratorMetadata)g.GetService(typeof(EmbeddingGeneratorMetadata))!;
 
 	// -------- DI dispatch --------
@@ -86,7 +87,7 @@ public class EmbeddingsProviderTests {
 		services.AddKontext();
 
 		var sp = services.BuildServiceProvider();
-		var generator = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+		var generator = sp.GetRequiredService<EmbeddingGenerator>();
 		await Assert.That(generator).IsTypeOf<EmbeddingService>();
 	}
 
@@ -103,7 +104,7 @@ public class EmbeddingsProviderTests {
 		// The local ONNX EmbeddingService must not be registered for non-Local providers,
 		// otherwise InitializeKontextAsync would try to load the model on startup.
 		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingService))).IsFalse();
-		await Assert.That(services.Any(d => d.ServiceType == typeof(IEmbeddingGenerator<string, Embedding<float>>))).IsTrue();
+		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingGenerator))).IsTrue();
 	}
 
 	[Test]
@@ -116,7 +117,7 @@ public class EmbeddingsProviderTests {
 		KontextServiceCollectionExtensions.RegisterEmbeddingsProvider(services, config);
 
 		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingService))).IsFalse();
-		await Assert.That(services.Any(d => d.ServiceType == typeof(IEmbeddingGenerator<string, Embedding<float>>))).IsTrue();
+		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingGenerator))).IsTrue();
 	}
 
 	[Test]
@@ -129,7 +130,7 @@ public class EmbeddingsProviderTests {
 		KontextServiceCollectionExtensions.RegisterEmbeddingsProvider(services, config);
 
 		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingService))).IsFalse();
-		await Assert.That(services.Any(d => d.ServiceType == typeof(IEmbeddingGenerator<string, Embedding<float>>))).IsTrue();
+		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingGenerator))).IsTrue();
 	}
 
 	[Test]
@@ -139,7 +140,7 @@ public class EmbeddingsProviderTests {
 		KontextServiceCollectionExtensions.RegisterEmbeddingsProvider(services, config);
 
 		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingService))).IsFalse();
-		await Assert.That(services.Any(d => d.ServiceType == typeof(IEmbeddingGenerator<string, Embedding<float>>))).IsTrue();
+		await Assert.That(services.Any(d => d.ServiceType == typeof(EmbeddingGenerator))).IsTrue();
 	}
 
 	[Test]

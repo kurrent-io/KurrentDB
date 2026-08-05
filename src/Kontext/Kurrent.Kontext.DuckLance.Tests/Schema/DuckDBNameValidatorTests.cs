@@ -5,6 +5,7 @@ namespace DuckLance.Tests.Schema;
 /// <summary>
 /// Unit tests for <see cref="DuckDBNameValidator"/> table-name validation.
 /// </summary>
+[Category("Schema")]
 public class DuckDBNameValidatorTests {
     [Test]
     [Arguments("docs")]
@@ -12,7 +13,7 @@ public class DuckDBNameValidatorTests {
     [Arguments("c_2_3")]
     [Arguments("A1_b2")]
     [Arguments("docs_2024_01")]
-    public async Task GetValidatedTableName_ValidInputs_ReturnsCollectionName(string collectionName) {
+    public async ValueTask get_validated_table_name_valid_inputs_returns_collection_name(string collectionName) {
         var result = DuckDBNameValidator.GetValidatedTableName(collectionName);
 
         await Assert.That(result).IsEqualTo(collectionName);
@@ -29,13 +30,13 @@ public class DuckDBNameValidatorTests {
     [Arguments("docs/sub")]  // path separator
     [Arguments("my.docs")]   // period: catalog separator in SQL identifiers and search-function URIs
     [Arguments("docs-2024")] // hyphen: parses as an operator in unquoted SQL identifiers
-    public async Task GetValidatedTableName_InvalidInputs_ThrowsArgumentException(string collectionName) =>
+    public async ValueTask get_validated_table_name_invalid_inputs_throws_argument_exception(string collectionName) =>
         await Assert
             .That(() => { DuckDBNameValidator.GetValidatedTableName(collectionName); })
             .Throws<ArgumentException>();
 
     [Test]
-    public async Task GetValidatedTableName_InvalidCollectionName_MessageNamesRule() =>
+    public async ValueTask get_validated_table_name_invalid_collection_name_message_names_rule() =>
         await Assert
             .That(() => { DuckDBNameValidator.GetValidatedTableName("bad name"); })
             .Throws<ArgumentException>()

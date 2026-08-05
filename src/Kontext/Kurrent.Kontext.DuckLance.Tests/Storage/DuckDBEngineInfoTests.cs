@@ -8,9 +8,10 @@ namespace DuckLance.Tests.Storage;
 /// DuckDB, no <c>lance</c> extension involved, so no platform gate. The snapshot is the
 /// get-the-info-first primitive: everything else (validation, attach verification) builds on it.
 /// </summary>
+[Category("Storage")]
 public class DuckDBEngineInfoTests {
     [Test]
-    public async Task Snapshot_From_A_Connection_String_Reports_The_Engine() {
+    public async ValueTask snapshot_from_connection_string_reports_the_engine() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -39,7 +40,7 @@ public class DuckDBEngineInfoTests {
     }
 
     [Test]
-    public async Task Snapshot_From_An_Open_Connection_Reports_Extensions_And_Attached_Databases() {
+    public async ValueTask snapshot_from_an_open_connection_reports_extensions_and_attached_databases() {
         var dir = CreateTempStorageDir();
 
         try {

@@ -3,12 +3,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Retrieval\Kurrent.Kontext.Retrieval.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +36,6 @@
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-    <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="ModelContextProtocol"/>
     <PackageReference Include="ModelContextProtocol.AspNetCore"/>
     <PackageReference Include="Polly" />

@@ -5,6 +5,7 @@ using System.Text.Json;
 using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.Aws;
 
@@ -15,7 +16,7 @@ namespace Kurrent.Kontext.Embeddings.Aws;
 /// input_type 'search_document' (the default) and search queries with 'search_query'
 /// (<see cref="EmbeddingPurpose.QueryOptions"/>).
 /// </summary>
-public sealed class CohereBedrockEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+public sealed class CohereBedrockEmbeddingGenerator : EmbeddingGenerator {
 	// Cohere's embed API accepts at most 96 texts per request.
 	const int MaxTextsPerRequest = 96;
 

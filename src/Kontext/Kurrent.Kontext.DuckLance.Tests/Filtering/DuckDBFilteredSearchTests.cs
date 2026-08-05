@@ -25,12 +25,13 @@ namespace DuckLance.Tests.Filtering;
 /// naive small-<c>k</c> search would return zero matches.
 /// </remarks>
 [LanceRequired]
+[Category("Filtering")]
 public class DuckDBFilteredSearchTests {
     static ReadOnlyMemory<float> Query() => new([1f, 0f, 0f, 0f]);
 
     // 1. Equality narrows to the matching category.
     [Test]
-    public async Task Search_EqualityFilter_NarrowsToMatchingCategory() {
+    public async ValueTask search_equality_filter_narrows_to_matching_category() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -65,7 +66,7 @@ public class DuckDBFilteredSearchTests {
     //   - containment Tags.Contains("post") (top 5) must return exactly 5 rows, all tagged 'post' -> proves the
     //     oversample covers the whole table (a k=5 search post-filtering array_has_any would return zero).
     [Test]
-    public async Task Search_OracleCase_PrefilterAndOversampleBothStayCorrect() {
+    public async ValueTask search_oracle_case_prefilter_and_oversample_both_stay_correct() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -103,7 +104,7 @@ public class DuckDBFilteredSearchTests {
 
     // 3. Combined && (category equality + tag containment) returns only rows satisfying BOTH predicates.
     [Test]
-    public async Task Search_CombinedEqualityAndContainment_ReturnsOnlyRowsSatisfyingBoth() {
+    public async ValueTask search_combined_equality_and_containment_returns_only_rows_satisfying_both() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -133,7 +134,7 @@ public class DuckDBFilteredSearchTests {
 
     // 4a. GetAsync equality filter over 20 records with OrderBy on the (indexed) key -> disjoint ordered pages.
     [Test]
-    public async Task GetAsync_EqualityFilter_WithOrderByPaging_ReturnsDisjointOrderedPages() {
+    public async ValueTask get_async_equality_filter_with_order_by_paging_returns_disjoint_ordered_pages() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -183,7 +184,7 @@ public class DuckDBFilteredSearchTests {
 
     // 4b. GetAsync containment filter returns the tagged records.
     [Test]
-    public async Task GetAsync_ContainmentFilter_ReturnsTaggedRecords() {
+    public async ValueTask get_async_containment_filter_returns_tagged_records() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -206,7 +207,7 @@ public class DuckDBFilteredSearchTests {
 
     // 4c. GetAsync honors IncludeVectors.
     [Test]
-    public async Task GetAsync_IncludeVectors_ControlsVectorHydration() {
+    public async ValueTask get_async_include_vectors_controls_vector_hydration() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -233,7 +234,7 @@ public class DuckDBFilteredSearchTests {
     // 5. An unsupported filter through the PUBLIC search API throws NotSupportedException, and no rows are harmed:
     // the collection still searches correctly afterward.
     [Test]
-    public async Task Search_UnsupportedFilter_ThrowsAndLeavesCollectionSearchable() {
+    public async ValueTask search_unsupported_filter_throws_and_leaves_collection_searchable() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -262,7 +263,7 @@ public class DuckDBFilteredSearchTests {
     // must come back. Before the fix, ExtractValue bound the pre-cast double 5.9, DuckDB evaluated `num = 5.9`, and
     // every num == 5 row was silently dropped (zero results) — the misfilter this proves is dead.
     [Test]
-    public async Task Search_LossyDoubleCastEqualityFilter_ReturnsExactlyNumFiveRows() {
+    public async ValueTask search_lossy_double_cast_equality_filter_returns_exactly_num_five_rows() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

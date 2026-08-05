@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.SemanticKernel.Connectors.DuckLance;
 
@@ -16,9 +17,9 @@ namespace Kurrent.SemanticKernel.Connectors.DuckLance;
 /// connector composes all of its own SQL from the model, so positions are stable by construction.
 /// Getting order wrong does not throw — it writes wrong data.
 /// </remarks>
-public abstract class RecordCodec<TRecord>(IEmbeddingGenerator<string, Embedding<float>>? embeddingGenerator = null)
+public abstract class RecordCodec<TRecord>(EmbeddingGenerator? embeddingGenerator = null)
     where TRecord : notnull {
-    protected IEmbeddingGenerator<string, Embedding<float>>? EmbeddingGenerator { get; } = embeddingGenerator;
+    protected EmbeddingGenerator? EmbeddingGenerator { get; } = embeddingGenerator;
 
     /// <summary>
     /// One entry per vector column: which storage column, and the text whose MEANING that column's

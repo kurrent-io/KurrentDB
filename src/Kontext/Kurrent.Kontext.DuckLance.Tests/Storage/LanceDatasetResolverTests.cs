@@ -5,13 +5,14 @@ namespace DuckLance.Tests.Storage;
 /// <summary>
 /// Unit tests for <see cref="LanceDatasetResolver"/> dataset path and table name resolution.
 /// </summary>
+[Category("Storage")]
 public class LanceDatasetResolverTests {
     [Test]
     [Arguments("docs")]
     [Arguments("collection")]
     [Arguments("c_2_3")]
     [Arguments("A1_b2")]
-    public async Task GetTableName_ValidInputs_ReturnsCollectionName(string collectionName) {
+    public async ValueTask get_table_name_valid_inputs_returns_collection_name(string collectionName) {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result = resolver.GetTableName(collectionName);
@@ -23,7 +24,7 @@ public class LanceDatasetResolverTests {
     [Arguments("docs")]
     [Arguments("collection")]
     [Arguments("c_2_3")]
-    public async Task GetQualifiedTableName_ValidInputs_ReturnsExpectedQualifiedName(string collectionName) {
+    public async ValueTask get_qualified_table_name_valid_inputs_returns_expected_qualified_name(string collectionName) {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
         var expected = $"{LanceDatasetResolver.DefaultStorageAlias}.main.{collectionName}";
 
@@ -33,7 +34,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetQualifiedTableName_StandardCase_IncludesDefaultAlias() {
+    public async ValueTask get_qualified_table_name_standard_case_includes_default_alias() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result = resolver.GetQualifiedTableName("docs");
@@ -43,7 +44,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetDatasetPath_ValidInputs_ReturnsPathWithLanceExtension() {
+    public async ValueTask get_dataset_path_valid_inputs_returns_path_with_lance_extension() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result = resolver.GetDatasetPath("docs");
@@ -52,7 +53,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetDatasetPath_ValidInputs_PathStartsWithDatabaseDirectory() {
+    public async ValueTask get_dataset_path_valid_inputs_path_starts_with_database_directory() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result = resolver.GetDatasetPath("docs");
@@ -61,7 +62,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetDatasetPath_ValidInputs_UsesPathCombine() {
+    public async ValueTask get_dataset_path_valid_inputs_uses_path_combine() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result          = resolver.GetDatasetPath("docs");
@@ -72,7 +73,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task DatabasePath_RelativePathProvided_ReturnsAbsolutePath() {
+    public async ValueTask database_path_relative_path_provided_returns_absolute_path() {
         var resolver = new LanceDatasetResolver(Path.Combine("some-rel-dir", "duck.db"));
 
         var result = resolver.DatabasePath;
@@ -81,7 +82,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task DatabasePath_AbsolutePathProvided_ReturnsResolvedPath() {
+    public async ValueTask database_path_absolute_path_provided_returns_resolved_path() {
         var absolutePath = Path.GetFullPath("/tmp/test/duck.db");
         var resolver     = new LanceDatasetResolver("/tmp/test/duck.db");
 
@@ -91,7 +92,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task DatabaseDirectory_IsTheDatabaseFilesDirectory() {
+    public async ValueTask database_directory_is_the_database_files_directory() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         var result = resolver.DatabaseDirectory;
@@ -106,7 +107,7 @@ public class LanceDatasetResolverTests {
     [Arguments("do;cs")]
     [Arguments("my.docs")]
     [Arguments("my-docs")]
-    public async Task GetTableName_InvalidCollectionNames_ThrowsArgumentException(string invalidCollectionName) {
+    public async ValueTask get_table_name_invalid_collection_names_throws_argument_exception(string invalidCollectionName) {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         await Assert
@@ -115,7 +116,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetQualifiedTableName_InvalidCollectionName_ThrowsArgumentException() {
+    public async ValueTask get_qualified_table_name_invalid_collection_name_throws_argument_exception() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         await Assert
@@ -124,7 +125,7 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task GetDatasetPath_InvalidCollectionName_ThrowsArgumentException() {
+    public async ValueTask get_dataset_path_invalid_collection_name_throws_argument_exception() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         await Assert
@@ -133,13 +134,13 @@ public class LanceDatasetResolverTests {
     }
 
     [Test]
-    public async Task Constructor_EmptyDatabasePath_ThrowsArgumentException() =>
+    public async ValueTask constructor_empty_database_path_throws_argument_exception() =>
         await Assert
             .That(() => { new LanceDatasetResolver(""); })
             .Throws<ArgumentException>();
 
     [Test]
-    public async Task Constructor_ValidInputs_CreatesInstance() {
+    public async ValueTask constructor_valid_inputs_creates_instance() {
         var resolver = new LanceDatasetResolver("/tmp/test/duck.db");
 
         await Assert.That(resolver).IsNotNull();

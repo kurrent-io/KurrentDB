@@ -3,6 +3,7 @@ using DuckLance.Tests.Support;
 using Kurrent.SemanticKernel.Connectors.DuckLance;
 using Microsoft.Extensions.AI;
 using TUnit.Assertions.Enums;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace DuckLance.Tests.Mapping;
 
@@ -13,9 +14,10 @@ namespace DuckLance.Tests.Mapping;
 /// <see cref="RecordingEmbeddingGenerator"/> because the base's one-call batching contract is
 /// unobservable with a real model.
 /// </summary>
+[Category("Mapping")]
 public class RecordCodecTests {
     [Test]
-    public async Task VectorizeAsync_Embeds_Every_Slot_In_One_Call_Addressed_By_Column() {
+    public async ValueTask vectorize_async_embeds_every_slot_in_one_call_addressed_by_column() {
         var generator = new RecordingEmbeddingGenerator();
         var codec     = new ArticleCodec(generator);
 
@@ -31,7 +33,7 @@ public class RecordCodecTests {
     }
 
     [Test]
-    public async Task VectorizeBatchAsync_Flattens_All_Records_Into_One_Call_And_Reshapes_Back() {
+    public async ValueTask vectorize_batch_async_flattens_all_records_into_one_call_and_reshapes_back() {
         var generator = new RecordingEmbeddingGenerator();
         var codec     = new ArticleCodec(generator);
 
@@ -55,7 +57,7 @@ public class RecordCodecTests {
     }
 
     [Test]
-    public async Task SingleVector_Tier_Routes_Slots_Through_The_Simple_Encode() {
+    public async ValueTask single_vector_tier_routes_slots_through_the_simple_encode() {
         var generator = new RecordingEmbeddingGenerator();
         var codec     = new MemoryCodec(generator);
         var record    = new MyMemoryEntry("m1", "Sergio lives in Norway", ["subject:sergio"]);
@@ -74,7 +76,7 @@ public class RecordCodecTests {
     }
 
     [Test]
-    public async Task VectorizeAsync_Without_Generator_Throws() {
+    public async ValueTask vectorize_async_without_generator_throws() {
         // MEVD's model builder already rejects string-typed vector properties when the MODEL has no
         // generator, so the no-generator throw is a base-codec concern: a hand-written codec whose
         // text path runs without one must fail loudly instead of null-referencing.
@@ -86,7 +88,7 @@ public class RecordCodecTests {
     }
 
     [Test]
-    public async Task VectorizeBatchAsync_Without_Generator_Throws() {
+    public async ValueTask vectorize_batch_async_without_generator_throws() {
         var codec = new NoGeneratorCodec();
 
         await Assert
@@ -108,7 +110,7 @@ public class RecordCodecTests {
     // at both ends (GetVectorTexts and Encode), never implied by ordering.
     readonly record struct Article(string Id, string Title, string Body);
 
-    sealed class ArticleCodec(IEmbeddingGenerator<string, Embedding<float>> embedder) : RecordCodec<Article>(embedder) {
+    sealed class ArticleCodec(EmbeddingGenerator embedder) : RecordCodec<Article>(embedder) {
         protected override VectorText[] GetVectorTexts(Article record) => [new("title_vec", record.Title), new("body_vec", record.Body)];
 
         public override object?[] Encode(Article record, VectorSlots vectors) =>

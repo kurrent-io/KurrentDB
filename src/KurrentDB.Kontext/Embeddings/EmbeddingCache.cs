@@ -9,6 +9,7 @@ using KurrentDB.Kontext.Workspaces.Registry;
 using KurrentDB.Kontext.Workspaces.Runtime;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Embeddings;
 
@@ -18,7 +19,7 @@ namespace KurrentDB.Kontext.Embeddings;
 public sealed class EmbeddingCache(
 	WorkspaceRegistry workspaces,
 	StoreRegistry<IVectorStore> vectorStores,
-	IEmbeddingGenerator<string, Embedding<float>> generator,
+	EmbeddingGenerator generator,
 	ILoggerFactory loggerFactory) {
 
 	const int MaxWorkspaceProbes = 5;

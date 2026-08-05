@@ -8,11 +8,12 @@ namespace DuckLance.Tests;
 /// Unit and integration tests for <see cref="DuckDBVectorStore"/>: construction validation, collection
 /// resolution (typed and dynamic), service discovery, collection-name listing, and disposal.
 /// </summary>
+[Category("VectorStore")]
 public class DuckDBVectorStoreTests {
     // --- Constructor validation ---
 
     [Test]
-    public async Task Constructor_EmptyDatabasePath_ThrowsArgumentException() {
+    public async ValueTask constructor_empty_database_path_throws_argument_exception() {
         var options = new DuckDBVectorStoreOptions { DatabasePath = "" };
 
         await Assert
@@ -23,7 +24,7 @@ public class DuckDBVectorStoreTests {
     // --- GetCollection (typed) ---
 
     [Test]
-    public async Task GetCollection_ValidRecord_ReturnsConfiguredCollection() {
+    public async ValueTask get_collection_valid_record_returns_configured_collection() {
         using var store      = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
         using var collection = store.GetCollection<string, DocRecord>("docs");
 
@@ -36,7 +37,7 @@ public class DuckDBVectorStoreTests {
     // --- GetCollection key/record-shape gating ---
 
     [Test]
-    public async Task GetCollection_IntKey_ThrowsNotSupportedException() {
+    public async ValueTask get_collection_int_key_throws_not_supported_exception() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         await Assert
@@ -45,7 +46,7 @@ public class DuckDBVectorStoreTests {
     }
 
     [Test]
-    public async Task GetCollection_DictionaryRecord_ThrowsArgumentException() {
+    public async ValueTask get_collection_dictionary_record_throws_argument_exception() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         await Assert
@@ -56,7 +57,7 @@ public class DuckDBVectorStoreTests {
     // --- GetDynamicCollection ---
 
     [Test]
-    public async Task GetDynamicCollection_ValidDefinition_ReturnsCollection() {
+    public async ValueTask get_dynamic_collection_valid_definition_returns_collection() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         VectorStoreCollectionDefinition definition = new() {
@@ -76,7 +77,7 @@ public class DuckDBVectorStoreTests {
     // --- Invalid collection name ---
 
     [Test]
-    public async Task GetCollection_InvalidCollectionName_ThrowsArgumentException() {
+    public async ValueTask get_collection_invalid_collection_name_throws_argument_exception() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         await Assert
@@ -87,7 +88,7 @@ public class DuckDBVectorStoreTests {
     // --- GetService (store) ---
 
     [Test]
-    public async Task GetService_VectorStoreMetadataType_ReturnsMetadata() {
+    public async ValueTask get_service_vector_store_metadata_type_returns_metadata() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         var service = store.GetService(typeof(VectorStoreMetadata));
@@ -97,7 +98,7 @@ public class DuckDBVectorStoreTests {
     }
 
     [Test]
-    public async Task GetService_StoreType_ReturnsSameInstance() {
+    public async ValueTask get_service_store_type_returns_same_instance() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         var service = store.GetService(typeof(DuckDBVectorStore));
@@ -106,7 +107,7 @@ public class DuckDBVectorStoreTests {
     }
 
     [Test]
-    public async Task GetService_NonNullServiceKey_ReturnsNull() {
+    public async ValueTask get_service_non_null_service_key_returns_null() {
         using var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
 
         var service = store.GetService(typeof(VectorStoreMetadata), "some-key");
@@ -117,7 +118,7 @@ public class DuckDBVectorStoreTests {
     // --- GetService (collection) ---
 
     [Test]
-    public async Task Collection_GetService_VectorStoreCollectionMetadataType_ReturnsMetadata() {
+    public async ValueTask collection_get_service_vector_store_collection_metadata_type_returns_metadata() {
         using var store      = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
         using var collection = store.GetCollection<string, DocRecord>("docs");
 
@@ -128,7 +129,7 @@ public class DuckDBVectorStoreTests {
     }
 
     [Test]
-    public async Task Collection_GetService_CollectionType_ReturnsSameInstance() {
+    public async ValueTask collection_get_service_collection_type_returns_same_instance() {
         using var store      = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
         using var collection = store.GetCollection<string, DocRecord>("docs");
 
@@ -138,7 +139,7 @@ public class DuckDBVectorStoreTests {
     }
 
     [Test]
-    public async Task Collection_GetService_NonNullServiceKey_ReturnsNull() {
+    public async ValueTask collection_get_service_non_null_service_key_returns_null() {
         using var store      = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") });
         using var collection = store.GetCollection<string, DocRecord>("docs");
 
@@ -151,7 +152,7 @@ public class DuckDBVectorStoreTests {
 
     [Test]
     [LanceRequired]
-    public async Task ListCollectionNamesAsync_ReturnsOnlyThisStoresCollections() {
+    public async ValueTask list_collection_names_async_returns_only_this_stores_collections() {
         var                dir    = CreateTempStorageDir();
         DuckDBVectorStore? storeA = null;
         DuckDBVectorStore? storeB = null;
@@ -195,7 +196,7 @@ public class DuckDBVectorStoreTests {
 
     [Test]
     [LanceRequired]
-    public async Task Dispose_KeepsStableEngineFile_AndIsIdempotent() {
+    public async ValueTask dispose_keeps_stable_engine_file_and_is_idempotent() {
         var dir   = CreateTempStorageDir();
         var store = new DuckDBVectorStore(new() { DatabasePath = Path.Combine(dir, "duck.db") });
 

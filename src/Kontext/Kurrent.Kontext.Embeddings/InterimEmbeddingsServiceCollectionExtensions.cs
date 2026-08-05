@@ -22,25 +22,12 @@ namespace Kurrent.Kontext.Embeddings;
 /// </para>
 /// </summary>
 public static class InterimEmbeddingsServiceCollectionExtensions {
-	// Stable logical-names of the pMM12 resources embedded by the KurrentDB.Kontext.Models build target.
-	const string Pmm12ModelResource = "KurrentDB.Kontext.Models.pmm12.model.onnx";
-	const string Pmm12TokenizerResource = "KurrentDB.Kontext.Models.pmm12.sentencepiece.bpe.model";
-
 	extension(IServiceCollection services) {
 		/// <summary>
-		/// Registers the interim multilingual generator — pMM12 read from the embedded models assembly and run
-		/// through the SentencePiece / XLM-R generator (implementation C). pMM12 uses no input prefix.
+		/// Registers the interim multilingual generator — <see cref="InterimPmm12"/> read from the embedded
+		/// models assembly and run through the SentencePiece / XLM-R generator (implementation C).
 		/// </summary>
-		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddInterimPmm12Embeddings() {
-			// FromEmbeddedResources is lazy — no bytes move here; the generator opens them when it is built.
-			var model = OnnxModel.FromEmbeddedResources(
-				"paraphrase-multilingual-MiniLM-L12-v2",
-				typeof(KontextModelsAssembly).Assembly,
-				Pmm12ModelResource,
-				new Dictionary<string, string> { ["sentencepiece.bpe.model"] = Pmm12TokenizerResource });
-
-			return services.AddEmbeddingGenerator(_ =>
-				new SentencePieceOnnxEmbeddingGenerator(model, new SentencePieceOnnxOptions { InputPrefix = null }));
-		}
+		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddInterimPmm12Embeddings() =>
+			services.AddEmbeddingGenerator(_ => InterimPmm12.CreateEmbeddingGenerator());
 	}
 }

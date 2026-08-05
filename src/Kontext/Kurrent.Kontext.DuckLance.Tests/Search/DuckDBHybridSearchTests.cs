@@ -24,6 +24,7 @@ namespace DuckLance.Tests.Search;
 /// </para>
 /// </remarks>
 [LanceRequired]
+[Category("Search")]
 public class DuckDBHybridSearchTests {
     static ReadOnlyMemory<float> Query() => new([1f, 0f, 0f, 0f]);
 
@@ -32,7 +33,7 @@ public class DuckDBHybridSearchTests {
     // Querying vector [1,0,0,0] + keyword "fox": A wins both modalities, so it must rank first; every result carries
     // a non-null score, and the scores are non-increasing (ORDER BY _hybrid_score DESC).
     [Test]
-    public async Task HybridSearch_VectorAndKeywordAgree_RanksAgreedDocumentFirst() {
+    public async ValueTask hybrid_search_vector_and_keyword_agree_ranks_agreed_document_first() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -58,7 +59,7 @@ public class DuckDBHybridSearchTests {
     // (C is far on both modalities), so A and B are the top 2. Order between them is blend-dependent, so is not
     // asserted.
     [Test]
-    public async Task HybridSearch_VectorAndKeywordDisagree_SurfacesBothInTopResults() {
+    public async ValueTask hybrid_search_vector_and_keyword_disagree_surfaces_both_in_top_results() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -82,7 +83,7 @@ public class DuckDBHybridSearchTests {
 
     // 3. Multiple keywords are joined into one full-text query ("fox jumps"); A contains both and still wins.
     [Test]
-    public async Task HybridSearch_MultipleKeywords_JoinsAndStillFindsMatch() {
+    public async ValueTask hybrid_search_multiple_keywords_joins_and_still_finds_match() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -105,7 +106,7 @@ public class DuckDBHybridSearchTests {
     // 4. Filtered hybrid, equality — a category equality WHERE narrows the search to the matching category only,
     // pushed down as a TRUE prefilter through hybrid.
     [Test]
-    public async Task HybridSearch_EqualityFilter_NarrowsToMatchingCategory() {
+    public async ValueTask hybrid_search_equality_filter_narrows_to_matching_category() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -146,7 +147,7 @@ public class DuckDBHybridSearchTests {
     // 5. Filtered hybrid, containment — a tag-containment WHERE is post-filtered, so the provider oversamples k to
     // the whole table; every tagged row survives regardless of its rank in either modality.
     [Test]
-    public async Task HybridSearch_ContainmentFilter_OversamplesAndReturnsTaggedRows() {
+    public async ValueTask hybrid_search_containment_filter_oversamples_and_returns_tagged_rows() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -187,7 +188,7 @@ public class DuckDBHybridSearchTests {
     // 6. Two IsFullTextIndexed properties — the abstraction cannot auto-select, so an unqualified hybrid search
     // throws; selecting the text property via AdditionalProperty resolves it and the search works.
     [Test]
-    public async Task HybridSearch_TwoFullTextProperties_RequireAdditionalPropertySelection() {
+    public async ValueTask hybrid_search_two_full_text_properties_require_additional_property_selection() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -234,7 +235,7 @@ public class DuckDBHybridSearchTests {
     // 7. TInput as ReadOnlyMemory<float> and float[] both drive hybrid search identically (the raw-text / generated
     // embedding input path is intentionally not exercised here — the ONNX embedding fixture is heavyweight).
     [Test]
-    public async Task HybridSearch_AcceptsReadOnlyMemoryAndFloatArrayInputs() {
+    public async ValueTask hybrid_search_accepts_read_only_memory_and_float_array_inputs() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

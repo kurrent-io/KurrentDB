@@ -9,6 +9,7 @@ namespace DuckLance.Tests.Indexing;
 /// Unit tests for <see cref="DuckDBReindexDecision.Decide"/>: the pure, database-free tick decision. No DuckDB or
 /// <c>lance</c> connection is touched anywhere in this class, so it is not gated by <see cref="LanceRequiredAttribute"/>.
 /// </summary>
+[Category("Indexing")]
 public class DuckDBReindexDecisionTests {
     static readonly DateTimeOffset s_now = new(
         2026, 1, 1,
@@ -16,7 +17,7 @@ public class DuckDBReindexDecisionTests {
         TimeSpan.Zero);
 
     [Test]
-    public async Task Decide_BelowRatio_NoIndexOperations() {
+    public async ValueTask decide_below_ratio_no_index_operations() {
         // unindexed = 1000 (meets the floor) but ratio = 1000 / 100000 = 0.01, below the 0.15 threshold.
         var decision = Decide(
             100000,
@@ -29,7 +30,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_AboveRatioButBelowFloor_NoIndexOperations() {
+    public async ValueTask decide_above_ratio_but_below_floor_no_index_operations() {
         // ratio = 50 / 100 = 0.5 (well above 0.15) but unindexed = 50 is below the 1000-row floor.
         var decision = Decide(
             100,
@@ -41,7 +42,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_BothThresholdsExceeded_AppendsPerIndex() {
+    public async ValueTask decide_both_thresholds_exceeded_appends_per_index() {
         // ratio = 5000 / 10000 = 0.5 (> 0.15) AND unindexed = 5000 (>= 1000): append.
         var decision = Decide(
             10000,
@@ -56,7 +57,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_RetrainDue_RetrainsEveryIndex_AndTakesPrecedenceOverAppend() {
+    public async ValueTask decide_retrain_due_retrains_every_index_and_takes_precedence_over_append() {
         // The same snapshot that would append above, but a retrain is due: every vector index is retrained instead.
         var decision = Decide(
             10000,
@@ -70,7 +71,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_ZeroRows_NoIndexOperations_ButCompactAndVacuumStillRun() {
+    public async ValueTask decide_zero_rows_no_index_operations_but_compact_and_vacuum_still_run() {
         var decision = Decide(
             0,
             Vectors(("vec_idx", 0)),
@@ -84,7 +85,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_NoVectorIndexes_NoIndexOperations_ButCompactAndVacuumStillRun() {
+    public async ValueTask decide_no_vector_indexes_no_index_operations_but_compact_and_vacuum_still_run() {
         var decision = Decide(
             1000,
             Vectors(),
@@ -98,7 +99,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_MultipleVectorIndexes_EachDecidedIndependently() {
+    public async ValueTask decide_multiple_vector_indexes_each_decided_independently() {
         // index "a" has a 5000-row backlog (append); index "b" has a 100-row backlog (ratio 0.01, no-op).
         var decision = Decide(
             10000,
@@ -112,7 +113,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_RatioExactlyAtThreshold_DoesNotAppend() {
+    public async ValueTask decide_ratio_exactly_at_threshold_does_not_append() {
         // unindexed = 500, ratio = 500 / 1000 = 0.5 exactly; the ratio test is strict '>', so this is a no-op.
         var decision = Decide(
             1000,
@@ -124,7 +125,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_RatioJustAboveThreshold_Appends() {
+    public async ValueTask decide_ratio_just_above_threshold_appends() {
         // unindexed = 501, ratio = 0.501 > 0.5: the strict '>' now passes.
         var decision = Decide(
             1000,
@@ -137,7 +138,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_UnindexedExactlyAtFloor_Appends() {
+    public async ValueTask decide_unindexed_exactly_at_floor_appends() {
         // unindexed = 100 exactly at the floor; the floor test is '>=', so this triggers. ratio 0.5 > 0.1 passes.
         var decision = Decide(
             200,
@@ -150,7 +151,7 @@ public class DuckDBReindexDecisionTests {
     }
 
     [Test]
-    public async Task Decide_UnindexedJustBelowFloor_DoesNotAppend() {
+    public async ValueTask decide_unindexed_just_below_floor_does_not_append() {
         // unindexed = 99, one below the floor of 100; the '>=' floor test fails.
         var decision = Decide(
             200,
@@ -200,9 +201,10 @@ public class DuckDBReindexDecisionTests {
 /// disposal (no DuckDB/<c>lance</c> work happens until a tick actually runs against a real table), so they are
 /// not gated by <see cref="LanceRequiredAttribute"/>.
 /// </summary>
+[Category("Indexing")]
 public class DuckDBReindexSchedulerRegistryTests {
     [Test]
-    public async Task GetCollection_SameName_RegistersExactlyOneScheduler_DifferentNames_RegisterSeparate() {
+    public async ValueTask get_collection_same_name_registers_exactly_one_scheduler_different_names_register_separate() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -222,7 +224,7 @@ public class DuckDBReindexSchedulerRegistryTests {
     }
 
     [Test]
-    public async Task GetDynamicCollection_RegistersAScheduler_ButStoreProxyOperationsDoNot() {
+    public async ValueTask get_dynamic_collection_registers_as_cheduler_but_store_proxy_operations_do_not() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -244,7 +246,7 @@ public class DuckDBReindexSchedulerRegistryTests {
     }
 
     [Test]
-    public async Task StoreDispose_DisposesSchedulers_SubsequentTickNowIsSafeNoOp() {
+    public async ValueTask store_dispose_disposes_schedulers_subsequent_tick_now_is_safe_no_op() {
         var dir   = CreateTempStorageDir();
         var store = NewStore(dir);
 
@@ -312,9 +314,10 @@ public class DuckDBReindexSchedulerRegistryTests {
 /// except for the single real-timer smoke test, which polls with a generous, eventually-consistent timeout.
 /// </summary>
 [LanceRequired]
+[Category("Indexing")]
 public class DuckDBReindexSchedulerIntegrationTests {
     [Test]
-    public async Task OptimizeIndexesAsync_FoldsRowsInsertedPastTheIndex_RowsIndexedCatchesUp() {
+    public async ValueTask optimize_indexes_async_folds_rows_inserted_past_the_index_rows_indexed_catches_up() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -350,7 +353,7 @@ public class DuckDBReindexSchedulerIntegrationTests {
     }
 
     [Test]
-    public async Task TickNowAsync_AppendsBacklog_ThenIsNoOp_AndDatasetStaysSearchable() {
+    public async ValueTask tick_now_async_appends_backlog_then_is_no_op_and_dataset_stays_searchable() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -390,7 +393,7 @@ public class DuckDBReindexSchedulerIntegrationTests {
     }
 
     [Test]
-    public async Task TickNowAsync_NoPriorEnsureVectorIndexes_CreatesTheVectorIndexViaCatchUp_ThenAppends() {
+    public async ValueTask tick_now_async_no_prior_ensure_vector_indexes_creates_the_vector_index_via_catch_up_then_appends() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -426,7 +429,7 @@ public class DuckDBReindexSchedulerIntegrationTests {
     }
 
     [Test]
-    public async Task TickNowAsync_TableNeverCreated_DoesNotThrow() {
+    public async ValueTask tick_now_async_table_never_created_does_not_throw() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -449,7 +452,7 @@ public class DuckDBReindexSchedulerIntegrationTests {
     }
 
     [Test]
-    public async Task RealTimer_EventuallyCreatesTheIndexAndLandsTheAppend() {
+    public async ValueTask real_timer_eventually_creates_the_index_and_lands_the_append() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

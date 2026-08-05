@@ -9,9 +9,10 @@ namespace DuckLance.Tests.Schema;
 /// Tests for <see cref="DuckDBSchemaBuilder"/>: the mapping from <see cref="CollectionModel"/> properties
 /// to DuckDB column types, and the <c>CREATE TABLE IF NOT EXISTS</c> statement assembled from them.
 /// </summary>
+[Category("Schema")]
 public class DuckDBSchemaBuilderTests {
     [Test]
-    public async Task BuildCreateTableSql_Produces_The_Golden_Oracle_Statement() {
+    public async ValueTask build_create_table_sql_produces_the_golden_oracle_statement() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("category", typeof(string)),
@@ -25,7 +26,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Maps_Every_Scalar_Type() {
+    public async ValueTask get_duckdb_type_maps_every_scalar_type() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("sVal", typeof(string)),
@@ -51,7 +52,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Maps_Every_Array_Type() {
+    public async ValueTask get_duckdb_type_maps_every_array_type() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("sArr", typeof(string[])),
@@ -72,7 +73,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Maps_Every_List_Type() {
+    public async ValueTask get_duckdb_type_maps_every_list_type() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("sList", typeof(List<string>)),
@@ -93,7 +94,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Unwraps_Nullable_Value_Types() {
+    public async ValueTask get_duckdb_type_unwraps_nullable_value_types() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("count", typeof(int?)));
@@ -102,7 +103,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task BuildCreateTableSql_Respects_StorageName_Override() {
+    public async ValueTask build_create_table_sql_respects_storage_name_override() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("category", typeof(string)) { StorageName = "cat_override" });
@@ -113,7 +114,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Interpolates_Vector_Dimensions() {
+    public async ValueTask get_duckdb_type_interpolates_vector_dimensions() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreVectorProperty("embedding", typeof(ReadOnlyMemory<float>), 768));
@@ -122,7 +123,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task BuildCreateTableSql_Supports_Multiple_Vector_Properties() {
+    public async ValueTask build_create_table_sql_supports_multiple_vector_properties() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreVectorProperty("titleEmbedding", typeof(ReadOnlyMemory<float>), 384),
@@ -134,7 +135,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Maps_Decimal_Exactly() {
+    public async ValueTask get_duckdb_type_maps_decimal_exactly() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("price", typeof(decimal)));
@@ -143,7 +144,7 @@ public class DuckDBSchemaBuilderTests {
     }
 
     [Test]
-    public async Task GetDuckDbType_Maps_DateTimeOffset_Exactly() {
+    public async ValueTask get_duckdb_type_maps_datetime_offset_exactly() {
         var model = BuildModel(
             new VectorStoreKeyProperty("id", typeof(string)),
             new VectorStoreDataProperty("createdAt", typeof(DateTimeOffset)));

@@ -7,13 +7,14 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.Prototype;
 
 /// <summary>
 /// Generates 384-dimensional sentence embeddings using all-MiniLM-L6-v2 via ONNX Runtime.
 /// </summary>
-public class EmbeddingService(ModelManager modelManager, ILogger<EmbeddingService> logger) : IEmbeddingGenerator<string, Embedding<float>>,
+public class EmbeddingService(ModelManager modelManager, ILogger<EmbeddingService> logger) : EmbeddingGenerator,
 	IDisposable {
 	public const int Dimensions = 384;
 

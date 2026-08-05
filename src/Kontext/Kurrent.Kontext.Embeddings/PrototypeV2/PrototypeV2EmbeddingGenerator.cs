@@ -3,6 +3,7 @@
 
 using Microsoft.Extensions.AI;
 using Microsoft.ML.OnnxRuntime;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.PrototypeV2;
 
@@ -13,7 +14,7 @@ namespace Kurrent.Kontext.Embeddings.PrototypeV2;
 /// (<see cref="Kurrent.Kontext.Embeddings.WordPieceOnnx.WordPieceOnnxEmbeddingGenerator"/>) is an opt-in upgrade
 /// that fixes accent handling but produces different vectors, so it is deliberately not the default.
 /// </summary>
-public sealed class PrototypeV2EmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+public sealed class PrototypeV2EmbeddingGenerator : EmbeddingGenerator {
 	const string ProviderName = "kontext-prototype-v2";
 	const string DefaultModelId = "all-MiniLM-L6-v2";
 
