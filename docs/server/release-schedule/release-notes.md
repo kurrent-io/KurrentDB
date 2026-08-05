@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.1.
 
+## [26.1.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.2)
+
+5 August 2026
+
+### Connectors: Fixed sink resource cleanup when a connector stops unexpectedly
+
+Connectors now release their sink resources on every stop path, including a processing error or a leadership change. Previously, cleanup only ran when a connector was stopped through the API.
+
 ## [26.1.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.1)
 
 10 July 2026
