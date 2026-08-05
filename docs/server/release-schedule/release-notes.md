@@ -14,6 +14,10 @@ This page contains the release notes for KurrentDB v26.1.
 
 Connectors now release their sink resources on every stop path, including a processing error or a leadership change. Previously, cleanup only ran when a connector was stopped through the API.
 
+### Projections: Fixed write timeout regressions (PR [#5699](https://github.com/kurrent-io/KurrentDB/pull/5699))
+
+Checkpoint write process may experience the timeout. Now database performs automatic retry instead of stopping the projection.
+
 ## [26.1.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.1)
 
 10 July 2026
