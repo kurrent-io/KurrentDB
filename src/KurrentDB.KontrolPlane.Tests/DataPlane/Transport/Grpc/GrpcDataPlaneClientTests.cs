@@ -21,7 +21,7 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(node);
 
-		var state = await client.GetReplicaStateAsync(node.Address, CancellationToken.None);
+		var state = await client.GetReplicaStateAsync(node.Address, TestToken);
 
 		Assert.Equal(5UL, state.Epoch);
 		Assert.Equal(100L, state.WriterCheckpoint);
@@ -35,8 +35,8 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(node);
 
-		await client.GetReplicaStateAsync(node.Address, CancellationToken.None);
-		await client.GetReplicaStateAsync(node.Address, CancellationToken.None);
+		await client.GetReplicaStateAsync(node.Address, TestToken);
+		await client.GetReplicaStateAsync(node.Address, TestToken);
 
 		Assert.Equal(1, client.ChannelsCreatedCount);
 		Assert.Equal(2, node.Service.CallCount);
@@ -49,21 +49,21 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(nodeA, nodeB);
 
-		await client.GetReplicaStateAsync(nodeA.Address, CancellationToken.None);
-		await client.GetReplicaStateAsync(nodeB.Address, CancellationToken.None);
+		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
+		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
 		Assert.Equal(2, client.ChannelsCreatedCount);
 
 		// keep nodeA alive, drop nodeB
-		await client.ReclaimConnectionsAsync(new HashSet<EndPoint> { nodeA.Address }, CancellationToken.None);
+		await client.ReclaimConnectionsAsync(new HashSet<EndPoint> { nodeA.Address }, TestToken);
 
 		Assert.Equal(1, client.ChannelsDisposedCount);
 
 		// nodeA's cached channel is still there, so no new channel is created
-		await client.GetReplicaStateAsync(nodeA.Address, CancellationToken.None);
+		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
 		Assert.Equal(2, client.ChannelsCreatedCount);
 
 		// nodeB's channel was reclaimed, so a fresh one is created on the next call
-		await client.GetReplicaStateAsync(nodeB.Address, CancellationToken.None);
+		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
 		Assert.Equal(3, client.ChannelsCreatedCount);
 	}
 
@@ -74,13 +74,15 @@ public class GrpcDataPlaneClientTests {
 
 		var client = CreateClient(nodeA, nodeB);
 
-		await client.GetReplicaStateAsync(nodeA.Address, CancellationToken.None);
-		await client.GetReplicaStateAsync(nodeB.Address, CancellationToken.None);
+		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
+		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
 
 		await client.DisposeAsync();
 
 		Assert.Equal(2, client.ChannelsDisposedCount);
 	}
+
+	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
 	private static TestDataPlaneClient CreateClient(params IEnumerable<DataPlaneNodeHost> nodes) =>
 		new(nodes.ToDictionary(static n => n.Address, static n => n.Handler));
