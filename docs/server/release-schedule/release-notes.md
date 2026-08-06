@@ -14,9 +14,13 @@ This page contains the release notes for KurrentDB v26.1.
 
 Connectors now release their sink resources on every stop path, including a processing error or a leadership change. Previously, cleanup only ran when a connector was stopped through the API.
 
-### Projections: Fixed write timeout regressions (PR [#5699](https://github.com/kurrent-io/KurrentDB/pull/5699))
+### Projections: Fixed projections stalling after a failed checkpoint write (PR [#5699](https://github.com/kurrent-io/KurrentDB/pull/5699))
 
-Checkpoint write process may experience the timeout. Now database performs automatic retry instead of stopping the projection.
+A projection whose checkpoint write did not succeed, for example because it timed out while the node was under load, stopped processing events entirely. The projection neither retried the write nor faulted: it stayed in the `Writing` state indefinitely, with only an `Error while processing message ... in queued handler 'Projection Core #N'` entry in the log to indicate a problem, and had to be restarted to recover. The fix restores the original behaviour: the checkpoint write is retried, and the projection is faulted once the retries are exhausted. This regression was introduced in 25.1.0.
+
+### Persistent Subscriptions: Fixed consumers stalling after a failed parked message write (PR [#5699](https://github.com/kurrent-io/KurrentDB/pull/5699))
+
+When a message could not be written to a subscription's parked message stream, the write was not retried and the consumer permanently lost one of its in-flight message slots. After enough failures the consumer stopped receiving messages altogether until it reconnected. Affected messages never reached the parked stream, and because the subscription checkpoint had already advanced past them, they were lost if the node restarted before the consumer reconnected. As before the regression, the write is retried, and exhausting the retries is reported with a `Possible message loss` error. This regression was introduced in 25.1.0.
 
 ## [26.1.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.1)
 
