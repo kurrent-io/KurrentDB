@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
-public class GrpcKontrolPlaneTests {
+public class GrpcKontrolPlaneClientTests {
 	[Fact]
 	public async Task RenewLeaderAppointmentAsync_switches_to_the_reported_leader() {
 		await using var nodeA = await KontrollerNode.StartAsync(new IPEndPoint(IPAddress.Loopback, 2113));
