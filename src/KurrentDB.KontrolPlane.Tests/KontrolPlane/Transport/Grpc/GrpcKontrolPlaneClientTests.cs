@@ -26,7 +26,8 @@ public class GrpcKontrolPlaneClientTests {
 
 		using var client = CreateClient(seed: nodeA.Address, nodeA, nodeB);
 
-		var success = await client.RenewLeaderAppointmentAsync(Database.MainDatabaseId, new IPEndPoint(IPAddress.Loopback, 1112), nodeEpoch: 1UL);
+		var success = await client
+			.RenewLeaderAppointmentAsync(Database.MainDatabaseId, new IPEndPoint(IPAddress.Loopback, 1112), nodeEpoch: 1UL, TestToken);
 
 		Assert.True(success);
 		Assert.Equal(1, nodeA.Service.RenewLeaderAppointmentCallCount);
@@ -58,7 +59,7 @@ public class GrpcKontrolPlaneClientTests {
 			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Loopback, 1113),
 		};
 
-		await using var enumerator = client.AnnounceNodeAsync(node).GetAsyncEnumerator();
+		await using var enumerator = client.AnnounceNodeAsync(node, TestToken).GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 		Assert.Equal(Database.MainDatabaseId, enumerator.Current.Id);
@@ -66,6 +67,8 @@ public class GrpcKontrolPlaneClientTests {
 		Assert.Equal(1, nodeA.Service.AnnounceDatabaseNodeCallCount);
 		Assert.Equal(1, nodeB.Service.AnnounceDatabaseNodeCallCount);
 	}
+
+	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
 	private static GrpcKontrolPlaneClient CreateClient(EndPoint seed, params IEnumerable<KontrollerNode> nodes) =>
 		new TestKontrolPlaneClient(nodes.ToDictionary(static n => n.Address, static n => n.Handler)) {
@@ -122,13 +125,13 @@ public class GrpcKontrolPlaneClientTests {
 					.Configure(app => app
 						.UseRouting()
 						.UseEndpoints(endpoints => endpoints.MapGrpcService<FakeKontrollerService>())))
-				.StartAsync();
+				.StartAsync(TestToken);
 
 			return new(host, address, service);
 		}
 
 		public async ValueTask DisposeAsync() {
-			await host.StopAsync();
+			await host.StopAsync(TestToken);
 			host.Dispose();
 		}
 	}

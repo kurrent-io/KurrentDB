@@ -141,13 +141,13 @@ public class GrpcDataPlaneClientTests {
 					.Configure(app => app
 						.UseRouting()
 						.UseEndpoints(endpoints => endpoints.MapGrpcService<FakeDataPlaneNodeService>())))
-				.StartAsync();
+				.StartAsync(TestToken);
 
 			return new(host, address, service);
 		}
 
 		public async ValueTask DisposeAsync() {
-			await host.StopAsync();
+			await host.StopAsync(TestToken);
 			host.Dispose();
 		}
 	}
