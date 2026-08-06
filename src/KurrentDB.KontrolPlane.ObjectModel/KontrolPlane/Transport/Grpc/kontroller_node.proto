@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package kurrent.kontrol_plane;
 
-import "google/protobuf/empty.proto";
-
 option csharp_namespace = "KurrentDB.KontrolPlane.Transport.Grpc";
 
 service Kontroller
