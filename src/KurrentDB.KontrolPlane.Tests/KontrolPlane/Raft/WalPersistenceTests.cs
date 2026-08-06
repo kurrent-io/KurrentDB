@@ -19,7 +19,6 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
-			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
 			             DataPlaneClientFactory = static () => new TestDataPlane(),
@@ -41,7 +40,6 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
-			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
 			             DataPlaneClientFactory = static () => new TestDataPlane(),

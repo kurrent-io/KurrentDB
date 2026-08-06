@@ -1,7 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Net;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 
 namespace KurrentDB.KontrolPlane.Raft;
@@ -16,6 +18,8 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly WriteAheadLog _wal;
 	private readonly ClusterStateMachine _state;
 	private readonly RaftCluster _raft;
+	private readonly IReadOnlySet<EndPoint> _seed;
+	private readonly IClusterConfigurationStorage<EndPoint> _raftMembershipStorage;
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
@@ -29,10 +33,12 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_state.Recover();
 		_wal = new(options.WalOptions, _state);
 
+		_seed = options.Nodes;
+		_raftMembershipStorage = new PersistentConfigurationStorage(configStorageLocation);
 		var config = new RaftCluster.TcpConfiguration(options.ListenAddress) {
 			PublicEndPoint = options.PublicAddress,
-			ConfigurationStorage = new PersistentConfigurationStorage(configStorageLocation),
-			ColdStart = options.SingleNodeDeployment,
+			ConfigurationStorage = _raftMembershipStorage,
+			ColdStart = _seed.Count is 0,
 		};
 
 		_raft = new(config) {
@@ -57,8 +63,24 @@ public partial class RaftKontroller : IAsyncDisposable {
 	}
 
 	public async Task StartAsync(CancellationToken token) {
+		await PopulateRaftClusterNodesAsync(_raftMembershipStorage, _seed, token);
 		await _raft.StartAsync(token);
 		_leadershipTask = HandleLeadershipAsync();
+	}
+
+	private static async Task PopulateRaftClusterNodesAsync(
+		IClusterConfigurationStorage<EndPoint> storage,
+		IReadOnlySet<EndPoint> nodes,
+		CancellationToken token) {
+		var configuration = await storage.LoadConfigurationAsync(token);
+
+		// If persistent storage contains a list of Raft nodes, do not load Seed
+		if (configuration.Members.Count is 0) {
+			configuration = nodes
+				.Aggregate(configuration, static (current, raftNodeAddress) => current.Add(raftNodeAddress));
+
+			await storage.SaveConfigurationAsync(configuration, configurationVersion: 0L, token);
+		}
 	}
 
 	public async Task StopAsync(CancellationToken token) {

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using DotNext.Collections.Generic;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 
 namespace KurrentDB.KontrolPlane.Raft;
@@ -47,8 +48,8 @@ partial class RaftKontroller {
 			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}
 
-		public bool SingleNodeDeployment {
-			get;
+		public IReadOnlySet<EndPoint> Nodes {
+			get => field ?? IReadOnlySet<EndPoint>.Empty;
 			init;
 		}
 

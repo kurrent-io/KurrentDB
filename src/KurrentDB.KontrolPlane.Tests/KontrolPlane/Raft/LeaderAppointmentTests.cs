@@ -20,7 +20,6 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			AppointmentDuration = TimeSpan.FromSeconds(1),
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
-			SingleNodeDeployment = true,
 		}) {
 			DataPlaneClientFactory = CreateDataPlane,
 		};
@@ -59,7 +58,6 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			AppointmentDuration = appointmentTimeout,
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
-			SingleNodeDeployment = true,
 		}) {
 			DataPlaneClientFactory = Func<IDataPlane>.Constant(replicaSet),
 		};
