@@ -29,6 +29,19 @@ public abstract partial class DatabaseNodeHost : IDatabaseNode {
 		_renewalRate = options.RenewalRate;
 	}
 
+	public async Task ResignLeader(CancellationToken token = default) {
+		var tokenSource = CancellationToken.Combine([_lifecycleToken, token]);
+		try {
+			await KontrolPlane.ResignLeaderAsync(_currentNode.DatabaseId, tokenSource.Token);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, token)) {
+			throw new OperationCanceledException(e.Message, e, token);
+		} finally {
+			tokenSource.Dispose();
+		}
+	}
+
 	public DatabaseNode CurrentNode => _clusterInfo?[_currentNode.Address] ?? _currentNode;
 
 	public ValueTask<DatabaseCluster> GetDatabaseInfoAsync(CancellationToken token = default)
@@ -43,18 +56,34 @@ public abstract partial class DatabaseNodeHost : IDatabaseNode {
 
 	public async IAsyncEnumerable<IReadOnlySet<DatabaseNode>> GetDatabaseMembershipChangesAsync(
 		[EnumeratorCancellation] CancellationToken token = default) {
-		// ensure that
-		await EnsureClusterInfoAvailableAsync(token);
+		using var tokenSource = CancellationToken.Combine([_lifecycleToken, token]);
+
+		try {
+			await EnsureClusterInfoAvailableAsync(token);
+		} catch (ObjectDisposedException) {
+			yield break;
+		}
+
 		Debug.Assert(_clusterInfo is not null);
 
 		var stateToken = _membershipChangeTracker.CurrentState;
-		var baseline = _clusterInfo.Nodes;
-		yield return baseline.ToImmutableHashSet();
+		ImmutableHashSet<DatabaseNode> baseline = [.. _clusterInfo.Nodes];
+		yield return baseline;
 
-		for (var newVersion = _clusterInfo.Nodes.ToImmutableSortedSet();
-		     await _membershipChangeTracker.WaitNextAsync(stateToken, token);
-		     baseline = newVersion) {
+		for (ImmutableHashSet<DatabaseNode> newVersion;; baseline = newVersion) {
+			bool loopAlive;
+			try {
+				loopAlive = await _membershipChangeTracker.WaitNextAsync(stateToken, token);
+			} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+				loopAlive = false;
+			} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+				throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+			}
 
+			if (!loopAlive)
+				break;
+
+			newVersion = [.. _clusterInfo.Nodes];
 			if (!newVersion.SetEquals(baseline)) {
 				yield return newVersion;
 			}
@@ -91,6 +120,7 @@ public abstract partial class DatabaseNodeHost : IDatabaseNode {
 		await _controlProcess.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext |
 		                                      ConfigureAwaitOptions.SuppressThrowing);
 		_membershipChangeTracker.TryComplete();
+		_clusterInfoAvailability.TrySetException(new ObjectDisposedException(GetType().Name));
 	}
 
 	private void RequestStop() {

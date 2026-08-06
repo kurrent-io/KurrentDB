@@ -13,17 +13,32 @@ partial class DatabaseNodeHost {
 	private Task _leadershipProcess;
 
 	public async IAsyncEnumerable<LeaderAppointment> GetDatabaseLeadersAsync([EnumeratorCancellation] CancellationToken token = default) {
+		using var tokenSource = CancellationToken.Combine([_lifecycleToken, token]);
+
 		// Make sure that we have an information about the database cluster
-		await _clusterInfoAvailability.Task.WaitAsync(token);
-		AsyncStateTracker.Token stateToken;
-		do {
-			stateToken = _leaderEvent.CurrentState;
+		try {
+			await EnsureClusterInfoAvailableAsync(tokenSource.Token);
+		} catch (ObjectDisposedException) {
+			yield break;
+		}
+
+		Debug.Assert(_clusterInfo is not null);
+
+		for (var loopAlive = true; loopAlive;) {
+			var stateToken = _leaderEvent.CurrentState;
 			var clusterInfo = _clusterInfo;
-			Debug.Assert(clusterInfo is not null);
 
 			if (clusterInfo.LeaderNode is { } leaderNode)
 				yield return new() { Leader = leaderNode, Epoch = clusterInfo.Epoch };
-		} while (await _leaderEvent.WaitNextAsync(stateToken, token));
+
+			try {
+				loopAlive = await _leaderEvent.WaitNextAsync(stateToken, tokenSource.Token);
+			} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+				loopAlive = false;
+			} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+				throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+			}
+		}
 	}
 
 	public CancellationToken LeadershipToken {

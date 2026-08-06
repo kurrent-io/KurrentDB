@@ -44,4 +44,6 @@ public interface IDatabaseNode {
 	/// Gets information about the current node.
 	/// </summary>
 	DatabaseNode CurrentNode { get; }
+
+	Task ResignLeader(CancellationToken token = default);
 }
