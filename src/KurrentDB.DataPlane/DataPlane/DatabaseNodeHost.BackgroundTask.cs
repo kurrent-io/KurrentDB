@@ -51,6 +51,8 @@ partial class DatabaseNodeHost {
 		// update database leader
 		if (!Equals(baseline?.LeaderAddress, newVersion.LeaderAddress))
 			await ChangeDatabaseLeaderAsync(baseline?.LeaderAddress, newVersion.LeaderAddress, newVersion.Epoch, newVersion.LeaderAppointmentDuration);
+
+		_membershipChangeTracker.TryAdvance();
 	}
 
 	private async ValueTask ChangeDatabaseLeaderAsync(EndPoint? oldLeader, EndPoint? newLeader, ulong epoch, TimeSpan appointmentDuration) {
