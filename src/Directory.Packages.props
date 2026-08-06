@@ -15,6 +15,7 @@
     <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
+		<PackageVersion Include="DotNext" Version="6.6.0" />
     <PackageVersion Include="DotNext.IO" Version="6.6.0" />
     <PackageVersion Include="DotNext.Threading" Version="6.6.0" />
     <PackageVersion Include="DotNext.Unsafe" Version="6.6.0" />
