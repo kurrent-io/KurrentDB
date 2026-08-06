@@ -58,6 +58,9 @@ public sealed record DatabaseNode : IModelEntity {
 		init;
 	} = string.Empty;
 
+	/// <summary>
+	/// Gets or sets unique instance ID of the node.
+	/// </summary>
 	public Guid InstanceId {
 		get;
 		init;

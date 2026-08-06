@@ -3,12 +3,16 @@
 
 using System.Diagnostics;
 using System.Net;
+using DotNext.Threading;
 using KurrentDB.KontrolPlane;
 
 namespace KurrentDB.DataPlane;
 
 partial class DatabaseNodeHost {
+	private readonly AsyncStateTracker _membershipChangeTracker = new();
+	private readonly TaskCompletionSource _clusterInfoAvailability = new(TaskCreationOptions.RunContinuationsAsynchronously);
 	private Task _controlProcess;
+	private volatile DatabaseCluster? _clusterInfo;
 
 	private async Task CommunicateWithKontrolPlaneAsync() {
 		var timer = new PeriodicTimer(_pollingPeriod);
@@ -30,44 +34,46 @@ partial class DatabaseNodeHost {
 		if (!await enumerator.MoveNextAsync())
 			return;
 
-		for (var baseline = new DatabaseClusterSnapshot(enumerator.Current); await enumerator.MoveNextAsync();) {
-			await MergeClusterInfoAsync(baseline, enumerator.Current);
+		var newVersion = enumerator.Current;
+
+		_clusterInfo = newVersion;
+		_clusterInfoAvailability.TrySetResult();
+		await MergeClusterInfoAsync(baseline: null, newVersion);
+		while (await enumerator.MoveNextAsync()) {
+			newVersion = enumerator.Current;
+			var oldVersion = _clusterInfo;
+			_clusterInfo = newVersion;
+			await MergeClusterInfoAsync(oldVersion, newVersion);
 		}
 	}
 
-	private async ValueTask MergeClusterInfoAsync(DatabaseClusterSnapshot baseline, DatabaseCluster newVersion) {
-		baseline.LeaderAppointmentDuration = newVersion.LeaderAppointmentDuration;
-
-		baseline.Clear();
-
-		if (!Equals(baseline.LeaderAddress, newVersion.LeaderAddress))
-			await ChangeDatabaseLeaderAsync(baseline, newVersion.LeaderAddress, newVersion.Epoch);
+	private async ValueTask MergeClusterInfoAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+		// update database leader
+		if (!Equals(baseline?.LeaderAddress, newVersion.LeaderAddress))
+			await ChangeDatabaseLeaderAsync(baseline?.LeaderAddress, newVersion.LeaderAddress, newVersion.Epoch, newVersion.LeaderAppointmentDuration);
 	}
 
-	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseClusterSnapshot baseline, EndPoint? leaderAddress, ulong epoch) {
-		Debug.Assert(!Equals(baseline.LeaderAddress, leaderAddress));
+	private async ValueTask ChangeDatabaseLeaderAsync(EndPoint? oldLeader, EndPoint? newLeader, ulong epoch, TimeSpan appointmentDuration) {
+		Debug.Assert(!Equals(oldLeader, newLeader));
 
-		baseline.LeaderAddress = leaderAddress;
-		if (_currentNode.Address.Equals(leaderAddress)) {
-			// local node becomes a database leader
-			StartLeadership(baseline.LeaderAppointmentDuration, epoch);
-		} else if (Equals(baseline.LeaderAddress, _currentNode.Address)) {
-			// local node is no longer a leader
-		}
-	}
-
-	private sealed class DatabaseClusterSnapshot : Dictionary<EndPoint, DatabaseNode> {
-		public DatabaseClusterSnapshot(DatabaseCluster clusterInfo) {
-			LeaderAddress = clusterInfo.LeaderAddress;
-			LeaderAppointmentDuration = clusterInfo.LeaderAppointmentDuration;
-
-			foreach (var databaseNode in clusterInfo.Nodes) {
-				Add(databaseNode.Address, databaseNode);
-			}
+		// process leadership of the current node
+		switch (_currentNode.Address.Equals(oldLeader), _currentNode.Address.Equals(newLeader)) {
+			case (false, true):
+				// local node becomes a database leader
+				StartLeadership(epoch, appointmentDuration);
+				break;
+			case (true, false):
+				// local node is no longer a leader
+				await LeadershipLostAsync();
+				_leadershipProcess = Task.CompletedTask;
+				break;
 		}
 
-		public EndPoint? LeaderAddress { get; set; }
-
-		public TimeSpan LeaderAppointmentDuration { get; set; }
+		// Do not reorder. We want to make sure that LeadershipToken is valid at the time of the notification
+		// returned by GetDatabaseLeadersAsync.
+		_leaderEvent.TryAdvance();
 	}
+
+	private Task EnsureClusterInfoAvailableAsync(CancellationToken token = default)
+		=> _clusterInfoAvailability.Task.WaitAsync(token);
 }

@@ -1,6 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using DotNext.Threading;
+
 namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
@@ -8,11 +13,11 @@ using KontrolPlane;
 /// <summary>
 /// Represents base class for Data Plane node host.
 /// </summary>
-public abstract partial class DatabaseNodeHost {
+public abstract partial class DatabaseNodeHost : IDatabaseNode {
 	private readonly CancellationToken _lifecycleToken; // cached to avoid ObjectDisposedException
 	private readonly TimeSpan _pollingPeriod;
-	private readonly DatabaseNode _currentNode;
 	private readonly double _renewalRate;
+	private readonly DatabaseNode _currentNode;
 	private CancellationTokenSource? _lifecycleCts;
 
 	protected DatabaseNodeHost(Options options) {
@@ -22,6 +27,38 @@ public abstract partial class DatabaseNodeHost {
 		_controlProcess = _leadershipProcess = Task.CompletedTask;
 		_currentNode = options.CurrentNode;
 		_renewalRate = options.RenewalRate;
+	}
+
+	public DatabaseNode CurrentNode => _clusterInfo?[_currentNode.Address] ?? _currentNode;
+
+	public ValueTask<DatabaseCluster> GetDatabaseInfoAsync(CancellationToken token = default)
+		=> _clusterInfoAvailability.Task.IsCompleted ? ValueTask.FromResult(_clusterInfo!) : WaitForClusterInfoAsync(token);
+
+	private async ValueTask<DatabaseCluster> WaitForClusterInfoAsync(CancellationToken token = default) {
+		await EnsureClusterInfoAvailableAsync(token);
+
+		Debug.Assert(_clusterInfo is not null);
+		return _clusterInfo;
+	}
+
+	public async IAsyncEnumerable<IReadOnlySet<DatabaseNode>> GetDatabaseMembershipChangesAsync(
+		[EnumeratorCancellation] CancellationToken token = default) {
+		// ensure that
+		await EnsureClusterInfoAvailableAsync(token);
+		Debug.Assert(_clusterInfo is not null);
+
+		var stateToken = _membershipChangeTracker.CurrentState;
+		var baseline = _clusterInfo.Nodes;
+		yield return baseline.ToImmutableHashSet();
+
+		for (var newVersion = _clusterInfo.Nodes.ToImmutableSortedSet();
+		     await _membershipChangeTracker.WaitNextAsync(stateToken, token);
+		     baseline = newVersion) {
+
+			if (!newVersion.SetEquals(baseline)) {
+				yield return newVersion;
+			}
+		}
 	}
 
 	/// <summary>
@@ -53,9 +90,8 @@ public abstract partial class DatabaseNodeHost {
 		RequestStop();
 		await _controlProcess.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext |
 		                                      ConfigureAwaitOptions.SuppressThrowing);
+		_membershipChangeTracker.TryComplete();
 	}
-
-	public abstract ValueTask LeadershipStartedAsync(ulong epoch, CancellationToken token);
 
 	private void RequestStop() {
 		if (Interlocked.Exchange(ref _lifecycleCts, null) is { } cts) {
