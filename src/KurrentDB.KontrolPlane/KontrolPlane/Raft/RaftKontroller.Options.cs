@@ -3,6 +3,7 @@
 
 using System.Net;
 using DotNext.Collections.Generic;
+using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 
 namespace KurrentDB.KontrolPlane.Raft;
@@ -11,10 +12,12 @@ partial class RaftKontroller {
 	/// <summary>
 	/// Represents Kontroller options.
 	/// </summary>
-	public readonly struct Options {
+	public readonly struct Options() {
 		private static readonly int WalChunkSize = Environment.SystemPageSize * 10;
 		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.SharedMemory;
 		private const WriteAheadLog.IntegrityHashAlgorithm WalHashAlgorithm = WriteAheadLog.IntegrityHashAlgorithm.None;
+
+		private readonly ElectionTimeout _electionSettings = ElectionTimeout.Recommended;
 
 		internal WriteAheadLog.Options WalOptions => new() {
 			Location = PersistentStateRoot,
@@ -56,6 +59,22 @@ partial class RaftKontroller {
 		public int SnapshotDepth {
 			get => field is 0 ? 100 : field;
 			init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+		}
+
+		/// <summary>
+		/// Gets lower bound of the Raft election timeout, in milliseconds.
+		/// </summary>
+		public int LowerElectionTimeout {
+			get => _electionSettings.LowerValue;
+			init => _electionSettings = _electionSettings with { LowerValue = value };
+		}
+
+		/// <summary>
+		/// Gets upper bound of the Raft election timeout, in milliseconds.
+		/// </summary>
+		public int UpperElectionTimeout {
+			get => _electionSettings.UpperValue;
+			init => _electionSettings = _electionSettings with { UpperValue = value };
 		}
 	}
 }
