@@ -12,22 +12,30 @@ namespace KurrentDB.KontrolPlane.Transport.Grpc;
 /// Represents server-side of the Kontroller.
 /// </summary>
 /// <param name="kontroller">The Kontroller instance.</param>
-public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
-	public override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
+public abstract class KontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
+	/// <summary>
+	/// Converts KPlane node address to the address that can be used to access KPlane
+	/// node via gRPC.
+	/// </summary>
+	/// <param name="nodeEndPoint">The node address.</param>
+	/// <returns>gRPC endpoint address that can be used to access the KPlane node.</returns>
+	protected abstract EndPoint GetApiEndPoint(EndPoint nodeEndPoint);
+
+	public sealed override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
 		var response = new RenewLeaderAppointmentResponse();
 		try {
 			response.Success = await kontroller.RenewLeaderAppointmentAsync(request.DatabaseId, request.Address.ToEndPoint(), request.Epoch,
 				context.CancellationToken);
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
-			response.KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
+			response.KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
 			response.Success = false;
 		}
 
 		return response;
 	}
 
-	public override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
+	public sealed override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
 		// announcement
 		AnnouncementResponse response;
 		try {
@@ -35,7 +43,7 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
 			response = new() {
-				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
+				KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			};
 
@@ -64,7 +72,7 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, leadershipToken)) {
 			// the current node is not a leader
 			response = new AnnouncementResponse {
-				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
+				KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			};
 
@@ -79,19 +87,19 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		}
 	}
 
-	public override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
+	public sealed override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
 		var response = new ResignResponse();
 		try {
 			await kontroller.ResignDatabaseLeaderAsync(request.DatabaseId, context.CancellationToken);
 			response.KontrollerLeader = ByteString.Empty;
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
-			response.KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
+			response.KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
 		}
 
 		return response;
 	}
 
 	private IEnumerable<ByteString> KontrollerNodes
-		=> kontroller.Nodes.Select(EndPointExtensions.ToByteString);
+		=> kontroller.Nodes.Select(GetApiEndPoint).Select(EndPointExtensions.ToByteString);
 }
