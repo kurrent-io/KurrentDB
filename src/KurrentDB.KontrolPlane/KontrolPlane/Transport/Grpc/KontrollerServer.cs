@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Net;
 using DotNext.Threading;
 using Google.Protobuf;
 using Grpc.Core;
@@ -28,15 +29,18 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 
 	public override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
 		// announcement
+		AnnouncementResponse response;
 		try {
 			await kontroller.TryAddDatabaseNodeAsync(request.NodeInfo.ToEntity(), context.CancellationToken);
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
-			await responseStream.WriteAsync(new() {
+			response = new() {
 				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
-			});
+			};
 
+			response.KontrollerNodes.Add(KontrollerNodes);
+			await responseStream.WriteAsync(response);
 			return;
 		}
 
@@ -46,21 +50,25 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		var enumerator = kontroller
 			.ListenDatabaseAsync(request.NodeInfo.DatabaseId, tokenSource.Token)
 			.GetAsyncEnumerator();
+
 		try {
 			while (await enumerator.MoveNextAsync()) {
-				await responseStream.WriteAsync(new() {
+				response = new() {
 					Cluster = new(enumerator.Current),
 					KontrollerLeader = ByteString.Empty,
-				});
+				};
+
+				response.KontrollerNodes.Add(KontrollerNodes);
+				await responseStream.WriteAsync(response);
 			}
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, leadershipToken)) {
 			// the current node is not a leader
-			var response = new AnnouncementResponse {
+			response = new AnnouncementResponse {
 				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			};
 
-			response.KontrollerNodes.Add(kontroller.Nodes.Select(EndPointExtensions.ToByteString));
+			response.KontrollerNodes.Add(KontrollerNodes);
 			await responseStream.WriteAsync(response);
 		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
 			// restore canceled token
@@ -83,4 +91,7 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 
 		return response;
 	}
+
+	private IEnumerable<ByteString> KontrollerNodes
+		=> kontroller.Nodes.Select(EndPointExtensions.ToByteString);
 }
