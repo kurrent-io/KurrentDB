@@ -104,16 +104,19 @@ partial class GrpcKontrolPlaneClient {
 		}
 
 		public void Release() {
-			for (uint current = _referenceCounter, tmp;; current = tmp) {
+			var current = _referenceCounter;
+			for (uint tmp;; current = tmp) {
 				if (current is 0U)
 					return;
 
-				tmp = Interlocked.CompareExchange(ref _referenceCounter, current - 1U, current);
+				var newValue = current - 1U;
+				tmp = Interlocked.CompareExchange(ref _referenceCounter, newValue, current);
 				if (tmp == current)
 					break;
 			}
 
-			Dispose();
+			if (current is 1U)
+				Dispose();
 		}
 
 		internal Kontroller.KontrollerClient Client => client;
