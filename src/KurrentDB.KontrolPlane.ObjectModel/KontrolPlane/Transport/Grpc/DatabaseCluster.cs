@@ -21,7 +21,7 @@ partial class DatabaseCluster {
 		Id = Id,
 		Description = Description,
 		LeaderAppointmentDuration = new(LeaderAppointmentDuration),
-		LeaderAddress = DatabaseLeader.ToEndPoint(),
+		LeaderAddress = DatabaseLeader.IsEmpty ? null : DatabaseLeader.ToEndPoint(),
 		Epoch = Epoch,
 		Nodes = [.. Nodes.Select(static n => n.ToEntity())]
 	};
