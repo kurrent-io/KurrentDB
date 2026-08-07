@@ -43,7 +43,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
 			var entry = GetOrCreateClient(currentAddress);
 
-			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) });
+			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) }, cancellationToken: token);
 			try {
 				// Outer loop for reconnections
 				// Inner loop for enumerating database cluster changes
