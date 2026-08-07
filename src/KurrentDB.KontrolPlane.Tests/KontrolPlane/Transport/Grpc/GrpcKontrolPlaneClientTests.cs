@@ -72,7 +72,7 @@ public class GrpcKontrolPlaneClientTests {
 
 	private static GrpcKontrolPlaneClient CreateClient(EndPoint seed, params IEnumerable<KontrollerNode> nodes) =>
 		new TestKontrolPlaneClient(nodes.ToDictionary(static n => n.Address, static n => n.Handler)) {
-			Seed = new HashSet<EndPoint> { seed },
+			KontrolPlaneNodes = new HashSet<EndPoint> { seed },
 		};
 
 	// Every RPC just returns whatever response the test configured beforehand, so each test

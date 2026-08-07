@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using DotNext;
+using Grpc.Core;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
@@ -60,6 +61,7 @@ partial class GrpcKontrolPlaneClient {
 		do {
 			if (!_clients.TryGetValue(address, out entry)) {
 				var channel = CreateChannel(address, out var invoker);
+				invoker = new CallInvokerWithUnaryCallTimeout(invoker, UnaryCallTimeout);
 				var newEntry = new ClientCacheEntry(new(invoker), channel);
 				entry = _clients.GetOrAdd(address, newEntry);
 				if (!ReferenceEquals(entry, newEntry)) {
@@ -124,4 +126,42 @@ partial class GrpcKontrolPlaneClient {
 			base.Dispose(disposing);
 		}
 	}
+}
+
+file sealed class CallInvokerWithUnaryCallTimeout(CallInvoker invoker, TimeSpan timeout) : CallInvoker {
+	public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method,
+		string? host,
+		CallOptions options,
+		TRequest request)
+		=> invoker.BlockingUnaryCall(method,
+			host,
+			options.Deadline is null ? options.WithDeadline(DateTime.UtcNow + timeout) : options,
+			request);
+
+	public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method,
+		string? host,
+		CallOptions options,
+		TRequest request)
+		=> invoker.AsyncUnaryCall(method,
+			host,
+			options.Deadline is null ? options.WithDeadline(DateTime.UtcNow + timeout) : options,
+			request);
+
+	public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method,
+		string? host,
+		CallOptions options,
+		TRequest request)
+		=> invoker.AsyncServerStreamingCall(method, host, options, request);
+
+	public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(
+		Method<TRequest, TResponse> method,
+		string? host,
+		CallOptions options)
+		=> invoker.AsyncClientStreamingCall(method, host, options);
+
+	public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
+		Method<TRequest, TResponse> method,
+		string? host,
+		CallOptions options)
+		=> invoker.AsyncDuplexStreamingCall(method, host, options);
 }

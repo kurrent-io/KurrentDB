@@ -16,9 +16,19 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	/// Sets a statically known list of Kontroller nodes.
 	/// </summary>
 	/// <exception cref="ArgumentOutOfRangeException">The set is empty.</exception>
-	public required IReadOnlySet<EndPoint> Seed {
+	public required IReadOnlySet<EndPoint> KontrolPlaneNodes {
 		init => _kontrollerNodes = value.Count > 0 ? [.. value] : throw new ArgumentOutOfRangeException(nameof(value));
 	}
+
+	/// <summary>
+	/// Gets or sets timeout for <see cref="RenewLeaderAppointmentAsync"/> or <see cref="ResignLeaderAsync"/> underlying gRPC
+	/// calls.
+	/// </summary>
+	/// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is less than or equal to <see cref="TimeSpan.Zero"/>.</exception>
+	public TimeSpan UnaryCallTimeout {
+		get;
+		init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
+	} = TimeSpan.FromSeconds(30);
 
 	/// <summary>
 	/// Creates gRPC communication channel.
@@ -41,7 +51,10 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 					try {
 						if (!await call.ResponseStream.MoveNext())
 							break;
-					} catch (RpcException e) when (e.StatusCode is StatusCode.DeadlineExceeded or StatusCode.Unavailable) {
+					} catch (RpcException e) when (e.StatusCode
+						                               is StatusCode.DeadlineExceeded
+						                               or StatusCode.Unavailable
+						                               or StatusCode.Cancelled) {
 						currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
 						break;
 					}
