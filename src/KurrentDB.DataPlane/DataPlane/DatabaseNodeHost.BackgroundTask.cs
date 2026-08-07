@@ -1,8 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics;
-using System.Net;
 using DotNext.Threading;
 using KurrentDB.KontrolPlane;
 
@@ -48,27 +46,33 @@ partial class DatabaseNodeHost {
 	}
 
 	private async ValueTask MergeClusterInfoAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
-		// update database leader
-		if (!Equals(baseline?.LeaderAddress, newVersion.LeaderAddress))
-			await ChangeDatabaseLeaderAsync(baseline?.LeaderAddress, newVersion.LeaderAddress, newVersion.Epoch, newVersion.LeaderAppointmentDuration);
+		await ChangeDatabaseLeaderAsync(baseline, newVersion);
 
 		_membershipChangeTracker.TryAdvance();
 	}
 
-	private async ValueTask ChangeDatabaseLeaderAsync(EndPoint? oldLeader, EndPoint? newLeader, ulong epoch, TimeSpan appointmentDuration) {
-		Debug.Assert(!Equals(oldLeader, newLeader));
-
-		// process leadership of the current node
-		switch (_currentNode.Address.Equals(oldLeader), _currentNode.Address.Equals(newLeader)) {
+	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+		// update database leader: either the leader address changed, or the same leader was
+		// re-appointed under a new epoch (KPlane can do this, e.g. right after its own failover,
+		// without ever reporting an intermediate LeaderAddress change).
+		switch (_currentNode.Address.Equals(baseline?.LeaderAddress), _currentNode.Address.Equals(newVersion.LeaderAddress)) {
 			case (false, true):
 				// local node becomes a database leader
-				StartLeadership(epoch, appointmentDuration);
+				StartLeadership(newVersion.Epoch, newVersion.LeaderAppointmentDuration);
 				break;
 			case (true, false):
 				// local node is no longer a leader
 				await LeadershipLostAsync();
 				_leadershipProcess = Task.CompletedTask;
 				break;
+			case (true, true) when baseline!.Epoch != newVersion.Epoch:
+				// still the leader, but re-appointed under a new epoch: restart the leadership session
+				// so the renewal loop is guaranteed to use the epoch this appointment actually belongs to.
+				await LeadershipLostAsync();
+				StartLeadership(newVersion.Epoch, newVersion.LeaderAppointmentDuration);
+				break;
+			case (false, false):
+				return;
 		}
 
 		// Do not reorder. We want to make sure that LeadershipToken is valid at the time of the notification

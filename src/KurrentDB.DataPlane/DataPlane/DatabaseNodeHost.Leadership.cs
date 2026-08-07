@@ -57,7 +57,6 @@ partial class DatabaseNodeHost {
 	}
 
 	private void StartLeadership(ulong epoch, TimeSpan appointmentDuration) {
-
 		var leadershipCts = CancellationTokenSource.CreateLinkedTokenSource(_lifecycleToken);
 		_leadershipProcess = RunLeadershipAsync(epoch, appointmentDuration * _renewalRate, leadershipCts, leadershipCts.Token);
 		_leadershipTokenSource = leadershipCts; // do not reorder
