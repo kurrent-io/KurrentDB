@@ -1,0 +1,25 @@
+# Memory Index
+
+- [Sérgio's C# style law](sergio-csharp-style-law.md) — summary-only docs on non-public, junior-readable comments, local functions, modern C#14/net10 idioms, no NRT-dead guards
+- [Data store picks engine per operation](data-store-picks-engine-per-operation.md) — MEVD only for vector-shaped ops; relational reads are plain DuckDB SQL ("vector store obsession" correction)
+- [Batch statements into one command](batch-statements-into-one-command.md) — multiple SQL statements/queries = ONE command + NextResult(); separate commands only when batching genuinely fails
+- [kurrentdb repo test execution](kurrentdb-repo-test-execution.md) — test-runner script EXISTS since 2026-07-21 (`scripts/testing/test-runner.cs`); builds whole slnx first; DuckLance suite ≈23s
+
+- [DuckDB vector analysis is not a decision](duckdb-vector-analysis-not-a-decision.md) — don't cite it as decided; keep DuckDB out of unrelated discussions
+- [Log position, not TFPos](log-position-not-tfpos.md) — new Kontext designs use the single commit log position
+- [No unauthorized scope cuts](no-unauthorized-scope-cuts.md) — don't defer/drop required functionality (e.g. indexing); keep it in or ask
+- [Polly stays in Kontext pool](polly-stays-in-kontext-pool.md) — StaleHandleRecycle ResiliencePipeline is deliberate; the 2026-07-20 manual-loop swap was a misunderstanding, reverted
+- [Ground Kontext in Generative Agents paper](kontext-ground-in-generative-agents.md) — reason about Engram/Kontext design via Park et al. 2023; flag deliberate extensions (HEARSAY, event-sourcing)
+- [No breadcrumb comments](no-breadcrumb-comments.md) — never leave "moved to X"/"was Y" trail comments after moving/removing code
+- [Definition of done includes follow-through](definition-of-done-includes-followthrough.md) — update docs I maintain after a change; don't ask permission for the obvious
+- [Settings objects are classes](settings-objects-are-classes.md) — config-bound/settings types are mutable classes, not records (records' required/init break the config source generator)
+- [Kontext v3 contract state](kontext-v3-contract-state.md) — settled shape of the memory protos (flat MemoryType, no metadata, scope-as-tags, retract-vs-supersede) + deferred items; read before resuming the contracts
+- [Kontext.Reloaded canonical model (Path B)](kontext-reloaded-canonical-model.md) — gRPC contract model IS the core (IKontextMemoryService); domain deleted; only the MCP edge maps (HTTP model→Contracts). Don't re-suggest decoupling
+- [Kontext MCP edge serialization constraints](kontext-mcp-edge-serialization-constraints.md) — tool schemas need STJ reflection fallback (AOT breaks them); no IAsyncEnumerable tool returns; RecalledMemory polymorphism drops the body over MCP
+- [Kontext↔KurrentDB integration exploration](kontext-kurrentdb-integration-exploration.md) — projector DECIDED 2026-07-21 (Surge DuckDBProjection à la SchemaRegistry, $kontext/memories, log_position); hosting + append mechanism still open; Lance write rules inside; quack appender-into-lance PROBED OK 2026-08-03 (USE redirection; Row.Add list/array gap open)
+- [Sérgio's perf bar: streaming over batch](sergio-perf-bar-streaming-over-batch.md) — corpus-scale ops must be O(largest item) memory; batch materialization unacceptable; zero-copy boundaries
+- [Never reformat inside a move](never-reformat-inside-a-move.md) — split move and reindent into two commits or git log --follow dies
+- [Repair your defects, don't put them to a vote](repair-your-defects-dont-put-them-to-a-vote.md) — never offer "accept the damage" as an option when I caused it and can fix it
+- [Discuss before recording](discuss-before-recording.md) — never write positions/decisions into design docs before Sérgio agrees in chat; proposals live in conversation until "log it"
+- [Root Directory.Build.props is live](root-directory-build-props-is-live.md) — loaded by a mechanism outside the in-repo MSBuild chain; never flag as dead or propose reverting; fix in place if broken
+- [DuckLance is ignored](ducklance-is-ignored.md) — never mention, run, fix, or propose work on DuckLance; only if Sérgio names it first

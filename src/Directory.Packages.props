@@ -3,7 +3,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageVersion Include="Apache.Arrow.Flight.AspNetCore" Version="22.1.0" />
     <PackageVersion Include="Apache.Arrow.Flight.Sql" Version="22.1.0" />
@@ -50,8 +49,8 @@
     <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.72" />
     <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.72" />
     <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.181" />
-    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.181" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.221" />
+    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.221" />
     <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.72" />
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.72" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.72" />
@@ -129,7 +128,6 @@
     <PackageVersion Include="Testcontainers" Version="4.7.0" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
   </ItemGroup>
-
   <ItemGroup Label="Test">
     <!-- Override vulnerable transitive from `bunit` -->
     <PackageVersion Include="AngleSharp" Version="1.5.2" />
@@ -181,7 +179,6 @@
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="22.1.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.1.1" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
-
     <!-- Microsoft.Testing.Platform -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.9.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.3.2" />
@@ -189,45 +186,41 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.2" />
     <PackageVersion Include="Microsoft.Testing.Platform" Version="2.3.2" />
     <PackageVersion Include="Microsoft.Testing.Platform.MSBuild" Version="2.3.2" />
-
     <!-- TUnit -->
     <PackageVersion Include="TUnit" Version="1.60.0" />
     <PackageVersion Include="TUnit.Assertions" Version="1.60.0" />
     <PackageVersion Include="TUnit.Core" Version="1.60.0" />
-
     <!-- xUnit -->
     <PackageVersion Include="xunit.v3.extensibility.core" Version="3.2.2" />
     <!-- When updating to 4.x, switch back to xunit.v3 that uses MTP v2 by default -->
     <PackageVersion Include="xunit.v3.mtp-v2" Version="3.2.2" />
-
     <!-- NUnit -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="6.2.0" />
   </ItemGroup>
-
   <ItemGroup Label="Kontext">
     <PackageVersion Include="AWSSDK.Extensions.Bedrock.MEAI" Version="4.0.8.1" />
     <PackageVersion Include="Catalyst" Version="1.0.65141" />
     <PackageVersion Include="Catalyst.Models.English" Version="1.0.30952" />
     <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
-    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.3" />
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.5" />
     <PackageVersion Include="Google.Cloud.VertexAI.Extensions" Version="1.0.0-beta08" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.76.0" />
     <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />
     <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
-    <PackageVersion Include="MessagePack" Version="3.1.7" />
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.8.0" />
+    <PackageVersion Include="MessagePack" Version="3.1.8" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.8.3" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.8.3" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.8.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.VectorData.Abstractions" Version="10.7.0" />
-    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.27.1" />
+    <PackageVersion Include="Microsoft.Extensions.VectorData.Abstractions" Version="10.8.0" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.28.0" />
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.78.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.78.0-alpha" />
-    <PackageVersion Include="ModelContextProtocol" Version="1.4.1" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
+    <PackageVersion Include="ModelContextProtocol" Version="2.1.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.1.0" />
     <!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.CommandLine" Version="6.13.1" />
     <PackageVersion Include="OllamaSharp" Version="5.4.25" />

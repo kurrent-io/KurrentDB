@@ -26,9 +26,6 @@ public static class KontextRetrieverBuilderExtensions {
             EmbeddingGenerator embeddingGenerator,
             KontextRetrievalOptions options
         ) {
-            ArgumentNullException.ThrowIfNull(index);
-            ArgumentNullException.ThrowIfNull(embeddingGenerator);
-
             return builder
                 .Planner(options.Overfetch, options.Time)
                 .AddSearch(new VectorSearch(index, embeddingGenerator))
@@ -52,6 +49,39 @@ public static class KontextRetrieverBuilderExtensions {
         }
 
         /// <summary>
+        /// The hybrid-comparison chain: Lance's in-engine alpha blend as the single search leg,
+        /// then the same reread, modulation, and MMR stages as the default chain — so a benchmark
+        /// isolates the fusion step: engine alpha blend versus Kontext rank fusion.
+        /// </summary>
+        /// <param name="index">The memories read model the hybrid leg queries.</param>
+        /// <param name="embeddingGenerator">The generator the vector half embeds the query with — the same model that embedded the stored memories.</param>
+        /// <param name="options">The chain's knobs; <see cref="KontextRetrievalOptions.Alpha"/> sets the blend.</param>
+        public KontextRetrieverBuilder Hybrid(
+            IMemoryIndex index,
+            EmbeddingGenerator embeddingGenerator,
+            KontextRetrievalOptions options
+        ) {
+            return builder
+                .Planner(options.Overfetch, options.Time)
+                .AddSearch(new HybridSearch(index, embeddingGenerator, options.Alpha))
+                .AddStage(Bm25Reranker.Create(options.Reranking))
+                .AddStage(CognitiveModulator.Create(options.Modulation))
+                .AddStage(MmrReorderer.Create(options.Reordering));
+        }
+
+        /// <inheritdoc cref="Hybrid(IMemoryIndex,EmbeddingGenerator,KontextRetrievalOptions)"/>
+        public KontextRetrieverBuilder Hybrid(
+            IMemoryIndex index,
+            EmbeddingGenerator embeddingGenerator,
+            Action<KontextRetrievalOptions>? configure = null
+        ) {
+            var options = new KontextRetrievalOptions();
+            configure?.Invoke(options);
+
+            return builder.Hybrid(index, embeddingGenerator, options);
+        }
+
+        /// <summary>
         /// The legacy chain, kept as the baseline the default is measured against: a fixed
         /// candidate floor, normalized fusion, and no BM25 reread or modulation.
         /// </summary>
@@ -63,9 +93,6 @@ public static class KontextRetrieverBuilderExtensions {
             EmbeddingGenerator embeddingGenerator,
             KontextRetrievalOptions options
         ) {
-            ArgumentNullException.ThrowIfNull(index);
-            ArgumentNullException.ThrowIfNull(embeddingGenerator);
-
             const int retrievalCandidates = 30;
 
             return builder

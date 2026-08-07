@@ -1,0 +1,20 @@
+---
+name: kontext-mcp-edge-serialization-constraints
+description: "MCP tool serialization constraints for the Kontext.Reloaded MCP edge — reflection fallback required, no IAsyncEnumerable returns, polymorphic models need STJ attributes"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: c61636bc-1725-45d6-9d21-f53d4de60ff8
+---
+
+Verified 2026-07-16 against ModelContextProtocol 1.4.1 with an in-memory client/server smoke test:
+
+1. **Tool schemas need the STJ reflection fallback.** `WithTools<T>()` uses `McpJsonUtilities.DefaultOptions`, which only includes `DefaultJsonTypeInfoResolver` when reflection-based STJ is enabled. Under `PublishAot=true` (the default for file-based C# test apps!) tool creation throws `NotSupportedException` for the custom `Edges.Mcp.Model` types. The KurrentDB host runs reflection-enabled (old KurrentDB.Kontext MCP edge relies on the same fallback), but the MCP edge would break in an AOT/trimmed host. When smoke-testing with a file-based app, set `#:property PublishAot=false`.
+
+2. **MCP tools cannot return `IAsyncEnumerable<T>`** — `McpServerTool.Create` throws at creation, before any call. Materialize to `IReadOnlyList<T>` at the MCP edge; streaming stays on the gRPC edge (also noted in `McpMemoryService` xmldoc).
+
+3. **MCP edge descriptions live in `McpInstructions.resx`, not attributes** (since 2026-07-16). Keys: `server.instructions`, `tool.{name}`, `tool.{name}.param.{p}`, `type.{Type}[.{jsonProp}]` ('+' joins nested types). Applied by `WithToolsFromResources<T>()` via `AIJsonSchemaCreateOptions` hooks. Gotcha: MSBuild names the embedded resource after the **namespace of the same-named sibling `.cs` file** (`Kurrent.Kontext.Mcp.McpInstructions`), not the resx folder path — the `ResourceManager` base name must match that. Enum-typed properties get the enum's type entry appended, because enum type nodes never surface on their own in schemas.
+
+4. **Polymorphic model records need `[JsonPolymorphic]`/`[JsonDerivedType]`** — FIXED 2026-07-16: `RecalledMemory` and `Citation` now carry `TypeDiscriminatorPropertyName = "kind"` with arms `lean`/`full` and `memory`/`record`. Without it, STJ serialized the DECLARED type's contract (`{"score":0.87}`, body silently dropped) and threw on deserializing abstract input. The schema exporter emits `anyOf` with `const` discriminators — agents see the closed union.
+
+5. **On net10, STJ source-gen CLOBBERS property initializers of init-only records** (verified via emitted generator code + behavior matrix): for a type whose properties are `init`, the generator emits `ObjectWithParameterizedConstructorCreator = args => new T { P1 = args[0], ... }` assigning EVERY property unconditionally — absent JSON members arrive as CLR defaults (`Type=Unspecified`, `Tags=null`), and real setters throw. NRT annotations lie; the IDE flags the `?? []` guards as redundant but removing them crashes. No serializer option fixes init-only. **`set` properties get plain `ObjectCreator` and honor initializers** (absent ⇒ initializer value); explicit `"x": null` still assigns null unless `JsonSerializerOptions.RespectNullableAnnotations = true`, which rejects it with a descriptive JsonException. **net11-preview fixes init-only outright** (UnsafeAccessor setters + plain creator) — when the repo moves to net11, `init` becomes safe again. RESOLVED 2026-07-16: the MCP model types are now **mutable sealed classes** (`{ get; set; }`, no records — mutable records would keep value-equality footguns) and `ToolSerializerOptions` sets `RespectNullableAnnotations = true`; the `?? []`/`?? ""` guards on non-nullable members were removed (nullable members like `Id`/`QueryId`/`reason` still coalesce — they mean "unset"). Known limitation: the SDK's catch-all converts the descriptive JsonException for explicit-null payloads into the generic "An error occurred invoking '<tool>'" (detail only in server logs) — filters can't intercept it, the catch sits inside the tool invoke. Related: [[kontext-reloaded-canonical-model]], [[kontext-v3-contract-state]], [[settings-objects-are-classes]].

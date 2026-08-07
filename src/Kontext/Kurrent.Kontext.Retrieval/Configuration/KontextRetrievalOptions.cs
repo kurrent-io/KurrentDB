@@ -13,6 +13,9 @@ public sealed class KontextRetrievalOptions {
     /// <summary>How far past the requested limit the searches over-fetch before fusion.</summary>
     public OverfetchOptions Overfetch { get; set; } = new();
 
+    /// <summary>The hybrid chain's engine blend: 0 = pure keyword, 1 = pure vector. Only the hybrid chain reads it.</summary>
+    public double Alpha { get; set; } = 0.5;
+
     /// <summary>The pool-local BM25 reread that refines the fused order before modulation.</summary>
     public Bm25RerankerOptions Reranking { get; set; } = new();
 

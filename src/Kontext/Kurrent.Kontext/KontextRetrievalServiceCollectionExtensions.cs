@@ -35,7 +35,7 @@ public static class KontextRetrievalServiceCollectionExtensions {
 
     static IKontextRetriever CreateDefaultRetriever(IServiceProvider sp) =>
         KontextRetriever.New()
-            .Default(
+            .Hybrid(
                 sp.GetRequiredService<KontextDataStore>(),
                 sp.GetRequiredService<EmbeddingGenerator>(),
                 ResolveServices(sp.GetService<KontextRetrievalOptions>() ?? new KontextRetrievalOptions(), sp))

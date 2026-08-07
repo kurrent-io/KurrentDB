@@ -14,8 +14,8 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" VersionOverride="10.7.0" />
-    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" VersionOverride="10.7.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" VersionOverride="10.8.3" />
+    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" VersionOverride="10.8.0" />
     <PackageReference Include="DuckDB.NET.Data.Full" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" />
   </ItemGroup>

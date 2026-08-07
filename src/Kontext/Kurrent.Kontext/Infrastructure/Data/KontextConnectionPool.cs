@@ -49,8 +49,8 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
     // flush an empty database.
     volatile bool _everExecuted;
 
-    public KontextConnectionPool(string connectionString, string storagePath, string storageAlias = "ldb", string? extensionPath = null)
-        : base(connectionString) {
+    public KontextConnectionPool(string connectionString, string storagePath, string storageAlias = "ldb")
+        : base(VendoredDuckDBExtensions.AmendConnectionString(connectionString)) {
         ArgumentException.ThrowIfNullOrEmpty(storagePath);
 
         if (!IsValidAlias(storageAlias)) {
@@ -72,9 +72,7 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
         // (a bare ATTACH fails on the second connection). Never DETACH.
         _initializeSql =
             $"""
-             {(extensionPath is null 
-                 ? "INSTALL lance; LOAD lance;" 
-                 : $"LOAD '{Escape(extensionPath)}';")}
+             {VendoredDuckDBExtensions.EnsureLanceInstalled()}
              ATTACH IF NOT EXISTS '{Escape(StoragePath)}' AS {storageAlias} (TYPE LANCE);
              """;
 

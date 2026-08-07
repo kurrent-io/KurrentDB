@@ -214,7 +214,10 @@ Three table functions **[validated]**: `lance_vector_search` (returns `_distance
   `lance_filter_ir.cpp`]** — silently post-filterish even with `prefilter := true` and a `LABEL_LIST`
   index. Correct fallback: **oversample** — set `k` to cover the whole candidate set (we use the table
   row count), let DuckDB evaluate the containment predicate, then `LIMIT n`. Equality predicates DO
-  push down and need no oversampling.
+  push down and need no oversampling. **Fix is scoped and in flight [2026-08-02]**: Lance v9.0.0
+  already converts `array_has_any/all` into native `LABEL_LIST` index queries; the gap is only the
+  extension's IR encoder — feasibility, change surface, and handoff in
+  `.claude/context/docs/research/2026-08-02-0042-lance-duckdb-containment-pushdown/`.
 - **The full pushdown whitelist [source-confirmed 2026-07-20 at HEAD of `lance-format/lance-duckdb`,
   clone: `~/dev/contrib/lance-duckdb`]**: column refs (incl. `struct_extract` nested), constants,
   non-try constant casts, all comparisons, AND/OR conjunctions, NOT, IS [NOT] NULL, IN/NOT IN
