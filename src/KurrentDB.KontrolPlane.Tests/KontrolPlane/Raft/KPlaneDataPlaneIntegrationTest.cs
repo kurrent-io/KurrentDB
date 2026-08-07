@@ -349,9 +349,8 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 
 	// A single Data Plane node: a real DatabaseNodeHost plus a real Kestrel-hosted gRPC DataPlaneServer,
 	// exposed on the address the Kontrol Plane will use to query its replica state.
-	private sealed class DPNode : IAsyncDisposable {
-		public required TestDatabaseNodeHost Host { get; init; }
-		public required WebApplication GrpcHost { get; init; }
+	private sealed class DPNode(TestDatabaseNodeHost host, WebApplication webApp) : IAsyncDisposable {
+		public IDatabaseNode Host => host;
 
 		public static async Task<DPNode> StartAsync(
 			DatabaseNode currentNode,
@@ -373,13 +372,13 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 
 			await host.StartAsync(token);
 
-			return new() { Host = host, GrpcHost = app };
+			return new(host, app);
 		}
 
 		public async ValueTask DisposeAsync() {
-			await Host.StopAsync(CancellationToken.None);
-			await GrpcHost.StopAsync();
-			await GrpcHost.DisposeAsync();
+			await host.StopAsync(CancellationToken.None);
+			await webApp.StopAsync();
+			await webApp.DisposeAsync();
 		}
 	}
 }
