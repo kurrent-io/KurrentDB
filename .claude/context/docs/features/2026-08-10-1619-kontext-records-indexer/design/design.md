@@ -1,0 +1,139 @@
+---
+title: Kontext Records Indexer
+status: settling         # exploring | settling | superseded
+authors: [sergio, claude]
+date: 2026-08-10
+tags: [kontext, lance, duckdb, quack, indexing, search]
+---
+
+# Design Space — Kontext Records Indexer
+
+<!--
+Working doc. Brainstorm, discussion, and decisions for this feature. Deliberately informal and
+append-leaning — you add to it, you mark decisions, you do not rewrite the history of the discussion.
+Kept for the life of the feature. Once it settles, distill the outcome into prd/prd.md and spec/spec.md,
+and slice releases into plans/. This doc is also the feature's decision record — keep the rejected
+options; the "why not" is the value. Sources this design space cites go in design/refs/.
+-->
+
+## Problem / Trigger
+
+Kontext needs whole-log search: consume the entire KurrentDB `$all` log and index it for
+full-text (BM25) and vector search in a Lance table, queried through DuckDB. Modeled on
+`KurrentDB.SecondaryIndexing`'s default index pipeline (`DefaultIndexSubscription` →
+`DefaultIndexProcessor` → DuckDB), which was mapped in full during the 2026-08-10 design
+session. The Quack appender gained LIST/ARRAY support (`#59`, shipped `0.0.0-alpha.217+`),
+which unblocks writing `FLOAT[N]` embedding columns at appender speed.
+
+## Exploration
+
+Reference pipeline facts that shaped the design (all verified against source this session):
+
+- `idx_all` stores positions, not payload; reads resolve events from the log via
+  `get_kdb_def(log_position)`. The table itself is the checkpoint (last row by `rowid`).
+- The `$`-prefix system-event filter lives in the subscription, not the processor.
+- One Quack appender `Flush()` = exactly one Lance commit, any row count; each SQL
+  `INSERT` is its own commit (`AppenderLanceProbeTests`).
+- `duckdb_appender_create` has no catalog slot — the only route into the Lance catalog is
+  `USE ldb` session redirection.
+- Reference defects deliberately not copied: poison event kills the subscription
+  permanently and silently; `deleted` column hardcoded `false`; bus-path shutdown disposes
+  processor before subscription.
+
+Rejected along the way (see Decisions for winners):
+
+- Staging table + `INSERT…SELECT` with VARCHAR→`FLOAT[N]` cast — designed to route around
+  the appender array gap; obsolete the moment the gap was confirmed closed in the pinned
+  package (alpha.221 contains `AddCollection`/`CollectionType`).
+- `UBIGINT` for `log_position` — the value is `Int64` end to end (`TFPos`, `idx_all`);
+  unsigned buys only casts. Consequence: `memories.log_position UBIGINT` is now wrong and
+  gets fixed to `BIGINT`.
+- `commit_position`, `stream_hash`, `deleted`, `expires_at` columns — read-path
+  reconstruction concerns of `idx_all` that a search surface does not have.
+- Table names `log_index` and `events` — everything in the Lance store is an index, and
+  the table holds no event bodies.
+- Per-column metadata-only rows for non-decodable payloads — collapsed once the
+  `ContentExtractor` null-return contract made skip the natural policy.
+- Deferred embedding backfill lane — impossible by construction once `embedding` went
+  NOT NULL.
+- BufferedView zero-copy uncommitted-read machinery — secondary-indexing read-path
+  concern; Kontext reads via the lance TVFs and tolerates a one-batch freshness gap.
+
+## Decisions
+
+- 2026-08-10 — Table is `ldb.main.records` (own dataset `<storage>/records.lance`), same
+  `ldb` attach as memories; per-table datasets isolate commits, so no contention with the
+  memories projector.
+- 2026-08-10 — Schema: `log_position BIGINT NOT NULL`, `record_id BLOB NOT NULL`,
+  `stream VARCHAR NOT NULL`, `category VARCHAR NOT NULL`, `schema_name VARCHAR NOT NULL`,
+  `schema_id VARCHAR NULL`, `schema_format VARCHAR NOT NULL`, `content VARCHAR NOT NULL`,
+  `embedding FLOAT[Dimension] NOT NULL`, `created_at BIGINT NOT NULL` (epoch ms).
+  Scalar columns are the prefilter surface — scalar equality pushes down into the lance
+  scan; array containment does not (the tags lesson).
+- 2026-08-10 — `created_at` kept: recency is one of the three retrieval components in the
+  Generative Agents model this system is grounded in, and retrofitting the column later
+  is a full backfill.
+- 2026-08-10 — Indexes: `content_fts` INVERTED on `content`, `vec_idx` IVF_HNSW_PQ on
+  `embedding` (memories params, 256-row training floor pattern), BTREE on `log_position`.
+- 2026-08-10 — Content extraction is a `ContentExtractor` delegate:
+  `string? Extract(in ResolvedEvent record)`, `null = skip` (no row written). The delegate
+  is the single authority over what gets indexed. Default v1: `schema_format == Json` →
+  complete payload as string, else null. Flattened `key: value` extraction and
+  schema-registry-aware extraction are future delegate swaps, not redesigns.
+- 2026-08-10 — Embedding input ≡ extractor output, nothing synthesized. Generator is a
+  ctor-injected `IEmbeddingGenerator<string, Embedding<float>>` (memories precedent);
+  dimension agreement with the table is owned by the DI wiring. Embedding is inline by
+  construction (`NOT NULL` forbids a backfill lane).
+- 2026-08-10 — Write path: extract → batch → embed → Quack `Appender` under `USE ldb` →
+  one `Flush()` per batch = one atomic Lance commit. Checkpoint is the table:
+  `max(log_position)`; atomic batch commits mean resume can neither duplicate nor lose.
+- 2026-08-10 — Subscription mirrors `DefaultIndexSubscription`: `Enumerator.AllSubscription`,
+  `requiresLeader: false`, `$`-prefix filter replicated (it lives in the subscription).
+  Node scope: every node indexes its local log into its local `ldb` — the secondary-index
+  pattern verbatim; the log is the replicated thing, the index is a local derivation.
+- 2026-08-10 — Hosting: `Kurrent.Kontext`, a `SystemReadyBackgroundService` beside
+  `KontextProjectorService`, same DI wiring.
+- 2026-08-10 — Supervision inverts the reference: backoff restart on subscription death;
+  poison record = retry once, then skip with error log + counter. A search index tolerates
+  a missing row; a stalled index does not.
+- 2026-08-10 — Tombstones: no column, gap inherited knowingly. Future mitigation exists
+  structurally: hits hydrate from the log, so a scavenged event fails hydration —
+  drop the hit, lazily `DELETE FROM records` on miss.
+- 2026-08-10 — Known accepted v1 truncations: embedder truncates long input at its own
+  window; `content` column is uncapped (pathological multi-MB payloads bloat row + FTS).
+  Both are delegate-fixable later.
+- 2026-08-10 — Corrective prerequisite: `memories.log_position UBIGINT → BIGINT`
+  (`KontextSchema` DDL + binding sites), own commit. `CREATE TABLE IF NOT EXISTS` will not
+  retype an existing dataset — deployed tables need rebuild (re-embed path is documented).
+
+- 2026-08-10 (implementation) — The checkpoint reads on the writer's own freshly-opened
+  connection, never a rented pooled one: a pooled connection can hold a stale lance dataset
+  handle and report an older table version, and a stale checkpoint replays into duplicate
+  rows (the appender inserts blindly). Found live: a rented connection that had scanned the
+  empty table kept reporting it empty after another connection's flush.
+  `KontextRecordsSchema.ReadLastPosition(connection)` takes the connection for this reason.
+- 2026-08-10 (implementation) — `ContentExtractor` gained a second parameter,
+  `string schemaFormat`, resolved once by the writer from the record's properties
+  (falling back to the IsJson flag) so extractors never re-parse the protobuf Struct
+  per event at whole-log rates.
+- 2026-08-10 (implementation) — Poison policy split by failure class: a deterministic
+  extractor throw skips the record with a warning + counter (`SkippedRecords`); an
+  embed/append/flush failure propagates so nothing commits and supervision replays the
+  batch from the checkpoint — no data loss either way.
+
+## Open Questions
+
+- Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
+  optimize throttle — tune with observed numbers.
+- Records dataset compaction/vacuum: not yet wired into a maintenance scheduler;
+  manifest count grows one per batch until it is.
+- `KontextRecordsSchema` duplicates `KontextSchema`'s index-lifecycle mechanics
+  (training-floor try-catch, SHOW INDEXES, DDL runner) — merge candidate, deliberately
+  not restructured mid-feature.
+- No end-to-end service test (subscription against a live node) — writer, schema, and
+  appender capability are covered; the subscription loop follows `DefaultIndexSubscription`
+  verbatim. Needs the in-server harness when hosting lands.
+- Pre-existing failures observed while landing this (not records-related):
+  `EvidenceStructBindingProbeTests` pins an engine limitation the vendored lance build has
+  fixed (pin update is a design decision — it justifies the evidence `VARCHAR[]` shape),
+  and the two ranking benchmarks flap around their floors run to run.

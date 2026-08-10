@@ -13,6 +13,8 @@ namespace Kurrent.Kontext.Tests.Data;
 ///   default catalog with USE — the C API has no catalog slot
 /// - one appender flush is ONE lance commit regardless of row count; one SQL INSERT statement is
 ///   one commit — the batch-amortization the appender write path exists for
+/// - FLOAT[N] ARRAY columns append via Add(span, CollectionType.Array) — the records indexer's
+///   embedding column rides this
 /// Guards Quack and lance-extension upgrades against silently moving that boundary.
 /// </summary>
 [Category("Integration")]
@@ -106,6 +108,41 @@ public class AppenderLanceProbeTests {
 		await Assert.That(rows).IsEqualTo(103L);
 		await Assert.That(afterFlush - baseline).IsEqualTo(1);
 		await Assert.That(afterInserts - afterFlush).IsEqualTo(3);
+	}
+
+	[Test]
+	public async ValueTask appends_float_array_column_through_use_redirection(CancellationToken cancellationToken) {
+		// Arrange
+		using var dir        = new TempDir();
+		using var pool       = NewPool(dir.Path);
+		using var connection = pool.Open();
+
+		Exec(connection, "CREATE TABLE ldb.main.probe_array (id BIGINT, content VARCHAR, embedding FLOAT[4])");
+		Exec(connection, "USE ldb");
+
+		// Values exactly representable in float32, so the SQL equality below is exact, not approximate.
+		ReadOnlySpan<float> embedding = [0.25f, -1.5f, 3.75f, 0.0625f];
+
+		// Act
+		var appender = new Appender(connection, "probe_array\0"u8);
+		var row      = appender.CreateRow();
+		row.Add(1L);
+		row.Add("probe-content");
+		row.Add(embedding, CollectionType.Array);
+		row.Dispose();
+		appender.Flush();
+		appender.Dispose();
+
+		var matches = Scalar(
+			connection,
+			"""
+			SELECT count(*) FROM ldb.main.probe_array
+			WHERE embedding = CAST([0.25, -1.5, 3.75, 0.0625] AS FLOAT[4])
+			  AND content = 'probe-content'
+			""");
+
+		// Assert — the FLOAT[N] ARRAY survives the lance round trip element-exact beside its scalars.
+		await Assert.That(matches).IsEqualTo(1L);
 	}
 
 	static ReadOnlySpan<byte> Payload => "probe-payload"u8;
