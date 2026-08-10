@@ -154,6 +154,16 @@ Rejected along the way (see Decisions for winners):
     the schemaFormat parameter and the writer's protobuf `Struct` parse both died because
     `SchemaInfo` arrives resolved; `schema_id` fills from `HeaderKeys.SchemaId` when present.
 
+- 2026-08-10 (final challenge, Sérgio) — "why not just resume from the last indexed row's
+  position?" examined to the bottom and RULED: **the checkpoint store stays.**
+  `max(log_position)` alone is correct (no duplicates possible, no transaction needed, the
+  two-dataset commit window disappears) but its resume point only advances on indexed rows —
+  every restart re-reads the trailing run of skipped records, unbounded on a JSON-poor log.
+  The store caps restart cost at O(1) regardless of log shape, at the price of the batch
+  transaction and the (accepted) two-dataset commit window. Same split the secondary indexes
+  ship: dense idx_all resumes from its own last row; the sparse user index carries a
+  checkpoint table.
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
