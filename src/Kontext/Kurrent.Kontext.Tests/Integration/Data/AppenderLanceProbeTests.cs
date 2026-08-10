@@ -3,6 +3,7 @@
 
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Quack;
+using Kurrent.Quack.Threading;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -108,6 +109,56 @@ public class AppenderLanceProbeTests {
 		await Assert.That(rows).IsEqualTo(103L);
 		await Assert.That(afterFlush - baseline).IsEqualTo(1);
 		await Assert.That(afterInserts - afterFlush).IsEqualTo(3);
+	}
+
+	[Test]
+	public async ValueTask buffered_appender_appends_to_lance_table_through_use_redirection(CancellationToken cancellationToken) {
+		// Arrange
+		using var dir        = new TempDir();
+		using var pool       = NewPool(dir.Path);
+		using var connection = pool.Open();
+
+		Exec(connection, "CREATE TABLE ldb.main.probe_buffered (id BIGINT, content VARCHAR, embedding FLOAT[4])");
+		Exec(connection, "USE ldb");
+
+		var baseline = CountManifests(dir.Path);
+
+		// Values exactly representable in float32, so the SQL equality below is exact, not approximate.
+		ReadOnlySpan<float> embedding = [0.25f, -1.5f, 3.75f, 0.0625f];
+
+		// Act — 100 rows, ONE flush, through the chunk-based appender. The chunk path
+		// (duckdb_append_data_chunk) is a different native route than the raw appender's
+		// per-value appends; this probe pins that it reaches the lance catalog at all.
+		var appender = new BufferedAppender(connection, "probe_buffered\0"u8);
+
+		for (var i = 0; i < 100; i++) {
+			var row = appender.CreateRow();
+			try {
+				row.Add((long)i);
+				row.Add("probe-content");
+				row.Add(embedding, CollectionType.Array);
+			} finally {
+				row.Dispose();
+			}
+		}
+
+		appender.Flush();
+		appender.Dispose();
+
+		var afterFlush = CountManifests(dir.Path);
+
+		var matches = Scalar(
+			connection,
+			"""
+			SELECT count(*) FROM ldb.main.probe_buffered
+			WHERE embedding = CAST([0.25, -1.5, 3.75, 0.0625] AS FLOAT[4])
+			  AND content = 'probe-content'
+			""");
+
+		// Assert — chunk-append reaches lance, the FLOAT[N] ARRAY survives element-exact
+		// beside its scalars, and commits scale with flushes, not rows.
+		await Assert.That(matches).IsEqualTo(100L);
+		await Assert.That(afterFlush - baseline).IsEqualTo(1);
 	}
 
 	[Test]
