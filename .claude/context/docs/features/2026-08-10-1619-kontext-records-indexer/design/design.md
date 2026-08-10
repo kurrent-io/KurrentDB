@@ -180,11 +180,10 @@ Rejected along the way (see Decisions for winners):
   `EvidenceStructBindingProbeTests` pins an engine limitation the vendored lance build has
   fixed (pin update is a design decision — it justifies the evidence `VARCHAR[]` shape),
   and the two ranking benchmarks flap around their floors run to run.
-- LATENT DEFECT, memories side: `KontextMemoryProjectorService`'s
-  `tx { MERGE into ldb; engine-catalog checkpoint }` is the exact cross-catalog shape the
-  engine refuses (probed). Never fired — the loop is unhosted and its tests exercise only
-  the writer. Fix is the records pattern: its checkpoint moves onto a lance-redirected
-  connection (the store itself is already catalog-agnostic after the MERGE rewrite).
+- ~~LATENT DEFECT, memories side~~ FIXED 2026-08-10 (`b899575`): the memories projector now
+  opens `pool.OpenLanceWriter()`, so its checkpoint lands in the lance catalog and the batch
+  transaction touches one catalog; pinned by
+  `KontextMemoryWriterTests.batch_and_checkpoint_commit_and_revert_together`.
 - The provider simplification (one facade ensuring schema, returning ReadOnly | Writer
   connections; scoped-handle machinery off the consumer surface) — endorsed, not yet
   executed beyond `OpenLanceWriter()`.
