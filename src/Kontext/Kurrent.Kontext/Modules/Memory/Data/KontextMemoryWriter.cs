@@ -180,7 +180,7 @@ public sealed class KontextMemoryWriter(
                  unnest(CAST($superseded_ats AS BIGINT[])) AS superseded_at,
                  unnest(CAST($retracted_ats AS BIGINT[])) AS retracted_at,
                  unnest(CAST($recalled_ats AS BIGINT[])) AS recalled_at,
-                 unnest(CAST($log_positions AS UBIGINT[])) AS log_position,
+                 unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
              ON t.memory_id = s.memory_id
              WHEN NOT MATCHED AND s.retained THEN INSERT (

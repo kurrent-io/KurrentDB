@@ -86,7 +86,7 @@ public sealed class KontextSchema(KontextConnectionPool connections, KontextSche
                is_superseded BOOLEAN,
                superseded_at BIGINT,
                superseded_by VARCHAR,
-               log_position UBIGINT,
+               log_position BIGINT,
                embedding FLOAT[{options.Dimension}])
              """;
 
