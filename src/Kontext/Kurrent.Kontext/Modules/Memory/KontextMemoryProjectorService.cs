@@ -22,8 +22,10 @@ namespace Kurrent.Kontext.Modules.Memory;
 /// only then stores the checkpoint — the data always lands before the position that claims it.
 ///
 /// No processor, no projection module: three message types need a switch, not a router, and
-/// the checkpoint belongs in the same duck file as the data (a stream-side checkpoint shared
-/// across nodes would poison node-local read models).
+/// the checkpoint belongs in the same LANCE catalog as the data — a stream-side checkpoint
+/// shared across nodes would poison node-local read models, and a transaction that writes
+/// lance cannot touch any other attached database, so an engine-catalog checkpoint could
+/// never share the batch transaction (probed, TransactionLanceProbeTests).
 /// </summary>
 public sealed class KontextMemoryProjectorService(IServiceProvider services, NodeReadyWhen readyWhen = NodeReadyWhen.Operational)
     : SystemReadyBackgroundService(services, readyWhen, "KontextMemoryProjector") {
@@ -41,10 +43,11 @@ public sealed class KontextMemoryProjectorService(IServiceProvider services, Nod
         var consumerBuilder = Services.GetRequiredService<IConsumerBuilder>();
         var loggerFactory   = Services.GetRequiredService<ILoggerFactory>();
 
-        // The projector owns the write side end to end: the dedicated connection (writers never
-        // rent), the checkpoint store, and the per-batch transaction that carries both the MERGE
-        // and the checkpoint. The writer only turns batches into statements on this connection.
-        await using var connection = pool.Open();
+        // The projector owns the write side end to end: the dedicated lance-redirected
+        // connection (writers never rent), the checkpoint store — whose unqualified table lands
+        // in the lance catalog via the redirection — and the per-batch transaction that carries
+        // both the MERGE and the checkpoint. The writer only turns batches into statements here.
+        await using var connection = pool.OpenLanceWriter();
 
         var checkpoints = new KontextCheckpointStore(CheckpointKey);
         checkpoints.EnsureSchema(connection);
@@ -69,9 +72,9 @@ public sealed class KontextMemoryProjectorService(IServiceProvider services, Nod
             .Create();
 
         await foreach (var batch in consumer.Records(stoppingToken).ReadBatches(BatchSize, BatchWindow, stoppingToken).ConfigureAwait(false)) {
-            // Data first, checkpoint second, one transaction: the native side commits atomically
-            // with the tx, lance commits per statement — a crash leaves the position lagging
-            // and the batch replays, never the reverse.
+            // Data and checkpoint in ONE transaction on the lance catalog — the only attached
+            // database a lance-writing transaction may touch (the engine refuses a second).
+            // Probed: the MERGE and the checkpoint land or revert together.
             using var tx = connection.BeginTransaction();
 
             await writer.ProjectAsync(batch, stoppingToken).ConfigureAwait(false);

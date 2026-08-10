@@ -76,6 +76,46 @@ public class KontextMemoryWriterTests {
 	}
 
 	[Test]
+	public async ValueTask batch_and_checkpoint_commit_and_revert_together(CancellationToken cancellationToken) {
+		// Arrange — the projector service's exact loop shape: writer MERGE + checkpoint MERGE
+		// in one transaction on the lance-redirected connection. A lance-writing transaction
+		// cannot touch any other attached catalog, so the checkpoint rides the redirection.
+		using var dir  = new TempDir();
+		using var pool = NewPool(dir.Path);
+
+		await NewSchema(pool).CreateAsync();
+
+		await using var connection = pool.OpenLanceWriter();
+
+		var writer      = NewWriter(connection);
+		var checkpoints = new KontextCheckpointStore("memories-writer-test");
+		checkpoints.EnsureSchema(connection);
+
+		// Act — committed batch.
+		using (var tx = connection.BeginTransaction()) {
+			await Project(writer, CreateRecord(NewRetained("m1", "first belief", Base), position: 100));
+			checkpoints.Store(connection, RecordPosition.ForLog(100));
+			tx.CommitOnDispose();
+		}
+
+		var afterCommit = checkpoints.Load(connection);
+
+		// Act — rolled-back batch: dispose without commit.
+		using (connection.BeginTransaction()) {
+			await Project(writer, CreateRecord(NewRetained("m2", "second belief", Base.AddHours(1)), position: 205));
+			checkpoints.Store(connection, RecordPosition.ForLog(205));
+		}
+
+		var afterRollback = checkpoints.Load(connection);
+
+		// Assert — data and checkpoint advanced together, then reverted together.
+		await Assert.That((ulong?)afterCommit).IsEqualTo(100UL);
+		await Assert.That((ulong?)afterRollback).IsEqualTo(100UL);
+		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(pool, "m2")).IsEqualTo(0L);
+	}
+
+	[Test]
 	public async ValueTask retain_replay_across_batches_leaves_state_unchanged(CancellationToken cancellationToken) {
 		// Arrange — the same record applied in two successive batches: exactly what a crash
 		// between an applied batch and its checkpoint produces on restart. The matched arm
