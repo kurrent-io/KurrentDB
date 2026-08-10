@@ -25,5 +25,9 @@ public partial class KontextConventions {
         private static partial Regex GetMemoriesStreamFilterRegEx();
 
         public static readonly ConsumeFilter MemoriesFilter = FromRegex(ConsumeFilterScope.Stream, GetMemoriesStreamFilterRegEx());
+
+        // The whole-log records index consumes everything except system events — which also
+        // excludes every $kontext stream, so the indexer never eats its own exhaust.
+        public static readonly ConsumeFilter RecordsIndexFilter = ExcludeSystemEvents();
     }
 }

@@ -2,12 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Modules.Records;
 using Kurrent.Kontext.Modules.Records.Data;
 using Kurrent.Quack;
-using KurrentDB.Core.Data;
-using KurrentDB.Core.TransactionLog.LogRecords;
+using Kurrent.Surge;
+using Kurrent.Surge.Schema;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -25,8 +26,7 @@ public class KontextRecordsWriterTests {
 		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
 		await schema.CreateAsync(cancellationToken);
 
-		await using var connection = pool.Open();
-		Exec(connection, "USE ldb");
+		await using var connection = pool.OpenLanceWriter();
 
 		using var writer = NewWriter(connection);
 
@@ -35,16 +35,17 @@ public class KontextRecordsWriterTests {
 		var expectedCreatedAt = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds();
 		var expectedEmbedding = FakeEmbeddingGenerator.Embed(content);
 
-		var json  = NewRecord(logPosition: 100, "orders-1", "OrderPlaced", content, isJson: true, timestamp);
-		var bytes = NewRecord(logPosition: 101, "orders-1", "OrderSnapshot", "raw-bytes", isJson: false, timestamp);
+		var json    = CreateRecord(logPosition: 100, "orders-1", "OrderPlaced", content, SchemaDataFormat.Json, timestamp, schemaId: "urn:schemas:orders:OrderPlaced:1");
+		var bytes   = CreateRecord(logPosition: 101, "orders-1", "OrderSnapshot", "raw-bytes", SchemaDataFormat.Bytes, timestamp);
+		var control = CreateRecord(logPosition: 102, "orders-1", "$subscription-caughtUp", "{}", SchemaDataFormat.Json, timestamp);
 
-		var baseline = CountManifests(dir.Path);
+		var baseline = CountManifests(dir.Path, "records.lance");
 
 		// Act
-		var written = await writer.ProjectAsync([json, bytes], cancellationToken);
+		var written = await writer.ProjectAsync([json, bytes, control], cancellationToken);
 
-		// Assert — the JSON record lands whole (every column), the undecodable one never lands,
-		// and the batch cost exactly one lance commit.
+		// Assert — the JSON record lands whole (every column, schema id from its header), the
+		// undecodable record and the control record never land, one flush = one lance commit.
 		using var command = connection.CreateCommand();
 		command.CommandText =
 			"""
@@ -54,7 +55,7 @@ public class KontextRecordsWriterTests {
 			  AND stream = 'orders-1'
 			  AND category = 'orders'
 			  AND schema_name = 'OrderPlaced'
-			  AND schema_id IS NULL
+			  AND schema_id = 'urn:schemas:orders:OrderPlaced:1'
 			  AND schema_format = 'Json'
 			  AND content = $content
 			  AND created_at = $created_at
@@ -67,37 +68,49 @@ public class KontextRecordsWriterTests {
 		await Assert.That(written).IsEqualTo(1);
 		await Assert.That((long)command.ExecuteScalar()!).IsEqualTo(1L);
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.records")).IsEqualTo(1L);
-		await Assert.That(CountManifests(dir.Path) - baseline).IsEqualTo(1);
+		await Assert.That(CountManifests(dir.Path, "records.lance") - baseline).IsEqualTo(1);
 	}
 
 	[Test]
-	public async ValueTask resumes_from_the_highest_committed_position(CancellationToken cancellationToken) {
-		// Arrange
+	public async ValueTask batch_and_checkpoint_commit_and_revert_together(CancellationToken cancellationToken) {
+		// Arrange — the indexer's exact loop shape: writer flush + checkpoint MERGE in one
+		// transaction on the lance-redirected connection.
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
 		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
 		await schema.CreateAsync(cancellationToken);
 
-		await using var connection = pool.Open();
-		Exec(connection, "USE ldb");
+		await using var connection = pool.OpenLanceWriter();
+
+		var checkpoints = new KontextCheckpointStore("records-writer-test");
+		checkpoints.EnsureSchema(connection);
 
 		using var writer    = NewWriter(connection);
 		var       timestamp = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
 
-		// Act
-		var beforeAnyWrite = schema.ReadLastPosition(connection);
+		// Act — committed batch.
+		using (var tx = connection.BeginTransaction()) {
+			await writer.ProjectAsync([CreateRecord(logPosition: 100, "orders-1", "OrderPlaced", """{"n": 1}""", SchemaDataFormat.Json, timestamp)], cancellationToken);
+			checkpoints.Store(connection, RecordPosition.ForLog(100));
+			tx.CommitOnDispose();
+		}
 
-		await writer.ProjectAsync([
-			NewRecord(logPosition: 100, "orders-1", "OrderPlaced", """{"n": 1}""", isJson: true, timestamp),
-			NewRecord(logPosition: 205, "orders-2", "OrderPlaced", """{"n": 2}""", isJson: true, timestamp)
-		], cancellationToken);
+		var afterCommit = checkpoints.Load(connection);
 
-		var afterWrite = schema.ReadLastPosition(connection);
+		// Act — rolled-back batch: dispose without commit.
+		using (connection.BeginTransaction()) {
+			await writer.ProjectAsync([CreateRecord(logPosition: 205, "orders-2", "OrderPlaced", """{"n": 2}""", SchemaDataFormat.Json, timestamp)], cancellationToken);
+			checkpoints.Store(connection, RecordPosition.ForLog(205));
+		}
 
-		// Assert — empty table means no checkpoint; after a flush the checkpoint is the batch's max.
-		await Assert.That(beforeAnyWrite).IsNull();
-		await Assert.That(afterWrite).IsEqualTo(205L);
+		var afterRollback = checkpoints.Load(connection);
+
+		// Assert — data and checkpoint advanced together, then reverted together.
+		await Assert.That((ulong?)afterCommit).IsEqualTo(100UL);
+		await Assert.That((ulong?)afterRollback).IsEqualTo(100UL);
+		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.records WHERE log_position = 100")).IsEqualTo(1L);
+		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.records WHERE log_position = 205")).IsEqualTo(0L);
 	}
 
 	[Test]
@@ -109,8 +122,7 @@ public class KontextRecordsWriterTests {
 		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
 		await schema.CreateAsync(cancellationToken);
 
-		await using var connection = pool.Open();
-		Exec(connection, "USE ldb");
+		await using var connection = pool.OpenLanceWriter();
 
 		using var writer = new KontextRecordsWriter(
 			connection,
@@ -120,8 +132,8 @@ public class KontextRecordsWriterTests {
 			NullLogger<KontextRecordsWriter>.Instance);
 
 		var timestamp = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
-		var poison    = NewRecord(logPosition: 100, "orders-1", "PoisonEvent", """{"bad": true}""", isJson: true, timestamp);
-		var good      = NewRecord(logPosition: 101, "orders-1", "OrderPlaced", """{"n": 1}""", isJson: true, timestamp);
+		var poison    = CreateRecord(logPosition: 100, "orders-1", "PoisonEvent", """{"bad": true}""", SchemaDataFormat.Json, timestamp);
+		var good      = CreateRecord(logPosition: 101, "orders-1", "OrderPlaced", """{"n": 1}""", SchemaDataFormat.Json, timestamp);
 
 		// Act
 		var written = await writer.ProjectAsync([poison, good], cancellationToken);
@@ -131,29 +143,34 @@ public class KontextRecordsWriterTests {
 		await Assert.That(writer.SkippedRecords).IsEqualTo(1L);
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.records WHERE log_position = 101")).IsEqualTo(1L);
 
-		static string? PoisonExtractor(in ResolvedEvent record, string schemaFormat) =>
-			record.Event.EventType == "PoisonEvent"
+		static string? PoisonExtractor(SurgeRecord record) =>
+			record.SchemaInfo.SchemaName == "PoisonEvent"
 				? throw new InvalidOperationException("poison")
-				: KontextRecordsContent.Json(in record, schemaFormat);
+				: KontextRecordsContent.Json(record);
 	}
 
-	static ResolvedEvent NewRecord(long logPosition, string stream, string eventType, string data, bool isJson, DateTime timestamp) {
-		var record = new EventRecord(
-			eventNumber: 0,
-			logPosition,
-			correlationId: Guid.NewGuid(),
-			eventId: Guid.NewGuid(),
-			transactionPosition: logPosition,
-			transactionOffset: 0,
-			stream,
-			expectedVersion: -1,
-			timestamp,
-			isJson ? PrepareFlags.Data | PrepareFlags.IsJson : PrepareFlags.Data,
-			eventType,
-			Encoding.UTF8.GetBytes(data),
-			metadata: null);
+	// The same shape as the memories tests' CreateRecord: the writer reads Position, SchemaInfo,
+	// Headers, Data, and Timestamp — Value stays null exactly as SkipDecoding leaves it.
+	static SurgeRecord CreateRecord(
+		long logPosition, string stream, string schemaName, string data,
+		SchemaDataFormat format, DateTime timestamp, string? schemaId = null
+	) {
+		var headers = new Headers();
 
-		return ResolvedEvent.ForUnresolvedEvent(record, 0L);
+		if (schemaId is not null)
+			headers[HeaderKeys.SchemaId] = schemaId;
+
+		return new() {
+			Id         = Guid.NewGuid(),
+			Position   = RecordPosition.ForStream(StreamId.From(stream), StreamRevision.From(0), LogPosition.From(logPosition, logPosition)),
+			Timestamp  = timestamp,
+			SchemaInfo = new SchemaInfo(schemaName, format),
+			Data       = Encoding.UTF8.GetBytes(data),
+			Value      = null!,
+			ValueType  = typeof(object),
+			SequenceId = (ulong)logPosition,
+			Headers    = headers
+		};
 	}
 
 	static KontextRecordsWriter NewWriter(DuckDBAdvancedConnection connection) =>
@@ -163,20 +180,14 @@ public class KontextRecordsWriterTests {
 			new EmbeddingGenerationOptions { Dimensions = 4 },
 			NullLogger<KontextRecordsWriter>.Instance);
 
-	static void Exec(DuckDBAdvancedConnection connection, string sql) {
-		using var command = connection.CreateCommand();
-		command.CommandText = sql;
-		command.ExecuteNonQuery();
-	}
-
 	static long Scalar(DuckDBAdvancedConnection connection, string sql) {
 		using var command = connection.CreateCommand();
 		command.CommandText = sql;
 		return (long)command.ExecuteScalar()!;
 	}
 
-	static int CountManifests(string storagePath) =>
-		Directory.GetFiles(storagePath, "*.manifest", SearchOption.AllDirectories).Length;
+	static int CountManifests(string storagePath, string dataset) =>
+		Directory.GetFiles(Path.Combine(storagePath, dataset), "*.manifest", SearchOption.AllDirectories).Length;
 
 	static KontextConnectionPool NewPool(string dir) =>
 		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);

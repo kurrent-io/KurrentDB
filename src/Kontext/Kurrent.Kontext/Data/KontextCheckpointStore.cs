@@ -8,11 +8,12 @@ using Kurrent.Surge;
 namespace Kurrent.Kontext.Data;
 
 /// <summary>
-/// The projections' checkpoint table — one row per projection key, in the native engine catalog.
-/// The connection is supplied per call: the caller decides which connection — and therefore
-/// which transaction — a checkpoint write rides. Store the checkpoint strictly after the data
-/// it claims: lance commits per statement, so the position can lag the data and replay a
-/// batch, never lead it and skip one.
+/// The projections' checkpoint table — one row per projection key. The connection supplied per
+/// call decides the catalog: on an engine-catalog connection the table is native; on a
+/// lance-redirected writer connection it lands in the lance catalog — REQUIRED whenever the
+/// checkpoint must share a transaction with lance writes, because a transaction that writes
+/// lance cannot touch any other attached database. The table carries no constraints (lance
+/// CREATE TABLE rejects them), so the upsert is a MERGE keyed on the row itself.
 ///
 /// Stores are monotonic: a position only ever advances, so a replayed batch writing an older
 /// position is a no-op rather than an error.
@@ -20,12 +21,9 @@ namespace Kurrent.Kontext.Data;
 public sealed class KontextCheckpointStore(string key) {
     public string Key { get; } = key;
 
-    /// <summary>Creates the checkpoint table and this key's row. Idempotent — safe on every start.</summary>
-    public void EnsureSchema(DuckDBAdvancedConnection connection) {
-        // A prepared statement takes exactly one statement — the DDL and the row cannot batch.
+    /// <summary>Creates the checkpoint table. Idempotent — safe on every start.</summary>
+    public void EnsureSchema(DuckDBAdvancedConnection connection) =>
         connection.ExecuteNonQuery<CreateCheckpointsTable>();
-        connection.ExecuteNonQuery<CheckpointKeyArgs, UpsertCheckpointRow>(new(Key));
-    }
 
     /// <summary>The position to resume from — <see cref="RecordPosition.Unset"/> until the first store.</summary>
     public RecordPosition Load(DuckDBAdvancedConnection connection) =>
@@ -51,28 +49,17 @@ file readonly record struct StoreCheckpointArgs(string Key, long Position);
 
 file readonly record struct CheckpointRow(long? Position);
 
-// timestamp is Unix epoch milliseconds, NULL until the first store.
+// No PRIMARY KEY on purpose: lance CREATE TABLE rejects constraints outright, and the store
+// must work in both catalogs. The MERGE below is keyed on the row, so nothing needs one.
+// timestamp is Unix epoch milliseconds.
 file struct CreateCheckpointsTable : IParameterlessStatement {
     public static ReadOnlySpan<byte> CommandText =>
         """
         CREATE TABLE IF NOT EXISTS checkpoints (
-            key        VARCHAR PRIMARY KEY,
-            position   BIGINT  DEFAULT NULL,
-            timestamp  BIGINT  DEFAULT NULL
+            key        VARCHAR,
+            position   BIGINT,
+            timestamp  BIGINT
         )
-        """u8;
-}
-
-file struct UpsertCheckpointRow : IPreparedStatement<CheckpointKeyArgs> {
-    public static StatementBindingResult Bind(in CheckpointKeyArgs args, PreparedStatement statement) =>
-        new(statement) {
-            args.Key,
-        };
-
-    public static ReadOnlySpan<byte> CommandText =>
-        """
-        INSERT INTO checkpoints (key) VALUES ($1)
-        ON CONFLICT (key) DO NOTHING
         """u8;
 }
 
@@ -93,6 +80,8 @@ file struct GetCheckpoint : IQuery<CheckpointKeyArgs, CheckpointRow> {
     public static CheckpointRow Parse(ref DataChunk.Row row) => new(row.TryReadInt64());
 }
 
+// Insert-or-advance in one statement: the monotonic guard lives in the MATCHED arm's
+// condition, the same facet-guarded MERGE shape the memories writer uses on lance.
 file struct StoreCheckpoint : IPreparedStatement<StoreCheckpointArgs> {
     public static StatementBindingResult Bind(in StoreCheckpointArgs args, PreparedStatement statement) =>
         new(statement) {
@@ -102,10 +91,13 @@ file struct StoreCheckpoint : IPreparedStatement<StoreCheckpointArgs> {
 
     public static ReadOnlySpan<byte> CommandText =>
         """
-        UPDATE checkpoints
-        SET position  = $2,
+        MERGE INTO checkpoints AS t
+        USING (SELECT $1 AS key, $2 AS position) AS s
+        ON t.key = s.key
+        WHEN NOT MATCHED THEN INSERT (key, position, timestamp)
+            VALUES (s.key, s.position, epoch_ms(now()))
+        WHEN MATCHED AND (t.position IS NULL OR t.position < s.position) THEN UPDATE SET
+            position  = s.position,
             timestamp = epoch_ms(now())
-        WHERE key = $1
-          AND (position IS NULL OR position < $2)
         """u8;
 }

@@ -121,6 +121,39 @@ Rejected along the way (see Decisions for winners):
   embed/append/flush failure propagates so nothing commits and supervision replays the
   batch from the checkpoint — no data loss either way.
 
+- 2026-08-10 (review cycle, Sérgio) — THE RESHAPE, superseding several v1 decisions above:
+  - The Surge `SystemConsumer` replaces `Enumerator.AllSubscription`. Source-verified: the
+    default filter is `ExcludeSystemEvents()` applied server-side; `SkipDecoding()` skips
+    deserialization (raw `Data` + resolved `SchemaInfo`, `Value` null); `Headers.Decode`
+    swallows arbitrary metadata, so the consumer is whole-log-safe; `CheckpointReceived`
+    control records advance `batch[^1].Position` through skipped stretches, fixing
+    table-as-checkpoint's restart re-scan defect. `DisableAutoCommit` mandatory (the
+    consumer's own store writes to a replicated stream — cross-node poison for node-local
+    indexes). Filter lives in `KontextConventions.Filters.RecordsIndexFilter`.
+  - `BufferedAppender` replaces the raw `Appender` (chunk writes vs per-value FFI at
+    whole-log rates; `UserIndexProcessor` precedent). The earlier "raw Appender is the
+    candidate primitive" note conflated `BufferedView` (read machinery) with
+    `BufferedAppender` (write-side buffering). Probe-gated and passed: chunk-append reaches
+    lance via USE, `FLOAT[N]` ARRAY round-trips, one flush = one commit.
+  - Checkpoint moves into a LANCE-resident `KontextCheckpointStore` table sharing the batch
+    transaction. `TransactionLanceProbeTests` pinned: a transaction writing lance cannot
+    touch another attached database (engine refuses); within lance, rollback reverts writes
+    across tables INCLUDING an appender flush; commits are one lance commit per table per
+    transaction. This kills table-as-checkpoint, the `Max(store, lanceMax)` dual read, and
+    the high-water guard — resume is a plain `Load`. The 2026-08-03 "per-statement commits,
+    no tx atomicity" finding is overturned on the current engine build. Residual window,
+    accepted: a crash inside duck's commit between two datasets' native commits.
+  - Lance `CREATE TABLE` rejects constraints, so `KontextCheckpointStore` went
+    constraint-free with a facet-guarded MERGE upsert (monotonic guard in the MATCHED arm) —
+    one class, catalog decided by the connection.
+  - Hosting and the loop split: thin `KontextRecordsIndexerService` shell over
+    `KontextRecordsIndexer` (loop + supervision). Connection configuration moved into the
+    infrastructure: `KontextConnectionPool.OpenLanceWriter()` returns the dedicated,
+    lance-redirected writer connection.
+  - `ContentExtractor` renamed `RecordContentExtractor`, now `string? (SurgeRecord)` —
+    the schemaFormat parameter and the writer's protobuf `Struct` parse both died because
+    `SchemaInfo` arrives resolved; `schema_id` fills from `HeaderKeys.SchemaId` when present.
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
@@ -137,3 +170,11 @@ Rejected along the way (see Decisions for winners):
   `EvidenceStructBindingProbeTests` pins an engine limitation the vendored lance build has
   fixed (pin update is a design decision — it justifies the evidence `VARCHAR[]` shape),
   and the two ranking benchmarks flap around their floors run to run.
+- LATENT DEFECT, memories side: `KontextMemoryProjectorService`'s
+  `tx { MERGE into ldb; engine-catalog checkpoint }` is the exact cross-catalog shape the
+  engine refuses (probed). Never fired — the loop is unhosted and its tests exercise only
+  the writer. Fix is the records pattern: its checkpoint moves onto a lance-redirected
+  connection (the store itself is already catalog-agnostic after the MERGE rewrite).
+- The provider simplification (one facade ensuring schema, returning ReadOnly | Writer
+  connections; scoped-handle machinery off the consumer surface) — endorsed, not yet
+  executed beyond `OpenLanceWriter()`.

@@ -1,9 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.Threading;
+using Kurrent.Surge;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -133,6 +135,39 @@ public class TransactionLanceProbeTests {
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.probe_app_data WHERE id = 2")).IsEqualTo(1L);
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.probe_app_ckpt WHERE position = 2")).IsEqualTo(1L);
 		await Assert.That(CountManifests(dir.Path) - baseline).IsEqualTo(2);
+	}
+
+	[Test]
+	public async ValueTask checkpoint_store_works_unchanged_on_a_lance_redirected_connection(CancellationToken cancellationToken) {
+		// Arrange
+		using var dir        = new TempDir();
+		using var pool       = NewPool(dir.Path);
+		using var connection = pool.Open();
+
+		Exec(connection, "USE ldb");
+
+		var checkpoints = new KontextCheckpointStore("records-probe");
+
+		// Act — the store's own DDL and statements, unqualified, landing in the lance catalog:
+		// PRIMARY KEY DDL, INSERT..ON CONFLICT DO NOTHING, and the filtered monotonic UPDATE.
+		checkpoints.EnsureSchema(connection);
+
+		var beforeAnyStore = checkpoints.Load(connection);
+
+		checkpoints.Store(connection, RecordPosition.ForLog(100));
+		var afterFirst = checkpoints.Load(connection);
+
+		// A replayed older batch must be a no-op, not an error.
+		checkpoints.Store(connection, RecordPosition.ForLog(50));
+		var afterStale = checkpoints.Load(connection);
+
+		var inLance = Scalar(connection, "SELECT count(*) FROM ldb.main.checkpoints WHERE key = 'records-probe'");
+
+		// Assert — the class works unchanged; the connection alone decides the catalog.
+		await Assert.That(beforeAnyStore).IsEqualTo(RecordPosition.Unset);
+		await Assert.That((ulong?)afterFirst).IsEqualTo(100UL);
+		await Assert.That((ulong?)afterStale).IsEqualTo(100UL);
+		await Assert.That(inLance).IsEqualTo(1L);
 	}
 
 	static void AppendOneRow(DuckDBAdvancedConnection connection, long id) {

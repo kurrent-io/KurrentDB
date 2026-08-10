@@ -87,6 +87,28 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
     /// <summary>The ATTACH alias under which the Lance namespace is mounted on every pooled connection.</summary>
     public string StorageAlias { get; }
 
+    /// <summary>
+    /// Opens a dedicated writer connection with the session redirected into the Lance catalog.
+    /// The appender's C API has no catalog slot, so USE is the only route into Lance for it —
+    /// and a transaction that writes Lance cannot touch any other attached database, so a
+    /// checkpoint store on this connection lands its unqualified tables in the SAME catalog,
+    /// which is exactly what lets a batch and its checkpoint share one transaction.
+    /// Unqualified names on this connection resolve into Lance, not the engine catalog.
+    /// </summary>
+    public DuckDBAdvancedConnection OpenLanceWriter() {
+        var connection = Open();
+
+        try {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"USE {StorageAlias}";
+            command.ExecuteNonQuery();
+            return connection;
+        } catch {
+            connection.Dispose();
+            throw;
+        }
+    }
+
     /// <summary>The Lance namespace directory holding every collection's dataset.</summary>
     public string StoragePath { get; }
 

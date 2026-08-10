@@ -3,15 +3,14 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Quack;
 
 namespace Kurrent.Kontext.Modules.Records.Data;
 
 /// <summary>
 /// Creates and maintains the records index's physical schema: the lance table, the eager
-/// indexes, and the lazily-trained vector index. The table doubles as the indexer's
-/// checkpoint — <see cref="ReadLastPositionAsync"/> is the resume point, valid because one
-/// appender flush is one atomic lance commit (rows and position land together or not at all).
+/// indexes, and the lazily-trained vector index. Resume state is NOT here — the indexer's
+/// checkpoint lives in the lance-resident <see cref="KontextCheckpointStore"/> table so it
+/// can share the batch transaction.
 ///
 /// Addressing rules (the lance extension's dual addressing):
 /// - table DDL uses the qualified name (ldb.main.records — hardcoded, matching the writer)
@@ -22,7 +21,7 @@ public sealed class KontextRecordsSchema(KontextConnectionPool connections, Kont
 
     // The eager indexes — neither has a training floor, so both are safe on an empty table:
     // - content_fts (INVERTED): the BM25 side of full-text and hybrid search
-    // - log_position_idx (BTREE): the checkpoint max() and range predicates push down as scalars
+    // - log_position_idx (BTREE): range predicates push down as scalars
     static readonly (string Name, string Column, string Method)[] EagerIndexes = [
         ("content_fts", "content", "INVERTED"),
         ("log_position_idx", "log_position", "BTREE"),
@@ -71,19 +70,6 @@ public sealed class KontextRecordsSchema(KontextConnectionPool connections, Kont
 
             await ExecuteDdlAsync(createIndex, ct).ConfigureAwait(false);
         }
-    }
-
-    /// <summary>
-    /// The indexer's resume point: the highest committed log position, or <see langword="null"/>
-    /// when the table is empty. Exclusive — the subscription continues after it. Takes the
-    /// caller's connection on purpose: a pooled connection can hold a stale lance dataset handle
-    /// and report an older version of the table, and a stale checkpoint replays into duplicate
-    /// rows — the writer's own freshly-opened connection always sees the latest commit.
-    /// </summary>
-    public long? ReadLastPosition(DuckDBAdvancedConnection connection) {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT max(log_position) FROM ldb.main.records";
-        return command.ExecuteScalar() is long position ? position : (long?)null;
     }
 
     /// <summary>
