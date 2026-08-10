@@ -27,6 +27,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly long _maxTempDirectorySizeBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
+	private readonly object _hardenLock = new();
 	[CanBeNull] private string _tempPath;
 
 	public DuckDBConnectionPool Shared { get; }
@@ -72,7 +73,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		CreatePool(isReadOnly: true, log: false, oneTime: [], allowedDirectories: []); // no writes go through here so set read only
 
 	// The only way to obtain a pool - never returns one unlocked. Opens the first connection, runs
-	// the one-time setups on it, then locks the instance configuration.
+	// the one-time setups on it, then hardens and locks the instance configuration.
 	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log,
 		IReadOnlyList<IDuckDBSetup> oneTime, IReadOnlyList<string> allowedDirectories) {
 		var availableRamMib = CalculateRam();
@@ -81,8 +82,9 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 			["temp_directory"] = _tempDirectory,
-			// security settings; the rest (allowed_directories, external access, config lock) are
-			// order-dependent, so every pool applies them post-open on the first connection below
+			// security settings; allowed_directories, external access and the config lock can't be
+			// carried in the connection string - DuckDB refuses to set allowed_directories before
+			// the database is started - so every pool applies them post-open via HardenInstance
 			["allow_community_extensions"] = "false",
 		};
 
@@ -95,17 +97,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			foreach (var s in oneTime)
 				s.Execute(connection);
 
-			// Restrict the instance's file access to the allowed directories (the node's own log
-			// directory for the Shared pool, nothing for read-only pools), then lock it down. Order
-			// matters and can't be expressed in the connection string: allowed_directories must be
-			// set while external access is still on, then external access is disabled, then the
-			// config is locked. These are global settings, so applying them once on the first
-			// connection covers the whole pool. The lock comes after the one-time setups because
-			// function registration needs the unlocked state.
-			var dirs = string.Join(", ", allowedDirectories.Select(d => $"'{d.Replace('\\', '/').Replace("'", "''")}'"));
-			connection.ExecuteAdHocNonQuery(
-				$"SET allowed_directories=[{dirs}]; SET enable_external_access=false; SET lock_configuration=true;",
-				multipleStatements: true);
+			HardenInstance(connection, allowedDirectories);
 		}
 
 		if (log)
@@ -145,6 +137,34 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 					tempObj.Delete();
 				}
 			}
+		}
+	}
+
+	// Harden the underlying DuckDB instance once: allow-list, external access off, config lock - in
+	// that order (allowed_directories is only settable while external access is on), and only after
+	// the setups, which need the unlocked state. Pools with the same connection string share an
+	// instance, so a later pool finds it already locked with the same settings and skips;
+	// _hardenLock closes the check-then-set race.
+	private void HardenInstance(DuckDBAdvancedConnection connection, IReadOnlyList<string> allowedDirectories) {
+		lock (_hardenLock) {
+			if (IsLocked(connection))
+				return;
+
+			var dirs = string.Join(", ", allowedDirectories.Select(d => $"'{d.Replace('\\', '/').Replace("'", "''")}'"));
+			connection.ExecuteAdHocNonQuery(
+				$"SET allowed_directories=[{dirs}]; SET enable_external_access=false; SET lock_configuration=true;",
+				multipleStatements: true);
+		}
+
+		return;
+
+		static bool IsLocked(DuckDBAdvancedConnection connection) {
+			using var result = connection.ExecuteAdHocQuery("SELECT current_setting('lock_configuration')::VARCHAR"u8);
+			while (result.TryFetch(out var chunk))
+				using (chunk)
+					if (chunk.TryRead(out var row))
+						return row.ReadString() == "true";
+			return false;
 		}
 	}
 
