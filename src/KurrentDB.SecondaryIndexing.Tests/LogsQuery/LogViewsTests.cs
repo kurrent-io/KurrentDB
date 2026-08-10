@@ -67,6 +67,17 @@ public sealed class LogViewsTests : DirectoryPerTest<LogViewsTests> {
 	}
 
 	[Fact]
+	public void RendersFormattedAndAlignedTokens() {
+		// Serilog writes format-specifier tokens into @r pre-padded (PropertyToken.Render applies
+		// the alignment), so the rendering must be used verbatim - not re-padded. A token with
+		// alignment but no format isn't in @r and is padded from the JSON property.
+		Write("log20260706.json",
+			"""{"@t":"2026-07-06T09:28:02.0000000+00:00","@mt":"waited {ms,8:N0} ms during {op,-8}!","@l":"Information","@i":2,"@r":["   1,234"],"ms":1234,"op":"flush"}""");
+		Assert.Equal("waited    1,234 ms during flush   !",
+			ScalarString($"SELECT message FROM ({Logs})"));
+	}
+
+	[Fact]
 	public void ExtractsPlainColumns() {
 		Write("log20260706.json", InfoLine);
 		Assert.Equal("Foo.Bar", ScalarString($"SELECT source_context FROM ({Logs})"));
