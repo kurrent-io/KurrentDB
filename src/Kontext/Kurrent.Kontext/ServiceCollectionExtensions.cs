@@ -4,11 +4,16 @@
 using FluentValidation;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Edges.Grpc;
+using Kurrent.Kontext.Embeddings;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
-using Kurrent.Kontext.Retrieval;
+using Kurrent.Kontext.Modules.Memory;
+using Kurrent.Kontext.Modules.Records;
+using KurrentDB.Core;
+using KurrentDB.Core.Settings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -16,38 +21,72 @@ namespace Kurrent.Kontext;
 
 public static class KontextServiceCollectionExtensions {
     extension(IServiceCollection services) {
-        /// <summary>
-        /// Registers the transport-neutral memory service: the explicit request validators, the validation
-        /// decorator, and <see cref="IKontextMemory"/> itself. Both edges build on this and it is idempotent,
-        /// so registering both edges is safe. The host must supply the <c>KontextConnectionPool</c> the
-        /// read model queries through. <paramref name="configure"/> tunes <see cref="KontextMemoryOptions"/>;
-        /// when omitted, defaults apply. <paramref name="retrieval"/> composes the recall pipeline in
-        /// place of the default one — see <see cref="KontextRetrievalServiceCollectionExtensions.AddKontextRetrieval"/>.
-        /// </summary>
-        public IServiceCollection AddKontext(
-            Action<KontextMemoryOptions>? configure = null,
-            Action<KontextRetrieverBuilder, IServiceProvider>? retrieval = null
-        ) {
-            if (configure is not null) {
-                var options = new KontextMemoryOptions();
-                configure(options);
-                services.TryAddSingleton(options);
-            }
+        #region ->> Composition Root <<-
 
-            services.AddCore(retrieval);
-            services.AddGrpcEdge();
-            services.AddMcpEdge();
+        /// <summary>
+        /// The whole system in one call: binds <see cref="KontextOptions"/> from
+        /// <see cref="KontextOptions.SectionName"/> and chains the logical groups. Hosts wanting a
+        /// partial composition call the groups directly.
+        /// </summary>
+        public IServiceCollection AddKontext(IConfiguration configuration) {
+            var options = configuration.GetSection(KontextOptions.SectionName).Get<KontextOptions>() ?? new();
+
+            return services
+                .AddKontextOptions(options)
+                .AddKontextStorage(options)
+                .AddKontextEmbeddings(options.Embeddings)
+                .AddKontextRetrieval()
+                .AddKontextMemory()
+                .AddKontextGrpcEdge()
+                .AddKontextMcpEdge()
+                .AddKontextIndexing();
+        }
+
+        #endregion // Composition Root
+
+        #region ->> Groups <<-
+
+        public IServiceCollection AddKontextOptions(KontextOptions options) {
+            services.AddSingleton(options);
+
+            // The dimension is the ONE value shared by the schema (FLOAT[N]) and the embeddings
+            // provider; deriving the schema options here keeps a single source of truth.
+            services.AddSingleton(new KontextSchemaOptions { Dimension = options.Embeddings.Dimension });
+
+            services.TryAddSingleton<KontextMemoryOptions>();
+
             return services;
         }
 
-        IServiceCollection AddCore(Action<KontextRetrieverBuilder, IServiceProvider>? retrieval) {
-            // The store is the projector-owned READ model over the lance table; the host
-            // supplies the KontextConnectionPool it queries through. Registered as its own
-            // singleton so future components (retrieval pipelines, maintenance) can share it.
+        /// <summary>
+        /// The engine needs no file: everything durable lives in lance (tables AND checkpoints),
+        /// so each connection opens an in-memory catalog and the lance ATTACH provides all shared
+        /// state — pinned by <c>InMemoryEngineProbeTests</c>.
+        /// </summary>
+        public IServiceCollection AddKontextStorage(KontextOptions options) {
+            services.AddSingleton(sp => new KontextConnectionPool(
+                "Data Source=:memory:",
+                ResolveStoragePath(options, sp)));
+
+            return services;
+        }
+
+        public IServiceCollection AddKontextEmbeddings(KontextEmbeddingsOptions options) {
+            services.AddKontextEmbeddings(
+                options.Provider,
+                options.Local,
+                options.OpenAI,
+                options.Ollama,
+                options.GoogleVertexAI,
+                options.AmazonBedrock);
+
+            return services;
+        }
+
+        /// <summary>The memory service: the store, the domain workflows, and their validation surface.</summary>
+        public IServiceCollection AddKontextMemory() {
             services.TryAddSingleton(sp => new KontextDataStore(
                 sp.GetRequiredService<KontextConnectionPool>()));
-
-            services.AddKontextRetrieval(retrieval);
 
             services.TryAddSingleton<KontextMemory>();
 
@@ -55,7 +94,39 @@ public static class KontextServiceCollectionExtensions {
                 sp.GetRequiredService<KontextMemory>(),
                 sp.GetRequiredService<RequestValidationService>()));
 
-            services.AddRequestValidation();
+            return services.AddRequestValidation();
+        }
+
+        public IServiceCollection AddKontextGrpcEdge() {
+            // Self-contained: the server host registers gRPC too, but this group must not
+            // depend on it — AddGrpc is internally idempotent.
+            services.AddGrpc();
+            services.TryAddSingleton<GrpcMemoryService>();
+            return services;
+        }
+
+        public IServiceCollection AddKontextMcpEdge() {
+            // All agent-facing text — server instructions, tool and parameter descriptions, and model schema
+            // descriptions — lives in McpInstructions.resx and is applied by WithToolsFromResources.
+            services.AddHttpContextAccessor();
+            services.TryAddSingleton<McpMemoryService>();
+
+            services
+                .AddMcpServer(options => options.ServerInstructions = McpInstructions.Server)
+                .WithToolsFromResources<McpMemoryService>()
+                .WithHttpTransport();
+
+            return services;
+        }
+
+        /// <summary>
+        /// The write side: the startup gate runs first (hosted services start in registration
+        /// order), so the dimension probe and the memories schema stand before either writer moves.
+        /// </summary>
+        public IServiceCollection AddKontextIndexing() {
+            services.AddHostedService<KontextBootstrapService>();
+            services.AddKontextMemoryProjector();
+            services.AddKontextRecordsIndexer();
 
             return services;
         }
@@ -71,19 +142,17 @@ public static class KontextServiceCollectionExtensions {
             return services;
         }
 
-        IServiceCollection AddGrpcEdge() {
-            services.TryAddSingleton<GrpcMemoryService>();
-            return services;
-        }
+        #endregion // Groups
+    }
 
-        IMcpServerBuilder AddMcpEdge() {
-            // All agent-facing text — server instructions, tool and parameter descriptions, and model schema
-            // descriptions — lives in McpInstructions.resx and is applied by WithToolsFromResources.
-            services.TryAddSingleton<McpMemoryService>();
+    static string ResolveStoragePath(KontextOptions options, IServiceProvider sp) {
+        if (!string.IsNullOrWhiteSpace(options.Path))
+            return options.Path;
 
-            return services
-                .AddMcpServer(options => options.ServerInstructions = McpInstructions.Server)
-                .WithToolsFromResources<McpMemoryService>();
-        }
+        var nodeOptions = sp.GetRequiredService<ClusterVNodeOptions>();
+        var indexPath = nodeOptions.Database.Index
+            ?? Path.Combine(nodeOptions.Database.Db, ESConsts.DefaultIndexDirectoryName);
+
+        return Path.Combine(indexPath, "kontext");
     }
 }

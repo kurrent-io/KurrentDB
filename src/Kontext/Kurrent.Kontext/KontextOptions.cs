@@ -10,6 +10,8 @@ namespace Kurrent.Kontext;
 /// class so it binds from configuration.
 /// </summary>
 public sealed class KontextOptions {
+    public const string SectionName = "KurrentDB:Kontext";
+
     public bool Enabled { get; set; }
 
     /// <summary>The storage root. Empty means derived by the host (index directory + "kontext").</summary>

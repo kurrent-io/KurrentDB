@@ -18,16 +18,10 @@ namespace Kurrent.Kontext;
 public static class KontextRetrievalServiceCollectionExtensions {
     /// <param name="services">The service collection.</param>
     extension(IServiceCollection services) {
-        public IServiceCollection AddKontextRetrieval(Action<KontextRetrieverBuilder, IServiceProvider>? configure = null) {
-            services.TryAddSingleton<IKontextRetriever>(sp => {
-                if (configure is null)
-                    return CreateDefaultRetriever(sp);
-
-                var builder = KontextRetriever.New();
-                configure(builder, sp);
-
-                return builder.Build();
-            });
+        public IServiceCollection AddKontextRetrieval() {
+            // First-wins: a pre-registered IKontextRetriever (composed directly with
+            // KontextRetriever.New()) beats the default Hybrid chain.
+            services.TryAddSingleton<IKontextRetriever>(CreateDefaultRetriever);
 
             return services;
         }

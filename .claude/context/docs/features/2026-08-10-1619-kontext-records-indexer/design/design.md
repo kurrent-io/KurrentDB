@@ -179,6 +179,21 @@ Rejected along the way (see Decisions for winners):
   morning is a stepping stone). Rejected along the way: moving the config aggregate into the
   embeddings library ("it's a Kontext config that happens to contain embeddings config").
 
+- 2026-08-11 (bootstrap executed, Sérgio's rulings) — **the plugin is two lines**:
+  `AddNodeSystemInfoProvider().AddKontext(configuration)` and `UseKontextMcp().UseKontextGrpc()`.
+  `AddKontext` is a chain of decomposed groups (Options/Storage/Embeddings/Retrieval/Memory/
+  GrpcEdge/McpEdge/Indexing), each independently callable, each self-contained (the gRPC edge
+  registers `AddGrpc` itself; the MCP edge owns `WithHttpTransport`). **No engine file** —
+  everything durable lives in lance, so the pool runs `Data Source=:memory:` per connection
+  (pinned by `InMemoryEngineProbeTests`: writer tx shape + rented readers with private
+  in-memory catalogs sharing only the ATTACH). `KontextBootstrapService` is the startup gate:
+  dimension probe + memories schema, hosted first. The Surge registrations come from the
+  system, not the plugin. The `Action<KontextRetrieverBuilder, IServiceProvider>` hook is GONE
+  everywhere — pre-registration of a builder-composed retriever is the variant seam
+  (first-wins), and the retrieval registration tests were removed by ruling. Workspaces are
+  dead; the MCP gate is authenticated-user until a Kontext-owned operation lands.
+  `AddKontextEmbeddings` naming: parked, revisit at the end.
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index

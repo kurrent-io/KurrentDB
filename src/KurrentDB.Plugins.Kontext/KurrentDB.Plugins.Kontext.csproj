@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Kontext\Kurrent.Kontext\Kurrent.Kontext.csproj" />
 		<ProjectReference Include="..\KurrentDB.Kontext\KurrentDB.Kontext.csproj" />
 		<ProjectReference Include="..\KurrentDB.Kontext.Models\KurrentDB.Kontext.Models.csproj" />
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />

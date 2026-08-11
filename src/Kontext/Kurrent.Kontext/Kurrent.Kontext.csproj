@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
@@ -21,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="DotNext.Threading" />
     <PackageReference Include="DuckDB.NET.Data.Full" />
+    <PackageReference Include="Grpc.AspNetCore" />
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Google.Api.CommonProtos" />
