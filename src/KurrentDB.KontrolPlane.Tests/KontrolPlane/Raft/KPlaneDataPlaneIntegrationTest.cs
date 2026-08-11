@@ -127,7 +127,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		var raftPorts = new[] { 23001, 23002, 23003 };
 		var dbNodeAddresses = new[] { 23021, 23022, 23023 }.Select(CreateEndPoint).ToArray();
 
-		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane1");
+		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane4");
 		try {
 			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
 			foreach (var node in databaseNodes) {
