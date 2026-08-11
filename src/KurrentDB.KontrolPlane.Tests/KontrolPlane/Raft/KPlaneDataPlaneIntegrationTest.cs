@@ -44,6 +44,13 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
+				// check whether the database cluster is available
+				var clusterInfo = await dataPlane[0].Host.GetDatabaseInfoAsync(TestToken);
+				Assert.True(dbNodeAddresses
+					.ToHashSet<EndPoint>()
+					.SetEquals(clusterInfo.Nodes.Select(static m => m.Address)));
+
+				// check whether the leader is appointed
 				var leaderInfo = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
 				Assert.NotNull(leaderInfo);
 				Assert.Contains(leaderInfo.Leader.Address, dbNodeAddresses);
@@ -75,7 +82,7 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
-				await WaitForRegisteredNodesAsync(kplane[0], Database.MainDatabaseId, dbNodeAddresses, TestToken);
+				await WaitForRegisteredNodesAsync(dataPlane[0].Host, dbNodeAddresses.ToHashSet<EndPoint>(), TestToken);
 
 				var leader = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
 				Assert.NotNull(leader);
@@ -130,6 +137,46 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 		}
 	}
 
+	[Fact(Timeout = 60_000)]
+	public async Task DiscoverMembershipChanges() {
+		var raftPorts = new[] { 23001, 23002, 23003 };
+		var dbNodeAddresses = new[] { 23021, 23022, 23023 }.Select(CreateEndPoint).ToArray();
+
+		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane1");
+		try {
+			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
+			foreach (var node in databaseNodes) {
+				await AddDatabaseNodeAsync(kplane, node, TestToken);
+			}
+
+			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
+			var enumerator = dataPlane[0]
+				.Host
+				.GetDatabaseMembershipChangesAsync(TestToken)
+				.GetAsyncEnumerator();
+			try {
+				// check whether the database cluster is available
+				Assert.True(await enumerator.MoveNextAsync());
+				var members = enumerator.Current;
+				Assert.True(dbNodeAddresses
+					.ToHashSet<EndPoint>()
+					.SetEquals(members.Select(static m => m.Address)));
+
+				// Add one more node
+				var addedNode = CreateDatabaseNode(CreateEndPoint(23024));
+				await AddDatabaseNodeAsync(kplane, addedNode, TestToken);
+
+				Assert.True(await enumerator.MoveNextAsync());
+				Assert.Contains(addedNode, enumerator.Current);
+			} finally {
+				await enumerator.DisposeAsync();
+				await Disposable.DisposeAsync(dataPlane);
+			}
+		} finally {
+			await Disposable.DisposeAsync(kplane);
+		}
+	}
+
 	private async Task<KPlaneNode[]> StartKPlaneClusterAsync(IReadOnlyList<int> raftPorts, TimeSpan appointmentDuration, string stateRootName) {
 		var raftAddresses = raftPorts.Select(CreateEndPoint).ToHashSet<EndPoint>();
 
@@ -176,13 +223,10 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 		}
 	}
 
-	private static async Task WaitForRegisteredNodesAsync(KPlaneNode node, string databaseId, IReadOnlyCollection<EndPoint> expectedAddresses, CancellationToken token) {
-		for (;;) {
-			var database = await node.Kontroller.GetDatabaseAsync(databaseId, token);
-			if (database is not null && expectedAddresses.All(address => database.Nodes.Any(n => n.Address.Equals(address))))
+	private static async Task WaitForRegisteredNodesAsync(IDatabaseNode node, IReadOnlySet<EndPoint> expectedAddresses, CancellationToken token) {
+		await foreach (var members in node.GetDatabaseMembershipChangesAsync(token)) {
+			if (expectedAddresses.SetEquals(members.Select(static m => m.Address)))
 				return;
-
-			await Task.Delay(50, token);
 		}
 	}
 
