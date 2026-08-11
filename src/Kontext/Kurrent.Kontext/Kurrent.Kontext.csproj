@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Retrieval\Kurrent.Kontext.Retrieval.csproj" />
   </ItemGroup>
 
@@ -18,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotNext.Threading" />
     <PackageReference Include="DuckDB.NET.Data.Full" />
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Google.Protobuf" />

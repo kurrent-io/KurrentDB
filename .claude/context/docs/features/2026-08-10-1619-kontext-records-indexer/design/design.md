@@ -164,6 +164,21 @@ Rejected along the way (see Decisions for winners):
   ship: dense idx_all resumes from its own last row; the sparse user index carries a
   checkpoint table.
 
+- 2026-08-11 (bootstrap config, Sérgio) — **`KontextOptions` is the ONE owner of the
+  `KurrentDB:Kontext` section.** The prototype's file contract survives (Provider + one block
+  per provider, only the active block written); `Dimension` (default 384, probe-validated via
+  `EnsureDimensionAsync`) is the one added key. The section collision died: `OnnxModelRegistry`
+  no longer binds `Kontext:Embeddings` — its keys (`ModelsDirectory`, `ModelId`, `Models[]`)
+  moved INSIDE the Local provider block, and the registry is built from those options.
+  Boundary ruling: the config aggregate is Kontext's (`KontextOptions` +
+  `KontextEmbeddingsOptions` in Kurrent.Kontext); the embeddings library owns the
+  `EmbeddingsProvider` enum and the `AddKontextEmbeddings(provider, …typed blocks…)` switch —
+  it takes pieces, never the host's config class. Local ladder: no registry configured →
+  shipped interim pmm12; registry configured → SentencePiece engine from disk-cached models —
+  which is what eventually deletes every embedded model bundle (the csproj flag from this
+  morning is a stepping stone). Rejected along the way: moving the config aggregate into the
+  embeddings library ("it's a Kontext config that happens to contain embeddings config").
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
