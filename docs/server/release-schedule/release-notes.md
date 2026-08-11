@@ -22,6 +22,10 @@ A projection whose checkpoint write did not succeed, for example because it time
 
 When a message could not be written to a subscription's parked message stream, the write was not retried and the consumer permanently lost one of its in-flight message slots. After enough failures the consumer stopped receiving messages altogether until it reconnected. Affected messages never reached the parked stream, and because the subscription checkpoint had already advanced past them, they were lost if the node restarted before the consumer reconnected. As before the regression, the write is retried, and exhausting the retries is reported with a `Possible message loss` error. This regression was introduced in 25.1.0.
 
+### Reduce temp space needed for secondary index migration (PR [#5692](https://github.com/kurrent-io/KurrentDB/pull/5692))
+
+When upgrading from 26.0 with secondary indexing enabled, disk space may be necessary to migrate the duckdb schema. The required disk space has been reduced by approximately a factor of 10.
+
 ## [26.1.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.1)
 
 10 July 2026
