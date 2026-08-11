@@ -41,8 +41,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				Assert.NotNull(leaderInfo);
 				Assert.Contains(leaderInfo.Leader.Address, dbNodeAddresses);
 
-				var leaderNode = Array.Find(dataPlane, node => node.Host.CurrentNode.Address.Equals(leaderInfo.Leader.Address));
-				Assert.NotNull(leaderNode);
+				var leaderNode = dataPlane.First(node => node.Host.CurrentNode.Address.Equals(leaderInfo.Leader.Address));
 				Assert.False(leaderNode.Host.LeadershipToken.IsCancellationRequested);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
