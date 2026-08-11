@@ -71,8 +71,6 @@ partial class DatabaseNodeHost {
 				await LeadershipLostAsync();
 				StartLeadership(newVersion.Epoch, newVersion.LeaderAppointmentDuration);
 				break;
-			case (false, false):
-				return;
 		}
 
 		// Do not reorder. We want to make sure that LeadershipToken is valid at the time of the notification
