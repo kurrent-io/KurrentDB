@@ -14,7 +14,7 @@ namespace Kurrent.Kontext.Testing;
 /// </summary>
 public static class MemorySeeding {
 	public static KontextConnectionPool NewPool(string dir) =>
-		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);
+		new(dir);
 
 	/// <summary>Creates the schema and seeds the given rows, then hands back a store over the same pool.</summary>
 	public static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool, int dimension, params MemoryRow[] rows) {

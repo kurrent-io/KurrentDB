@@ -357,7 +357,7 @@ public class KontextMaintenanceSchedulerTests {
 	}
 
 	static KontextConnectionPool NewPool(string dir) =>
-		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);
+		new(dir);
 
 	// Dimension 4 matches the literal 4-dim vectors the fillers seed.
 	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });

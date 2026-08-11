@@ -93,7 +93,7 @@ public class KontextCheckpointStoreTests {
 	}
 
 	static KontextConnectionPool NewPool(string dir) =>
-		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);
+		new(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

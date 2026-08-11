@@ -68,9 +68,7 @@ public static class KontextServiceCollectionExtensions {
         /// state — pinned by <c>InMemoryEngineProbeTests</c>.
         /// </summary>
         public IServiceCollection AddKontextStorage(KontextOptions options) {
-            services.AddSingleton(sp => new KontextConnectionPool(
-                "Data Source=:memory:",
-                ResolveStoragePath(options, sp)));
+            services.AddSingleton(sp => new KontextConnectionPool(ResolveStoragePath(options, sp)));
 
             return services;
         }

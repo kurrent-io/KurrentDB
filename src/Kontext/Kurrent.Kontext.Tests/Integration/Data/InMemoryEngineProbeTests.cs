@@ -23,7 +23,7 @@ public class InMemoryEngineProbeTests {
 	public async ValueTask writer_shape_works_without_an_engine_file(CancellationToken cancellationToken) {
 		// Arrange — no Data Source file: the engine catalog is in-memory, per connection.
 		using var dir  = new TempDir();
-		using var pool = new KontextConnectionPool("Data Source=:memory:", dir.Path);
+		using var pool = new KontextConnectionPool(dir.Path);
 
 		await using var connection = pool.OpenLanceWriter();
 
@@ -66,7 +66,7 @@ public class InMemoryEngineProbeTests {
 		// Arrange — writer commits on its own connection; the reader rents a DIFFERENT
 		// connection whose private in-memory catalog shares nothing but the lance ATTACH.
 		using var dir  = new TempDir();
-		using var pool = new KontextConnectionPool("Data Source=:memory:", dir.Path);
+		using var pool = new KontextConnectionPool(dir.Path);
 
 		await using (var connection = pool.OpenLanceWriter()) {
 			Exec(connection, "CREATE TABLE IF NOT EXISTS ldb.main.probe_shared (id BIGINT)");

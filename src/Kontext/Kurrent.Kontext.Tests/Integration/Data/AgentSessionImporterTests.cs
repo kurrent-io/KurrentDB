@@ -278,7 +278,7 @@ public class AgentSessionImporterTests {
 	#region ->> Test Infrastructure <<-
 
 	static KontextConnectionPool NewPool(string dir) =>
-		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);
+		new(dir);
 
 	static AgentSessionImporter NewImporter(KontextConnectionPool pool, string sourcePath) =>
 		new(pool, new() { SourcePath = sourcePath });

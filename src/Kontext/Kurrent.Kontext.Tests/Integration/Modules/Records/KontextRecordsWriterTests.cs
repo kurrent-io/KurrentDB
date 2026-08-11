@@ -190,7 +190,7 @@ public class KontextRecordsWriterTests {
 		Directory.GetFiles(Path.Combine(storagePath, dataset), "*.manifest", SearchOption.AllDirectories).Length;
 
 	static KontextConnectionPool NewPool(string dir) =>
-		new($"Data Source={Path.Combine(dir, "engine.db")};access_mode=READ_WRITE", dir);
+		new(dir);
 
 	/// <summary>
 	/// Deterministic 4-dim embeddings: a unit vector on the axis picked by the content's length,
