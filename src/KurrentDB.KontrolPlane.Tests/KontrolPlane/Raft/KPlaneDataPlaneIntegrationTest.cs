@@ -124,8 +124,8 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 
 	[Fact(Timeout = 60_000)]
 	public async Task DiscoverMembershipChanges() {
-		var raftPorts = new[] { 23001, 23002, 23003 };
-		var dbNodeAddresses = new[] { 23021, 23022, 23023 }.Select(CreateEndPoint).ToArray();
+		var raftPorts = new[] { 23301, 23302, 23303 };
+		var dbNodeAddresses = new[] { 23321, 23322, 23323 }.Select(CreateEndPoint).ToArray();
 
 		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1));
 		try {
@@ -148,7 +148,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 					.SetEquals(members.Select(static m => m.Address)));
 
 				// Add one more node
-				var addedNode = CreateDatabaseNode(CreateEndPoint(23024));
+				var addedNode = CreateDatabaseNode(CreateEndPoint(23324));
 				await AddDatabaseNodeAsync(kplane, addedNode, TestToken);
 
 				Assert.True(await enumerator.MoveNextAsync());
