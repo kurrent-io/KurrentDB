@@ -144,6 +144,10 @@ partial class KPlaneDataPlaneIntegrationTest {
 				ConnectionPoolCapacity = 10,
 				PersistentStateRoot = stateRoot,
 				Nodes = raftSeed,
+				// DotNext's default (150-300ms) is tuned for a healthy LAN; it's too tight when several real
+				// 3-node Raft clusters compete for CPU in the same test process, which can livelock elections.
+				LowerElectionTimeout = 300,
+				UpperElectionTimeout = 600,
 			}) {
 				DataPlaneClientFactory = dataPlaneClientFactory,
 			};
