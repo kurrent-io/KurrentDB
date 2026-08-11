@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using DotNext;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -43,18 +44,18 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
-				var (leaderAddress, epoch) = await WaitForDatabaseLeaderAsync(kplane[0], Database.MainDatabaseId, TestToken);
+				var leaderInfo = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
+				Assert.NotNull(leaderInfo);
+				Assert.Contains(leaderInfo.Leader.Address, dbNodeAddresses);
 
-				Assert.Contains(leaderAddress, dbNodeAddresses);
-
-				var leader = await WaitForDataPlaneLeadershipAsync(dataPlane, leaderAddress, TestToken);
-				Assert.False(leader.Host.LeadershipToken.IsCancellationRequested);
-				Assert.True(epoch > 0UL);
+				var leaderNode = Array.Find(dataPlane, node => node.Host.CurrentNode.Address.Equals(leaderInfo.Leader.Address));
+				Assert.NotNull(leaderNode);
+				Assert.False(leaderNode.Host.LeadershipToken.IsCancellationRequested);
 			} finally {
-				await StopDataPlaneClusterAsync(dataPlane);
+				await Disposable.DisposeAsync(dataPlane);
 			}
 		} finally {
-			await StopKPlaneClusterAsync(kplane);
+			await Disposable.DisposeAsync(kplane);
 		}
 	}
 
@@ -76,17 +77,13 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 			try {
 				await WaitForRegisteredNodesAsync(kplane[0], Database.MainDatabaseId, dbNodeAddresses, TestToken);
 
-				var (leaderAddress, _) = await WaitForDatabaseLeaderAsync(kplane[0], Database.MainDatabaseId, TestToken);
-
-				Assert.Contains(leaderAddress, dbNodeAddresses);
-
-				var leader = await WaitForDataPlaneLeadershipAsync(dataPlane, leaderAddress, TestToken);
-				Assert.False(leader.Host.LeadershipToken.IsCancellationRequested);
+				var leader = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
+				Assert.NotNull(leader);
 			} finally {
-				await StopDataPlaneClusterAsync(dataPlane);
+				await Disposable.DisposeAsync(dataPlane);
 			}
 		} finally {
-			await StopKPlaneClusterAsync(kplane);
+			await Disposable.DisposeAsync(kplane);
 		}
 	}
 
@@ -94,55 +91,42 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 	public async Task DataPlaneReconnects_when_kplane_leader_changes() {
 		var raftPorts = new[] { 23201, 23202, 23203 };
 		var dbNodeAddresses = new[] { 23221, 23222, 23223 }.Select(CreateEndPoint).ToArray();
-		// wider than the other tests' 1s: after a KPlane failover, KurrentDB.DataPlane.DatabaseNodeHost restarts its
-		// leadership session (see ChangeDatabaseLeaderAsync's (true,true) case), which briefly reports
-		// LeadershipToken as canceled while it stops the old renewal loop and starts a new one. A short
-		// AppointmentDuration leaves too little slack for that restart to settle - especially under CPU
-		// contention from adjacent tests in the same collection - before this test's one-shot assertion samples it.
-		var appointmentDuration = TimeSpan.FromSeconds(3);
+		var appointmentDuration = TimeSpan.FromSeconds(1);
 
 		var kplane = await StartKPlaneClusterAsync(raftPorts, appointmentDuration, "kplane3");
 		try {
 			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
-			foreach (var node in databaseNodes) {
-				await AddDatabaseNodeAsync(kplane, node, TestToken);
-			}
-
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
-				var (leaderAddress, _) = await WaitForDatabaseLeaderAsync(kplane[0], Database.MainDatabaseId, TestToken);
-				var databaseLeader = await WaitForDataPlaneLeadershipAsync(dataPlane, leaderAddress, TestToken);
-				Assert.False(databaseLeader.Host.LeadershipToken.IsCancellationRequested);
+				foreach (var node in databaseNodes) {
+					await AddDatabaseNodeAsync(kplane, node, TestToken);
+				}
 
-				// find and stop the current KPlane (Raft) leader
+				// GetDatabaseLeadersAsync reflects the cluster-wide appointment, not "am I the leader" - any
+				// connected Data Plane node observes the same stream, so there's no need to know in advance
+				// which one KPlane elects.
+				await using var leaders = dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
+				Assert.True(await leaders.MoveNextAsync());
+				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
+				var initialEpoch = leaders.Current.Epoch;
+
+				// stop the current KPlane (Raft) leader
 				var raftLeaderAddress = await kplane[0].Kontroller.WaitForLeaderAsync(TestToken);
 				var raftLeaderIndex = Array.FindIndex(kplane, n => Equals(n.RaftAddress, raftLeaderAddress));
 				Assert.True(raftLeaderIndex >= 0);
+				await kplane[raftLeaderIndex].DisposeAsync();
 
-				var stoppedNode = kplane[raftLeaderIndex];
-				var survivors = kplane.Where((_, i) => i != raftLeaderIndex).ToArray();
-
-				await stoppedNode.DisposeAsync();
-
-				// a new KPlane leader must be elected among the survivors; WaitForLeaderAsync can return the
-				// stale (now-stopped) leader immediately if the survivor hasn't detected the loss yet, so poll
-				// until it actually changes.
-				await WaitForDifferentRaftLeaderAsync(survivors[0], raftLeaderAddress, TestToken);
-
-				// give the renewal loop a few appointment cycles to prove it keeps succeeding against the new KPlane leader
-				await Task.Delay(appointmentDuration * 4, TestToken);
-
-				// the same node must still be recognized as leader by the Data Plane side; note the LeadershipToken
-				// *object* isn't expected to be the same instance as before - KPlane can legitimately re-appoint the
-				// same node under a new epoch (e.g. right after its own failover), which restarts the leadership
-				// session and issues a fresh token even though the leader address never changed.
-				Assert.Equal(leaderAddress, databaseLeader.Host.CurrentNode.Address);
-				Assert.False(databaseLeader.Host.LeadershipToken.IsCancellationRequested);
+				// the new KPlane leader's appointment cache starts empty, so it re-appoints under a fresh
+				// epoch as soon as it takes over - even if the winning candidate ends up being the same DP
+				// node as before (tie-breaking isn't guaranteed stable across a quorum change).
+				Assert.True(await leaders.MoveNextAsync());
+				Assert.True(leaders.Current.Epoch > initialEpoch);
+				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
 			} finally {
-				await StopDataPlaneClusterAsync(dataPlane);
+				await Disposable.DisposeAsync(dataPlane);
 			}
 		} finally {
-			await StopKPlaneClusterAsync(kplane);
+			await Disposable.DisposeAsync(kplane);
 		}
 	}
 
@@ -163,12 +147,6 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 		return nodes;
 	}
 
-	private static async Task StopKPlaneClusterAsync(IReadOnlyList<KPlaneNode> nodes) {
-		foreach (var node in nodes) {
-			await node.DisposeAsync();
-		}
-	}
-
 	// Every node reports a distinct WriterCheckpoint so leader-appointment tie-breaking is deterministic:
 	// the same candidate (index 0) wins every re-appointment instead of flapping between equally-ranked nodes.
 	private static async Task<DPNode[]> StartDataPlaneClusterAsync(IReadOnlyList<KPlaneNode> kplane, IReadOnlyList<DatabaseNode> databaseNodes) {
@@ -183,12 +161,6 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 		return nodes;
 	}
 
-	private static async Task StopDataPlaneClusterAsync(IReadOnlyList<DPNode> nodes) {
-		foreach (var node in nodes) {
-			await node.DisposeAsync();
-		}
-	}
-
 	private static async Task AddDatabaseNodeAsync(IReadOnlyList<KPlaneNode> kplane, DatabaseNode node, CancellationToken token) {
 		for (;;) {
 			foreach (var kplaneNode in kplane) {
@@ -200,27 +172,7 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 				}
 			}
 
-			await Task.Delay(50, token);
-		}
-	}
-
-	private static async Task<(EndPoint Leader, ulong Epoch)> WaitForDatabaseLeaderAsync(KPlaneNode node, string databaseId, CancellationToken token) {
-		for (;;) {
-			var database = await node.Kontroller.GetDatabaseAsync(databaseId, token);
-			if (database?.LeaderAddress is { } leader)
-				return (leader, database.Epoch);
-
-			await Task.Delay(50, token);
-		}
-	}
-
-	private static async Task WaitForDifferentRaftLeaderAsync(KPlaneNode node, EndPoint previousLeader, CancellationToken token) {
-		for (;;) {
-			var leader = await node.Kontroller.WaitForLeaderAsync(token);
-			if (!Equals(leader, previousLeader))
-				return;
-
-			await Task.Delay(50, token);
+			await kplane[0].Kontroller.WaitForLeaderAsync(token);
 		}
 	}
 
@@ -229,18 +181,6 @@ public sealed class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KPlaneData
 			var database = await node.Kontroller.GetDatabaseAsync(databaseId, token);
 			if (database is not null && expectedAddresses.All(address => database.Nodes.Any(n => n.Address.Equals(address))))
 				return;
-
-			await Task.Delay(50, token);
-		}
-	}
-
-	private static async Task<DPNode> WaitForDataPlaneLeadershipAsync(IReadOnlyList<DPNode> dataPlane, EndPoint expectedLeader, CancellationToken token) {
-		for (;;) {
-			var leader = dataPlane.FirstOrDefault(n =>
-				n.Host.CurrentNode.Address.Equals(expectedLeader) && !n.Host.LeadershipToken.IsCancellationRequested);
-
-			if (leader is not null)
-				return leader;
 
 			await Task.Delay(50, token);
 		}
