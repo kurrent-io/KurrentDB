@@ -215,6 +215,28 @@ Rejected along the way (see Decisions for winners):
   - Plugin is enabled by default (Connectors-style cascade, Sérgio's edit) and the full system
     now boots green inside every test node: 42/42.
 
+- 2026-08-11 (storage-layer cleanup, Sérgio's rulings) — three commits, in order:
+  - `81bf8e026` — the pool is in-memory only. Ctor is `(storagePath)`; `Data Source=:memory:`
+    is a hardcoded const (pinned by `InMemoryEngineProbeTests`) and the alias is hardcoded
+    `ldb`. The dispose-time CHECKPOINT, `_everExecuted`, and the stem-collision half of
+    `VerifyLanceNamespace` die (the in-memory engine catalog is always `memory`); the
+    is-attached check stays. Every test `NewPool` helper is `new(dir)`.
+  - `f29a09b79` — the memories projector gets the records-indexer supervision, shape verbatim:
+    `KontextMemoryProjector` extracted (loop + connection + supervision, 5s→60s backoff,
+    restart re-opens the connection and resumes from the checkpoint);
+    `KontextMemoryProjectorService` is a thin hosting shell like `KontextRecordsIndexerService`.
+    Before this, a lance commit conflict killed the hosted service silently.
+  - `1ca55339d` — ONE acquisition surface. `KontextConnectionPool` composes a private Quack
+    pool instead of being one: public surface is `ExecuteAsync` (ReadOnly) and
+    `OpenLanceWriter` (Writer); `Open`/`Rent` are internal, test-only via InternalsVisibleTo —
+    the scoped-handle machinery is off the consumer surface. The name stays
+    `KontextConnectionPool` (ruling). Deleted with the duality, by ruling: the commented-out
+    `KontextConnectionProvider` and the dead Surge projection subgraph (`KontextProjection`,
+    `KontextMemoryProjection`, `KontextProjectorService<T>` — zero callers, resolved an
+    `IDuckDBConnectionProvider` nothing registers — and its tests, the one consumer that
+    needed the pool's inheritance). `MemorySeeding.Insert` now opens one lance writer for the
+    whole corpus — seeding is writing, and writers never rent.
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
@@ -235,6 +257,7 @@ Rejected along the way (see Decisions for winners):
   opens `pool.OpenLanceWriter()`, so its checkpoint lands in the lance catalog and the batch
   transaction touches one catalog; pinned by
   `KontextMemoryWriterTests.batch_and_checkpoint_commit_and_revert_together`.
-- The provider simplification (one facade ensuring schema, returning ReadOnly | Writer
+- ~~The provider simplification (one facade ensuring schema, returning ReadOnly | Writer
   connections; scoped-handle machinery off the consumer surface) — endorsed, not yet
-  executed beyond `OpenLanceWriter()`.
+  executed beyond `OpenLanceWriter()`.~~ EXECUTED 2026-08-11 (`1ca55339d`) — see the
+  storage-layer cleanup decision below.
