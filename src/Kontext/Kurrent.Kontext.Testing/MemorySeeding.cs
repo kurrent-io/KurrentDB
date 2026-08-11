@@ -39,19 +39,21 @@ public static class MemorySeeding {
 		var insertInto = $"INSERT INTO ldb.main.memories (\n  {string.Join(",\n  ", Columns.Select(column => column.Name))})\nVALUES";
 		var tuple      = "(" + string.Join(", ", Enumerable.Repeat("?", Columns.Length)) + ")";
 
+		// Seeding is writing: one dedicated writer for the whole corpus, per the pool's
+		// writers-never-rent doctrine.
+		using var connection = pool.OpenLanceWriter();
+
 		foreach (var chunk in rows.Chunk(chunkSize)) {
 			var values = string.Join(",\n", Enumerable.Repeat(tuple, chunk.Length));
 
-			using (pool.Rent(out var connection)) {
-				using var insert = connection.CreateCommand();
-				insert.CommandText = $"{insertInto}\n{values}";
+			using var insert = connection.CreateCommand();
+			insert.CommandText = $"{insertInto}\n{values}";
 
-				foreach (var row in chunk)
-				foreach (var (_, value) in Columns)
-					insert.Parameters.Add(new DuckDBParameter(value(row) ?? DBNull.Value));
+			foreach (var row in chunk)
+			foreach (var (_, value) in Columns)
+				insert.Parameters.Add(new DuckDBParameter(value(row) ?? DBNull.Value));
 
-				insert.ExecuteNonQuery();
-			}
+			insert.ExecuteNonQuery();
 		}
 	}
 

@@ -11,15 +11,15 @@ using Polly.Retry;
 namespace Kurrent.Kontext.Infrastructure.Data;
 
 /// <summary>
-/// Kontext's own DuckDB connection pool: one owner for every engine problem. The engine needs no
-/// file — everything durable lives in lance, so every connection opens an in-memory catalog and is
-/// bootstrapped with the lance extension and the storage namespace ATTACH (verified engine-side).
-/// <see cref="ExecuteAsync{T}"/> is the concurrent READ surface, recycling a stale cached dataset
-/// view onto a fresh connection. Writers never rent: they hold a dedicated connection
-/// (<see cref="DuckDBConnectionPool{T}.Open"/>) for prepared-statement reuse and transaction
-/// control, and carry the Lance commit-conflict retry there.
+/// Kontext's ONE connection acquisition surface: pooling and every engine problem live inside.
+/// The engine needs no file — everything durable lives in lance, so every connection opens an
+/// in-memory catalog and is bootstrapped with the lance extension and the storage namespace
+/// ATTACH (verified engine-side). <see cref="ExecuteAsync{T}"/> is the concurrent READ surface,
+/// recycling a stale cached dataset view onto a fresh connection. Writers never rent: they hold
+/// a dedicated connection from <see cref="OpenLanceWriter"/> for prepared-statement reuse and
+/// transaction control, and carry the Lance commit-conflict retry there.
 /// </summary>
-public sealed class KontextConnectionPool : DuckDBConnectionPool {
+public sealed class KontextConnectionPool : IDisposable {
     // Recycles a poisoned connection ONCE: a stale cached dataset view never converges on the same
     // connection, so the rent-and-run callback disposes it (dropping its Scope so the pool can't
     // re-admit it) and the retry re-runs the WHOLE callback — a fresh rent whose Initialize
@@ -38,15 +38,14 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
     // InMemoryEngineProbeTests.
     const string InMemoryEngine = "Data Source=:memory:";
 
-    readonly string _initializeSql;
+    readonly Pool _pool;
 
     // Set by Dispose; guards ExecuteAsync against renting from a frozen pool (Kurrent.Quack's
     // Rent/Open perform no disposed-check of their own — a rent on a frozen pool silently mints a
     // brand-new connection).
     volatile bool _disposed;
 
-    public KontextConnectionPool(string storagePath)
-        : base(VendoredDuckDBExtensions.AmendConnectionString(InMemoryEngine)) {
+    public KontextConnectionPool(string storagePath) {
         ArgumentException.ThrowIfNullOrEmpty(storagePath);
 
         StoragePath  = Path.GetFullPath(storagePath);
@@ -56,22 +55,12 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
         // stays free of DB I/O — engine problems surface on the first operation, not here.
         Directory.CreateDirectory(StoragePath);
 
-        // Composed ONCE at construction, never per call: paths and identifiers cannot be bound as
-        // parameters in LOAD/ATTACH, so the path is quote-escaped and the alias was validated as a
-        // bare identifier above. ATTACH IF NOT EXISTS is idempotent per shared engine instance
-        // (a bare ATTACH fails on the second connection). Never DETACH.
-        _initializeSql =
-            $"""
-             {VendoredDuckDBExtensions.EnsureLanceInstalled()}
-             ATTACH IF NOT EXISTS '{Escape(StoragePath)}' AS {StorageAlias} (TYPE LANCE);
-             """;
-        
-        static string Escape(string value) => value.Replace("'", "''", StringComparison.Ordinal);
+        _pool = new Pool(StoragePath, StorageAlias);
     }
-    
+
     /// <summary>The Lance namespace directory holding every collection's dataset.</summary>
     public string StoragePath { get; }
-    
+
     /// <summary>The ATTACH alias under which the Lance namespace is mounted on every pooled connection.</summary>
     public string StorageAlias { get; }
 
@@ -84,7 +73,7 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
     /// Unqualified names on this connection resolve into Lance, not the engine catalog.
     /// </summary>
     public DuckDBAdvancedConnection OpenLanceWriter() {
-        var connection = Open();
+        var connection = _pool.Open();
 
         try {
             using var command = connection.CreateCommand();
@@ -131,6 +120,21 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
             },
             cancellationToken);
 
+    // Test-only white-box surface (via InternalsVisibleTo): the engine probes open raw dedicated
+    // connections and rent pooled ones directly.
+    internal DuckDBAdvancedConnection Open() => _pool.Open();
+
+    internal DuckDBConnectionPool<DuckDBAdvancedConnection>.Scope Rent(out DuckDBAdvancedConnection connection) =>
+        _pool.Rent(out connection);
+
+    public void Dispose() {
+        _disposed = true;
+
+        // Freezes the inner pool and disposes every idle pooled connection. Each in-memory
+        // engine catalog dies with its connection; everything durable is already in lance on disk.
+        _pool.Dispose();
+    }
+
     // One resilience attempt: rent, run, return — with the poisoned-connection discipline.
     T RentAndRun<T>(Func<DuckDBAdvancedConnection, T> operation) {
         // Re-checked on EVERY attempt: a retry racing Dispose must not rent from a frozen pool
@@ -139,7 +143,7 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
 
         // NEVER copy the Scope: it is a struct whose Dispose calls the pool's duplicate-unchecked
         // TryReturn — disposing two copies would admit the same (not-thread-safe) connection twice.
-        var scope        = Rent(out var connection);
+        var scope        = _pool.Rent(out var connection);
         var returnToPool = true;
 
         try {
@@ -168,49 +172,64 @@ public sealed class KontextConnectionPool : DuckDBConnectionPool {
             || text.Contains("belongs to non-existent fragment", StringComparison.Ordinal);
     }
 
-    protected override void Initialize(DuckDBAdvancedConnection connection) {
-        try {
+    // The engine-problem owner: every physical connection is bootstrapped with the lance
+    // extension and the namespace ATTACH, then verified engine-side.
+    sealed class Pool : DuckDBConnectionPool {
+        readonly string _initializeSql;
+        readonly string _storageAlias;
+
+        public Pool(string storagePath, string storageAlias)
+            : base(VendoredDuckDBExtensions.AmendConnectionString(InMemoryEngine)) {
+            _storageAlias = storageAlias;
+
+            // Composed ONCE at construction, never per call: paths and identifiers cannot be bound
+            // as parameters in LOAD/ATTACH, so the path is quote-escaped and the alias is a bare
+            // identifier. ATTACH IF NOT EXISTS is idempotent per shared engine instance
+            // (a bare ATTACH fails on the second connection). Never DETACH.
+            _initializeSql =
+                $"""
+                 {VendoredDuckDBExtensions.EnsureLanceInstalled()}
+                 ATTACH IF NOT EXISTS '{Escape(storagePath)}' AS {storageAlias} (TYPE LANCE);
+                 """;
+
+            static string Escape(string value) => value.Replace("'", "''", StringComparison.Ordinal);
+        }
+
+        protected override void Initialize(DuckDBAdvancedConnection connection) {
             try {
-                using var command = connection.CreateCommand();
-                command.CommandText = _initializeSql;
-                command.ExecuteNonQuery();
-            } catch (DuckDBException ex) when (ex.Message.Contains($"database with name \"{StorageAlias}\" already exists", StringComparison.Ordinal)) {
-                // Two pool-miss connections can race Initialize on the same shared engine instance:
-                // ATTACH IF NOT EXISTS is check-then-create, not atomic, so the race loser throws
-                // "already exists" even though the attachment is now in exactly the desired state.
-                // One pool derives one namespace, so the racing attach is always same-path — benign.
+                try {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = _initializeSql;
+                    command.ExecuteNonQuery();
+                } catch (DuckDBException ex) when (ex.Message.Contains($"database with name \"{_storageAlias}\" already exists", StringComparison.Ordinal)) {
+                    // Two pool-miss connections can race Initialize on the same shared engine instance:
+                    // ATTACH IF NOT EXISTS is check-then-create, not atomic, so the race loser throws
+                    // "already exists" even though the attachment is now in exactly the desired state.
+                    // One pool derives one namespace, so the racing attach is always same-path — benign.
+                }
+
+                VerifyLanceNamespace(connection);
+            } catch {
+                // Kurrent.Quack's Open() does not dispose the freshly-opened physical connection when
+                // Initialize throws, which would leak an open native handle. Dispose it here before
+                // the failure propagates.
+                connection.Dispose();
+                throw;
             }
-
-            VerifyLanceNamespace(connection);
-        } catch {
-            // Kurrent.Quack's Open() does not dispose the freshly-opened physical connection when
-            // Initialize throws, which would leak an open native handle. Dispose it here before
-            // the failure propagates.
-            connection.Dispose();
-            throw;
         }
-    }
 
-    // The engine-side attach guard: ask the engine whether the alias actually resolved.
-    // NOTE (validated live 2026-07-20): an attached TYPE LANCE database reports type='duckdb' in
-    // duckdb_databases() on this extension build, so the type column cannot prove the attach —
-    // presence by name is the provable fact. The in-memory engine catalog is always named
-    // "memory", so the alias can never collide with it.
-    void VerifyLanceNamespace(DuckDBAdvancedConnection connection) {
-        var info = DuckDBEngineInfo.From(connection);
+        // The engine-side attach guard: ask the engine whether the alias actually resolved.
+        // NOTE (validated live 2026-07-20): an attached TYPE LANCE database reports type='duckdb' in
+        // duckdb_databases() on this extension build, so the type column cannot prove the attach —
+        // presence by name is the provable fact. The in-memory engine catalog is always named
+        // "memory", so the alias can never collide with it.
+        void VerifyLanceNamespace(DuckDBAdvancedConnection connection) {
+            var info = DuckDBEngineInfo.From(connection);
 
-        if (info.FindDatabase(StorageAlias) is null) {
-            throw new InvalidOperationException(
-                $"The '{StorageAlias}' Lance namespace is not attached — the pool's connection initialization did not land.");
+            if (info.FindDatabase(_storageAlias) is null) {
+                throw new InvalidOperationException(
+                    $"The '{_storageAlias}' Lance namespace is not attached — the pool's connection initialization did not land.");
+            }
         }
-    }
-
-    protected override void Dispose(bool disposing) {
-        if (disposing)
-            _disposed = true;
-
-        // The base freezes the pool and disposes every idle pooled connection. Each in-memory
-        // engine catalog dies with its connection; everything durable is already in lance on disk.
-        base.Dispose(disposing);
     }
 }
