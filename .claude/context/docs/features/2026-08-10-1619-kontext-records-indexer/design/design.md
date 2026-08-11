@@ -194,6 +194,24 @@ Rejected along the way (see Decisions for winners):
   dead; the MCP gate is authenticated-user until a Kontext-owned operation lands.
   `AddKontextEmbeddings` naming: parked, revisit at the end.
 
+- 2026-08-11 (hosting shakedown) — three corrections from actually booting the system in a node:
+  - `KontextBootstrapService` DELETED (my unrequested invention): the solved primitive is
+    Core's readiness-gated `AddSystemStartupTask` (`SystemStartupManager`), the same mechanism
+    SchemaRegistry and Connectors use — "Kontext Bootstrap" runs the dimension probe + memories
+    schema there. Message registration follows the same house pattern: "Kontext Message
+    Registration" startup task registering all five contract events via
+    `KontextConventions.RegisterMessages<T>` (copied from SchemaRegistryConventions minus its
+    Eventuous mapping — deduplicate into Core later, per ruling).
+  - ROOT CAUSE of the node-readiness deaths, found by worktree bisection + ctor instrumentation:
+    **Core's `SystemReadiness` has two public constructors and MEDI cannot disambiguate —
+    `TryAddSingleton<SystemReadiness>()` threw at first resolution, faulting host startup
+    silently (reads as a 10s readiness timeout).** Latent since the class was written; exposed
+    the first time anything hosted a `SystemReadyBackgroundService` in a node. Fix: factory
+    registration in `AddSystemReadiness`. License and the routing order were investigated and
+    acquitted; `UseRouting` before `UseEndpoints` kept anyway (SchemaRegistry precedent).
+  - Plugin is enabled by default (Connectors-style cascade, Sérgio's edit) and the full system
+    now boots green inside every test node: 42/42.
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index

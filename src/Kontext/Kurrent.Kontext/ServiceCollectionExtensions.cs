@@ -11,8 +11,11 @@ using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
 using Kurrent.Kontext.Modules.Memory;
 using Kurrent.Kontext.Modules.Records;
+using Kurrent.Surge.Schema;
 using KurrentDB.Core;
+using KurrentDB.Core.Hosting;
 using KurrentDB.Core.Settings;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -39,6 +42,7 @@ public static class KontextServiceCollectionExtensions {
                 .AddKontextMemory()
                 .AddKontextGrpcEdge()
                 .AddKontextMcpEdge()
+                .AddMessageRegistration()
                 .AddKontextIndexing();
         }
 
@@ -120,15 +124,46 @@ public static class KontextServiceCollectionExtensions {
         }
 
         /// <summary>
-        /// The write side: the startup gate runs first (hosted services start in registration
-        /// order), so the dimension probe and the memories schema stand before either writer moves.
+        /// The write side. The startup task is the readiness-gated gate the whole server uses
+        /// (SystemStartupManager): the dimension probe fails fast — a mismatched model kills
+        /// startup instead of poisoning the vector store, and the probe forces the model to
+        /// load, so a broken model surfaces here too — then the memories schema is created.
+        /// The records indexer bootstraps its own schema.
         /// </summary>
         public IServiceCollection AddKontextIndexing() {
-            services.AddHostedService<KontextBootstrapService>();
+            services.AddSystemStartupTask("Kontext Bootstrap", static async (_, sp, ct) => {
+                await sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()
+                    .EnsureDimensionAsync(sp.GetRequiredService<KontextOptions>().Embeddings.Dimension, ct)
+                    .ConfigureAwait(false);
+
+                await new KontextSchema(
+                        sp.GetRequiredService<KontextConnectionPool>(),
+                        sp.GetRequiredService<KontextSchemaOptions>())
+                    .CreateAsync(ct)
+                    .ConfigureAwait(false);
+            });
+
             services.AddKontextMemoryProjector();
             services.AddKontextRecordsIndexer();
 
             return services;
+        }
+
+        IServiceCollection AddMessageRegistration() {
+            return services.AddSystemStartupTask("Kontext Message Registration", static (_, sp, ct) =>
+                RegisterMemoryMessages(sp.GetRequiredService<ISchemaRegistry>(), ct));
+
+            static async Task RegisterMemoryMessages(ISchemaRegistry registry, CancellationToken ct) {
+                Task[] tasks = [
+                    KontextConventions.RegisterMessages<Contracts.MemoriesRetained>(registry, ct),
+                    KontextConventions.RegisterMessages<Contracts.MemoryRetracted>(registry, ct),
+                    KontextConventions.RegisterMessages<Contracts.MemoriesRecalled>(registry, ct),
+                    KontextConventions.RegisterMessages<Contracts.MemoriesAccessed>(registry, ct),
+                    KontextConventions.RegisterMessages<Contracts.ReflectionCompleted>(registry, ct),
+                ];
+
+                await Task.WhenAll(tasks);
+            }
         }
 
         IServiceCollection AddRequestValidation() {

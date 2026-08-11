@@ -26,11 +26,18 @@ public static class KontextApplicationBuilderExtensions {
                 await next();
             });
 
+            // UseRouting before UseEndpoints, the SchemaRegistry precedent — without it the
+            // pipeline build throws and takes the whole node down with it.
+            app.UseRouting();
+
             return app.UseEndpoints(endpoints => endpoints.MapMcp(McpBasePath));
         }
 
         /// <summary>Maps the gRPC memory service.</summary>
-        public IApplicationBuilder UseKontextGrpc() =>
-            app.UseEndpoints(endpoints => endpoints.MapGrpcService<GrpcMemoryService>());
+        public IApplicationBuilder UseKontextGrpc() {
+            app.UseRouting();
+
+            return app.UseEndpoints(endpoints => endpoints.MapGrpcService<GrpcMemoryService>());
+        }
     }
 }

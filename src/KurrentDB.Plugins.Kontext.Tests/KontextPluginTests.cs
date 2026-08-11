@@ -12,23 +12,9 @@ namespace KurrentDB.Plugins.Kontext.Tests;
 
 public class KontextPluginTests {
 	[Test]
-	public async Task IsEnabled_Returns_False_By_Default() {
+	public async Task IsEnabled_Returns_True_By_Default() {
 		var config = new ConfigurationBuilder()
 			.AddInMemoryCollection()
-			.Build();
-
-		var plugin = new KontextPlugin();
-		var (enabled, _) = plugin.IsEnabled(config);
-
-		await Assert.That(enabled).IsFalse();
-	}
-
-	[Test]
-	public async Task IsEnabled_Returns_True_When_Configured() {
-		var config = new ConfigurationBuilder()
-			.AddInMemoryCollection(new Dictionary<string, string?> {
-				[$"{KurrentConfigurationKeys.Prefix}:Kontext:Enabled"] = "true"
-			})
 			.Build();
 
 		var plugin = new KontextPlugin();
@@ -38,13 +24,27 @@ public class KontextPluginTests {
 	}
 
 	[Test]
-	public async Task IsEnabled_Instructions_Mention_Config_Key() {
+	public async Task IsEnabled_Returns_False_When_Disabled() {
+		var config = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?> {
+				[$"{KurrentConfigurationKeys.Prefix}:Kontext:Enabled"] = "false"
+			})
+			.Build();
+
+		var plugin = new KontextPlugin();
+		var (enabled, _) = plugin.IsEnabled(config);
+
+		await Assert.That(enabled).IsFalse();
+	}
+
+	[Test]
+	public async Task IsEnabled_Instructions_Point_At_Documentation() {
 		var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
 		var plugin = new KontextPlugin();
 		var (_, instructions) = plugin.IsEnabled(config);
 
-		await Assert.That(instructions).Contains("KurrentDB__Kontext__Enabled");
+		await Assert.That(instructions).Contains("documentation");
 	}
 
 	// -------- Storage path resolution --------

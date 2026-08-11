@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.RegularExpressions;
+using Humanizer;
 using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Schema;
 
 using static Kurrent.Surge.Consumers.ConsumeFilter;
 
@@ -16,6 +18,17 @@ public partial class KontextConventions {
     public static class Streams {
         public const string KontextStreamPrefix  = "$kontext"; //$ktx/memories
         public const string MemoriesStreamPrefix = $"{KontextStreamPrefix}/memories";
+    }
+
+    // Copied from SchemaRegistryConventions.RegisterMessages (minus its Eventuous type mapping,
+    // which Kontext does not use) until the primitive moves into Core — deduplicate then.
+    public static async Task<RegisteredSchema> RegisterMessages<T>(ISchemaRegistry client, CancellationToken ct = default) {
+        var schemaName = $"{Streams.MemoriesStreamPrefix}-{typeof(T).Name.Kebaberize()}";
+
+        return await client.RegisterSchema<T>(
+            new SchemaInfo(schemaName, SchemaDataFormat.Json),
+            cancellationToken: ct
+        );
     }
 
     public partial class Filters {

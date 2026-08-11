@@ -19,11 +19,21 @@ public class KontextPlugin() : SubsystemsPlugin(name: PluginNames.Kontext, requi
 			.AddNodeSystemInfoProvider()
 			.AddKontext(configuration);
 
-	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
-		app.UseKontextMcp().UseKontextGrpc();
+	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
+        app.UseKontextMcp().UseKontextGrpc();
+    }
 
-	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabled = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Kontext:Enabled", false);
-		return (enabled, "Set KurrentDB__Kontext__Enabled to true to enable the kontext plugin.");
+    public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
+        var enabled = configuration.GetValue(
+            $"KurrentDB:{Name}:Enabled",
+            configuration.GetValue($"{Name}:Enabled",
+                configuration.GetValue("Enabled", true)
+            )
+        );
+        
+        return (enabled, "Please check the documentation for instructions on how to enable the plugin.");
+        
+		// var enabled = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Kontext:Enabled", false);
+		// return (enabled, "Set KurrentDB__Kontext__Enabled to true to enable the kontext plugin.");
 	}
 }
