@@ -206,9 +206,12 @@ Rejected along the way (see Decisions for winners):
     **Core's `SystemReadiness` has two public constructors and MEDI cannot disambiguate —
     `TryAddSingleton<SystemReadiness>()` threw at first resolution, faulting host startup
     silently (reads as a 10s readiness timeout).** Latent since the class was written; exposed
-    the first time anything hosted a `SystemReadyBackgroundService` in a node. Fix: factory
-    registration in `AddSystemReadiness`. License and the routing order were investigated and
-    acquitted; `UseRouting` before `UseEndpoints` kept anyway (SchemaRegistry precedent).
+    the first time anything hosted a `SystemReadyBackgroundService` in a node. Fixed twice:
+    first a factory registration (symptom, one site), then — Sérgio's ruling — the
+    `(IServiceProvider)` convenience constructor was DELETED so the class has one constructor
+    and plain `TryAddSingleton` composes it; the factory and its comment died with it. License
+    and routing order were investigated and acquitted; `UseRouting` before `UseEndpoints` kept
+    anyway (SchemaRegistry precedent).
   - Plugin is enabled by default (Connectors-style cascade, Sérgio's edit) and the full system
     now boots green inside every test node: 42/42.
 

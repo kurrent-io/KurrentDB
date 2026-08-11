@@ -75,10 +75,6 @@ public enum NodeReadyWhen {
 
 [UsedImplicitly]
 public sealed class SystemReadiness(ISubscriber subscriber, GetNodeSystemInfo getNodeInfo) {
-    public SystemReadiness(IServiceProvider services) : this(
-        services.GetRequiredService<ISubscriber>(),
-        services.GetRequiredService<GetNodeSystemInfo>()) { }
-
-    public ISystemReadinessProbe CreateProbe(NodeReadyWhen readyWhen = NodeReadyWhen.Operational) => 
+    public ISystemReadinessProbe CreateProbe(NodeReadyWhen readyWhen = NodeReadyWhen.Operational) =>
         new AdvancedSystemReadinessProbe(subscriber, getNodeInfo, readyWhen);
 }
