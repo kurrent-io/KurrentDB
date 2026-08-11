@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using System.Runtime.CompilerServices;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -20,7 +21,9 @@ partial class KPlaneDataPlaneIntegrationTest {
 	static KPlaneDataPlaneIntegrationTest()
 		=> AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-	private async Task<KPlaneNode[]> StartKPlaneClusterAsync(IReadOnlyList<int> raftPorts, TimeSpan appointmentDuration, string stateRootName) {
+	private async Task<KPlaneNode[]> StartKPlaneClusterAsync(IReadOnlyList<int> raftPorts,
+		TimeSpan appointmentDuration,
+		[CallerMemberName] string stateRootName = "") {
 		var raftAddresses = raftPorts.Select(CreateEndPoint).ToHashSet<EndPoint>();
 
 		var nodes = new KPlaneNode[raftPorts.Count];

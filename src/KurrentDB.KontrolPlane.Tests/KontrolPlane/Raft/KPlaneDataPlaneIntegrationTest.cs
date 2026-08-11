@@ -21,7 +21,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		var raftPorts = new[] { 23001, 23002, 23003 };
 		var dbNodeAddresses = new[] { 23021, 23022, 23023 }.Select(CreateEndPoint).ToArray();
 
-		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane1");
+		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1));
 		try {
 			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
 			foreach (var node in databaseNodes) {
@@ -56,7 +56,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		var raftPorts = new[] { 23101, 23102, 23103 };
 		var dbNodeAddresses = new[] { 23121, 23122, 23123 }.Select(CreateEndPoint).ToArray();
 
-		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane2");
+		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1));
 		try {
 			// the database has no pre-configured nodes; the Data Plane side registers itself via announcement
 			var database = await kplane[0].Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
@@ -85,7 +85,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		var dbNodeAddresses = new[] { 23221, 23222, 23223 }.Select(CreateEndPoint).ToArray();
 		var appointmentDuration = TimeSpan.FromSeconds(1);
 
-		var kplane = await StartKPlaneClusterAsync(raftPorts, appointmentDuration, "kplane3");
+		var kplane = await StartKPlaneClusterAsync(raftPorts, appointmentDuration);
 		try {
 			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
@@ -127,7 +127,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		var raftPorts = new[] { 23001, 23002, 23003 };
 		var dbNodeAddresses = new[] { 23021, 23022, 23023 }.Select(CreateEndPoint).ToArray();
 
-		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1), "kplane4");
+		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1));
 		try {
 			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
 			foreach (var node in databaseNodes) {
