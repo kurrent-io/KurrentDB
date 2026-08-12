@@ -14,8 +14,6 @@ using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
 partial class RaftKontroller : IKontroller {
-	public TimeSpan AppointmentDuration { get; }
-
 	public IEnumerable<EndPoint> Nodes => _raft.Members.Select(static member => member.EndPoint);
 
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
@@ -157,7 +155,7 @@ partial class RaftKontroller : IKontroller {
 					Id = databaseId,
 					Epoch = database.Epoch,
 					Description = database.Description,
-					LeaderAppointmentDuration = AppointmentDuration,
+					LeaderAppointmentDuration = _appointmentDuration,
 				}
 				: null;
 		}

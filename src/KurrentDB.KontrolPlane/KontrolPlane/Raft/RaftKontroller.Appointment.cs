@@ -17,6 +17,7 @@ using StateMachine.Queries;
 partial class RaftKontroller {
 	// key is database ID, value is the time when the leadership was updated for the particular database
 	private readonly ConcurrentDictionary<string, LeaderAppointment> _appointmentState = new();
+	private readonly TimeSpan _appointmentDuration;
 
 	// Spin in the loop and process appointments for every database
 	private async ValueTask ProcessAppointmentsAsync(CancellationToken token) {
@@ -25,7 +26,7 @@ partial class RaftKontroller {
 		var deletedDatabases = new HashSet<string>();
 		var activeMembers = new HashSet<EndPoint>();
 		var dataPlane = DataPlaneClientFactory.Invoke();
-		var timer = new PeriodicTimer(AppointmentDuration);
+		var timer = new PeriodicTimer(_appointmentDuration);
 		try {
 			do {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
@@ -123,7 +124,7 @@ partial class RaftKontroller {
 	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes)
 		=> nodes is not []
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
-		       || appointment.IsExpired(AppointmentDuration));
+		       || appointment.IsExpired(_appointmentDuration));
 
 	private async Task AppointLeaderAsync(
 		string databaseId,

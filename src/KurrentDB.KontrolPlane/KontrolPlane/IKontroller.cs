@@ -5,6 +5,9 @@ using System.Net;
 
 namespace KurrentDB.KontrolPlane;
 
+/// <summary>
+/// An interface to interact with Kontroller, which is a node of KPlane.
+/// </summary>
 public interface IKontroller {
 	ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default);
 
@@ -23,11 +26,6 @@ public interface IKontroller {
 	ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default);
 
 	ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default);
-
-	/// <summary>
-	/// Gets database leader appointment duration.
-	/// </summary>
-	TimeSpan AppointmentDuration { get; }
 
 	/// <summary>
 	/// Gets known Kontroller nodes.
