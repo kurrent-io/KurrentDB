@@ -165,7 +165,7 @@ partial class RaftKontroller {
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
 		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, CancellationToken.None))
-			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
+			_appointmentState[databaseId] = new(candidate, epoch + 1UL); // appointment increments the Epoch
 
 		static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaStateAsync(
 			IDataPlane dataPlane,
