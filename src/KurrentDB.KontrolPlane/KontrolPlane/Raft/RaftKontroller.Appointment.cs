@@ -65,10 +65,9 @@ partial class RaftKontroller {
 		static void LeadershipLost(IEnumerable<Exception> exceptions, CancellationToken token) {
 			foreach (var e in exceptions) {
 				switch (e) {
-					case NotLeaderException nle:
-						throw new OperationCanceledException(nle.Message, e, token);
+					case NotLeaderException:
 					case OperationCanceledException oce when oce.CancellationToken == token:
-						throw new OperationCanceledException(oce.Message, oce, token);
+						throw new OperationCanceledException(e.Message, e, token);
 				}
 			}
 		}
