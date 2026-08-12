@@ -79,7 +79,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		}
 	}
 
-	[Fact(Timeout = 90_000)]
+	[Fact(Timeout = 60_000)]
 	public async Task DataPlaneReconnects_when_kplane_leader_changes() {
 		var raftPorts = new[] { 23201, 23202, 23203 };
 		var dbNodeAddresses = new[] { 23221, 23222, 23223 }.Select(CreateEndPoint).ToArray();
@@ -155,6 +155,41 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				Assert.Contains(addedNode, enumerator.Current);
 			} finally {
 				await enumerator.DisposeAsync();
+				await Disposable.DisposeAsync(dataPlane);
+			}
+		} finally {
+			await Disposable.DisposeAsync(kplane);
+		}
+	}
+
+	[Fact(Timeout = 60_000)]
+	public async Task ResignLeader() {
+		var raftPorts = new[] { 23401, 23402, 23403 };
+		var dbNodeAddresses = new[] { 23421, 23422, 23423 }.Select(CreateEndPoint).ToArray();
+		var appointmentDuration = TimeSpan.FromSeconds(1);
+
+		var kplane = await StartKPlaneClusterAsync(raftPorts, appointmentDuration);
+		try {
+			var databaseNodes = dbNodeAddresses.Select(CreateDatabaseNode).ToArray();
+			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
+			try {
+				foreach (var node in databaseNodes) {
+					await AddDatabaseNodeAsync(kplane, node, TestToken);
+				}
+
+				await using var leaders = dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
+				Assert.True(await leaders.MoveNextAsync());
+				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
+				var initialEpoch = leaders.Current.Epoch;
+
+				// resign leader
+				await dataPlane[0].Host.ResignLeader(TestToken);
+
+				// Wait for a new appointment
+				Assert.True(await leaders.MoveNextAsync());
+				Assert.True(leaders.Current.Epoch > initialEpoch);
+				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
+			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}
 		} finally {
