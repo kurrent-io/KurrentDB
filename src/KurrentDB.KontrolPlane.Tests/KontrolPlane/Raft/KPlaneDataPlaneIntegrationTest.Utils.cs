@@ -112,7 +112,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 			=> CreateHttp2Channel(address, out invoker);
 	}
 
-	private sealed class TestKontrollerServer(IKontroller kontroller) : KontrollerServer(kontroller) {
+	private sealed class TestGrpcKontrollerServer(IKontroller kontroller) : GrpcKontrollerServer(kontroller) {
 		protected override EndPoint GetApiEndPoint(EndPoint nodeEndPoint) => ToGrpcEndPoint(nodeEndPoint);
 	}
 
@@ -162,7 +162,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 			builder.Services.AddGrpc();
 
 			var app = builder.Build();
-			app.MapGrpcService<TestKontrollerServer>();
+			app.MapGrpcService<TestGrpcKontrollerServer>();
 			await app.StartAsync(token);
 
 			return new() {

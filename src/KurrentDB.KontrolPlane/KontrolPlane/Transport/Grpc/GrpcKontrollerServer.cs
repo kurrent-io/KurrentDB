@@ -12,7 +12,7 @@ namespace KurrentDB.KontrolPlane.Transport.Grpc;
 /// Represents server-side of the Kontroller.
 /// </summary>
 /// <param name="kontroller">The Kontroller instance.</param>
-public abstract class KontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
+public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
 	/// <summary>
 	/// Converts KPlane node address to the address that can be used to access KPlane
 	/// node via gRPC.
