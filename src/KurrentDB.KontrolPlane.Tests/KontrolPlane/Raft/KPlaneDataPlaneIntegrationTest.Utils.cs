@@ -207,7 +207,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 			builder.Services.AddGrpc();
 
 			var app = builder.Build();
-			app.MapGrpcService<DataPlaneServer>();
+			app.MapGrpcService<GrpcDataPlaneServer>();
 			await app.StartAsync(token);
 
 			await host.StartAsync(token);
