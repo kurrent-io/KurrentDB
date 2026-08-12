@@ -166,23 +166,25 @@ partial class RaftKontroller {
 		// if the current node is not a leader anymore
 		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, CancellationToken.None))
 			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
-	}
 
-	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaStateAsync(
-		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
-		out int quorum,
-		CancellationToken token) {
-		var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
-		regularNodes.AddRange(nodes
-			.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
-			.Select(static node => node.Address)
-			.Select(address => GetMemberReplicaStateAsync(dataPlane, address, token)));
+		static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaStateAsync(
+			IDataPlane dataPlane,
+			IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+			out int quorum,
+			CancellationToken token) {
+			var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
+			regularNodes.AddRange(nodes
+				.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
+				.Select(static node => node.Address)
+				.Select(address => GetMemberReplicaStateAsync(dataPlane, address, token)));
 
-		quorum = regularNodes.Count / 2 + 1;
-		return Task.WhenEach(regularNodes);
+			quorum = regularNodes.Count / 2 + 1;
+			return Task.WhenEach(regularNodes);
+		}
 
-		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetMemberReplicaStateAsync(IDataPlane dataPlane, EndPoint address, CancellationToken token)
+		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetMemberReplicaStateAsync(IDataPlane dataPlane,
+			EndPoint address,
+			CancellationToken token)
 			=> new(address, await dataPlane.GetReplicaStateAsync(address, token));
 	}
 
