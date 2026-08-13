@@ -13,7 +13,7 @@ partial class RaftKontroller {
 	/// Represents Kontroller options.
 	/// </summary>
 	public readonly struct Options() {
-		private static readonly int WalChunkSize = 1024 * 1024; // 1MB
+		private const int WalChunkSize = 1024 * 1024; // 1MB
 		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.PrivateMemory;
 		private const WriteAheadLog.IntegrityHashAlgorithm WalHashAlgorithm = WriteAheadLog.IntegrityHashAlgorithm.None;
 
