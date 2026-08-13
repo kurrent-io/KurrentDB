@@ -13,7 +13,7 @@ partial class RaftKontroller {
 	/// Represents Kontroller options.
 	/// </summary>
 	public readonly struct Options() {
-		private static readonly int WalChunkSize = Environment.SystemPageSize * 10;
+		private static readonly int WalChunkSize = Environment.SystemPageSize * 100;
 		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.PrivateMemory;
 		private const WriteAheadLog.IntegrityHashAlgorithm WalHashAlgorithm = WriteAheadLog.IntegrityHashAlgorithm.None;
 
