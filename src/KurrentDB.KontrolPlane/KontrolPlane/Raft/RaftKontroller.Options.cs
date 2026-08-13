@@ -14,7 +14,7 @@ partial class RaftKontroller {
 	/// </summary>
 	public readonly struct Options() {
 		private static readonly int WalChunkSize = Environment.SystemPageSize * 10;
-		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.SharedMemory;
+		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.PrivateMemory;
 		private const WriteAheadLog.IntegrityHashAlgorithm WalHashAlgorithm = WriteAheadLog.IntegrityHashAlgorithm.None;
 
 		private readonly ElectionTimeout _electionSettings = ElectionTimeout.Recommended;
