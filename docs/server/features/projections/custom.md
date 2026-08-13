@@ -33,6 +33,11 @@ fromStream('account-1')
     .outputState()
 ```
 
+::: tip
+Kurrent's [gaffer](https://gaffer.kurrent.io) tooling runs projections like this one on your machine and
+deploys them to a server.
+:::
+
 ## Projections API
 
 Below, you can find the JavaScript API for user defined projections.
@@ -111,9 +116,8 @@ handler. The event provided through the handler contains the following propertie
 
 ## Debugging
 
-User projections have a bonus that debugging is easier
-via any browser that ships with debugging capabilities. The screenshots in this document show the use of
-Chrome, but we have tested debugging with all major browsers including Firefox, Edge and Safari.
+A projection can log from inside a handler, and you can step through one before it goes anywhere near a
+server. Both are covered below.
 
 ### Logging from a projection
 
@@ -178,29 +182,13 @@ V2 is a parallel-partitioned engine with an incompatible checkpoint format and a
 Before selecting it, read [Projections Engine V2](./engine-v2.md) — in particular, V2 does not emit
 `outputState()` result streams and does not support `trackemittedstreams`.
 
-### Debugging your first projection
+### Stepping through a projection
 
-Once the projection is running, open your browser and enable the developer tools. Once you have the developer
-tools open, visit your projection URL and you should see a button labelled _Debug_.
-
-![Projections Debugging Part 1](images/projections_debugging_part_1.png)
-
-After clicking the projection "Debug" button, you see the debugging interface with the definition of the
-projection and information about the events the projection is processing on the right-hand side.
-
-At the top there are a couple of buttons to take note of, specifically the _Run Step_ and _Update_ buttons.
-You use _Run Step_ to step through the event waiting in the queue, placing you in projection debugging mode.
-The _Update_ button provides you with a way to update the projection definition without having to go back to
-the projection itself and leave the context of the debugger.
-
-![Projections Debugging Part 2](images/projections_debugging_part_2.png)
-
-If the _Run Step_ button is not greyed out, and you click it, the browser has hit a breakpoint.
-
-![Projections Debugging Part 3](images/projections_debugging_part_3.png)
-
-You are now able to step through the projection, the important method to step into is
-the `handler(state, eventEnvelope)` method.
+The [gaffer](https://gaffer.kurrent.io) command line runs a projection on your machine with a debugger
+attached, against a file of sample events or against one of your databases, so you can set breakpoints,
+step through a handler and inspect the state as it changes without deploying anything. The
+[VS Code extension](https://gaffer.kurrent.io/extension/vs-code/) drives it from the editor, and any
+DAP-aware editor can attach to it.
 
 ## Configuring projections
 
