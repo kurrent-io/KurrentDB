@@ -18,7 +18,7 @@ using StateMachine.LogEntries;
 using StateMachine.Queries;
 
 partial class RaftKontroller {
-	private static Func<KeyValuePair<EndPoint, ReplicaState>, int> ZeroFunc
+	private static readonly Func<KeyValuePair<EndPoint, ReplicaState>, int> ZeroFunc
 		= Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0);
 
 	// key is database ID, value is the time when the leadership was updated for the particular database
