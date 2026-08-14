@@ -125,7 +125,11 @@ partial class RaftKontroller : IKontroller {
 	public async ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default) {
 		try {
 			await _raft.ResignLeaderAsync(databaseId, token);
-			_appointmentState.TryRemove(databaseId, out _);
+			if (_appointmentState.TryGetValue(databaseId, out var appointment)) {
+				_appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
+			}
+
+			_appointmentRoundSignal.Set();
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		}

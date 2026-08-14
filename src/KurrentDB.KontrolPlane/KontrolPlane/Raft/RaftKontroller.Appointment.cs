@@ -3,9 +3,12 @@
 
 using System.Collections.Concurrent;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DotNext;
 using DotNext.Diagnostics;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Threading;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
@@ -15,9 +18,13 @@ using StateMachine.LogEntries;
 using StateMachine.Queries;
 
 partial class RaftKontroller {
+	private static Func<KeyValuePair<EndPoint, ReplicaState>, int> ZeroFunc
+		= Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0);
+
 	// key is database ID, value is the time when the leadership was updated for the particular database
 	private readonly ConcurrentDictionary<string, LeaderAppointment> _appointmentState = new();
 	private readonly TimeSpan _appointmentDuration;
+	private readonly AsyncAutoResetEvent _appointmentRoundSignal = new(initialState: false);
 
 	// Spin in the loop and process appointments for every database
 	private async ValueTask ProcessAppointmentsAsync(CancellationToken token) {
@@ -26,7 +33,6 @@ partial class RaftKontroller {
 		var deletedDatabases = new HashSet<string>();
 		var activeMembers = new HashSet<EndPoint>();
 		var dataPlane = DataPlaneClientFactory.Invoke();
-		var timer = new PeriodicTimer(_appointmentDuration);
 		try {
 			do {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
@@ -55,9 +61,8 @@ partial class RaftKontroller {
 					databases.Clear();
 					activeMembers.Clear();
 				}
-			} while (await timer.WaitForNextTickAsync(token));
-		}  finally {
-			timer.Dispose();
+			} while (await _appointmentRoundSignal.WaitAsync(_appointmentDuration, token));
+		} finally {
 			_appointmentState.Clear();
 			await dataPlane.DisposeAsync();
 		}
@@ -108,8 +113,8 @@ partial class RaftKontroller {
 					.ToList();
 
 				ImportMembers(CollectionsMarshal.AsSpan(nodes), activeMembers);
-				if (IsAppointmentRequired(database.Id, nodes))
-					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, dataPlane, nodes, token));
+				if (IsAppointmentRequired(database.Id, nodes, out var resignedLeader))
+					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, dataPlane, nodes, resignedLeader, token));
 			}
 		}
 
@@ -120,16 +125,29 @@ partial class RaftKontroller {
 		}
 	}
 
-	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes)
-		=> nodes is not []
-		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
-		       || appointment.IsExpired(_appointmentDuration));
+	private bool IsAppointmentRequired(string databaseId,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		out EndPoint? resignedLeader) {
+		if (nodes is [] || !_appointmentState.TryGetValue(databaseId, out var appointment)) {
+			resignedLeader = null;
+			return true;
+		}
+
+		if (appointment.IsResigned) {
+			resignedLeader = appointment.Address;
+			return true;
+		}
+
+		resignedLeader = null;
+		return appointment.IsExpired(_appointmentDuration);
+	}
 
 	private async Task AppointLeaderAsync(
 		string databaseId,
 		ulong epoch,
 		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		EndPoint? resignedLeader,
 		CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
@@ -157,6 +175,7 @@ partial class RaftKontroller {
 			.Where(pair => pair.Value.Epoch == maxEpoch)
 			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
 			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
+			.ThenByDescending(resignedLeader is null ? ZeroFunc : resignedLeader.GetOrder)
 			.ThenByDescending(static pair => pair.Value.Priority)
 			.First()
 			.Key;
@@ -188,7 +207,9 @@ partial class RaftKontroller {
 	}
 
 	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch) {
-		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment) || expectedAppointment.Epoch != epoch)
+		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment)
+		    || expectedAppointment.Epoch != epoch
+		    || expectedAppointment.IsResigned)
 			return false;
 
 		var newAppointment = new LeaderAppointment(leaderAddress, epoch);
@@ -196,11 +217,18 @@ partial class RaftKontroller {
 	}
 
 	[StructLayout(LayoutKind.Auto)]
-	private readonly record struct LeaderAppointment(EndPoint Address, ulong Epoch, Timestamp UpdatedAt) {
+	private readonly record struct LeaderAppointment(EndPoint Address, ulong Epoch, Timestamp RenewedAt) {
 		public LeaderAppointment(EndPoint address, ulong epoch)
 			: this(address, epoch, new()) {
 		}
 
-		public bool IsExpired(TimeSpan expiration) => UpdatedAt.Elapsed >= expiration;
+		public bool IsResigned { get; init; }
+
+		public bool IsExpired(TimeSpan expiration) => RenewedAt.Elapsed >= expiration;
 	}
+}
+
+file static class EndPointExtensions {
+	public static int GetOrder(this EndPoint resignedLeader, KeyValuePair<EndPoint, ReplicaState> candidate)
+		=> Unsafe.BitCast<bool, byte>(!resignedLeader.Equals(candidate.Key));
 }
