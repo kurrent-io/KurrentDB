@@ -34,7 +34,7 @@ partial class RaftKontroller {
 		var activeMembers = new HashSet<EndPoint>();
 		var dataPlane = DataPlaneClientFactory.Invoke();
 		try {
-			do {
+			for (;; await _appointmentRoundSignal.WaitAsync(_appointmentDuration, token)) {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
 				try {
 					StartAppointments(snapshot, dataPlane, tasks, databases, activeMembers, token);
@@ -61,7 +61,7 @@ partial class RaftKontroller {
 					databases.Clear();
 					activeMembers.Clear();
 				}
-			} while (await _appointmentRoundSignal.WaitAsync(_appointmentDuration, token));
+			}
 		} finally {
 			_appointmentState.Clear();
 			await dataPlane.DisposeAsync();
