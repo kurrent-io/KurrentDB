@@ -101,10 +101,10 @@ public partial class RaftKontroller : IAsyncDisposable {
 
 	private ValueTask CancelAsync() {
 		return Interlocked.Exchange(ref _lifecycleTokenSource, null) is { } cts
-			? CancelAndDiposeAsync(cts)
+			? CancelAndDisposeAsync(cts)
 			: ValueTask.CompletedTask;
 
-		static async ValueTask CancelAndDiposeAsync(CancellationTokenSource cts) {
+		static async ValueTask CancelAndDisposeAsync(CancellationTokenSource cts) {
 			using (cts) {
 				await cts.CancelAsync();
 			}
