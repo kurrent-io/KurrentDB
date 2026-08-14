@@ -66,6 +66,10 @@ public partial class RaftKontroller : IAsyncDisposable {
 	}
 
 	public async Task StartAsync(CancellationToken token) {
+		// Make sure that everything in the WAL is applied. Some log entries could contain
+		// cluster configuration, we don't want to compete with subsequent call to PopulateRaftClusterNodesAsync
+		await _raft.AuditTrail.WaitForApplyAsync(_raft.AuditTrail.LastCommittedEntryIndex, token);
+
 		await PopulateRaftClusterNodesAsync(_raftMembershipStorage, _seed, token);
 		await _raft.StartAsync(token);
 		_leadershipTask = HandleLeadershipAsync();
