@@ -5,6 +5,7 @@ using System.Net;
 using DotNext.Collections.Generic;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
+using DotNext.Net.Security;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
@@ -23,7 +24,7 @@ partial class RaftKontroller {
 			Location = PersistentStateRoot,
 			HashAlgorithm = WalHashAlgorithm,
 			ChunkSize = WalChunkSize,
-			MemoryManagement = WalMemoryManagementStrategy
+			MemoryManagement = WalMemoryManagementStrategy,
 		};
 
 		public required string PersistentStateRoot {
@@ -75,6 +76,14 @@ partial class RaftKontroller {
 		public int UpperElectionTimeout {
 			get => _electionSettings.UpperValue;
 			init => _electionSettings = _electionSettings with { UpperValue = value };
+		}
+
+		/// <summary>
+		/// Gets or sets transport-layer security options.
+		/// </summary>
+		public SslOptions? Tls {
+			get;
+			init;
 		}
 	}
 }

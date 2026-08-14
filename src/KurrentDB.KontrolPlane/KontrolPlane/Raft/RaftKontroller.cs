@@ -41,6 +41,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			ColdStart = _seed.Count is 0,
 			LowerElectionTimeout = options.LowerElectionTimeout,
 			UpperElectionTimeout = options.UpperElectionTimeout,
+			SslOptions = options.Tls,
 		};
 
 		_raft = new(config) {
