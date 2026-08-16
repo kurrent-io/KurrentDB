@@ -30,3 +30,4 @@
 - [Kontext projection progress tracker](kontext-projection-progress-tracker.md) — lives in Kontext only; SecondaryIndexProgressTracker deliberately untouched, never propose unifying; Atomic<ProgressMark> pair shape settled 2026-08-10
 - [Kontext lance FTS tokenizer contract](kontext-lance-fts-tokenizer-contract.md) — fork default = upstream minus stem; our WITH = full upstream defaults, parity digging exhausted; hybrid deterministic, two-leg RRF noisy ±0.05; three-way numbers 2026-08-15
 - [Diagrams always termaid](diagrams-always-termaid.md) — every diagram renders through the termaid skill; never hand-draw box art
+- [Linear commit refs close issues](linear-commit-refs-close-issues.md) — workspace automation completes ANY issue referenced from a pushed commit; reference only the issue the commit finishes
