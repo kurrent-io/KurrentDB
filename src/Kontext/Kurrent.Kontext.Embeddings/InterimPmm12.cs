@@ -22,8 +22,14 @@ public static class InterimPmm12 {
 	const string TokenizerResource = "KurrentDB.Kontext.Models.pmm12.sentencepiece.bpe.model";
 
 	/// <summary>pMM12 through the SentencePiece / XLM-R generator. pMM12 uses no input prefix.</summary>
-	public static SentencePieceOnnxEmbeddingGenerator CreateEmbeddingGenerator() =>
-		new(Model(), new SentencePieceOnnxOptions { InputPrefix = null });
+	public static SentencePieceOnnxEmbeddingGenerator CreateEmbeddingGenerator(Action<SentencePieceOnnxOptions>? configure = null) {
+		// pMM12 was trained at max_seq_length 128 — beyond that, tokens ride position embeddings
+		// the model never saw. XLM-R positions physically extend to 512, so the generator's
+		// family default runs, but this model's correct window is 128.
+		var options = new SentencePieceOnnxOptions { InputPrefix = null, MaxTokens = 128 };
+		configure?.Invoke(options);
+		return new(Model(), options);
+	}
 
 	/// <summary>FromEmbeddedResources is lazy — no bytes move here; the generator opens them when it is built.</summary>
 	static OnnxModel Model() =>

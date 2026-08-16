@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
 using TUnit.Core.Interfaces;
@@ -16,10 +17,14 @@ namespace Kurrent.Kontext.Testing;
 /// Shared PerTestSession: the cost is all up-front (419 sequential ONNX embeds, one schema build)
 /// and nothing a test does mutates it.
 /// </summary>
-public sealed class KontextCorpus : IAsyncInitializer, IAsyncDisposable {
+public sealed class KontextCorpus(Action<SentencePieceOnnxOptions>? embeddingOptions) : IAsyncInitializer, IAsyncDisposable {
 	const string CorpusFile = "locomo-conv26.json";
 
-	readonly KontextStoreFixture _store = new();
+	// ClassDataSource<T> requires a true parameterless constructor — an optional parameter
+	// does not satisfy the TUnit analyzer.
+	public KontextCorpus() : this(null) { }
+
+	readonly KontextStoreFixture _store = new(embeddingOptions);
 
 	/// <summary>The committed corpus as loaded: memories, questions and ground truth.</summary>
 	public CorpusFixture Data { get; private set; } = null!;

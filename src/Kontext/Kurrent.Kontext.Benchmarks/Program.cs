@@ -11,6 +11,41 @@ if (args is ["--determinism", ..]) {
 	return;
 }
 
+if (args is ["--max-tokens-ab", ..]) {
+	await RunMaxTokensAb();
+	return;
+}
+
+// pMM12 was trained at max_seq_length 128; the generator runs 512, riding position embeddings
+// the model never trained on past token 128. Which setting actually ranks better is an
+// empirical question — this mode answers it on the shipped chain.
+static async ValueTask RunMaxTokensAb() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		var runs = new List<QualityRun>();
+
+		foreach (var maxTokens in (int[])[128, 512]) {
+			await using var corpus = new KontextCorpus(options => options.MaxTokens = maxTokens);
+			await corpus.InitializeAsync();
+
+			var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+
+			runs.Add(await benchmark.Run(
+				$"focused maxTokens={maxTokens}",
+				KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build()));
+		}
+
+		QualityReport.PrintMetrics(runs, baseline: runs[^1]);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
+}
+
 await RunRetrievalQuality();
 
 return;

@@ -20,8 +20,12 @@ namespace Kurrent.Kontext.Testing;
 /// Inject with <c>[ClassDataSource&lt;KontextStoreFixture&gt;(Shared = SharedType.None)]</c> for a
 /// fresh store per test, or create and initialize directly outside a test host.
 /// </remarks>
-public sealed class KontextStoreFixture : IAsyncInitializer, IAsyncDisposable {
-	readonly SentencePieceOnnxEmbeddingGenerator _embeddingGenerator = InterimPmm12.CreateEmbeddingGenerator();
+public sealed class KontextStoreFixture(Action<SentencePieceOnnxOptions>? embeddingOptions) : IAsyncInitializer, IAsyncDisposable {
+	// ClassDataSource<T> requires a true parameterless constructor — an optional parameter
+	// does not satisfy the TUnit analyzer.
+	public KontextStoreFixture() : this(null) { }
+
+	readonly SentencePieceOnnxEmbeddingGenerator _embeddingGenerator = InterimPmm12.CreateEmbeddingGenerator(embeddingOptions);
 
 	TempDir?            _dir;
 	KontextDataSource? _dataSources;
