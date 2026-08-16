@@ -500,7 +500,7 @@ public class KontextDataStoreTests {
 
 		// Assert
 		await Assert.That(ready).IsFalse();
-		await Assert.That(dataSources.GetIndexInfo("memories").Name).IsNull();
+		await Assert.That(dataSources.GetVectorIndexInfo("memories").Name).IsNull();
 	}
 
 	#region ->> Test Infrastructure <<-

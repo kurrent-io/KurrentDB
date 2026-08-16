@@ -8,11 +8,11 @@ using Kurrent.Quack.ConnectionPool;
 namespace Kurrent.Kontext.Data;
 
 /// <summary>
-/// Vector-index maintenance and hygiene over any lance dataset: the lazily-trained vector
-/// index, the time-based retrain, compaction, and the state probes the maintenance scheduler
-/// decides on. Table and eager-index DDL is bootstrap, not maintenance — it lives in
-/// <see cref="KontextSchemaTask"/> on the migration stream, and version pruning is the
-/// dataset's own AUTO_CLEANUP policy, set there too.
+/// Index maintenance and hygiene over any lance dataset: the lazily-trained vector index, the
+/// time-based retrain, the inverted (FTS) tail fold, compaction, and the state probes the
+/// maintenance scheduler decides on. Table and eager-index DDL is bootstrap, not maintenance —
+/// it lives in <see cref="KontextSchemaTask"/> on the migration stream, and version pruning is
+/// the dataset's own AUTO_CLEANUP policy, set there too.
 ///
 /// Addressing rules (the lance extension's dual addressing): index DDL uses the RAW dataset
 /// path, and inside WITH (...) it is always '=', never ':='.
@@ -34,7 +34,7 @@ public static class KontextIndexMaintenance {
         /// and merge — the optimize here bounds that tail's latency cost, not correctness.
         /// </remarks>
         public bool EnsureVectorIndex(string table, string column, VectorIndexOptions? options = null) {
-            if (dataSource.GetIndexInfo(table).Name is { } vector) {
+            if (dataSource.GetVectorIndexInfo(table).Name is { } vector) {
                 var alterIndex = $"ALTER INDEX {vector} ON ldb.main.{table} OPTIMIZE WITH (mode = 'append')";
                 ExecuteCommand(dataSource, alterIndex);
                 return true;
@@ -88,6 +88,24 @@ public static class KontextIndexMaintenance {
             ExecuteCommand(dataSource, $"ALTER INDEX {VectorIndexName(column)} ON ldb.main.{table} OPTIMIZE WITH (mode = 'retrain')");
 
         /// <summary>
+        /// Folds the unindexed tail into the inverted (FTS) index (append-optimize) — the same
+        /// mechanic the vector fold uses, but for a different reason: over unfolded rows,
+        /// <c>lance_fts</c> returns the FIRST k rows by scan arrival instead of the top k by
+        /// BM25, so the FTS tail is a correctness hole, not a latency cost. A zero tail is an
+        /// engine no-op (no new dataset version), so calling this on every tick is free.
+        /// Returns true when an inverted index exists and its tail was folded; false when the
+        /// table has none — ALTER INDEX on a missing index is a SILENT no-op, so absence is
+        /// reported instead of masked.
+        /// </summary>
+        public bool EnsureInvertedIndex(string table) {
+            if (dataSource.GetFtsIndexInfo(table).Name is not { } inverted)
+                return false;
+
+            ExecuteCommand(dataSource, $"ALTER INDEX {inverted} ON ldb.main.{table} OPTIMIZE WITH (mode = 'append')");
+            return true;
+        }
+
+        /// <summary>
         /// Folds deletion tombstones and small fragments back into compact form — dataset hygiene,
         /// a genuinely separate operation from index freshness.
         /// </summary>
@@ -133,10 +151,24 @@ public static class KontextIndexMaintenance {
                 });
 
         /// <summary>
-        /// One consistent snapshot of the dataset's vector-index state, read on ONE connection so
-        /// every number describes the same lance dataset version. Valid only once the table exists.
+        /// One consistent snapshot of the dataset's vector-index (<c>*_ivx</c>) state, read on ONE
+        /// connection so every number describes the same lance dataset version. Valid only once
+        /// the table exists.
         /// </summary>
-        public VectorIndexInfo GetIndexInfo(string table) =>
+        public IndexInfo GetVectorIndexInfo(string table) =>
+            ReadIndexInfo(dataSource, table, "_ivx");
+
+        /// <summary>The same snapshot for the inverted (FTS) index (<c>*_fts</c>).</summary>
+        public IndexInfo GetFtsIndexInfo(string table) =>
+            ReadIndexInfo(dataSource, table, "_fts");
+    }
+
+    // Naming convention: {column}_ivx IS the vector index and {column}_fts IS the inverted
+    // index — names are derived, never registered, and classification goes by the suffix,
+    // never by sniffing index_type.
+    static string VectorIndexName(string column) => $"{column}_ivx";
+
+    static IndexInfo ReadIndexInfo(KontextDataSource dataSource, string table, string suffix) =>
             dataSource.Execute(
                 connection => {
                     // Two ad-hoc queries, back-to-back on the SAME connection: the ad-hoc surface
@@ -158,7 +190,7 @@ public static class KontextIndexMaintenance {
                         while (chunk.TryRead(out var row)) {
                             var name = row.ReadString();
 
-                            if (!IsVectorIndex(name))
+                            if (!name.EndsWith(suffix, StringComparison.Ordinal))
                                 continue;
 
                             var indexType   = row.ReadString();
@@ -168,15 +200,13 @@ public static class KontextIndexMaintenance {
 
                             chunk.Dispose();
 
-                            return new VectorIndexInfo(totalRows, name, indexType, column, (long)(rowsIndexed ?? 0), details);
+                            return new IndexInfo(totalRows, name, indexType, column, (long)(rowsIndexed ?? 0), details);
                         }
 
                         chunk.Dispose();
                     }
 
-                    return new VectorIndexInfo(totalRows, null, null, null, null, null);
-
-                    static bool IsVectorIndex(string name) => name.EndsWith("_ivx", StringComparison.Ordinal);
+                    return new IndexInfo(totalRows, null, null, null, null, null);
 
                     // ExecuteAdHocNonQuery's long is duckdb rows_changed (INSERT/UPDATE/DELETE only),
                     // so a scalar SELECT must come through a query result.
@@ -191,11 +221,6 @@ public static class KontextIndexMaintenance {
                         return rows;
                     }
                 });
-    }
-
-    // Naming convention: {column}_ivx IS the vector index — the name is derived, never
-    // registered, and classification goes by the suffix, never by sniffing index_type.
-    static string VectorIndexName(string column) => $"{column}_ivx";
 
     // The char overload — NOT the utf8 one: that parameter is documented null-terminated, and
     // Encoding.GetBytes produces no terminator.
@@ -204,16 +229,16 @@ public static class KontextIndexMaintenance {
 }
 
 /// <summary>
-/// One consistent snapshot of a dataset's vector-index state, read on one connection so every
-/// number describes the same lance dataset version.
+/// One consistent snapshot of a dataset's index state for one index family (vector or
+/// inverted), read on one connection so every number describes the same lance dataset version.
 /// </summary>
 /// <param name="TotalRows">The table's total row count at the snapshot's dataset version.</param>
-/// <param name="Name">The <c>*_ivx</c> vector index name; null while no vector index exists.</param>
-/// <param name="IndexType">The engine's index family as SHOW INDEXES reports it (e.g. <c>IVF_HNSW_PQ</c>); null while no vector index exists.</param>
-/// <param name="Column">The column the index covers; null while no vector index exists.</param>
+/// <param name="Name">The index name (<c>*_ivx</c> or <c>*_fts</c>); null while no such index exists.</param>
+/// <param name="IndexType">The engine's index family as SHOW INDEXES reports it (e.g. <c>IVF_HNSW_PQ</c>, <c>Inverted</c>); null while no such index exists.</param>
+/// <param name="Column">The column the index covers; null while no such index exists.</param>
 /// <param name="RowsIndexed">The rows folded into the index: null while no index exists, 0 while the index exists but has folded nothing yet.</param>
-/// <param name="Details">The engine's per-index JSON (metric, HNSW and PQ parameters, runtime hints); null while no vector index exists.</param>
-public sealed record VectorIndexInfo(
+/// <param name="Details">The engine's per-index JSON (index parameters, runtime hints); null while no such index exists.</param>
+public sealed record IndexInfo(
     long    TotalRows,
     string? Name,
     string? IndexType,

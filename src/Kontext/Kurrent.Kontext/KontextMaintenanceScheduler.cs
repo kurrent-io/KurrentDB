@@ -8,10 +8,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Kurrent.Kontext.Data;
 
 /// <summary>
-/// The memories dataset's background maintenance loop: on a fixed cadence it creates the vector
-/// index once the table has grown enough rows to train one, folds newly written rows into it (or
-/// periodically retrains it), and runs always-on dataset compaction. Version pruning is NOT
-/// here — it is the dataset's own AUTO_CLEANUP policy, set by the schema.
+/// The memories dataset's background maintenance loop: on a fixed cadence it folds the FTS
+/// tail into the inverted index, creates the vector index once the table has grown enough rows
+/// to train one, folds newly written rows into it (or periodically retrains it), and runs
+/// always-on dataset compaction. Version pruning is NOT here — it is the dataset's own
+/// AUTO_CLEANUP policy, set by the schema.
 ///
 /// The split mirrors the rest of the data layer:
 /// - <see cref="KontextIndexMaintenance"/> owns every maintenance statement — this class issues no SQL
@@ -110,7 +111,13 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
                 return;
             }
 
-            var info = _dataSource.GetIndexInfo(Table);
+            // The FTS tail is a correctness hole — over unfolded rows lance_fts returns the
+            // first k rows by scan arrival, not the top k by score — so the fold runs FIRST,
+            // always-on and never cadence-gated: a vector-index failure later in the tick must
+            // not starve it. A zero tail is an engine no-op (no new dataset version).
+            _dataSource.EnsureInvertedIndex(Table);
+
+            var info = _dataSource.GetVectorIndexInfo(Table);
 
             var now    = _timeProvider.GetUtcNow();
             var action = Decide(info.TotalRows, info.RowsIndexed, _options, _lastRetrain, now);

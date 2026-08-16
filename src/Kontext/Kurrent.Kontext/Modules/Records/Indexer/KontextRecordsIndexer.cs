@@ -36,7 +36,7 @@ public sealed class KontextRecordsIndexer(
     const int BatchSize = 500;
 
     static readonly TimeSpan BatchWindow         = TimeSpan.FromSeconds(5);
-    static readonly TimeSpan VectorIndexThrottle = TimeSpan.FromSeconds(30);
+    static readonly TimeSpan IndexMaintenanceThrottle = TimeSpan.FromSeconds(30);
     static readonly TimeSpan InitialRestartDelay = TimeSpan.FromSeconds(5);
     static readonly TimeSpan MaximumRestartDelay = TimeSpan.FromSeconds(60);
 
@@ -110,11 +110,15 @@ public sealed class KontextRecordsIndexer(
 
             _log.LogDebug("Records indexer committed {Written} of {BatchSize} records", written, batch.Count);
 
-            if (written == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < VectorIndexThrottle)
+            if (written == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
                 continue;
 
+            // FTS first — over unfolded rows lance_fts returns the first k rows by scan
+            // arrival, not the top k by score, so the fold is correctness; the vector fold
+            // is only latency.
+            dataSource.EnsureInvertedIndex("records");
             dataSource.EnsureVectorIndex("records", "embedding");
-            
+
             lastOptimize = TimeProvider.System.GetTimestamp();
         }
     }

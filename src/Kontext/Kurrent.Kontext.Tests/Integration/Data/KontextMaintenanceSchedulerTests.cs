@@ -3,6 +3,7 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Quack;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kurrent.Kontext.Tests.Data;
@@ -243,6 +244,80 @@ public class KontextMaintenanceSchedulerTests {
 
 	#endregion // Ticks
 
+	#region ->> FTS Fold <<-
+
+	[Test]
+	public async ValueTask tick_folds_the_inverted_index_tail() {
+		// Arrange — the schema creates content_fts on the EMPTY table, so every seeded row
+		// lands in the unindexed tail.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedContent(dataSources, 300, "r", content: "filler words batch");
+
+		using var scheduler = NewScheduler(dataSources);
+
+		var before = dataSources.GetFtsIndexInfo("memories");
+		await Assert.That((before.Name, before.UnindexedRows)).IsEqualTo(("content_fts", 300L));
+
+		// Act
+		await scheduler.TickNowAsync();
+
+		// Assert
+		var after = dataSources.GetFtsIndexInfo("memories");
+
+		await Assert.That((after.Name, after.RowsIndexed)).IsEqualTo(("content_fts", (long?)300L));
+	}
+
+	[Test]
+	public async ValueTask keyword_search_ranks_by_score_and_repeats_identically_after_the_fold() {
+		// Arrange — the needle repeats the query terms, so a folded index MUST rank it first;
+		// over an unfolded tail lance_fts returns arbitrary first-k rows instead (the defect
+		// this fold exists to close).
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedContent(dataSources, 300, "r", content: "filler words batch");
+		SeedContent(dataSources, 1, "needle", content: "filler words batch filler words batch filler words batch");
+
+		using var scheduler = NewScheduler(dataSources);
+
+		// Act
+		await scheduler.TickNowAsync();
+
+		var first  = SearchIds(dataSources, "filler words batch", k: 5);
+		var second = SearchIds(dataSources, "filler words batch", k: 5);
+
+		// Assert
+		await Assert.That(first[0]).IsEqualTo("needle-0");
+		await Assert.That(string.Join(",", second)).IsEqualTo(string.Join(",", first));
+	}
+
+	[Test]
+	public async ValueTask next_tick_folds_new_memories_into_the_inverted_index() {
+		// Arrange
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedContent(dataSources, 300, "r", content: "filler words batch");
+
+		using var scheduler = NewScheduler(dataSources);
+
+		await scheduler.TickNowAsync();
+
+		// Act — a fresh batch lands after the fold; the next tick indexes it.
+		SeedContent(dataSources, 50, "s", content: "filler words batch");
+		await scheduler.TickNowAsync();
+
+		// Assert
+		await Assert.That(dataSources.GetFtsIndexInfo("memories").RowsIndexed).IsEqualTo(350L);
+	}
+
+	#endregion // FTS Fold
+
 	#region ->> Test Infrastructure <<-
 
 	/// <summary>Runs the pure decision, deriving the retrain clock from <paramref name="retrainDue"/>: overdue by a day, or fresh as of now.</summary>
@@ -286,7 +361,7 @@ public class KontextMaintenanceSchedulerTests {
 
 	/// <summary>The (TotalRows, Name, RowsIndexed) projection the assertions compare — Details JSON is engine noise.</summary>
 	static (long, string?, long?) Snapshot(KontextDataSource dataSources) {
-		var info = dataSources.GetIndexInfo("memories");
+		var info = dataSources.GetVectorIndexInfo("memories");
 		return (info.TotalRows, info.Name, info.RowsIndexed);
 	}
 
@@ -344,7 +419,7 @@ public class KontextMaintenanceSchedulerTests {
 			        false,
 			        NULL,
 			        '',
-			        CAST([0.1, 0.1, cos(i), sin(i)] AS FLOAT[4])
+			        CAST(list_transform(range({KontextSchemaTask.Dimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextSchemaTask.Dimension}])
 			 FROM range({count}) AS t(i)
 			 """;
 
@@ -356,6 +431,79 @@ public class KontextMaintenanceSchedulerTests {
 	}
 
 	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
+
+	/// <summary>
+	/// Seeds rows with real-dimension embeddings and the given content — the FTS fold tests'
+	/// seed. Engine-side like <see cref="SeedFillers"/>; the fixed content makes BM25 scores
+	/// controllable (repeat the query terms to build a top-scoring needle).
+	/// </summary>
+	static void SeedContent(KontextDataSource dataSource, int count, string idPrefix, string content) {
+		var sql =
+			$"""
+			 INSERT INTO ldb.main.memories (
+			   memory_id,
+			   memory_type,
+			   content,
+			   importance,
+			   tags,
+			   reasoning,
+			   evidence,
+			   supersedes,
+			   validity_start,
+			   validity_end,
+			   retained_at,
+			   last_accessed_at,
+			   is_retracted,
+			   retracted_at,
+			   is_superseded,
+			   superseded_at,
+			   superseded_by,
+			   embedding)
+			 SELECT '{idPrefix}-' || i,
+			        1,
+			        '{content}',
+			        0,
+			        CAST([] AS VARCHAR[]),
+			        '',
+			        CAST([] AS VARCHAR[]),
+			        CAST([] AS VARCHAR[]),
+			        NULL,
+			        NULL,
+			        epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
+			        epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
+			        false,
+			        NULL,
+			        false,
+			        NULL,
+			        '',
+			        CAST(list_transform(range({KontextSchemaTask.Dimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextSchemaTask.Dimension}])
+			 FROM range({count}) AS t(i)
+			 """;
+
+		dataSource.Execute(connection => {
+			using var command = connection.CreateCommand();
+			command.CommandText = sql;
+			command.ExecuteNonQuery();
+		});
+	}
+
+	/// <summary>The memory ids the keyword leg returns, in a total order (score, then id) so two identical runs compare exactly.</summary>
+	static List<string> SearchIds(KontextDataSource dataSources, string query, int k) =>
+		dataSources.Execute(connection => {
+			var ids = new List<string>();
+
+			using var result = connection.ExecuteAdHocQuery(
+				$"SELECT memory_id FROM lance_fts('ldb.main.memories', 'content', '{query}', k := {k}, prefilter := false) ORDER BY _score DESC, memory_id");
+
+			while (result.TryFetch(out var chunk)) {
+				while (chunk.TryRead(out var row))
+					ids.Add(row.ReadString());
+
+				chunk.Dispose();
+			}
+
+			return ids;
+		});
 
 
 
