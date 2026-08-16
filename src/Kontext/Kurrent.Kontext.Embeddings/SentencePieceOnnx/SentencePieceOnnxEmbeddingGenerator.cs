@@ -16,7 +16,7 @@ namespace Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 /// pooling mode from <see cref="SentencePieceOnnxOptions"/>. Verified bit-exact against a transformers.js
 /// reference for multilingual-e5-small.
 /// </summary>
-public sealed class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
+public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 	const string ProviderName = "kontext-sentencepiece-onnx";
 	const string DefaultModelId = "multilingual-e5-small";
 
@@ -51,15 +51,18 @@ public sealed class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 
 		using (var spm = model.ReadAsset(_options.TokenizerAsset))
 			_sp = SentencePieceTokenizer.Create(spm, addBeginningOfSentence: false, addEndOfSentence: false);
-		_spUnknownId = _sp.UnknownId;
+		
+        _spUnknownId = _sp.UnknownId;
 
 		using (var onnx = model.ReadModel())
 			_session = OnnxModelLoader.CreateSession(OnnxModelLoader.ReadAllBytes(onnx));
-		_feedTokenTypeIds = _session.InputMetadata.ContainsKey("token_type_ids");
+		
+        _feedTokenTypeIds = _session.InputMetadata.ContainsKey("token_type_ids");
 
 		// Warm-up run so the embedding dimension is read from the actual ONNX output rather than guessed.
 		var probe = _session.Embed(Encode("probe"), _feedTokenTypeIds, _options.PoolingMode, _options.NormalizeEmbeddings);
-		_metadata = new EmbeddingGeneratorMetadata(
+		
+        _metadata = new EmbeddingGeneratorMetadata(
 			providerName: ProviderName,
 			defaultModelId: model.Name,
 			defaultModelDimensions: probe.Length);

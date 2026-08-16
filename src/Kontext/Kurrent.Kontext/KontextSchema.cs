@@ -106,7 +106,6 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             )
             """;
         
-
         return executor.ExecuteAsync(
             connection => connection.ExecuteAdHocNonQuery(script, multipleStatements: true), ct
         ).AsTask();

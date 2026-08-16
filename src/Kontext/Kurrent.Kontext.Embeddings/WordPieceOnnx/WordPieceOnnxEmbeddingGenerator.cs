@@ -15,7 +15,7 @@ namespace Kurrent.Kontext.Embeddings.WordPieceOnnx;
 /// shared <c>session.Embed(…)</c>. Runs any BERT/WordPiece ONNX model; validated on all-MiniLM-L6-v2:
 /// bit-identical to the hand-rolled path on ASCII, and it fixes the accent bug (café ≡ cafe).
 /// </summary>
-public sealed class WordPieceOnnxEmbeddingGenerator : EmbeddingGenerator {
+public class WordPieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 	const string ProviderName = "kontext-wordpiece-onnx";
 	const string DefaultModelId = "all-MiniLM-L6-v2";
 
