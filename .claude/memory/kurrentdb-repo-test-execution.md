@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-01T19:21:31.931Z
+  modified: 2026-08-13T13:23:17.379Z
 ---
 
 Verified 2026-07-21: `scripts/testing/test-runner.cs` now EXISTS in the kurrentdb repo (Sérgio added
@@ -22,6 +22,10 @@ Release) ≈ 9 min; warm incremental build ≈ 1 min. `Kurrent.Kontext.Tests` fu
 2026-07-21, real DuckDB+Lance + ONNX) ≈ 31s test time, ≈ 2-3 min total including warm build.
 `DuckLance.Tests` full suite (448 tests) ≈ 23s test time. Filtered unit run of one small Kontext
 class (4 tests, 2026-08-01) ≈ 6 min wall — build-dominated; test time itself 390ms.
+`Kurrent.Kontext.Tests` unit category (38 tests, 2026-08-10) ≈ 60s test time, ≈ 6 min wall
+including the slnx build. Full `/*Kontext*/` scope (all 5 Kontext assemblies, 2026-08-13) ≈ 11s
+test time for Kurrent.Kontext.Tests (139 tests) + ≈ 60s for KurrentDB.Plugins.Kontext.Tests
+(41 tests, boots real nodes); ≈ 4-6 min wall including the warm slnx build.
 
 Exit codes (fixed 2026-07-21, verified): runner computes its own exit from the parsed summary —
 0 all passed, 2 any failure, 8 filter matched nothing, else raw dotnet-test exit (crash/infra).

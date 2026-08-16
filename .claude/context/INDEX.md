@@ -14,6 +14,8 @@ See [docs/features/INDEX.md](docs/features/INDEX.md) for feature status and arti
 | [How Memory Systems Scope by Identity — who supplies user/project/workspace over MCP](docs/research/2026-07-21-1716-memory-identity-scoping/) | research | 2026-07-21 | sergio |
 | [Embeddable IdP for the Kontext MCP edge — ASP.NET Core native vs OpenIddict vs Duende](docs/research/2026-07-21-1759-embeddable-idp-for-mcp/) | research | 2026-07-21 | sergio |
 | [lance-duckdb — array_has_any containment pushdown (feasibility + change surface)](docs/research/2026-08-02-0042-lance-duckdb-containment-pushdown/) | research | 2026-08-02 | sergio |
+| [Kontext Document Ingestion — Microsoft.Extensions.DataIngestion, single core, gRPC + MCP edges](docs/research/2026-08-11-1301-kontext-document-ingestion/) | research | 2026-08-11 | sergio |
+| [Lance Index Creation Contract (DuckDB Extension)](docs/research/2026-08-15-2318-lance-index-creation-contract/) | research | 2026-08-15 | sergio |
 
 ## Reports
 

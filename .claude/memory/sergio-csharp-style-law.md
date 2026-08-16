@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-07T09:28:31.860Z
+  modified: 2026-08-15T15:31:27.711Z
 ---
 
 Style rulings Sérgio issued while reformatting DuckLance; apply to all code I write in this repo.
@@ -19,7 +19,16 @@ Style rulings Sérgio issued while reformatting DuckLance; apply to all code I w
   NEVER dense run-on comment paragraphs with lines cut mid-thought (2026-07-20): prefer a short
   lead sentence + bullets, one fact per bullet, blank comment lines between groups. Less text,
   same info.
-- **Local functions whenever they fit** (dedicated adoption sweep still pending).
+- **Local functions whenever they fit** — and "fit" includes single-caller private helpers:
+  a helper only one member calls belongs INSIDE that member as a local function, never as a
+  sibling private method. VIOLATED 2026-08-13 (DuckDBDataSource.Mint: wrote MintCore +
+  IsBenignAttachRace as private methods; Sérgio reshaped them into locals himself — "you keep
+  forgetting we have local functions"). VIOLATED TWICE MORE 2026-08-15 (IsVectorIndex written
+  class-level with one caller; then a full-file rewrite HOISTED IsBelowTrainingFloor back to
+  class level after Sérgio had already localized it himself — "there will be consequences").
+  TWO CHECKS, EVERY TIME: (1) before adding any private method, count callers — exactly one →
+  it is a local function inside that caller; (2) during any rewrite/move, re-run the count and
+  NEVER hoist an existing local function out — hoisting reintroduces what he removed.
 - **Modern C# 14 / .NET 10 idioms always** — "we don't need to code like the year 2000":
   `ArgumentException.ThrowIfNullOrEmpty(x)` over manual `IsNullOrEmpty` + throw; raw string
   literals over concatenated SQL; expression bodies when a guard removal leaves one statement.

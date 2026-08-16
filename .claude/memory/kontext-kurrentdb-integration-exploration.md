@@ -1,11 +1,11 @@
 ---
 name: kontext-kurrentdb-integration-exploration
-description: Kontext↔KurrentDB integration — projector/stream-name DECIDED 2026-07-21 (Surge DuckDBProjection, $kontext/memories); hosting/append mechanism still open
+description: Kontext↔KurrentDB integration — memories path is KontextMemoryProjector (IConsumer-direct, supervised); storage surface is KontextDataSources since 2026-08-13 (pool RETIRED); Surge DuckDBProjection path DELETED
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-05T14:44:09.190Z
+  modified: 2026-08-15T20:10:29.302Z
 ---
 
 As of 2026-07-18, Sérgio is explicitly in exploration mode on the Kontext↔KurrentDB
@@ -119,8 +119,10 @@ Options on the table:
   (oversample); topical steering later moves to pipeline ranking (RRF/boost — Park-style blend).
   Fallback if oversample ever hurts: delimited tags_text + contains() pushes down (observed) but
   is stringly/unindexable — not for isolation.
-- **DECIDED 2026-07-21: the read-model projector uses the Surge prototype's
-  `DuckDBProjection`/`DuckDBProjector` exactly like SchemaRegistry's `SchemaProjections`** —
+- **~~DECIDED 2026-07-21~~ SUPERSEDED (write path by the 2026-08-03 IConsumer-direct ruling;
+  artifacts deleted 2026-08-11 with the pool audit): the read-model projector uses the Surge
+  prototype's `DuckDBProjection`/`DuckDBProjector` exactly like SchemaRegistry's
+  `SchemaProjections`** —
   Sérgio's explicit ruling ("we use the DuckDBProjection JUST LIKE SchemaProjections"; the old
   prototype Surge is fine because it ships in kurrentdb today). Landed:
   `Modules/Memory/Data/KontextMemoryProjection` (MemoryRetained/MemoryRetracted/MemoriesRecalled;
@@ -191,6 +193,49 @@ Options on the table:
   the 2026-08-02 pushdown research targeted has landed. The duckdb-lance KB doc's §9 upgrade
   tripwires fired — the whole prefilter+spliced-WHERE convention needs re-probing before the
   search layer is adapted. Decision pending: adapt to 1.5.5 vs revert the DuckDB.NET pin.
+- **PROBED 2026-08-10 (`TransactionLanceProbeTests`, pinned): the 2026-08-03 "each statement
+  commits separately on lance / no tx atomicity" rule is OVERTURNED on the current engine
+  (DuckDB 1.5.5 + vendored PR #237 lance)** — lance writes participate in the duck transaction:
+  ROLLBACK reverts writes across multiple lance tables INCLUDING a BufferedAppender flush;
+  commit granularity is one lance commit per TABLE per transaction; and a transaction that
+  writes lance CANNOT also write another attached catalog — the engine refuses ("a single
+  transaction can only write to a single attached database"). Consequence VERIFIED: the
+  memories projector loop's `tx { MERGE into ldb; engine-catalog checkpoint }` shape is
+  refused at runtime (latent — the loop is unhosted and its tests exercise only the writer).
+  Checkpoints must live in the SAME lance catalog to share the transaction. The remaining
+  unprobeable window: a crash inside duck's commit processing between two datasets' native
+  commits.
+- **POOL AUDIT 2026-08-11 (agreed, handed off): three-step cleanup of `KontextConnectionPool`
+  and its consumers, in this order** — (1) the memories projector lacks the supervision /
+  commit-conflict retry the pool's own doc promises (records indexer has it; a lance commit
+  conflict kills the memories BackgroundService silently) — wrap it in the records indexer's
+  supervision pattern; (2) slim the pool for the no-engine-file world: hardcode
+  `Data Source=:memory:` (drop the connectionString ctor param), delete the dispose-time
+  CHECKPOINT + `_everExecuted`, delete the stem-collision half of `VerifyLanceNamespace`
+  (keep is-attached), fix the file-era comments, simplify every test `NewPool(dir)`;
+  (3) the endorsed provider facade: ONE acquisition surface (ReadOnly | Writer), pooling
+  hidden, scoped-handle machinery off the consumer surface, merging the
+  KontextConnectionPool/KontextConnectionProvider duality. Everything is green going in:
+  plugin 42/42 with Kontext enabled-by-default booting in every test node; only the standing
+  pre-existing failures remain (EvidenceStructBindingProbeTests pin + the two flapping
+  ranking benchmarks).
+  **EXECUTED 2026-08-11, all three landed**: `81bf8e026` (pool slim: ctor is `(storagePath)`,
+  `:memory:` const, dispose-CHECKPOINT/`_everExecuted`/stem-collision guard dead, `NewPool(dir)`
+  everywhere), `f29a09b79` (`KontextMemoryProjector` extracted with the records-indexer
+  supervision verbatim; the service is a thin shell), `1ca55339d` (the pool COMPOSES a private
+  Quack pool — public surface `ExecuteAsync` | `OpenLanceWriter`, `Open`/`Rent` internal via
+  IVT for probes). **SUPERSEDED 2026-08-13, Sérgio's ruling: `KontextConnectionPool` is RETIRED —
+  `KontextDataSources` (Local: in-memory engine + lance ATTACH + USE ldb; Shared: same +
+  `kurrent.ddb` READ_ONLY) is the ONE storage surface. NO pooling with lance EVER: the extension
+  caches a dataset per connection and only evicts on that connection's own writes — a reused
+  connection is silently stale; writers hold a dedicated connection, every read opens a fresh
+  one. `StoragePath` is gone (lance DDL takes qualified table names). Test seam is
+  `MemorySeeding.NewDataSources(dir)`.** Same-session ruling: the dead Surge projection
+  subgraph (KontextProjection, KontextMemoryProjection, KontextProjectorService&lt;T&gt;, its tests,
+  the commented KontextConnectionProvider) is DELETED — the 2026-07-21 DuckDBProjection decision
+  below is fully superseded by the IConsumer-direct path, and the
+  `DuckDBAdvancedConnectionProvider(pool)` seam died with it (the pool is no longer a
+  DuckDBConnectionPool). Suite after: 784 green, only the standing pre-existing failures.
 - **DECIDED 2026-08-03: every memories timestamp column is BIGINT Unix epoch MILLISECONDS** —
   Sérgio's ruling ("we're not going to use timestampZ; Unix timestamp for all dates"); TIMESTAMPTZ
   retired from the read model (schema DDL, projection writes, store reads/sorts, all test seeds —
@@ -211,3 +256,23 @@ Options on the table:
   migration path between shapes is validated (CTAS / INSERT..SELECT). The two split-spikes
   (cross-catalog JOIN, one-txn-one-catalog) are moot for now. Stream-first/write-through remains an
   orthogonal, still-open question.
+- **SUPERSEDED 2026-08-15: "array containment can NEVER push down in this extension" is DEAD** —
+  the vendored fork's own PR (`cf3b2a6` prefilter-on-pushed-filter, `~/dev/contrib/lance-duckdb`)
+  encodes `array_has_all`/`array_has_any` into lance filter IR: NON-EMPTY containment pushes as a
+  true prefilter (probed live, vendored build). EMPTY list literals are refused BY DESIGN
+  (`lance_expr_ir.cpp` EncodeListLiteral: lance rejects empty needles; DuckDB/DataFusion semantics
+  diverge on empty), and with `prefilter := true` an unencodable predicate is a hard error —
+  which is why tagless searches that splice a vacuous `array_has_all(tags, [])` die (the 4
+  standing ranking-test failures). Consequences: the oversample-to-table-count rule for tagged
+  searches is OBSOLETE, and the "filter := is REST-only" note predates this PR — re-verify
+  before citing.
+- **PROBED 2026-08-15: the VENDORED lance extension loads into the local `duckdb` CLI** —
+  `duckdb -unsigned` + `LOAD '<repo>/src/<any>/bin/<cfg>/net10.0/vendor/duckdb/extensions/v1.5.5/osx_arm64/lance.duckdb_extension'`
+  (ABI matches the CLI's v1.5.5). CRITICAL: one statement per `-c` flag — a single `-c` script
+  parses BEFORE `LOAD` executes, so vendored-only grammar (postfix `... (col) USING BTREE`,
+  `SHOW INDEXES ON <qualified table>`) raises Parser Error unless the LOAD ran in an earlier `-c`.
+  The upstream signed-registry build parses NEITHER form — vendored grammar can ONLY be probed
+  this way (or in-app). SHOW INDEXES probed shape: index_name/index_type/fields/details VARCHAR
+  (details is JSON), rows_indexed UBIGINT (NOT BIGINT); index_type reports BTree/Inverted/
+  IVF_HNSW_PQ. A 4-dim IVF_HNSW_PQ trains fine at 300 rows; creation = full train
+  (rows_indexed = table count immediately).

@@ -237,6 +237,24 @@ Rejected along the way (see Decisions for winners):
     needed the pool's inheritance). `MemorySeeding.Insert` now opens one lance writer for the
     whole corpus — seeding is writing, and writers never rent.
 
+- 2026-08-13 (storage surface, Sérgio's rulings) — **`KontextConnectionPool` is retired;
+  `KontextDataSources` is the ONE storage surface.** Two in-memory engines reaching their data
+  through attachments: `Local` (lance ATTACH + `USE ldb` on every connection) and `Shared`
+  (same, plus the node's `kurrent.ddb` attached READ_ONLY — reads only, a lance-writing
+  transaction cannot touch a second catalog). The rule that killed pooling: the lance extension
+  caches a dataset per connection (`LanceDatasetCacheState`) and only evicts on that
+  connection's own writes — a reused connection serves the version it first saw, so
+  `ConnectionUse.Shared` is never used with lance. Writers hold a dedicated connection forever
+  (`OpenLanceWriter`); every read opens a fresh one (~0.8ms vs 0.13ms pooled — noise against a
+  vector/FTS scan). The async members run through `StaleHandleRecycle.ExecuteAsync` with
+  `Task.Run` inside the retry callback, returning `ValueTask` — Polly 8.7.0's sync entry point
+  is sync-over-async and `DelayAsync` blocks the thread when `IsSynchronous`. `StoragePath`
+  died with the pool: lance DDL takes qualified table names, so nothing needs the raw dataset
+  path. The `Kontext:Path` override test died with it — the section's keys are owned by
+  `KontextOptions` (2026-08-11 ruling), which has no Path key. Production wiring:
+  storage `<index>/kontext`, temp `<index>/kontext.tmp` (the `kurrent.ddb.tmp` convention),
+  shared attach `<db>/kurrent.ddb` (must match `DuckDBConnectionPoolLifetime`'s composition).
+
 ## Open Questions
 
 - Batch size / time-box defaults (500 / 5s, memories precedent) and the 30s vector-index
