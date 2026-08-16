@@ -117,7 +117,10 @@ public sealed class KontextRecordsIndexer(
             if (written == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < VectorIndexThrottle)
                 continue;
 
-            await _schema.EnsureVectorIndexAsync(ct).ConfigureAwait(false);
+            await _schema
+                .EnsureVectorIndexAsync(ct)
+                .ConfigureAwait(false);
+            
             lastOptimize = TimeProvider.System.GetTimestamp();
         }
     }

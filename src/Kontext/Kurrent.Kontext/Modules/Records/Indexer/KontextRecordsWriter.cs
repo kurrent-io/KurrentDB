@@ -47,7 +47,7 @@ public sealed class KontextRecordsWriter : IDisposable {
     /// commits them. Returns the number of rows written.
     /// </summary>
     public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct) {
-        var rows = new List<PendingRecord>(batch.Count);
+        var pendingRecords = new List<PendingRecord>(batch.Count);
 
         foreach (var record in batch) {
             // Control records ($checkpoint-received, $subscription-caughtUp) are consumer
@@ -71,7 +71,7 @@ public sealed class KontextRecordsWriter : IDisposable {
 
             string stream = record.Position.StreamId;
 
-            rows.Add(new(
+            var pendingRecord = new PendingRecord(
                 LogPosition: (long)record.Position.LogPosition.CommitPosition!.Value,
                 RecordId: record.Id,
                 Stream: stream,
@@ -80,20 +80,22 @@ public sealed class KontextRecordsWriter : IDisposable {
                 SchemaId: record.Headers.TryGetValue(HeaderKeys.SchemaId, out var schemaId) ? schemaId : null,
                 SchemaFormat: record.SchemaInfo.SchemaDataFormat.ToString(),
                 Content: content,
-                CreatedAt: new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds()));
+                CreatedAt: new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds());
+            
+            pendingRecords.Add(pendingRecord);
         }
 
-        if (rows.Count == 0)
+        if (pendingRecords.Count == 0)
             return 0;
 
         // One model call for the whole batch — per-record embedding is the dominant cost at
         // whole-log rates. A failure here propagates: nothing flushes, the transaction
         // reverts, and supervision replays the batch.
         var generated = await _embeddings
-            .GenerateAsync(rows.Select(row => row.Content), _embeddingOptions, ct)
+            .GenerateAsync(pendingRecords.Select(row => row.Content), _embeddingOptions, ct)
             .ConfigureAwait(false);
 
-        foreach (var (pending, embedding) in rows.Zip(generated)) {
+        foreach (var (pending, embedding) in pendingRecords.Zip(generated)) {
             var recordId = pending.RecordId;
             var row      = _appender.CreateRow();
 
@@ -115,7 +117,7 @@ public sealed class KontextRecordsWriter : IDisposable {
 
         _appender.Flush();
 
-        return rows.Count;
+        return pendingRecords.Count;
     }
 
     public void Dispose() => _appender.Dispose();

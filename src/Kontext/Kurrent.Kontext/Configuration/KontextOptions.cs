@@ -14,8 +14,5 @@ public sealed class KontextOptions {
 
     public bool Enabled { get; set; }
 
-    /// <summary>The storage root. Empty means derived by the host (index directory + "kontext").</summary>
-    public string Path { get; set; } = "";
-
     public KontextEmbeddingsOptions Embeddings { get; set; } = new();
 }
