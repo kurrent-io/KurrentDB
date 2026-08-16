@@ -2,6 +2,10 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+
+    <!-- A DuckDB extension only loads into the engine version it was built for, so the vendored
+         extension folder is named after this too. One value keeps the two in step. -->
+    <DuckDBVersion>1.5.5</DuckDBVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Apache.Arrow.Flight.AspNetCore" Version="22.1.0" />
@@ -204,7 +208,7 @@
     <PackageVersion Include="Catalyst" Version="1.0.65141" />
     <PackageVersion Include="Catalyst.Models.English" Version="1.0.30952" />
     <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
-    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.5" />
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="$(DuckDBVersion)" />
     <PackageVersion Include="Google.Cloud.VertexAI.Extensions" Version="1.0.0-beta08" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.76.0" />
     <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />

@@ -9,7 +9,8 @@ namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
 /// Behavioural tests for <see cref="KontextCheckpointStore"/> against a REAL engine: the shared
-/// checkpoints table in the native catalog, one row per projection key, monotonic stores.
+/// checkpoints table in the connection's current catalog — the lance catalog on the writer
+/// connection, the production shape — one row per projection key, monotonic stores.
 /// </summary>
 [Category("Integration")]
 [Timeout(30_000)]
@@ -17,9 +18,9 @@ public class KontextCheckpointStoreTests {
 	[Test]
 	public async ValueTask loads_unset_before_any_store(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		var store = new KontextCheckpointStore("fresh-projection");
 		store.EnsureSchema(connection);
@@ -31,9 +32,9 @@ public class KontextCheckpointStoreTests {
 	[Test]
 	public async ValueTask store_then_load_round_trips(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		var store    = new KontextCheckpointStore("round-trip");
 		var expected = RecordPosition.ForLog(4200);
@@ -50,9 +51,9 @@ public class KontextCheckpointStoreTests {
 	[Test]
 	public async ValueTask stale_store_is_a_no_op(CancellationToken cancellationToken) {
 		// Arrange — the monotonic guard: a replayed batch writing an older position folds nothing.
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		var store  = new KontextCheckpointStore("monotonic");
 		var newest = RecordPosition.ForLog(500);
@@ -70,9 +71,9 @@ public class KontextCheckpointStoreTests {
 	[Test]
 	public async ValueTask keys_are_isolated(CancellationToken cancellationToken) {
 		// Arrange — two projections share the table, never each other's row.
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		var memories = new KontextCheckpointStore("memories");
 		var entities = new KontextCheckpointStore("entities");
@@ -92,8 +93,8 @@ public class KontextCheckpointStoreTests {
 		await Assert.That(entities.Load(connection)).IsEqualTo(entitiesPosition);
 	}
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) =>
+		MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

@@ -29,10 +29,9 @@ namespace Kurrent.Kontext.Modules.Memory;
 /// checkpoint — the batch transaction makes the replay exact.
 /// </summary>
 public sealed class KontextMemoryProjector(
-    KontextConnectionPool pool,
+    KontextDataSource dataSource,
     IConsumerBuilder consumerBuilder,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
-    KontextSchemaOptions schemaOptions,
     ILoggerFactory loggerFactory
 ) {
     // Changing the key orphans the stored checkpoint and replays the read model from the start.
@@ -74,14 +73,14 @@ public sealed class KontextMemoryProjector(
         // connection (writers never rent), the checkpoint store — whose unqualified table lands
         // in the lance catalog via the redirection — and the per-batch transaction that carries
         // both the MERGE and the checkpoint. The writer only turns batches into statements here.
-        await using var connection = pool.OpenLanceWriter();
+        await using var connection = dataSource.OpenLanceWriter();
 
         var checkpoints = new KontextCheckpointStore(CheckpointKey);
         checkpoints.EnsureSchema(connection);
 
         // The dimension is the schema's — the FLOAT[N] column type and the writer's cast must
-        // agree, and both come from the same configured value.
-        var writer = new KontextMemoryWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = schemaOptions.Dimension });
+        // agree, and both come from KontextSchemaTask.Dimension.
+        var writer = new KontextMemoryWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
 
         // Only used when no checkpoint exists yet — resumption always wins. Earliest, unlike the
         // schema registry's Latest: the read model is rebuildable, so a fresh node projects the

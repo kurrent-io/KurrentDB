@@ -10,22 +10,21 @@ using Kurrent.Surge;
 namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
-/// Pins that the pool needs NO engine file: everything durable lives in lance (tables AND
-/// checkpoints), so the duck engine is a pure compute surface — each connection opens an
-/// in-memory catalog and the lance ATTACH provides all shared state. Verifies the full writer
-/// shape (appender flush + checkpoint MERGE in one transaction) and that a rented reader —
-/// its own private in-memory catalog — sees the writer's lance commits.
+/// Pins that the storage needs NO engine file: everything durable lives in lance (tables AND
+/// checkpoints), so the in-memory duck engine is a pure compute surface and the lance ATTACH
+/// carries all durable state. Verifies the full writer shape (appender flush + checkpoint MERGE
+/// in one transaction) and that a separate read connection sees the writer's lance commits.
 /// </summary>
 [Category("Integration")]
 [Timeout(30_000)]
 public class InMemoryEngineProbeTests {
 	[Test]
 	public async ValueTask writer_shape_works_without_an_engine_file(CancellationToken cancellationToken) {
-		// Arrange — no Data Source file: the engine catalog is in-memory, per connection.
-		using var dir  = new TempDir();
-		using var pool = new KontextConnectionPool(dir.Path);
+		// Arrange — no Data Source file: the engine catalog is in-memory.
+		using var dir         = new TempDir();
+		using var dataSources = MemorySeeding.NewDataSources(dir.Path);
 
-		await using var connection = pool.OpenLanceWriter();
+		await using var connection = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE IF NOT EXISTS ldb.main.probe_mem (id BIGINT, content VARCHAR)");
 
@@ -62,23 +61,23 @@ public class InMemoryEngineProbeTests {
 	}
 
 	[Test]
-	public async ValueTask rented_reader_sees_the_writers_lance_commits(CancellationToken cancellationToken) {
-		// Arrange — writer commits on its own connection; the reader rents a DIFFERENT
-		// connection whose private in-memory catalog shares nothing but the lance ATTACH.
-		using var dir  = new TempDir();
-		using var pool = new KontextConnectionPool(dir.Path);
+	public async ValueTask separate_reader_connection_sees_the_writers_lance_commits(CancellationToken cancellationToken) {
+		// Arrange — writer commits on its own connection; the read runs on a DIFFERENT,
+		// freshly-opened connection, so the commit can only arrive through lance.
+		using var dir         = new TempDir();
+		using var dataSources = MemorySeeding.NewDataSources(dir.Path);
 
-		await using (var connection = pool.OpenLanceWriter()) {
+		await using (var connection = dataSources.OpenLanceWriter()) {
 			Exec(connection, "CREATE TABLE IF NOT EXISTS ldb.main.probe_shared (id BIGINT)");
 			Exec(connection, "INSERT INTO ldb.main.probe_shared VALUES (42)");
 		}
 
 		// Act
-		var seen = await pool.ExecuteAsync(
+		var seen = await dataSources.ExecuteAsync(
 			connection => Scalar(connection, "SELECT count(*) FROM ldb.main.probe_shared WHERE id = 42"),
 			cancellationToken);
 
-		// Assert — lance is the shared state; the engine catalogs never needed to be.
+		// Assert — lance is the durable shared state; no engine file was ever needed.
 		await Assert.That(seen).IsEqualTo(1L);
 	}
 

@@ -21,10 +21,9 @@ public sealed class KontextRecordsIndexerService(IServiceProvider services, Node
     : SystemReadyBackgroundService(services, readyWhen, "KontextRecordsIndexer") {
     protected override Task RunAsync(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) =>
         new KontextRecordsIndexer(
-            Services.GetRequiredService<KontextConnectionPool>(),
+            Services.GetRequiredService<KontextDataSource>(),
             Services.GetRequiredService<IConsumerBuilder>(),
             Services.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
-            Services.GetRequiredService<KontextSchemaOptions>(),
             Services.GetRequiredService<RecordContentExtractor>(),
             Services.GetRequiredService<ILoggerFactory>()
         ).RunUntilStopped(stoppingToken);

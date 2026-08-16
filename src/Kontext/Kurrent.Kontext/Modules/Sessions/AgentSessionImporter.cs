@@ -13,8 +13,10 @@ namespace Kurrent.Kontext.Modules.Sessions;
 /// import batch, and the count/existence probes callers need, and nothing else composes SQL against
 /// these tables.
 ///
-/// The tables live UNQUALIFIED in the engine catalog's <c>main</c> schema, which always exists — so
-/// nothing creates a schema. They are ordinary DuckDB tables on the plain bulk-append write path.
+/// The tables live in the engine catalog's <c>main</c> schema, which always exists — so nothing
+/// creates a schema. They are ordinary DuckDB tables on the plain bulk-append write path,
+/// addressed as <c>memory.main.*</c> throughout: storage connections start on the lance catalog,
+/// so an unqualified name would silently land these relational tables in lance.
 ///
 /// Two tables split ONE materialized scan per tick (the extension re-reads every JSONL file on each
 /// call — no pushdown — so scanning once and splitting it halves the cost):
@@ -30,21 +32,23 @@ namespace Kurrent.Kontext.Modules.Sessions;
 /// is not unique (a real FK would need a separate sessions dimension table), and sessions made up
 /// ENTIRELY of unparseable lines exist — an enforced FK would reject exactly the rows we are keeping.
 ///
-/// DDL is a one-time <see cref="CreateAsync"/> bootstrap (mirroring <see cref="KontextSchema.CreateAsync"/>);
+/// DDL is a one-time <see cref="CreateAsync"/> bootstrap (mirroring <see cref="KontextSchemaTask"/>);
 /// the per-tick <see cref="ImportAsync"/> is DML-only and assumes the tables already exist.
 ///
-/// Renting from the pool's READ surface (<see cref="KontextConnectionPool.ExecuteAsync{T}"/>) is
-/// deliberate. The writer discipline — a dedicated connection, commit-conflict retry, prepared
+/// Going through the READ surface (<see cref="KontextDataSource.ExecuteAsync{T}"/>) is
+/// deliberate. The writer discipline — a held connection, commit-conflict retry, prepared
 /// statement reuse — exists for Lance commits; none of it applies to a plain-table INSERT, and the
-/// import scheduler's tick gate already serializes ticks, so renting keeps the importer stateless.
+/// import scheduler's tick gate already serializes ticks, so per-call connections keep the
+/// importer stateless. The tables still survive across calls: every connection of the data
+/// source joins the same in-memory engine catalog.
 /// </summary>
-public sealed class AgentSessionImporter(KontextConnectionPool connections, AgentSessionImportOptions options) {
+public sealed class AgentSessionImporter(KontextDataSource connections, AgentSessionImportOptions options) {
     // The one-time bootstrap DDL, verbatim from spike-bootstrap.sql: the two tables in the engine
     // catalog's main schema, one command. IF NOT EXISTS makes CreateAsync idempotent; the columns are
     // explicit on purpose — an extension upgrade that adds columns must not silently reshape our tables.
     const string BootstrapSql =
         """
-        CREATE TABLE IF NOT EXISTS transcripts (
+        CREATE TABLE IF NOT EXISTS memory.main.transcripts (
           source                VARCHAR,
           session_id            VARCHAR,
           project_path          VARCHAR,
@@ -75,7 +79,7 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
           imported_at           TIMESTAMPTZ DEFAULT now()
         );
 
-        CREATE TABLE IF NOT EXISTS transcript_parse_errors (
+        CREATE TABLE IF NOT EXISTS memory.main.transcript_parse_errors (
           source       VARCHAR,
           session_id   VARCHAR,
           project_path VARCHAR,
@@ -89,13 +93,13 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
 
     // The existence/count probe: duckdb_tables() lists across every attached catalog and never throws,
     // so it answers "does the table exist yet" without touching a table that may not be there. Filtered
-    // to the engine catalog's main schema (current_database(), schema 'main') so it targets exactly our
-    // unqualified tables and can never match an 'ldb' Lance dataset.
+    // to the engine catalog's main schema — 'memory' by name, because current_database() is the lance
+    // catalog on these connections — so it can never match an 'ldb' Lance dataset.
     const string TableExistsSql =
         """
         SELECT count(*)
         FROM duckdb_tables()
-        WHERE database_name = current_database()
+        WHERE database_name = 'memory'
           AND schema_name = 'main'
           AND table_name = $table_name
         """;
@@ -108,10 +112,10 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
     /// <summary>
     /// Creates the two transcript tables (<c>transcripts</c> and <c>transcript_parse_errors</c>).
     /// Idempotent — safe to run on every host start (both use IF NOT EXISTS). Mirrors
-    /// <see cref="KontextSchema.CreateAsync"/>: the host gets ONE place to bootstrap this storage
+    /// <see cref="KontextSchemaTask"/>: the host gets ONE place to bootstrap this storage
     /// before any import tick touches the tables, keeping the per-tick batch DML-only.
     /// </summary>
-    public Task CreateAsync(CancellationToken ct = default) =>
+    public ValueTask CreateAsync(CancellationToken ct = default) =>
         connections.ExecuteAsync(
             connection => {
                 using var command = connection.CreateCommand();
@@ -133,16 +137,16 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
     /// cadence is the retry.
     /// </para>
     /// <para>
-    /// The scan is materialized into a <c>CREATE OR REPLACE TEMP TABLE</c> — OR REPLACE because pooled
-    /// connections outlive ticks, so a tick that failed after creating the temp table may have left it
-    /// behind. The incremental key is <c>uuid</c> (message identity); forked or resumed sessions copy
+    /// The scan is materialized into a <c>CREATE OR REPLACE TEMP TABLE</c>; the connection — and with
+    /// it the temp table — dies when the callback returns, so the whole batch must stay one command.
+    /// The incremental key is <c>uuid</c> (message identity); forked or resumed sessions copy
     /// prefix messages into new files, so the incoming scan is deduped by uuid before the ANTI JOIN
     /// drops everything already stored. The parse-error snapshot is refreshed with <c>DELETE</c> +
     /// <c>INSERT</c> (stable table identity now that DDL is bootstrap-owned) — it is a snapshot, not
     /// a log.
     /// </para>
     /// </remarks>
-    public Task ImportAsync(CancellationToken ct = default) =>
+    public ValueTask ImportAsync(CancellationToken ct = default) =>
         connections.ExecuteAsync(
             connection => {
                 using var command = connection.CreateCommand();
@@ -153,11 +157,11 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
     /// <summary>
     /// Determines whether the transcript tables exist yet — the import scheduler's quiet-skip probe
     /// for ticks that fire before <see cref="CreateAsync"/> has run. Mirrors
-    /// <see cref="KontextSchema.ExistsAsync"/>, filtering the engine catalog's <c>main</c> schema
+    /// <see cref="KontextIndexMaintenance.ExistsAsync"/>, filtering the engine catalog's <c>main</c> schema
     /// (current_database(), not the Lance 'ldb' alias). Bootstrap creates both tables together, so
     /// probing <c>transcripts</c> answers for both.
     /// </summary>
-    public Task<bool> ExistsAsync(CancellationToken ct = default) =>
+    public ValueTask<bool> ExistsAsync(CancellationToken ct = default) =>
         connections.ExecuteAsync(
             connection => {
                 using var command = connection.CreateCommand();
@@ -172,22 +176,22 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
     /// of a call that lands before <see cref="CreateAsync"/> has created the table: returns 0 instead
     /// of failing.
     /// </summary>
-    public Task<long> CountAsync(CancellationToken ct = default) => CountTableAsync("transcripts", ct);
+    public ValueTask<long> CountAsync(CancellationToken ct = default) => CountTableAsync("transcripts", ct);
 
     /// <summary>
     /// The current parse-error snapshot count — the lines this extension build cannot parse yet.
     /// Mirrors <see cref="CountAsync"/>, including the tolerance of a table that does not exist before
     /// bootstrap.
     /// </summary>
-    public Task<long> CountParseErrorsAsync(CancellationToken ct = default) => CountTableAsync("transcript_parse_errors", ct);
+    public ValueTask<long> CountParseErrorsAsync(CancellationToken ct = default) => CountTableAsync("transcript_parse_errors", ct);
 
-    Task<long> CountTableAsync(string tableName, CancellationToken ct) =>
+    ValueTask<long> CountTableAsync(string tableName, CancellationToken ct) =>
         connections.ExecuteAsync(
             connection => {
                 // A bare SELECT count(*) FROM <table> binds the table name at PARSE time, so it throws
                 // before CreateAsync has bootstrapped the table rather than returning 0. Probe first
                 // (the same current_database()/main filter ExistsAsync uses, so it never matches an ldb
-                // Lance table), count only when the table is really there — two commands on one rented
+                // Lance table), count only when the table is really there — two commands on one
                 // connection because a single batch would still fail to parse its second statement.
                 using var probe = connection.CreateCommand();
                 probe.CommandText = TableExistsSql;
@@ -199,7 +203,7 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
                 using var count = connection.CreateCommand();
                 // A table name cannot be a bound parameter, but tableName is a hardcoded literal here
                 // (never caller input), so embedding it carries no injection surface.
-                count.CommandText = $"SELECT count(*) FROM {tableName}";
+                count.CommandText = $"SELECT count(*) FROM memory.main.{tableName}";
 
                 return (long)count.ExecuteScalar()!;
             }, ct);
@@ -218,7 +222,7 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
              CREATE OR REPLACE TEMP TABLE agent_scan AS
              SELECT * FROM read_conversations(path := '{escapedPath}', source := 'claude');
 
-             INSERT INTO transcripts BY NAME
+             INSERT INTO memory.main.transcripts BY NAME
              SELECT
                rc.source, rc.session_id, rc.project_path, rc.project_dir, rc.file_name,
                rc.is_agent, rc.line_number, rc.message_type, rc.uuid, rc.parent_uuid,
@@ -228,14 +232,14 @@ public sealed class AgentSessionImporter(KontextConnectionPool connections, Agen
                rc.cache_read_tokens, rc.slug, rc.git_branch, rc.cwd, rc.version,
                rc.stop_reason, rc.repository
              FROM agent_scan AS rc
-             ANTI JOIN transcripts AS m ON rc.uuid = m.uuid
+             ANTI JOIN memory.main.transcripts AS m ON rc.uuid = m.uuid
              WHERE rc.message_type <> '_parse_error'
                AND rc.uuid IS NOT NULL
              QUALIFY row_number() OVER (PARTITION BY rc.uuid ORDER BY rc.file_name, rc.line_number) = 1;
 
-             DELETE FROM transcript_parse_errors;
+             DELETE FROM memory.main.transcript_parse_errors;
 
-             INSERT INTO transcript_parse_errors
+             INSERT INTO memory.main.transcript_parse_errors
              SELECT
                rc.source, rc.session_id, rc.project_path, rc.project_dir, rc.file_name,
                rc.line_number, rc.message_content AS error, now() AS scanned_at

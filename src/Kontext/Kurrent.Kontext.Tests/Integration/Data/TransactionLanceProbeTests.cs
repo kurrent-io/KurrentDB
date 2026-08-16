@@ -29,11 +29,11 @@ public class TransactionLanceProbeTests {
 	[Test]
 	public async ValueTask cross_catalog_write_transaction_is_refused(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
-		Exec(connection, "CREATE TABLE probe_ckpt_native (position BIGINT)");
+		Exec(connection, "CREATE TABLE memory.main.probe_ckpt_native (position BIGINT)");
 		Exec(connection, "CREATE TABLE ldb.main.probe_rb (id BIGINT)");
 
 		// Act — one duck transaction attempting to write both catalogs.
@@ -42,7 +42,7 @@ public class TransactionLanceProbeTests {
 		using (connection.BeginTransaction()) {
 			Exec(connection, "INSERT INTO ldb.main.probe_rb VALUES (1)");
 			try {
-				Exec(connection, "INSERT INTO probe_ckpt_native VALUES (10)");
+				Exec(connection, "INSERT INTO memory.main.probe_ckpt_native VALUES (10)");
 			} catch (Exception ex) {
 				refusal = ex.Message;
 			}
@@ -54,15 +54,15 @@ public class TransactionLanceProbeTests {
 		await Assert.That(refusal).IsNotNull();
 		await Assert.That(refusal!).Contains("single transaction can only write to a single attached database");
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.probe_rb")).IsEqualTo(0L);
-		await Assert.That(Scalar(connection, "SELECT count(*) FROM probe_ckpt_native")).IsEqualTo(0L);
+		await Assert.That(Scalar(connection, "SELECT count(*) FROM memory.main.probe_ckpt_native")).IsEqualTo(0L);
 	}
 
 	[Test]
 	public async ValueTask transaction_across_two_lance_tables(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_two_a (id BIGINT)");
 		Exec(connection, "CREATE TABLE ldb.main.probe_two_b (id BIGINT)");
@@ -102,9 +102,9 @@ public class TransactionLanceProbeTests {
 	[Test]
 	public async ValueTask appender_flush_and_checkpoint_insert_in_one_transaction(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_app_data (id BIGINT)");
 		Exec(connection, "CREATE TABLE ldb.main.probe_app_ckpt (position BIGINT)");
@@ -140,9 +140,9 @@ public class TransactionLanceProbeTests {
 	[Test]
 	public async ValueTask checkpoint_store_works_unchanged_on_a_lance_redirected_connection(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "USE ldb");
 
@@ -198,8 +198,8 @@ public class TransactionLanceProbeTests {
 	static int CountManifests(string storagePath, string? dataset = null) =>
 		Directory.GetFiles(dataset is null ? storagePath : Path.Combine(storagePath, dataset), "*.manifest", SearchOption.AllDirectories).Length;
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) =>
+		MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

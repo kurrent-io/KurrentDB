@@ -53,24 +53,28 @@
   </ItemGroup>
     
   <ItemGroup>
-    <Folder Include="Data\.scratch\" />
+    <Folder Include=".scratch\" />
+    <Folder Include="Infrastructure\Data\Migrations\DuckDB\" />
     <Folder Include="Modules\Entities\" />
   </ItemGroup>
 
   <!-- Vendored lance build (lance-duckdb PR #237 — the stock v1.5.5 build broke the
-       prefilter := true contract). Only the platform being built for is copied (~250 MB each);
-       the output path is fixed so runtime code needs no platform logic. -->
+       prefilter := true contract). Only the platform being built for is copied (~215 MB each),
+       into DuckDB's own <root>/extensions/<version>/<platform>/ repository layout. -->
   <PropertyGroup>
-    <DuckDBVersion>1.5.5</DuckDBVersion>
-    <_VendoredLanceRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_VendoredLanceRid>
-    <_VendoredLanceRid Condition="'$(_VendoredLanceRid)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</_VendoredLanceRid>
-    <_VendoredLancePlatform Condition="'$(_VendoredLanceRid)' == 'osx-arm64'">osx_arm64</_VendoredLancePlatform>
-    <_VendoredLancePlatform Condition="'$(_VendoredLanceRid)' == 'linux-arm64'">linux_arm64</_VendoredLancePlatform>
-    <_VendoredLancePlatform Condition="'$(_VendoredLanceRid)' == 'linux-x64'">linux_amd64</_VendoredLancePlatform>
+    <!-- The publish target's RID, not the build host's. -->
+    <VendoredLanceRid Condition="'$(VendoredLanceRid)' == ''">$([MSBuild]::ValueOrDefault('$(RuntimeIdentifier)', '$(NETCoreSdkPortableRuntimeIdentifier)'))</VendoredLanceRid>
+    <!-- osx-arm64 -> osx_arm64, linux-x64 -> linux_amd64. DuckDBVendorExtensions must agree. -->
+    <VendoredLancePlatform>$(VendoredLanceRid.Replace('-x64', '_amd64').Replace('-', '_'))</VendoredLancePlatform>
+    <!-- Also composed from AppContext.BaseDirectory by DuckDBVendorExtensions. -->
+    <VendoredExtensionsDir>vendor/duckdb/extensions/v$(DuckDBVersion)/$(VendoredLancePlatform)</VendoredExtensionsDir>
+    <VendoredLancePath>$([MSBuild]::NormalizePath('$(RepoRoot)', '$(VendoredExtensionsDir)', 'lance.duckdb_extension'))</VendoredLancePath>
   </PropertyGroup>
-  <ItemGroup Condition="'$(_VendoredLancePlatform)' != ''">
-    <None Include="$(MSBuildThisFileDirectory)..\..\..\vendor\duckdb\extensions\v$(DuckDBVersion)\$(_VendoredLancePlatform)\lance.duckdb_extension"
-          Link="vendor\duckdb\extensions\lance.duckdb_extension"
+
+  <!-- Gated on the file, so vendoring a new platform needs no change here. -->
+  <ItemGroup Condition="Exists('$(VendoredLancePath)')">
+    <None Include="$(VendoredLancePath)"
+          LinkBase="$(VendoredExtensionsDir)"
           CopyToOutputDirectory="PreserveNewest"
           Visible="false" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Infrastructure.Data.Migrations.DuckDB;
 using Kurrent.Quack;
 using Polly;
 using Polly.Retry;
@@ -11,7 +12,7 @@ namespace Kurrent.Kontext.Infrastructure.Data;
 /// Kontext's data sources. The engine needs no file of its own — everything durable lives in
 /// Lance — so both are in-memory engines that reach their data through attachments.
 /// </summary>
-public sealed class KontextDataSources : IDisposable {
+public sealed class KontextDataSource : IDuckDBSchemaExecutor, IDisposable {
     public const string LanceAlias  = "ldb";
     public const string SharedAlias = "kdb";
 
@@ -20,7 +21,7 @@ public sealed class KontextDataSources : IDisposable {
     
     static readonly ResiliencePipeline StaleHandleRecycle;
 
-    static KontextDataSources() {
+    static KontextDataSource() {
         // Recycles a poisoned connection ONCE: a stale cached dataset view never converges on the same
         // connection, so the retry re-runs the whole callback on a fresh one. No delay — the fresh
         // connection either sees the dataset or the failure is not transient.
@@ -47,7 +48,7 @@ public sealed class KontextDataSources : IDisposable {
     /// </summary>
     public DuckDBDataSource Shared { get; }
 
-    public KontextDataSources(string storagePath, string tempDirectory, string sharedDatabasePath) {
+    public KontextDataSource(string storagePath, string tempDirectory, string sharedDatabasePath) {
         ArgumentException.ThrowIfNullOrEmpty(storagePath);
         ArgumentException.ThrowIfNullOrEmpty(tempDirectory);
         ArgumentException.ThrowIfNullOrEmpty(sharedDatabasePath);

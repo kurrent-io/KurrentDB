@@ -30,15 +30,15 @@ public class KontextMemoryWriterTests {
 	[Test]
 	public async ValueTask projects_a_batch_of_retained_memories_in_one_transaction(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var retained          = NewRetained("m1", "first belief", Base);
 		var expectedMemory    = retained.Memories[0].Memory;
@@ -67,12 +67,12 @@ public class KontextMemoryWriterTests {
 		await Assert.That(stored.SupersededBy).IsEqualTo("");
 
 		// Assert — the write-side stamps for both rows.
-		var (logPosition, embeddingMatches, citesSource) = ReadProjectionStamp(pool, "m1", expectedEmbedding, citedId: "cited-1");
+		var (logPosition, embeddingMatches, citesSource) = ReadProjectionStamp(dataSources, "m1", expectedEmbedding, citedId: "cited-1");
 
 		await Assert.That(logPosition).IsEqualTo(100UL);
 		await Assert.That(embeddingMatches).IsTrue();
 		await Assert.That(citesSource).IsTrue();
-		await Assert.That(ReadLogPosition(pool, "m2")).IsEqualTo(200UL);
+		await Assert.That(ReadLogPosition(dataSources, "m2")).IsEqualTo(200UL);
 	}
 
 	[Test]
@@ -80,12 +80,12 @@ public class KontextMemoryWriterTests {
 		// Arrange — the projector service's exact loop shape: writer MERGE + checkpoint MERGE
 		// in one transaction on the lance-redirected connection. A lance-writing transaction
 		// cannot touch any other attached catalog, so the checkpoint rides the redirection.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		await using var connection = pool.OpenLanceWriter();
+		await using var connection = dataSources.OpenLanceWriter();
 
 		var writer      = NewWriter(connection);
 		var checkpoints = new KontextCheckpointStore("memories-writer-test");
@@ -111,8 +111,8 @@ public class KontextMemoryWriterTests {
 		// Assert — data and checkpoint advanced together, then reverted together.
 		await Assert.That((ulong?)afterCommit).IsEqualTo(100UL);
 		await Assert.That((ulong?)afterRollback).IsEqualTo(100UL);
-		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
-		await Assert.That(ReadRowCount(pool, "m2")).IsEqualTo(0L);
+		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(dataSources, "m2")).IsEqualTo(0L);
 	}
 
 	[Test]
@@ -120,15 +120,15 @@ public class KontextMemoryWriterTests {
 		// Arrange — the same record applied in two successive batches: exactly what a crash
 		// between an applied batch and its checkpoint produces on restart. The matched arm
 		// rewrites the content columns with the same values — the state cannot change.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 		var       record = CreateRecord(NewRetained("m1", "first belief", Base), position: 100);
 
 		// Act
@@ -136,20 +136,20 @@ public class KontextMemoryWriterTests {
 		await Project(writer, record);
 
 		// Assert — one row, intact, still stamped with the original position.
-		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 		await Assert.That((await store.GetAsync("m1"))!.Content).IsEqualTo("first belief");
-		await Assert.That(ReadLogPosition(pool, "m1")).IsEqualTo(100UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(100UL);
 	}
 
 	[Test]
 	public async ValueTask retain_replay_refreshes_the_embedding_in_place(CancellationToken cancellationToken) {
 		// Arrange — the original pass wrote m1 with the standard fake model.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var record = CreateRecord(NewRetained("m1", "first belief", Base), position: 100);
 
@@ -161,9 +161,9 @@ public class KontextMemoryWriterTests {
 
 		// Assert — still one row, its embedding refreshed to the new model's vector.
 		var (logPosition, embeddingMatches, _) = ReadProjectionStamp(
-			pool, "m1", ShiftedEmbeddingGenerator.Embed("first belief"), citedId: "cited-1");
+			dataSources, "m1", ShiftedEmbeddingGenerator.Embed("first belief"), citedId: "cited-1");
 
-		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 		await Assert.That(embeddingMatches).IsTrue();
 		await Assert.That(logPosition).IsEqualTo(100UL);
 	}
@@ -172,15 +172,15 @@ public class KontextMemoryWriterTests {
 	public async ValueTask retain_replay_does_not_resurrect_folded_lifecycle(CancellationToken cancellationToken) {
 		// Arrange — m1 superseded by m2 in a later batch, then m1's retained record replays.
 		// An overwrite-on-match implementation would briefly resurrect m1 here.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 		var m1Record     = CreateRecord(NewRetained("m1", "old belief", Base), position: 100);
@@ -196,22 +196,22 @@ public class KontextMemoryWriterTests {
 
 		await Assert.That(old!.SupersededAt.ToDateTimeOffset()).IsEqualTo(supersededAt);
 		await Assert.That(old.SupersededBy).IsEqualTo("m2");
-		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 	}
 
 	[Test]
 	public async ValueTask same_batch_supersession_folds_prior_rows(CancellationToken cancellationToken) {
 		// Arrange — m1 and its successor m2 arrive in the SAME batch: the insert leg runs
 		// before the folds, so the supersession must land on the row inserted moments earlier.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 
@@ -225,7 +225,7 @@ public class KontextMemoryWriterTests {
 
 		await Assert.That(old!.SupersededAt.ToDateTimeOffset()).IsEqualTo(supersededAt);
 		await Assert.That(old.SupersededBy).IsEqualTo("m2");
-		await Assert.That(ReadLogPosition(pool, "m1")).IsEqualTo(200UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(200UL);
 
 		// Assert — the successor carries the supersedes edge, keeping the lineage symmetric.
 		var successor = await store.GetAsync("m2");
@@ -237,15 +237,15 @@ public class KontextMemoryWriterTests {
 	[Test]
 	public async ValueTask retraction_in_the_same_batch_marks_every_cascaded_row(CancellationToken cancellationToken) {
 		// Arrange + Act — two retains and the retraction cascading over both, ONE batch.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var retractedAt = Base.AddHours(3);
 
@@ -264,7 +264,7 @@ public class KontextMemoryWriterTests {
 		// Assert — both rows carry the retraction instant and the retracting position.
 		await Assert.That((await store.GetAsync("m1"))!.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
 		await Assert.That((await store.GetAsync("m2"))!.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
-		await Assert.That(ReadLogPosition(pool, "m1")).IsEqualTo(300UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
 
 		var listed = await store.ListAsync(
 				[], [], Contracts.RecollectSort.RetainedAt,
@@ -277,15 +277,15 @@ public class KontextMemoryWriterTests {
 	[Test]
 	public async ValueTask recall_resets_the_recency_clock_and_the_latest_recall_wins(CancellationToken cancellationToken) {
 		// Arrange — a memory whose recency clock starts at its retention instant.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var firstRecallAt = Base.AddHours(5);
 		var lastRecallAt  = Base.AddHours(7);
@@ -303,7 +303,7 @@ public class KontextMemoryWriterTests {
 
 		await Assert.That(stored!.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(lastRecallAt);
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
-		await Assert.That(ReadLogPosition(pool, "m1")).IsEqualTo(300UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
 	}
 
 	[Test]
@@ -311,15 +311,15 @@ public class KontextMemoryWriterTests {
 		// Arrange — ONE event carrying a three-memory retain call, which is what `retain` emits for
 		// a batch. Its last memory supersedes the first, so the intra-event ordering guarantee is
 		// exercised too: the fold has to find a row this same event inserted.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var retained = NewRetainedBatch(Base,
 			("b1", "first observation", []),
@@ -335,7 +335,7 @@ public class KontextMemoryWriterTests {
 		var stored = await store.GetAsync(expectedIds.ToArray()).ToListAsync();
 
 		await Assert.That(stored.Select(memory => memory.MemoryId).Order().ToList()).IsEquivalentTo(expectedIds);
-		await Assert.That(ReadLogPosition(pool, "b3")).IsEqualTo(100UL);
+		await Assert.That(ReadLogPosition(dataSources, "b3")).IsEqualTo(100UL);
 
 		// Assert — they share the call's single retention instant.
 		foreach (var memory in stored)
@@ -356,15 +356,15 @@ public class KontextMemoryWriterTests {
 		// Arrange — the conjunction case: m1 does not exist, and ONE batch retains it,
 		// supersedes it (via m2), AND retracts it. The single MERGE must insert the row already
 		// carrying the full terminal state — no intermediate live window ever exists.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
 
-		using var connection = pool.Open();
+		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(pool);
+		var       store  = new KontextDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 		var retractedAt  = Base.AddHours(3);
@@ -385,12 +385,12 @@ public class KontextMemoryWriterTests {
 		// Assert — one row, both lifecycle facets folded at birth, stamped with the last touch.
 		var stored = await store.GetAsync("m1");
 
-		await Assert.That(ReadRowCount(pool, "m1")).IsEqualTo(1L);
+		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 		await Assert.That(stored!.SupersededBy).IsEqualTo("m2");
 		await Assert.That(stored.SupersededAt.ToDateTimeOffset()).IsEqualTo(supersededAt);
 		await Assert.That(stored.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
-		await Assert.That(ReadLogPosition(pool, "m1")).IsEqualTo(300UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
 	}
 
 	#region ->> Test Infrastructure <<-
@@ -470,9 +470,9 @@ public class KontextMemoryWriterTests {
 
 	/// <summary>Reads the write-side columns the store never surfaces, in one round trip.</summary>
 	static (ulong LogPosition, bool EmbeddingMatches, bool CitesSource) ReadProjectionStamp(
-		KontextConnectionPool pool, string memoryId, float[] expectedEmbedding, string citedId
-	) {
-		using (pool.Rent(out var connection)) {
+		KontextDataSource dataSource, string memoryId, float[] expectedEmbedding, string citedId
+	) =>
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText =
 				"""
@@ -490,32 +490,26 @@ public class KontextMemoryWriterTests {
 			reader.Read();
 
 			return (Convert.ToUInt64(reader.GetValue(0), CultureInfo.InvariantCulture), reader.GetBoolean(1), reader.GetBoolean(2));
-		}
-	}
+		});
 
-	static long ReadRowCount(KontextConnectionPool pool, string memoryId) {
-		using (pool.Rent(out var connection)) {
+	static long ReadRowCount(KontextDataSource dataSource, string memoryId) =>
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText = "SELECT count(*) FROM ldb.main.memories WHERE memory_id = $memory_id";
 			command.Parameters.Add(new("memory_id", memoryId));
 			return (long)command.ExecuteScalar()!;
-		}
-	}
+		});
 
-	static ulong ReadLogPosition(KontextConnectionPool pool, string memoryId) {
-		using (pool.Rent(out var connection)) {
+	static ulong ReadLogPosition(KontextDataSource dataSource, string memoryId) =>
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText = "SELECT log_position FROM ldb.main.memories WHERE memory_id = $memory_id";
 			command.Parameters.Add(new("memory_id", memoryId));
 			return Convert.ToUInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
-		}
-	}
+		});
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
-
-	// Dimension 4 matches FakeEmbeddingGenerator's vectors.
-	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
+	static KontextDataSource NewDataSources(string dir) =>
+		MemorySeeding.NewDataSources(dir);
 
 	/// <summary>
 	/// Deterministic 4-dim embeddings: a unit vector on the axis picked by the content's length,

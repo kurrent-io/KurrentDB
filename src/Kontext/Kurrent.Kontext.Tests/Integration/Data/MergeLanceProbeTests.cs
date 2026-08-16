@@ -21,9 +21,9 @@ public class MergeLanceProbeTests {
 		// Arrange — one pre-existing row; the source carries one plain insert, one insert that is
 		// already retracted (same-batch retain+retract), one fold-only row against the existing
 		// target, and one fold-only ghost that matches nothing and must do NOTHING.
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_merge (id VARCHAR, content VARCHAR, is_retracted BOOLEAN, retracted_at BIGINT, log_position BIGINT)");
 		Exec(connection, "INSERT INTO ldb.main.probe_merge VALUES ('e1', 'old', false, NULL, 1)");
@@ -70,9 +70,9 @@ public class MergeLanceProbeTests {
 	[Test]
 	public async ValueTask transaction_commit_granularity_on_lance(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_txn (id BIGINT)");
 
@@ -117,8 +117,8 @@ public class MergeLanceProbeTests {
 	static int CountManifests(string storagePath) =>
 		Directory.GetFiles(storagePath, "*.manifest", SearchOption.AllDirectories).Length;
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) =>
+		MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

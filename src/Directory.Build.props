@@ -1,4 +1,30 @@
 <Project>
+  <!--
+    Hard link large assets into every output directory instead of copying them. The repo carries
+    several hundred-megabyte binaries — the vendored lance extension, the embedded ONNX models,
+    the DuckDB and ONNX natives — and MSBuild copies each one into the output of every project
+    that references it, directly or transitively. Linking makes those directory entries share a
+    single file on disk, so the bytes are written once no matter how many projects consume them.
+
+    Three properties because three different Copy invocations are involved: content and None
+    items, copy-local references, and the project's own build outputs.
+
+    Hard links need the source and the destination on one volume; MSBuild falls back to copying
+    when they are not, so a build on a separate output disk still works, just without the saving.
+  -->
+  <PropertyGroup>
+    <CreateHardLinksForAdditionalFilesIfPossible>true</CreateHardLinksForAdditionalFilesIfPossible>
+    <CreateHardLinksForCopyLocalIfPossible>true</CreateHardLinksForCopyLocalIfPossible>
+    <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>true</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- This file sits one level below the repository root, and it is the nearest
+         Directory.Build.props for everything under src, so it is where a project reaching outside
+         its own cone can anchor. -->
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))</RepoRoot>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>

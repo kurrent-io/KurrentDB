@@ -53,36 +53,23 @@ public class KontextPluginTests {
 	public required NodeShim NodeShim { get; init; }
 
 	[Test]
-	public async Task ConfigureServices_Uses_Kontext_Path_Override_When_Set() {
-		var overridePath = Path.Combine(Path.GetTempPath(), $"kontext-path-{Guid.NewGuid():N}");
-		var config = new ConfigurationBuilder()
-			.AddInMemoryCollection(new Dictionary<string, string?> {
-				[$"{KurrentConfigurationKeys.Prefix}:Kontext:Path"] = overridePath,
-			})
-			.Build();
-
-		var services = new ServiceCollection();
-		new KontextPlugin().ConfigureServices(services, config);
-
-		await using var sp = services.BuildServiceProvider();
-		var pool = sp.GetRequiredService<KontextConnectionPool>();
-		await Assert.That(pool.StoragePath).IsEqualTo(overridePath);
-	}
-
-	[Test]
-	public async Task ConfigureServices_Falls_Back_To_Index_Kontext_Dir_When_Path_Unset() {
+	public async Task ConfigureServices_Resolves_Storage_Under_The_Index_Kontext_Dir() {
 		var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
 		var services = new ServiceCollection();
 		services.AddSingleton(NodeShim.Node.Services.GetRequiredService<ClusterVNodeOptions>());
 		new KontextPlugin().ConfigureServices(services, config);
 
-		await using var sp = services.BuildServiceProvider();
-		var pool = sp.GetRequiredService<KontextConnectionPool>();
-
 		var options = NodeShim.Node.Services.GetRequiredService<ClusterVNodeOptions>();
 		var expectedIndex = options.Database.Index
 			?? Path.Combine(options.Database.Db, ESConsts.DefaultIndexDirectoryName);
-		await Assert.That(pool.StoragePath).IsEqualTo(Path.Combine(expectedIndex, "kontext"));
+		var expectedStorage = Path.Combine(expectedIndex, "kontext");
+
+		// The resolved path is observable through the ctor's one filesystem effect: it creates
+		// the lance namespace directory before any engine I/O.
+		await using var sp = services.BuildServiceProvider();
+		_ = sp.GetRequiredService<KontextDataSource>();
+
+		await Assert.That(Directory.Exists(expectedStorage)).IsTrue();
 	}
 }

@@ -7,6 +7,7 @@ using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -15,7 +16,7 @@ namespace Kurrent.Kontext.Tests.Data;
 /// <summary>
 /// Behavioural tests for <see cref="KontextDataStore"/> against a REAL DuckDB + Lance engine.
 /// The store is read-only, so each test seeds the memories table directly with SQL — exactly how
-/// the projector will write it — through the same borrowed pool the store reads from. No vector
+/// the projector will write it — through the same data sources the store reads from. No vector
 /// store and no embedding model anywhere: embeddings are seeded as literal 4-dim vectors, and
 /// searches pass the query embedding in.
 /// </summary>
@@ -31,9 +32,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask get_by_id_round_trips_every_field() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var stored = await store.GetAsync("m1");
@@ -59,9 +60,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask get_by_id_returns_null_for_missing_and_never_hides_lifecycle() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act + Assert
 		await Assert.That(await store.GetAsync("no-such-memory")).IsNull();
@@ -75,9 +76,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask get_by_ids_returns_present_and_skips_missing() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var memories = await store.GetAsync(["m1", "m3", "no-such-memory"]).ToListAsync();
@@ -89,9 +90,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask list_hides_retracted_keeps_superseded_and_sorts_by_retained_descending() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var memories = await store.ListAsync(
@@ -106,9 +107,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask list_filters_by_any_of_types_and_all_tags() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act + Assert
 		var byTypes = await store.ListAsync(
@@ -130,9 +131,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask list_sorts_by_importance_and_last_accessed_and_limits() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act + Assert
 		var byImportance = await store.ListAsync(
@@ -154,11 +155,11 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask lineage_returns_the_whole_family_from_any_member_in_chronological_order() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		SeedLineage(pool);
+		SeedLineage(dataSources);
 
 		var expected = new List<string> { "L1", "L2", "L3", "L4" };
 
@@ -176,9 +177,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask lineage_of_an_unsuperseded_memory_is_itself_and_a_missing_id_streams_nothing() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act + Assert
 		var alone = await store.GetLineageAsync("m1").ToListAsync();
@@ -192,9 +193,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask lineage_keeps_the_up_chain_when_the_successor_has_a_one_sided_edge() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var family = await store.GetLineageAsync("m4").ToListAsync();
@@ -206,11 +207,11 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask list_by_importance_breaks_ties_by_last_access_in_the_same_direction() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		SeedTieRows(pool);
+		SeedTieRows(dataSources);
 
 		// Act
 		var best = await store.ListAsync(
@@ -231,11 +232,11 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask list_settles_exact_ties_deterministically_by_memory_id() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		SeedTieRows(pool);
+		SeedTieRows(dataSources);
 
 		// Act
 		var first = await store.ListAsync(
@@ -258,9 +259,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask search_ranks_by_vector_similarity_when_alpha_is_pure_vector() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var hits = await store.SearchAsync(
@@ -278,9 +279,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask search_ranks_by_keywords_when_alpha_is_pure_text() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var hits = await store.SearchAsync(
@@ -297,9 +298,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask search_never_surfaces_retracted_or_superseded_memories() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var zebra  = await store.SearchAsync("zebra", [0f, 0f, 1f, 0f], []).ToListAsync();
@@ -311,16 +312,16 @@ public class KontextDataStoreTests {
 	}
 
 	[Test]
-	public async ValueTask search_with_tags_oversamples_past_a_tiny_k() {
+	public async ValueTask search_with_tags_prefilters_to_tagged_rows_only() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		// Act
+		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
 		var hits = await store.SearchAsync(
 				"anything", [0f, 1f, 0f, 0f], [Tag("team", "blue")],
-				new() { K = 1, Limit = 10 })
+				new() { K = 10, Limit = 10 })
 			.ToListAsync();
 
 		// Assert
@@ -330,9 +331,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask vector_search_ranks_nearest_first_with_exact_match_at_distance_zero() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var hits = await store.SearchAsync([1f, 0f, 0f, 0f], [], new() { Limit = 2 }).ToListAsync();
@@ -348,9 +349,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask vector_search_never_surfaces_retracted_or_superseded_memories() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var zebra  = await store.SearchAsync([0f, 0f, 1f, 0f], []).ToListAsync();
@@ -362,14 +363,14 @@ public class KontextDataStoreTests {
 	}
 
 	[Test]
-	public async ValueTask vector_search_with_tags_oversamples_past_a_tiny_k() {
+	public async ValueTask vector_search_with_tags_prefilters_to_tagged_rows_only() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		// Act
-		var hits = await store.SearchAsync([0f, 1f, 0f, 0f], [Tag("team", "blue")], new() { K = 1, Limit = 10 }).ToListAsync();
+		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
+		var hits = await store.SearchAsync([0f, 1f, 0f, 0f], [Tag("team", "blue")], new() { K = 10, Limit = 10 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).Order().ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
@@ -378,9 +379,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask fulltext_search_ranks_by_keywords_with_a_real_bm25_score() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var hits = await store.SearchAsync("projector checkpoint format", [], new FullTextSearchOptions { Limit = 1 }).ToListAsync();
@@ -396,9 +397,9 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask fulltext_search_never_surfaces_retracted_or_superseded_memories() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
 		// Act
 		var zebra  = await store.SearchAsync("zebra", []).ToListAsync();
@@ -412,16 +413,16 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask search_finds_the_exact_match_through_a_trained_ivf_hnsw_pq_index() {
 		// Arrange
-		using var dir   = new TempDir();
-		using var pool  = NewPool(dir.Path);
-		var       store = await Seed(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources);
 
-		await SeedFillersAndCreateVectorIndex(pool);
+		await SeedFillersAndCreateVectorIndex(dataSources);
 
 		// The index must really exist — otherwise this test silently re-tests the brute-force path.
-		var indexes = await pool.ExecuteAsync(connection => {
+		var indexes = await dataSources.ExecuteAsync(connection => {
 			using var command = connection.CreateCommand();
-			command.CommandText = $"SHOW INDEXES ON '{DatasetPath(pool)}'";
+			command.CommandText = $"SHOW INDEXES ON '{DatasetPath(dir.Path)}'";
 
 			var       names  = new List<string>();
 			using var reader = command.ExecuteReader();
@@ -432,7 +433,7 @@ public class KontextDataStoreTests {
 			return names;
 		});
 
-		await Assert.That(indexes).Contains("vec_idx");
+		await Assert.That(indexes).Contains("embedding_ivx");
 
 		// Act
 		var hits = await store.SearchAsync(
@@ -469,52 +470,48 @@ public class KontextDataStoreTests {
 	[Test]
 	public async ValueTask schema_create_is_idempotent_and_creates_the_eager_indexes() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
-
-		var schema = NewSchema(pool);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		// Act
-		await schema.CreateAsync();
-		await schema.CreateAsync();
+		await MemorySeeding.CreateSchema(dataSources);
+		await MemorySeeding.CreateSchema(dataSources);
 
 		// Assert
-		var indexes = await schema.ListIndexesAsync();
+		var indexes = AllIndexNames(dataSources);
 
 		await Assert.That(indexes).Contains("content_fts");
 		await Assert.That(indexes).Contains("memory_id_idx");
 		await Assert.That(indexes).Contains("superseded_by_idx");
 		await Assert.That(indexes).Contains("tags_idx");
-		await Assert.That(indexes).DoesNotContain("vec_idx");
+		await Assert.That(indexes).DoesNotContain("embedding_ivx");
 	}
 
 	[Test]
 	public async ValueTask schema_vector_index_waits_for_the_training_floor() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		await Seed(pool);
-
-		var schema = NewSchema(pool);
+		await Seed(dataSources);
 
 		// Act
-		var ready = await schema.EnsureVectorIndexAsync();
+		var ready = dataSources.EnsureVectorIndex("memories", "embedding");
 
 		// Assert
 		await Assert.That(ready).IsFalse();
-		await Assert.That(await schema.ListIndexesAsync()).DoesNotContain("vec_idx");
+		await Assert.That(dataSources.GetIndexInfo("memories").Name).IsNull();
 	}
 
 	#region ->> Test Infrastructure <<-
 
 	static Contracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
 
-	/// <summary>Creates the schema through <see cref="KontextSchema"/> and seeds the five fixed rows, then hands back a store over the same pool.</summary>
-	static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool) {
+	/// <summary>Creates the schema through <see cref="KontextSchemaTask"/> and seeds the five fixed rows, then hands back a store over the same data sources.</summary>
+	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS
 		// INVERTED index the keyword tests need) — seeding only inserts rows.
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSource);
 
 		// One multi-row INSERT: five fixed tuples, nineteen parameters each, bound row by row
 		// in AddRow's column order. Kept apart from the schema DDL because parameters don't
@@ -549,7 +546,7 @@ public class KontextDataStoreTests {
 			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""";
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using (var insert = connection.CreateCommand()) {
 				insert.CommandText = insertRowsSql;
 
@@ -578,13 +575,13 @@ public class KontextDataStoreTests {
 
 				insert.ExecuteNonQuery();
 			}
-		}
+		});
 
-		return new(pool);
+		return new(dataSource);
 	}
 
 	/// <summary>Crosses the vector-index training floor with 300 filler rows, then creates the IVF_HNSW_PQ index through <see cref="KontextSchema"/>.</summary>
-	static async ValueTask SeedFillersAndCreateVectorIndex(KontextConnectionPool pool) {
+	static async ValueTask SeedFillersAndCreateVectorIndex(KontextDataSource dataSource) {
 		// Fillers are generated ENGINE-SIDE: one statement, no parameters, deterministic. Their
 		// vectors spread over the (z, w) circle, far from every axis the search tests query.
 		const string fillersSql =
@@ -629,23 +626,21 @@ public class KontextDataStoreTests {
 			FROM range(300) AS t(i)
 			""";
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using var fillers = connection.CreateCommand();
 			fillers.CommandText = fillersSql;
 			fillers.ExecuteNonQuery();
-		}
+		});
 
 		// The schema component owns the vector index; the fillers above just crossed the
 		// training floor, so the first call must create it. The second call exercises the
 		// other half of the lifecycle against the real engine: index exists => append-optimize.
-		var schema = NewSchema(pool);
-
-		await Assert.That(await schema.EnsureVectorIndexAsync()).IsTrue();
-		await Assert.That(await schema.EnsureVectorIndexAsync()).IsTrue();
+		await Assert.That(dataSource.EnsureVectorIndex("memories", "embedding")).IsTrue();
+		await Assert.That(dataSource.EnsureVectorIndex("memories", "embedding")).IsTrue();
 	}
 
 	/// <summary>One complete supersession family: L4 (living head) replaced L3, which had consolidated L1 and L2.</summary>
-	static void SeedLineage(KontextConnectionPool pool) {
+	static void SeedLineage(KontextDataSource dataSource) {
 		// Literal, engine-side values — no parameters, fully deterministic:
 		// - the tree: L4 -> L3 -> {L1, L2}; only L4 is still living
 		// - edges are SYMMETRIC (each superseded_by has its matching supersedes entry),
@@ -688,15 +683,15 @@ public class KontextDataStoreTests {
 			   false, NULL, false, NULL, '', CAST([0.0, 0.0, 0.5, 0.9] AS FLOAT[4]))
 			""";
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText = sql;
 			command.ExecuteNonQuery();
-		}
+		});
 	}
 
 	/// <summary>Two extra rows that TIE on purpose — the raw material for the ordering-guarantee tests.</summary>
-	static void SeedTieRows(KontextConnectionPool pool) {
+	static void SeedTieRows(KontextDataSource dataSource) {
 		// Literal, engine-side values — no parameters, fully deterministic:
 		// - importance 3 matches m1, so {m7, m1, m6} form one importance tie group
 		// - last access ranks inside that group: m6 (Base+50h) > m1 (Base+30h) > m7 (Base+10h)
@@ -732,14 +727,14 @@ public class KontextDataStoreTests {
 			   false, NULL, false, NULL, '', CAST([0.4, 0.6, 0.0, 0.0] AS FLOAT[4]))
 			""";
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText = sql;
 			command.ExecuteNonQuery();
-		}
+		});
 	}
 
-	static string DatasetPath(KontextConnectionPool pool) => System.IO.Path.Combine(pool.StoragePath, "memories.lance");
+	static string DatasetPath(string dir) => System.IO.Path.Combine(System.IO.Path.GetFullPath(dir), "memories.lance");
 
 	// Binds one VALUES tuple, in InsertRowsSql's column order; null binds as NULL.
 	static void AddRow(
@@ -765,11 +760,25 @@ public class KontextDataStoreTests {
 			command.Parameters.Add(new DuckDBParameter(value ?? DBNull.Value));
 	}
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
-	// Dimension 4 matches the literal 4-dim vectors every test seeds.
-	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
+
+	/// <summary>Every index name on the memories dataset — the maintenance surface lists only vector indexes.</summary>
+	static List<string> AllIndexNames(KontextDataSource dataSource) =>
+		dataSource.Execute(static connection => {
+			using var result = connection.ExecuteAdHocQuery("SHOW INDEXES ON ldb.main.memories"u8);
+
+			var names = new List<string>();
+
+			while (result.TryFetch(out var chunk)) {
+				while (chunk.TryRead(out var row))
+					names.Add(row.ReadString());
+
+				chunk.Dispose();
+			}
+
+			return names;
+		});
 
 
 	#endregion // Test Infrastructure

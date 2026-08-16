@@ -13,7 +13,7 @@ namespace Kurrent.Kontext.Tests.Data;
 /// against a REAL DuckDB engine and the REAL agent_data community extension: each test writes a
 /// validated Claude Code session under <c>projects/-tmp-proj/&lt;session&gt;.jsonl</c>, bootstraps the
 /// tables with CreateAsync, imports, and reads <c>transcripts</c> (and the
-/// <c>transcript_parse_errors</c> snapshot) back through the same pool the importer rents from. The
+/// <c>transcript_parse_errors</c> snapshot) back through the same data sources the importer reads from. The
 /// scheduler halves drive ticks deterministically with a FakeTimeProvider.
 /// </summary>
 [Category("Integration")]
@@ -21,13 +21,13 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask imports_session_messages() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 		await importer.CreateAsync();
 
 		// The tool_use row is the one carrying every asserted field — a real model, a tool name, and a
@@ -44,19 +44,19 @@ public class AgentSessionImporterTests {
 
 		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
-		await Assert.That(await ReadToolUseRowAsync(pool, sample.Uuid3)).IsEqualTo(expectedRow);
+		await Assert.That(await ReadToolUseRowAsync(dataSources, sample.Uuid3)).IsEqualTo(expectedRow);
 	}
 
 	[Test]
 	public async ValueTask reimport_is_idempotent() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 		await importer.CreateAsync();
 
 		// Act
@@ -70,13 +70,13 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask imports_only_new_messages_on_reimport() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 		await importer.CreateAsync();
 
 		await importer.ImportAsync();
@@ -88,14 +88,14 @@ public class AgentSessionImporterTests {
 
 		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(4L);
-		await Assert.That(await ContainsUuidAsync(pool, sample.Uuid4)).IsTrue();
+		await Assert.That(await ContainsUuidAsync(dataSources, sample.Uuid4)).IsTrue();
 	}
 
 	[Test]
 	public async ValueTask keeps_unparseable_lines_in_parse_errors_table() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(
@@ -107,7 +107,7 @@ public class AgentSessionImporterTests {
 				Fixture.AssistantToolUseLine,
 			]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 		await importer.CreateAsync();
 
 		// Act
@@ -116,14 +116,14 @@ public class AgentSessionImporterTests {
 		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(2L);
-		await Assert.That(await CountParseErrorsLinkedToMessagesAsync(pool)).IsEqualTo(2L);
+		await Assert.That(await CountParseErrorsLinkedToMessagesAsync(dataSources)).IsEqualTo(2L);
 	}
 
 	[Test]
 	public async ValueTask parse_errors_is_a_snapshot_not_a_log() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(
@@ -134,7 +134,7 @@ public class AgentSessionImporterTests {
 				Fixture.GarbageLine,
 			]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 		await importer.CreateAsync();
 
 		await importer.ImportAsync();
@@ -155,10 +155,10 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask count_is_zero_before_first_import() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var importer = NewImporter(pool, Path.Combine(dir.Path, "claude-home"));
+		var importer = NewImporter(dataSources, Path.Combine(dir.Path, "claude-home"));
 
 		// Act + Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
@@ -168,13 +168,13 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask create_is_idempotent() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
-		var importer = NewImporter(pool, sourceRoot);
+		var importer = NewImporter(dataSources, sourceRoot);
 
 		// Act
 		await importer.CreateAsync();
@@ -190,8 +190,8 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask tick_runs_import() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
@@ -203,13 +203,14 @@ public class AgentSessionImporterTests {
 			TickInterval = TimeSpan.FromMinutes(5),
 		};
 
-		var importer = new AgentSessionImporter(pool, options);
+		var importer = new AgentSessionImporter(dataSources, options);
 		await importer.CreateAsync();
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
-		// Act
-		clock.Advance(TimeSpan.FromMinutes(6));
+		// Act — the tick body through the timer's own gate. A timer-fired tick is fire-and-forget
+		// and cannot be awaited, and advancing the clock first would race it for the gate.
+		await scheduler.TickNowAsync();
 
 		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
@@ -218,8 +219,8 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask tick_skips_quietly_before_bootstrap() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var sample     = NewSample();
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
@@ -231,7 +232,7 @@ public class AgentSessionImporterTests {
 			TickInterval = TimeSpan.FromMinutes(5),
 		};
 
-		var importer = new AgentSessionImporter(pool, options);
+		var importer = new AgentSessionImporter(dataSources, options);
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
@@ -248,8 +249,8 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask tick_failure_does_not_throw() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
 		var clock = new FakeTimeProvider();
 
@@ -258,7 +259,7 @@ public class AgentSessionImporterTests {
 			TickInterval = TimeSpan.FromMinutes(5),
 		};
 
-		var importer = new AgentSessionImporter(pool, options);
+		var importer = new AgentSessionImporter(dataSources, options);
 		await importer.CreateAsync();
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
@@ -277,11 +278,10 @@ public class AgentSessionImporterTests {
 
 	#region ->> Test Infrastructure <<-
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
-	static AgentSessionImporter NewImporter(KontextConnectionPool pool, string sourcePath) =>
-		new(pool, new() { SourcePath = sourcePath });
+	static AgentSessionImporter NewImporter(KontextDataSource dataSource, string sourcePath) =>
+		new(dataSource, new() { SourcePath = sourcePath });
 
 	/// <summary>Fresh, arbitrary identity per test: distinct engines never collide, but the convention is per-test ids.</summary>
 	static Sample NewSample() =>
@@ -321,17 +321,17 @@ public class AgentSessionImporterTests {
 			.Replace("aaaaaaaa-0000-0000-0000-000000000003", sample.Uuid3, StringComparison.Ordinal)
 			.Replace("aaaaaaaa-0000-0000-0000-000000000004", sample.Uuid4, StringComparison.Ordinal);
 
-	/// <summary>Reads the asserted columns of one imported message back through the pool's read surface.</summary>
-	static Task<(string Source, string Role, string Model, string ToolName, DateTimeOffset Timestamp)> ReadToolUseRowAsync(
-		KontextConnectionPool pool, string uuid
+	/// <summary>Reads the asserted columns of one imported message back through the data sources' read surface.</summary>
+	static ValueTask<(string Source, string Role, string Model, string ToolName, DateTimeOffset Timestamp)> ReadToolUseRowAsync(
+		KontextDataSource dataSource, string uuid
 	) =>
-		pool.ExecuteAsync(
+		dataSource.ExecuteAsync(
 			connection => {
 				using var command = connection.CreateCommand();
 				command.CommandText =
 					"""
 					SELECT source, message_role, model, tool_name, "timestamp"
-					FROM transcripts
+					FROM memory.main.transcripts
 					WHERE uuid = $uuid
 					""";
 				command.Parameters.Add(new("uuid", uuid));
@@ -355,11 +355,11 @@ public class AgentSessionImporterTests {
 					Timestamp: timestamp);
 			});
 
-	static Task<bool> ContainsUuidAsync(KontextConnectionPool pool, string uuid) =>
-		pool.ExecuteAsync(
+	static ValueTask<bool> ContainsUuidAsync(KontextDataSource dataSource, string uuid) =>
+		dataSource.ExecuteAsync(
 			connection => {
 				using var command = connection.CreateCommand();
-				command.CommandText = "SELECT count(*) FROM transcripts WHERE uuid = $uuid";
+				command.CommandText = "SELECT count(*) FROM memory.main.transcripts WHERE uuid = $uuid";
 				command.Parameters.Add(new("uuid", uuid));
 
 				return (long)command.ExecuteScalar()! > 0;
@@ -369,15 +369,15 @@ public class AgentSessionImporterTests {
 	/// Counts parse-error rows whose <c>session_id</c> matches an imported transcript — the logical
 	/// link the two tables share (a SEMI JOIN, so a shared session never fans the count out per row).
 	/// </summary>
-	static Task<long> CountParseErrorsLinkedToMessagesAsync(KontextConnectionPool pool) =>
-		pool.ExecuteAsync(
+	static ValueTask<long> CountParseErrorsLinkedToMessagesAsync(KontextDataSource dataSource) =>
+		dataSource.ExecuteAsync(
 			connection => {
 				using var command = connection.CreateCommand();
 				command.CommandText =
 					"""
 					SELECT count(*)
-					FROM transcript_parse_errors AS pe
-					SEMI JOIN transcripts AS m ON pe.session_id = m.session_id
+					FROM memory.main.transcript_parse_errors AS pe
+					SEMI JOIN memory.main.transcripts AS m ON pe.session_id = m.session_id
 					""";
 
 				return (long)command.ExecuteScalar()!;

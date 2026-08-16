@@ -9,39 +9,39 @@ namespace Kurrent.Kontext.Testing;
 
 /// <summary>
 /// Seeds the memories read model exactly how the projector will write it. The write path is not
-/// built yet, so the integration suites create the schema through <see cref="KontextSchema"/> and
-/// insert rows directly with SQL.
+/// built yet, so the integration suites create the schema through <see cref="KontextSchemaTask"/>
+/// and insert rows directly with SQL.
 /// </summary>
 public static class MemorySeeding {
-	public static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	public static KontextDataSource NewDataSources(string dir) =>
+		new(dir, $"{dir}.tmp", Path.Combine(dir, "kurrent.ddb"));
 
-	/// <summary>Creates the schema and seeds the given rows, then hands back a store over the same pool.</summary>
-	public static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool, int dimension, params MemoryRow[] rows) {
-		await CreateSchema(pool, dimension);
-		Insert(pool, rows);
+	/// <summary>Creates the schema and seeds the given rows, then hands back a store over the same data sources.</summary>
+	public static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource, params MemoryRow[] rows) {
+		await CreateSchema(dataSource);
+		Insert(dataSource, rows);
 
-		return new(pool);
+		return new(dataSource);
 	}
 
 	/// <summary>
-	/// Creates the table and every eager index — the schema component owns all DDL, including the FTS
-	/// INVERTED index the keyword leg needs. The dimension must match the vectors the rows carry.
+	/// Creates the tables and every eager index — the migration step owns all DDL, including the FTS
+	/// INVERTED index the keyword leg needs.
 	/// </summary>
-	public static ValueTask CreateSchema(KontextConnectionPool pool, int dimension) =>
-		new(new KontextSchema(pool, new() { Dimension = dimension }).CreateAsync());
+	public static ValueTask CreateSchema(KontextDataSource dataSource) =>
+		new(new KontextSchemaTask().ExecuteAsync(dataSource));
 
 	/// <summary>Inserts rows into an already-created schema; a corpus seeds across several calls.</summary>
-	public static void Insert(KontextConnectionPool pool, params MemoryRow[] rows) {
+	public static void Insert(KontextDataSource dataSource, params MemoryRow[] rows) {
 		// Chunked: a 400-row corpus in one statement is ~7,600 parameters.
 		const int chunkSize = 64;
 
 		var insertInto = $"INSERT INTO ldb.main.memories (\n  {string.Join(",\n  ", Columns.Select(column => column.Name))})\nVALUES";
 		var tuple      = "(" + string.Join(", ", Enumerable.Repeat("?", Columns.Length)) + ")";
 
-		// Seeding is writing: one dedicated writer for the whole corpus, per the pool's
-		// writers-never-rent doctrine.
-		using var connection = pool.OpenLanceWriter();
+		// Seeding is writing: one dedicated writer for the whole corpus — writers hold their
+		// connection, they never go through the per-call read surface.
+		using var connection = dataSource.OpenLanceWriter();
 
 		foreach (var chunk in rows.Chunk(chunkSize)) {
 			var values = string.Join(",\n", Enumerable.Repeat(tuple, chunk.Length));
@@ -91,8 +91,8 @@ public sealed record MemoryRow(
 	DateTimeOffset             RetainedAt
 ) {
 	/// <summary>
-	/// Inert unless the pipeline has a vector leg; the default just keeps the row well-formed and
-	/// matches the 4-dim schema the keyword suites create. Suites that rank on vectors set it.
+	/// Inert unless the pipeline has a vector leg; the default just keeps the row well-formed.
+	/// Suites that rank on vectors set it.
 	/// </summary>
 	public float[]         Embedding      { get; init; } = [1f, 0f, 0f, 0f];
 

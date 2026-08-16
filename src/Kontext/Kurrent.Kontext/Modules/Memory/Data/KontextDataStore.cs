@@ -16,7 +16,7 @@ namespace Kurrent.Kontext.Data;
 /// Access the memories read model.
 ///
 /// No vector store: queries go straight to DuckDB through the host-owned
-/// <see cref="KontextConnectionPool"/>, which owns the engine problems (bootstrap, retries, lifecycle).
+/// <see cref="KontextDataSource"/>, which owns the engine problems (bootstrap, retries, lifecycle).
 ///
 /// Read-only by design: KurrentDB is the source of truth for memories, and the projector
 /// updates this read model without going through the store.
@@ -34,7 +34,7 @@ namespace Kurrent.Kontext.Data;
 /// - every value travels as a named $parameter, never inlined into the text (validated live:
 ///   even Lance's named arguments bind); only a clause or the FLOAT[N] dimension is interpolated
 /// </summary>
-public sealed class KontextDataStore(KontextConnectionPool connections) : IMemoryIndex {
+public sealed class KontextDataStore(KontextDataSource connections) : IMemoryIndex {
     /// <summary>
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///
@@ -62,12 +62,6 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
         // The candidate pool must at least cover the requested page.
         var k = Math.Max(options.K, options.Limit);
 
-        // Tag containment is NOT pushed down into the search: with tag filters the pool must cover
-        // the whole table, or matching rows outside the top-k would be silently missed (the
-        // validated oversample rule).
-        if (tags.Count > 0)
-            k = Math.Max(k, await CountMemoriesAsync(ct).ConfigureAwait(false));
-
         // Every value is bound as a named $parameter — the Lance named arguments included
         // (validated live 2026-07-20: k := $k, prefilter := $prefilter, … all bind). Only two
         // things can never be parameters and stay in the text: the FLOAT[N] dimension (a type,
@@ -75,6 +69,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
         // the engine's defaults stay intact — their values are still bound.
         var nprobs   = options.Nprobs is not null ? ", nprobs := $nprobs" : "";
         var useIndex = options.UseIndex is not null ? ", use_index := $use_index" : "";
+
+        // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
+        // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
+        var tagFilter = tags.Count > 0 ? "\n               AND array_has_all(tags, CAST($tags AS VARCHAR[]))" : "";
 
         var commandText =
             $"""
@@ -99,8 +97,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                                       prefilter := $prefilter,
                                       refine_factor := $refine_factor{nprobs}{useIndex})
              WHERE is_retracted = false
-               AND is_superseded = false
-               AND array_has_all(tags, CAST($tags AS VARCHAR[]))
+               AND is_superseded = false{tagFilter}
              ORDER BY _distance ASC
              LIMIT $limit
              """;
@@ -115,8 +112,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                     command.Parameters.Add(new("k", k));
                     command.Parameters.Add(new("prefilter", options.Prefilter));
                     command.Parameters.Add(new("refine_factor", options.RefineFactor));
-                    command.Parameters.Add(new("tags", tagValues));
                     command.Parameters.Add(new("limit", options.Limit));
+
+                    if (tags.Count > 0)
+                        command.Parameters.Add(new("tags", tagValues));
 
                     if (options.Nprobs is { } probes)
                         command.Parameters.Add(new("nprobs", probes));
@@ -173,16 +172,14 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
         // The candidate pool must at least cover the requested page.
         var k = Math.Max(options.K, options.Limit);
 
-        // Tag containment is NOT pushed down into the search: with tag filters the pool must cover
-        // the whole table, or matching rows outside the top-k would be silently missed (the
-        // validated oversample rule).
-        if (tags.Count > 0)
-            k = Math.Max(k, await CountMemoriesAsync(ct).ConfigureAwait(false));
+        // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
+        // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
+        var tagFilter = tags.Count > 0 ? "\n              AND array_has_all(tags, CAST($tags AS VARCHAR[]))" : "";
 
         // Every value is bound as a named $parameter — the Lance named arguments included
-        // (validated live 2026-07-20). Nothing varies in the text, so it is a true const.
-        const string commandText =
-            """
+        // (validated live 2026-07-20); the tag clause is the one conditional splice.
+        var commandText =
+            $"""
             SELECT memory_id,
                    memory_type,
                    content,
@@ -203,8 +200,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                            k := $k,
                            prefilter := $prefilter)
             WHERE is_retracted = false
-              AND is_superseded = false
-              AND array_has_all(tags, CAST($tags AS VARCHAR[]))
+              AND is_superseded = false{tagFilter}
             ORDER BY _score DESC
             LIMIT $limit
             """;
@@ -218,8 +214,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                     command.Parameters.Add(new("query", query));
                     command.Parameters.Add(new("k", k));
                     command.Parameters.Add(new("prefilter", options.Prefilter));
-                    command.Parameters.Add(new("tags", tagValues));
                     command.Parameters.Add(new("limit", options.Limit));
+
+                    if (tags.Count > 0)
+                        command.Parameters.Add(new("tags", tagValues));
 
                     var       results = new List<MemoryHit>();
                     using var reader  = command.ExecuteReader();
@@ -279,12 +277,6 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
         // The candidate pool must at least cover the requested page.
         var k = Math.Max(options.K, options.Limit);
 
-        // Tag containment is NOT pushed down into the search: with tag filters the pool must cover
-        // the whole table, or matching rows outside the top-k would be silently missed (the
-        // validated oversample rule).
-        if (tags.Count > 0)
-            k = Math.Max(k, await CountMemoriesAsync(ct).ConfigureAwait(false));
-
         // Every value is bound as a named $parameter — the Lance named arguments included
         // (validated live 2026-07-20: k := $k, alpha := $alpha, … all bind). Only two things can
         // never be parameters and stay in the text: the FLOAT[N] dimension (a type, not a value)
@@ -292,6 +284,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
         // defaults stay intact — their values are still bound.
         var nprobs   = options.Nprobs is not null ? ", nprobs := $nprobs" : "";
         var useIndex = options.UseIndex is not null ? ", use_index := $use_index" : "";
+
+        // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
+        // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
+        var tagFilter = tags.Count > 0 ? "\n               AND array_has_all(tags, CAST($tags AS VARCHAR[]))" : "";
 
         var commandText =
             $"""
@@ -321,8 +317,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                                       refine_factor := $refine_factor,
                                       oversample_factor := $oversample_factor{nprobs}{useIndex})
              WHERE is_retracted = false
-               AND is_superseded = false
-               AND array_has_all(tags, CAST($tags AS VARCHAR[]))
+               AND is_superseded = false{tagFilter}
              ORDER BY _hybrid_score DESC
              LIMIT $limit
              """;
@@ -340,8 +335,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
                     command.Parameters.Add(new("alpha", options.Alpha));
                     command.Parameters.Add(new("refine_factor", options.RefineFactor));
                     command.Parameters.Add(new("oversample_factor", options.OversampleFactor));
-                    command.Parameters.Add(new("tags", tagValues));
                     command.Parameters.Add(new("limit", options.Limit));
+
+                    if (tags.Count > 0)
+                        command.Parameters.Add(new("tags", tagValues));
 
                     if (options.Nprobs is { } probes)
                         command.Parameters.Add(new("nprobs", probes));
@@ -369,18 +366,6 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
 
         foreach (var hit in hits)
             yield return hit;
-    }
-
-    // How many rows the memories table holds right now — the tag-filter oversample bound.
-    Task<int> CountMemoriesAsync(CancellationToken ct) {
-        const string sql = "SELECT count(*) FROM ldb.main.memories";
-
-        return connections.ExecuteAsync(
-            connection => {
-                using var command = connection.CreateCommand();
-                command.CommandText = sql;
-                return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture);
-            }, ct);
     }
 
     /// <summary>The stored memory with the given id, or null. Never hides: retracted and superseded memories come back too.</summary>
@@ -634,7 +619,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
     }
 
     // The evidence wire encoding shared with the projector: one citation per VARCHAR[] element, as
-    // protobuf canonical JSON (see the column's note in KontextSchema).
+    // protobuf canonical JSON (see the column's note in KontextSchemaTask).
     public static string EncodeEvidence(Contracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
 
     public static Contracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<Contracts.Evidence>(encoded);
@@ -665,7 +650,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) : IMemor
     // Reads one row POSITIONALLY, in the SELECT column order, off the validated wire shapes (KB):
     // - VARCHAR[] arrives as List<string>
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
-    // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in KontextSchema)
+    // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in KontextSchemaTask)
     // - timestamps are BIGINT Unix epoch milliseconds (UTC) — the schema's one stated rule
     static Contracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
         var stored = new Contracts.StoredMemory {

@@ -7,6 +7,7 @@ using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
+using Kurrent.Kontext.Testing;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -30,10 +31,10 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask retain_throws_not_implemented() {
 		// Arrange
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = new KontextDataStore(pool);
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = new KontextDataStore(dataSources);
+		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert — the write path lands in the read model via the log, not through this service.
 		await Assert.That(async () => await memory.RetainAsync(new())).Throws<NotImplementedException>();
@@ -42,10 +43,10 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask retract_throws_not_implemented() {
 		// Arrange
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = new KontextDataStore(pool);
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = new KontextDataStore(dataSources);
+		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert
 		await Assert.That(async () => await memory.RetractAsync(new())).Throws<NotImplementedException>();
@@ -54,10 +55,10 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask reflect_throws_not_implemented() {
 		// Arrange
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = new KontextDataStore(pool);
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = new KontextDataStore(dataSources);
+		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert
 		await Assert.That(async () => await memory.ReflectAsync(new())).Throws<NotImplementedException>();
@@ -66,9 +67,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask recall_finds_seeded_memories_by_keywords() {
 		// Arrange — three memories with fully distinct vocabularies; only a1 carries "aardvark".
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("a1", Contracts.MemoryType.Observation, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]),
 			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]),
 			new Row("a3", Contracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", Contracts.MemoryImportance.Low, Base.AddHours(3), [0f, 0f, 1f, 0f]));
@@ -101,9 +102,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask recall_returns_full_memories_when_include_full_is_set() {
 		// Arrange — one memory carrying the heavy fields lean drops (evidence, validity window).
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("b1", Contracts.MemoryType.Fact, "flamingo stands gracefully on one leg", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) {
 				Evidence      = SeedEvidenceBlobs(),
 				ValidityStart = Base.AddHours(-24),
@@ -134,9 +135,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask recall_never_surfaces_retracted_or_superseded_memories() {
 		// Arrange — three memories all carrying "wombat"; two are hidden (one retracted, one superseded).
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("c1", Contracts.MemoryType.Observation, "wombat digs a cozy burrow", Contracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]),
 			new Row("c2", Contracts.MemoryType.Observation, "wombat mistaken hidden note", Contracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]) {
 				IsRetracted = true,
@@ -164,9 +165,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask recall_filters_by_tags() {
 		// Arrange — both memories carry "salmon"; only d1 wears the project:rivers tag.
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("d1", Contracts.MemoryType.Fact, "salmon swim upstream every year", Contracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]) {
 				Tags = ["project:rivers"],
 			},
@@ -189,9 +190,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask reclaim_returns_exact_ids_including_retracted() {
 		// Arrange — a living memory and a retracted one; reclaim asks for both plus a stranger.
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("e1", Contracts.MemoryType.Observation, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]),
 			new Row("e2", Contracts.MemoryType.Observation, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]) {
 				IsRetracted = true,
@@ -217,9 +218,9 @@ public class KontextMemoryTests {
 	public async ValueTask recollect_lists_by_type_and_sorts() {
 		// Arrange — four memories of two types and distinct importances. Recollect scopes to FACT and
 		// orders by importance descending, so only the three facts return, most-important first.
-		using var dir    = new TempDir();
-		using var pool   = NewPool(dir.Path);
-		var       store  = await Seed(pool,
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
 			new Row("f1", Contracts.MemoryType.Fact, "fact about caching", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) { LastAccessedAt = Base.AddHours(10) },
 			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), [0f, 1f, 0f, 0f]) { LastAccessedAt = Base.AddHours(20) },
 			new Row("f3", Contracts.MemoryType.Hearsay, "plan to rewrite the projector", Contracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) { LastAccessedAt = Base.AddHours(30) },
@@ -256,11 +257,11 @@ public class KontextMemoryTests {
 	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
 	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
 
-	/// <summary>Creates the schema through <see cref="KontextSchema"/> and seeds the given rows, then hands back a store over the same pool.</summary>
-	static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool, params Row[] rows) {
+	/// <summary>Creates the schema through <see cref="KontextSchemaTask"/> and seeds the given rows, then hands back a store over the same data sources.</summary>
+	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource, params Row[] rows) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS INVERTED
 		// index the keyword recall needs) — seeding only inserts rows.
-		await NewSchema(pool).CreateAsync();
+		await MemorySeeding.CreateSchema(dataSource);
 
 		// One multi-row INSERT: N tuples of nineteen parameters each, bound row by row in AddRow's
 		// column order. Kept apart from the schema DDL because parameters don't prepare across a
@@ -292,7 +293,7 @@ public class KontextMemoryTests {
 		var tuple  = "(" + string.Join(", ", Enumerable.Repeat("?", 18)) + ")";
 		var values = string.Join(",\n", Enumerable.Repeat(tuple, rows.Length));
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using var insert = connection.CreateCommand();
 			insert.CommandText = $"{columns}\n{values}";
 
@@ -300,9 +301,9 @@ public class KontextMemoryTests {
 				AddRow(insert, row);
 
 			insert.ExecuteNonQuery();
-		}
+		});
 
-		return new(pool);
+		return new(dataSource);
 	}
 
 	// Binds one VALUES tuple, in the INSERT's column order; null binds as NULL. Supersedes is
@@ -356,11 +357,7 @@ public class KontextMemoryTests {
 		public DateTimeOffset? ValidityEnd    { get; init; }
 	}
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
-
-	// Dimension 4 matches the literal 4-dim vectors every test seeds.
-	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

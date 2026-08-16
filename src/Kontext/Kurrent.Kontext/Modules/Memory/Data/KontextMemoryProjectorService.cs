@@ -20,10 +20,9 @@ public sealed class KontextMemoryProjectorService(IServiceProvider services, Nod
     : SystemReadyBackgroundService(services, readyWhen, "KontextMemoryProjector") {
     protected override Task RunAsync(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) =>
         new KontextMemoryProjector(
-            Services.GetRequiredService<KontextConnectionPool>(),
+            Services.GetRequiredService<KontextDataSource>(),
             Services.GetRequiredService<IConsumerBuilder>(),
             Services.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
-            Services.GetRequiredService<KontextSchemaOptions>(),
             Services.GetRequiredService<ILoggerFactory>()
         ).RunUntilStopped(stoppingToken);
 }

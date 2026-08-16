@@ -106,7 +106,7 @@ public sealed class KontextRecordsWriter : IDisposable {
                 row.Add(pending.Category);
                 row.Add(pending.SchemaName);
                 row.Add(pending.SchemaId);
-                row.Add(pending.SchemaFormat);
+                row.Add(pending.SchemaFormat); // always json
                 row.Add(pending.Content);
                 row.Add(pending.CreatedAt);
                 row.Add(embedding.Vector.Span, CollectionType.Array);

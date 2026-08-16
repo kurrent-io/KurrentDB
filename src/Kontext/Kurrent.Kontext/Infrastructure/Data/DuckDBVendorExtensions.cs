@@ -3,104 +3,9 @@
 
 using System.Runtime.InteropServices;
 using DuckDB.NET.Native;
-using Kurrent.Quack;
 
 namespace Kurrent.Kontext.Infrastructure.Data;
 
-public abstract class DuckDBExtensionInstaller(string name, string filename) {
- 
-    public bool Install(DuckDBAdvancedConnection connection) {
-        var (sql, installed) = Provision();
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        command.ExecuteNonQuery();
-        return installed;
-    }
-   
-    (string Sql, bool Installed, string Path, long Size) Provision() {
-        var defaultExtensionPath = DuckDBVendorExtensions.GetDefaultExtensionPath(filename);
-        
-        if (File.Exists(defaultExtensionPath))
-            return ($"LOAD {name};", true, defaultExtensionPath, new FileInfo(defaultExtensionPath).Length);
-
-        if (!File.Exists(filename))
-            return ($"INSTALL {name}; LOAD {name};", false, null, 0);
-        
-        var appExtensionPath = DuckDBVendorExtensions.GetAppExtensionPath(filename);
-
-        if (!File.Exists(appExtensionPath))
-            throw new InvalidOperationException($"DuckDB extension not found: {filename}");
-
-        try {
-            Directory.CreateDirectory(defaultExtensionPath);
-
-            // Copy-then-rename keeps a concurrent process from observing a half-written binary.
-            // the losing racer's rename fails on the now-existing target, and that's fine.
-            var destFileName = $"{defaultExtensionPath}.tmp-{Environment.ProcessId}";
-
-            try {
-                File.Copy(appExtensionPath, destFileName, overwrite: true);
-                File.Move(destFileName, defaultExtensionPath);
-            } catch (IOException) when (File.Exists(defaultExtensionPath)) {
-                File.Delete(destFileName);
-            }
-
-            return ($"LOAD {name};", true);
-        }
-        catch (Exception ex) {
-            throw new InvalidOperationException($"Unable to install DuckDB extension: {name}", ex);
-        }
-    }
-    
-    // ReadOnlySpan<byte> Provision() {
-    //     var defaultExtensionPath = DuckDBVendorExtensions.GetDefaultExtensionPath(filename);
-    //     
-    //     if (File.Exists(defaultExtensionPath))
-    //         return $"LOAD {name};"u8;
-    //
-    //     if (!File.Exists(extensionFilename))
-    //         return $"INSTALL {name}; LOAD {name};";
-    //     
-    //     var appExtensionPath = DuckDBVendorExtensions.GetAppExtensionPath(filename);
-    //
-    //     if (!File.Exists(appExtensionPath))
-    //         throw new InvalidOperationException($"DuckDB extension not found: {filename}");
-    //
-    //     try {
-    //         Directory.CreateDirectory(defaultExtensionPath);
-    //
-    //         // Copy-then-rename keeps a concurrent process from observing a half-written binary.
-    //         // the losing racer's rename fails on the now-existing target, and that's fine.
-    //         var destFileName = $"{defaultExtensionPath}.tmp-{Environment.ProcessId}";
-    //
-    //         try {
-    //             File.Copy(appExtensionPath, destFileName, overwrite: true);
-    //             File.Move(destFileName, defaultExtensionPath);
-    //         } catch (IOException) when (File.Exists(defaultExtensionPath)) {
-    //             File.Delete(destFileName);
-    //         }
-    //
-    //         return $"LOAD {name};";
-    //     }
-    //     catch (Exception ex) {
-    //         throw new InvalidOperationException($"Unable to install DuckDB extension: {name}", ex);
-    //     }
-    // }
-    
-    // The vendored binary is unsigned, and allow_unsigned_extensions is startup-only ("Cannot
-    // change allow_unsigned_extensions setting while database is running"), so it must ride the
-    // connection string into the engine's open configuration — a SET in bootstrap SQL would
-    // throw. Harmless when the loaded build is the signed stock one.
-    public static string AmendConnectionString(string connectionString) =>
-        connectionString.Contains("allow_unsigned_extensions", StringComparison.OrdinalIgnoreCase)
-            ? connectionString
-            : $"{connectionString};allow_unsigned_extensions=true";
-}
-
-/// <summary>
-/// Provisions the vendored DuckDB extension binaries into DuckDB's default extension folder and
-/// composes the engine settings and SQL that load them.
-/// </summary>
 class DuckDBVendorExtensions {
     static readonly string LibraryVersion = 
         NativeMethods.Startup.DuckDBLibraryVersion();
@@ -114,21 +19,99 @@ class DuckDBVendorExtensions {
             .Replace("-", "_");               // Convert any remaining hyphens to underscores (arm64, s390x, etc.)
 
 
+    // Where DuckDB itself installs and loads extensions from.
     static readonly string UserFolder =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    
-    // DuckDB composes its default extension folder from the engine version and platform;
-    // duckdb_library_version() returns the exact version segment (e.g. "v1.5.5").
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".duckdb");
+
+    // Where the build ships the vendored extensions, mirroring Kurrent.Kontext.csproj.
+    static readonly string AppFolder =
+        Path.Combine(AppContext.BaseDirectory, "vendor", "duckdb");
+
+    // Both roots use DuckDB's own repository layout, <root>/extensions/<version>/<platform>/,
+    // so either can be handed to the engine as an extension_directory. duckdb_library_version()
+    // returns the exact version segment (e.g. "v1.5.5").
     static string ExtensionPath(string filename, string baseDirectory) {
         ArgumentException.ThrowIfNullOrWhiteSpace(filename);
-        ArgumentException.ThrowIfNullOrWhiteSpace(baseDirectory);
-            
-        return Path.Combine(
-            baseDirectory, "vendor", "duckdb", "extensions",
-            LibraryVersion, Platform, filename);
+
+        return Path.Combine(baseDirectory, "extensions", LibraryVersion, Platform, filename);
     }
-    
-    public static string GetDefaultExtensionPath(string filename) =>  ExtensionPath(filename, UserFolder);
-    
-    public static string GetAppExtensionPath(string filename) =>  ExtensionPath(filename, AppContext.BaseDirectory);
+
+    public static string GetDefaultExtensionPath(string filename) => ExtensionPath(filename, UserFolder);
+
+    public static string GetAppExtensionPath(string filename) => ExtensionPath(filename, AppFolder);
+
+    /// <summary>
+    /// Finds the vendored extension shipped beside the application.
+    /// </summary>
+    /// <remarks>
+    /// Only the application declares the vendored build, so it is present next to a deployed node
+    /// and absent from a test host. A caller that finds nothing here should fall back to the
+    /// engine's own extension repository — at the cost of the stock build, which is not the
+    /// vendored one.
+    /// </remarks>
+    /// <param name="filename">The extension file name.</param>
+    /// <param name="path">The full path, when the extension ships with this application.</param>
+    /// <returns><see langword="true"/> when the extension is present.</returns>
+    public static bool TryGetAppExtensionPath(string filename, out string path) {
+        path = GetAppExtensionPath(filename);
+
+        return File.Exists(path);
+    }
+
+    /// <summary>
+    /// Links the shipped extension into DuckDB's own extension folder so <c>LOAD {name}</c>
+    /// resolves it by name, including from an external duckdb session.
+    /// </summary>
+    /// <remarks>
+    /// A symbolic link by default rather than a copy: the binary is ~225 MB, a link crosses volumes
+    /// where a hard link cannot, and it keeps resolving to whatever the build last shipped, so
+    /// nothing has to compare contents to decide whether to refresh it. Creating one needs
+    /// Developer Mode or elevation on Windows, which is what <paramref name="copy"/> is for.
+    /// </remarks>
+    /// <param name="name">The extension name, as <c>LOAD</c> addresses it.</param>
+    /// <param name="filename">The extension file name.</param>
+    /// <param name="copy">Copies the file instead of linking to it.</param>
+    public static void InstallDevExtension(string name, string filename, bool copy = false) {
+        var appExtensionPath = GetAppExtensionPath(filename);
+
+        if (!File.Exists(appExtensionPath))
+            throw new InvalidOperationException($"DuckDB extension not found: {filename}");
+
+        var defaultExtensionPath = GetDefaultExtensionPath(filename);
+
+        if (!copy && LinksToShippedExtension(defaultExtensionPath, appExtensionPath))
+            return;
+
+        try {
+            Directory.CreateDirectory(Path.GetDirectoryName(defaultExtensionPath)!);
+
+            // Clears a stale link or an earlier copy: deleting a symbolic link removes the link
+            // and never the file it points at, and deleting a path that does not exist is a no-op.
+            File.Delete(defaultExtensionPath);
+
+            if (copy) {
+                // Copy-then-rename keeps a concurrent process from observing a half-written binary;
+                // the losing racer's rename fails on the now-existing target, which is fine.
+                var stagedPath = $"{defaultExtensionPath}.tmp-{Environment.ProcessId}";
+
+                try {
+                    File.Copy(appExtensionPath, stagedPath, overwrite: true);
+                    File.Move(stagedPath, defaultExtensionPath);
+                } catch (IOException) when (File.Exists(defaultExtensionPath)) {
+                    File.Delete(stagedPath);
+                }
+            } else {
+                File.CreateSymbolicLink(defaultExtensionPath, appExtensionPath);
+            }
+        } catch (IOException) when (!copy && LinksToShippedExtension(defaultExtensionPath, appExtensionPath)) {
+            // A concurrent process linked it first, which leaves exactly the desired state.
+        } catch (Exception ex) {
+            throw new InvalidOperationException($"Unable to install DuckDB dev extension: {name}", ex);
+        }
+
+        // ResolveLinkTarget throws when the path does not exist and returns null for a real file,
+        // so existence is established first and a plain copy answers false.
+        static bool LinksToShippedExtension(string path, string shippedPath) =>
+            File.Exists(path) && File.ResolveLinkTarget(path, false)?.FullName == Path.GetFullPath(shippedPath);
+    }
 }

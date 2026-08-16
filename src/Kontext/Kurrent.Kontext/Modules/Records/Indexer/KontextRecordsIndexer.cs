@@ -24,10 +24,9 @@ namespace Kurrent.Kontext.Modules.Records;
 /// record is skipped by the writer, never fatal.
 /// </summary>
 public sealed class KontextRecordsIndexer(
-    KontextConnectionPool pool,
+    KontextDataSource dataSource,
     IConsumerBuilder consumerBuilder,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
-    KontextSchemaOptions schemaOptions,
     RecordContentExtractor extractContent,
     ILoggerFactory loggerFactory
 ) {
@@ -41,12 +40,9 @@ public sealed class KontextRecordsIndexer(
     static readonly TimeSpan InitialRestartDelay = TimeSpan.FromSeconds(5);
     static readonly TimeSpan MaximumRestartDelay = TimeSpan.FromSeconds(60);
 
-    readonly KontextRecordsSchema _schema = new(pool, schemaOptions);
     readonly ILogger _log = loggerFactory.CreateLogger<KontextRecordsIndexer>();
 
     public async Task RunUntilStopped(CancellationToken stoppingToken) {
-        await _schema.CreateAsync(stoppingToken).ConfigureAwait(false);
-
         var restartDelay = InitialRestartDelay;
 
         while (!stoppingToken.IsCancellationRequested) {
@@ -70,7 +66,7 @@ public sealed class KontextRecordsIndexer(
     }
 
     async Task IndexUntilStopped(CancellationToken ct) {
-        await using var connection = pool.OpenLanceWriter();
+        await using var connection = dataSource.OpenLanceWriter();
 
         var checkpoints = new KontextCheckpointStore(CheckpointKey);
         checkpoints.EnsureSchema(connection);
@@ -81,7 +77,7 @@ public sealed class KontextRecordsIndexer(
 
         using var writer = new KontextRecordsWriter(
             connection, extractContent, embeddings,
-            new EmbeddingGenerationOptions { Dimensions = schemaOptions.Dimension },
+            new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
             loggerFactory.CreateLogger<KontextRecordsWriter>());
 
         await using var consumer = consumerBuilder
@@ -117,9 +113,7 @@ public sealed class KontextRecordsIndexer(
             if (written == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < VectorIndexThrottle)
                 continue;
 
-            await _schema
-                .EnsureVectorIndexAsync(ct)
-                .ConfigureAwait(false);
+            dataSource.EnsureVectorIndex("records", "embedding");
             
             lastOptimize = TimeProvider.System.GetTimestamp();
         }

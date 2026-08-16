@@ -29,30 +29,30 @@ public class EvidenceStructBindingProbeTests {
 	[Test]
 	public async ValueTask struct_list_writes_but_cannot_be_read_back_when_fields_are_sparse(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		using (pool.Rent(out var connection))
-			Exec(connection, $"CREATE TABLE ldb.main.probe_evidence (memory_id VARCHAR, evidence {EvidenceType})");
+		dataSources.Execute(connection =>
+			Exec(connection, $"CREATE TABLE ldb.main.probe_evidence (memory_id VARCHAR, evidence {EvidenceType})"));
 
 		// Act — two citations of different kinds, so `repo` is set on one element and null on the
 		// other. That asymmetry is what the decoder mishandles.
 		var write = Try(() => {
-			using (pool.Rent(out var connection))
+			dataSources.Execute(connection =>
 				Exec(connection,
 					"""
 					INSERT INTO ldb.main.probe_evidence VALUES ('m1', [
 					  {'kind': 'memory', 'memory_id': 'cited-1', 'repo': NULL, 'commit': NULL, 'uri': NULL},
 					  {'kind': 'git', 'memory_id': NULL, 'repo': 'kurrent--kurrentdb', 'commit': 'c93c6ae82', 'uri': NULL}])
-					""");
+					"""));
 		});
 
 		var read = Try(() => {
-			using (pool.Rent(out var connection)) {
+			dataSources.Execute(connection => {
 				using var command = connection.CreateCommand();
 				command.CommandText = "SELECT evidence[1].memory_id FROM ldb.main.probe_evidence";
 				command.ExecuteScalar();
-			}
+			});
 		});
 
 		// Assert — the write half is fine, so this is a decode limitation and not bad SQL.
@@ -77,8 +77,7 @@ public class EvidenceStructBindingProbeTests {
 		command.ExecuteNonQuery();
 	}
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

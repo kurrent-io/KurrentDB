@@ -7,6 +7,31 @@
     <Project Path="src/KurrentDB.Testing.Tests/KurrentDB.Testing.Tests.csproj" />
     <Project Path="src/KurrentDB.Testing/KurrentDB.Testing.csproj" />
   </Folder>
+  <Folder Name="/Kontext/">
+    <Project Path="src/Kontext/Kurrent.Kontext.Benchmarks/Kurrent.Kontext.Benchmarks.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Contracts/Kurrent.Kontext.Contracts.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings/Kurrent.Kontext.Embeddings.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Retrieval/Kurrent.Kontext.Retrieval.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext/Kurrent.Kontext.csproj" />
+    <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
+    <Project Path="src/KurrentDB.Plugins.Kontext/KurrentDB.Plugins.Kontext.csproj" />
+  </Folder>
+  <Folder Name="/Kontext/DuckLance/">
+    <Project Path="src/Kontext/Kurrent.Kontext.DuckLance.Tests/DuckLance.Tests.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.DuckLance/DuckLance.csproj" />
+  </Folder>
+  <Folder Name="/Kontext/Prototype/">
+    <Project Path="src/KurrentDB.Kontext.Tests/KurrentDB.Kontext.Tests.csproj" />
+    <Project Path="src/KurrentDB.Kontext/KurrentDB.Kontext.csproj" />
+    <Project Path="src/KurrentDB.Plugins.Kontext.Tests/KurrentDB.Plugins.Kontext.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Kontext/Tests/">
+    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings.Playground/Kurrent.Kontext.Embeddings.Playground.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings.Tests/Kurrent.Kontext.Embeddings.Tests.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Retrieval.Tests/Kurrent.Kontext.Retrieval.Tests.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Testing/Kurrent.Kontext.Testing.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Tests/Kurrent.Kontext.Tests.csproj" />
+  </Folder>
   <Folder Name="/Plugins/">
     <Project Path="src/KurrentDB.AutoScavenge.Tests/KurrentDB.AutoScavenge.Tests.csproj" />
     <Project Path="src/KurrentDB.AutoScavenge/KurrentDB.AutoScavenge.csproj" />
@@ -41,25 +66,6 @@
   <Folder Name="/Plugins/Connectors/Tests/">
     <Project Path="src/Connectors/KurrentDB.Connectors.Tests/KurrentDB.Connectors.Tests.csproj" />
     <Project Path="src/Connectors/KurrentDB.Connectors.TestServer/KurrentDB.Connectors.TestServer.csproj" />
-  </Folder>
-  <Folder Name="/Plugins/Kontext/">
-    <Project Path="src/Kontext/Kurrent.Kontext.DuckLance.Tests/DuckLance.Tests.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.DuckLance/DuckLance.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Contracts/Kurrent.Kontext.Contracts.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings.Playground/Kurrent.Kontext.Embeddings.Playground.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings.Tests/Kurrent.Kontext.Embeddings.Tests.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Embeddings/Kurrent.Kontext.Embeddings.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Benchmarks/Kurrent.Kontext.Benchmarks.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Retrieval.Tests/Kurrent.Kontext.Retrieval.Tests.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Retrieval/Kurrent.Kontext.Retrieval.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Testing/Kurrent.Kontext.Testing.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext.Tests/Kurrent.Kontext.Tests.csproj" />
-    <Project Path="src/Kontext/Kurrent.Kontext/Kurrent.Kontext.csproj" />
-  </Folder>
-  <Folder Name="/Plugins/Kontext/Prototype/">
-    <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
-    <Project Path="src/KurrentDB.Kontext.Tests/KurrentDB.Kontext.Tests.csproj" />
-    <Project Path="src/KurrentDB.Kontext/KurrentDB.Kontext.csproj" />
   </Folder>
   <Folder Name="/Projections/">
     <Project Path="src/KurrentDB.Projections.JavaScript.Tests/KurrentDB.Projections.JavaScript.Tests.csproj" />
@@ -121,8 +127,6 @@
   <Project Path="src/KurrentDB.MicroBenchmarks/KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src/KurrentDB.NETCore.Compatibility/KurrentDB.NETCore.Compatibility.csproj" />
   <Project Path="src/KurrentDB.PluginHosting/KurrentDB.PluginHosting.csproj" />
-  <Project Path="src/KurrentDB.Plugins.Kontext.Tests/KurrentDB.Plugins.Kontext.Tests.csproj" />
-  <Project Path="src/KurrentDB.Plugins.Kontext/KurrentDB.Plugins.Kontext.csproj" />
   <Project Path="src/KurrentDB.POC.IO.Core/KurrentDB.POC.IO.Core.csproj" />
   <Project Path="src/KurrentDB.Scripting/KurrentDB.Scripting.csproj" />
   <Project Path="src/KurrentDB.SourceGenerators/KurrentDB.SourceGenerators.csproj" />

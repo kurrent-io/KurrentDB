@@ -24,10 +24,13 @@ public class AppenderLanceProbeTests {
 	[Test]
 	public async ValueTask appends_to_native_table_control(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
+		// The writer connection starts on the lance catalog, and the appender follows the
+		// session's default catalog — the native control must flip back to the engine catalog.
+		Exec(connection, "USE memory");
 		Exec(connection, "CREATE TABLE probe_native (id BIGINT, log_position UBIGINT, payload BLOB)");
 
 		// Act
@@ -41,9 +44,9 @@ public class AppenderLanceProbeTests {
 	[Test]
 	public async ValueTask appends_to_lance_table_through_use_redirection(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_lance (id BIGINT, log_position UBIGINT, payload BLOB)");
 
@@ -69,9 +72,9 @@ public class AppenderLanceProbeTests {
 	[Test]
 	public async ValueTask one_flush_is_one_lance_commit(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_grain (id BIGINT, log_position UBIGINT, payload BLOB)");
 		Exec(connection, "USE ldb");
@@ -114,9 +117,9 @@ public class AppenderLanceProbeTests {
 	[Test]
 	public async ValueTask buffered_appender_appends_to_lance_table_through_use_redirection(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_buffered (id BIGINT, content VARCHAR, embedding FLOAT[4])");
 		Exec(connection, "USE ldb");
@@ -164,9 +167,9 @@ public class AppenderLanceProbeTests {
 	[Test]
 	public async ValueTask appends_float_array_column_through_use_redirection(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir        = new TempDir();
-		using var pool       = NewPool(dir.Path);
-		using var connection = pool.Open();
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		using var connection  = dataSources.OpenLanceWriter();
 
 		Exec(connection, "CREATE TABLE ldb.main.probe_array (id BIGINT, content VARCHAR, embedding FLOAT[4])");
 		Exec(connection, "USE ldb");
@@ -236,8 +239,8 @@ public class AppenderLanceProbeTests {
 	static int CountManifests(string storagePath) =>
 		Directory.GetFiles(storagePath, "*.manifest", SearchOption.AllDirectories).Length;
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) =>
+		MemorySeeding.NewDataSources(dir);
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

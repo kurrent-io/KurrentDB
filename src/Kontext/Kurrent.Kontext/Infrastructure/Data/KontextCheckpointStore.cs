@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DotNext;
 using Kurrent.Quack;
 using Kurrent.Surge;
 
@@ -94,10 +93,12 @@ file struct StoreCheckpoint : IPreparedStatement<StoreCheckpointArgs> {
         MERGE INTO checkpoints AS t
         USING (SELECT $1 AS key, $2 AS position) AS s
         ON t.key = s.key
-        WHEN NOT MATCHED THEN INSERT (key, position, timestamp)
+        WHEN NOT MATCHED THEN
+            INSERT (key, position, timestamp)
             VALUES (s.key, s.position, epoch_ms(now()))
-        WHEN MATCHED AND (t.position IS NULL OR t.position < s.position) THEN UPDATE SET
-            position  = s.position,
-            timestamp = epoch_ms(now())
+        WHEN MATCHED AND (t.position IS NULL OR t.position < s.position) THEN
+            UPDATE SET
+                position  = s.position,
+                timestamp = epoch_ms(now())
         """u8;
 }

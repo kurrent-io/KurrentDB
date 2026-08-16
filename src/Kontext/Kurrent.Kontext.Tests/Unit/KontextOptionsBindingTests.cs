@@ -19,7 +19,6 @@ public class KontextOptionsBindingTests {
 
 		// Assert — zero config boots local 384-dim, disabled.
 		await Assert.That(options.Enabled).IsFalse();
-		await Assert.That(options.Path).IsEqualTo("");
 		await Assert.That(options.Embeddings.Provider).IsEqualTo(EmbeddingsProvider.Local);
 		await Assert.That(options.Embeddings.Dimension).IsEqualTo(384);
 		await Assert.That(options.Embeddings.BatchSize).IsEqualTo(1);
@@ -32,7 +31,6 @@ public class KontextOptionsBindingTests {
 		// Arrange + Act — the file shape users write: only the active provider's block appears.
 		var options = Bind(new() {
 			["KurrentDB:Kontext:Enabled"]                    = "true",
-			["KurrentDB:Kontext:Path"]                       = "/var/lib/kurrentdb/kontext",
 			["KurrentDB:Kontext:Embeddings:Provider"]        = "OpenAI",
 			["KurrentDB:Kontext:Embeddings:Dimension"]       = "1536",
 			["KurrentDB:Kontext:Embeddings:OpenAI:ApiKey"]   = "sk-test",
@@ -41,7 +39,6 @@ public class KontextOptionsBindingTests {
 
 		// Assert — including the BatchSize passthrough following the active provider.
 		await Assert.That(options.Enabled).IsTrue();
-		await Assert.That(options.Path).IsEqualTo("/var/lib/kurrentdb/kontext");
 		await Assert.That(options.Embeddings.Provider).IsEqualTo(EmbeddingsProvider.OpenAI);
 		await Assert.That(options.Embeddings.Dimension).IsEqualTo(1536);
 		await Assert.That(options.Embeddings.OpenAI.ApiKey).IsEqualTo("sk-test");

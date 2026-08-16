@@ -10,7 +10,7 @@ namespace Kurrent.Kontext.Tests.Data;
 /// <summary>
 /// Two halves, matching the scheduler's own split:
 /// - Decide tests are pure — no engine anywhere, just the per-tick decision table
-/// - tick tests run against a REAL DuckDB + Lance engine through the same pool + schema pair the
+/// - tick tests run against a REAL DuckDB + Lance engine through the same data sources + schema pair the
 ///   host wires, driving ticks deterministically with TickNowAsync (plus one real-timer smoke test)
 /// </summary>
 [Category("Integration")]
@@ -88,74 +88,70 @@ public class KontextMaintenanceSchedulerTests {
 	[Test]
 	public async ValueTask tick_skips_quietly_before_the_schema_is_created() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
 
-		using var scheduler = NewScheduler(schema);
+		using var scheduler = NewScheduler(dataSources);
 
 		// Act
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(await schema.ExistsAsync()).IsFalse();
+		await Assert.That(dataSources.Exists("memories")).IsFalse();
 	}
 
 	[Test]
 	public async ValueTask tick_creates_the_vector_index_at_the_training_floor_then_folds_later_backlogs() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
-		await schema.CreateAsync();
-		SeedFillers(pool, 300, "r");
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedFillers(dataSources, 300, "r");
 
-		using var scheduler = NewScheduler(schema);
+		using var scheduler = NewScheduler(dataSources);
 
 		// Act
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
+		await Assert.That(Snapshot(dataSources)).IsEqualTo((300L, (string?)"embedding_ivx", (long?)300L));
 
 		// Act
-		SeedFillers(pool, 50, "s");
+		SeedFillers(dataSources, 50, "s");
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((350L, (long?)350L));
+		await Assert.That(Snapshot(dataSources)).IsEqualTo((350L, (string?)"embedding_ivx", (long?)350L));
 	}
 
 	[Test]
 	public async ValueTask tick_leaves_the_index_uncreated_below_the_training_floor() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
-		await schema.CreateAsync();
-		SeedFillers(pool, 5, "r");
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedFillers(dataSources, 5, "r");
 
-		using var scheduler = NewScheduler(schema);
+		using var scheduler = NewScheduler(dataSources);
 
 		// Act
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((5L, (long?)null));
+		await Assert.That(Snapshot(dataSources)).IsEqualTo((5L, (string?)null, (long?)null));
 	}
 
 	[Test]
 	public async ValueTask tick_retrains_on_cadence() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
-		await schema.CreateAsync();
-		SeedFillers(pool, 300, "r");
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedFillers(dataSources, 300, "r");
 
 		var clock = new FakeTimeProvider(Now);
 
@@ -164,54 +160,52 @@ public class KontextMaintenanceSchedulerTests {
 			RetrainInterval = TimeSpan.FromHours(24),
 		};
 
-		using var scheduler = new KontextMaintenanceScheduler(schema, options, clock);
+		using var scheduler = new KontextMaintenanceScheduler(dataSources, options, clock);
 
 		// The creation tick also starts the retrain clock (a creation IS a full train).
 		await scheduler.TickNowAsync();
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
+		await Assert.That(Snapshot(dataSources)).IsEqualTo((300L, (string?)"embedding_ivx", (long?)300L));
 
 		// Act
-		SeedFillers(pool, 50, "s");
+		SeedFillers(dataSources, 50, "s");
 		clock.Advance(TimeSpan.FromHours(25));
 		await scheduler.TickNowAsync();
 
 		// Assert
-		var expectedState = (350L, (long?)350L);
+		var expectedState = (350L, (string?)"embedding_ivx", (long?)350L);
 
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo(expectedState);
+		await Assert.That(Snapshot(dataSources)).IsEqualTo(expectedState);
 
 		// A tick right after the rebuild has nothing to do: the retrain clock was re-armed.
 		await scheduler.TickNowAsync();
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo(expectedState);
+		await Assert.That(Snapshot(dataSources)).IsEqualTo(expectedState);
 	}
 
 	[Test]
 	public async ValueTask maintenance_statements_execute_directly_against_the_live_engine() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
-		await schema.CreateAsync();
-		SeedFillers(pool, 300, "r");
-		await Assert.That(await schema.EnsureVectorIndexAsync()).IsTrue();
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedFillers(dataSources, 300, "r");
+		await Assert.That(dataSources.EnsureVectorIndex("memories", "embedding")).IsTrue();
 
 		// Act
-		await schema.RetrainVectorIndexAsync();
-		await schema.CompactAsync();
-		await schema.VacuumAsync(TimeSpan.FromDays(14), retainVersions: 3);
+		dataSources.RetrainVectorIndex("memories", "embedding");
+		dataSources.Compact("memories");
 
 		// Assert
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
+		await Assert.That(Snapshot(dataSources)).IsEqualTo((300L, (string?)"embedding_ivx", (long?)300L));
 	}
 
 	[Test]
 	public async ValueTask dispose_makes_later_ticks_safe_noops() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var scheduler = NewScheduler(NewSchema(pool));
+		var scheduler = NewScheduler(dataSources);
 
 		// Act
 		scheduler.Dispose();
@@ -219,18 +213,17 @@ public class KontextMaintenanceSchedulerTests {
 		scheduler.Dispose(); // double-dispose is equally safe
 
 		// Assert
-		await Assert.That(await NewSchema(pool).ExistsAsync()).IsFalse();
+		await Assert.That(dataSources.Exists("memories")).IsFalse();
 	}
 
 	[Test]
 	public async ValueTask real_timer_eventually_creates_the_index_and_folds_a_backlog() {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = NewSchema(pool);
-		await schema.CreateAsync();
-		SeedFillers(pool, 300, "r");
+		await MemorySeeding.CreateSchema(dataSources);
+		SeedFillers(dataSources, 300, "r");
 
 		var options = new KontextMaintenanceOptions {
 			TickInterval            = TimeSpan.FromMilliseconds(200),
@@ -238,14 +231,14 @@ public class KontextMaintenanceSchedulerTests {
 			UnindexedRatioThreshold = 0.01,
 		};
 
-		using var scheduler = new KontextMaintenanceScheduler(schema, options);
+		using var scheduler = new KontextMaintenanceScheduler(dataSources, options);
 
 		// Act + Assert
-		await Assert.That(await PollAsync(schema, expected: (300L, 300L), TimeSpan.FromSeconds(10))).IsTrue();
+		await Assert.That(await PollAsync(dataSources, expected: (300L, "embedding_ivx", 300L), TimeSpan.FromSeconds(10))).IsTrue();
 
 		// Phase 2: a later background tick folds a fresh 50-row backlog in.
-		SeedFillers(pool, 50, "s");
-		await Assert.That(await PollAsync(schema, expected: (350L, 350L), TimeSpan.FromSeconds(10))).IsTrue();
+		SeedFillers(dataSources, 50, "s");
+		await Assert.That(await PollAsync(dataSources, expected: (350L, "embedding_ivx", 350L), TimeSpan.FromSeconds(10))).IsTrue();
 	}
 
 	#endregion // Ticks
@@ -269,33 +262,39 @@ public class KontextMaintenanceSchedulerTests {
 		};
 
 	/// <summary>An eager scheduler for deterministic ticks: any backlog folds, and the real timer never fires mid-test.</summary>
-	static KontextMaintenanceScheduler NewScheduler(KontextSchema schema) =>
+	static KontextMaintenanceScheduler NewScheduler(KontextDataSource dataSources) =>
 		new(
-			schema, new() {
+			dataSources, new() {
 				TickInterval            = TimeSpan.FromHours(1),
 				UnindexedRowFloor       = 1,
 				UnindexedRatioThreshold = 0.01,
 			});
 
 	/// <summary>Polls the maintenance state until it matches <paramref name="expected"/> or <paramref name="timeout"/> elapses.</summary>
-	static async Task<bool> PollAsync(KontextSchema schema, (long, long?) expected, TimeSpan timeout) {
+	static async Task<bool> PollAsync(KontextDataSource dataSources, (long, string?, long?) expected, TimeSpan timeout) {
 		var deadline = DateTimeOffset.UtcNow + timeout;
 
 		while (DateTimeOffset.UtcNow < deadline) {
-			if (await TryReadStateAsync(schema) == expected)
+			if (TryReadState(dataSources) == expected)
 				return true;
 
 			await Task.Delay(TimeSpan.FromMilliseconds(100));
 		}
 
-		return await TryReadStateAsync(schema) == expected;
+		return TryReadState(dataSources) == expected;
 	}
 
-	static async Task<(long, long?)?> TryReadStateAsync(KontextSchema schema) {
+	/// <summary>The (TotalRows, Name, RowsIndexed) projection the assertions compare — Details JSON is engine noise.</summary>
+	static (long, string?, long?) Snapshot(KontextDataSource dataSources) {
+		var info = dataSources.GetIndexInfo("memories");
+		return (info.TotalRows, info.Name, info.RowsIndexed);
+	}
+
+	static (long, string?, long?)? TryReadState(KontextDataSource dataSources) {
 		try {
-			return await schema.GetMaintenanceStateAsync();
+			return Snapshot(dataSources);
 		} catch (Exception) {
-			// A concurrent maintenance tick (compaction/vacuum) can momentarily disturb a cached
+			// A concurrent maintenance tick (compaction) can momentarily disturb a cached
 			// dataset handle; treat a transient read failure as "not ready yet" and poll again.
 			return null;
 		}
@@ -306,7 +305,7 @@ public class KontextMaintenanceSchedulerTests {
 	/// deterministic — the same proven shape the store tests seed with. The id prefix keeps
 	/// successive seed batches distinct.
 	/// </summary>
-	static void SeedFillers(KontextConnectionPool pool, int count, string idPrefix) {
+	static void SeedFillers(KontextDataSource dataSource, int count, string idPrefix) {
 		var sql =
 			$"""
 			 INSERT INTO ldb.main.memories (
@@ -349,18 +348,15 @@ public class KontextMaintenanceSchedulerTests {
 			 FROM range({count}) AS t(i)
 			 """;
 
-		using (pool.Rent(out var connection)) {
+		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText = sql;
 			command.ExecuteNonQuery();
-		}
+		});
 	}
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
-	// Dimension 4 matches the literal 4-dim vectors the fillers seed.
-	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
 
 
 	#endregion // Test Infrastructure

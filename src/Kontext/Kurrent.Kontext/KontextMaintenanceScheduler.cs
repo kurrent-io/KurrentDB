@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -9,10 +10,11 @@ namespace Kurrent.Kontext.Data;
 /// <summary>
 /// The memories dataset's background maintenance loop: on a fixed cadence it creates the vector
 /// index once the table has grown enough rows to train one, folds newly written rows into it (or
-/// periodically retrains it), and runs always-on dataset compaction and vacuum.
+/// periodically retrains it), and runs always-on dataset compaction. Version pruning is NOT
+/// here — it is the dataset's own AUTO_CLEANUP policy, set by the schema.
 ///
 /// The split mirrors the rest of the data layer:
-/// - <see cref="KontextSchema"/> owns every DDL/maintenance statement — this class issues no SQL
+/// - <see cref="KontextIndexMaintenance"/> owns every maintenance statement — this class issues no SQL
 /// - this class owns the clock, the tick cadence, and the pure per-tick decision (<see cref="Decide"/>)
 ///
 /// A tick never throws: every failure is logged and the next tick simply tries again — which is
@@ -20,9 +22,12 @@ namespace Kurrent.Kontext.Data;
 /// the projector fails its tick, and the cadence IS the retry.
 /// </summary>
 public sealed class KontextMaintenanceScheduler : IDisposable {
+    const string Table  = "memories";
+    const string Column = "embedding";
+
+    readonly KontextDataSource         _dataSource;
     readonly ILogger                   _logger;
     readonly KontextMaintenanceOptions _options;
-    readonly KontextSchema             _schema;
     readonly TimeProvider              _timeProvider;
     readonly ITimer                    _timer;
 
@@ -35,9 +40,9 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
     // Interlocked non-overlap gate: 0 = idle, 1 = a tick is running.
     int _tickGate;
 
-    public KontextMaintenanceScheduler(KontextSchema schema, KontextMaintenanceOptions options, TimeProvider? timeProvider = null) {
-        _schema  = schema;
-        _options = options;
+    public KontextMaintenanceScheduler(KontextDataSource dataSource, KontextMaintenanceOptions options, TimeProvider? timeProvider = null) {
+        _dataSource = dataSource;
+        _options    = options;
 
         // Tests supply a fake TimeProvider for deterministic clocks and timers.
         _timeProvider = timeProvider ?? TimeProvider.System;
@@ -67,13 +72,17 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
     /// Runs one tick body immediately, through the same non-overlap gate the timer uses — for
     /// deterministic tests; a background caller normally lets the timer drive ticks.
     /// </summary>
-    public Task TickNowAsync(CancellationToken ct = default) => RunTickGuardedAsync(ct);
+    public Task TickNowAsync(CancellationToken ct = default) {
+        RunTickGuarded();
+        return Task.CompletedTask;
+    }
 
     void OnTimerTick(object? state) =>
-        // Fire-and-forget: the guarded tick body never throws, so nothing can escape onto the timer thread.
-        _ = RunTickGuardedAsync(CancellationToken.None);
+        // The tick runs synchronously on the timer's thread-pool thread; the guarded body never
+        // throws, so nothing can escape onto it.
+        RunTickGuarded();
 
-    async Task RunTickGuardedAsync(CancellationToken ct) {
+    void RunTickGuarded() {
         if (Volatile.Read(ref _disposed) != 0)
             return;
 
@@ -82,7 +91,7 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
             return;
 
         try {
-            await RunTickBodyAsync(ct).ConfigureAwait(false);
+            RunTickBody();
         } finally {
             Interlocked.Exchange(ref _tickGate, 0);
         }
@@ -90,47 +99,46 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
 
     // The single tick body. Never throws — every failure is caught and logged; quietly skips
     // while the memories table has not been created yet (a tick that fires before the host ran
-    // KontextSchema.CreateAsync).
-    async Task RunTickBodyAsync(CancellationToken ct) {
+    // the migration stream — KontextSchemaTask).
+    void RunTickBody() {
         if (Volatile.Read(ref _disposed) != 0)
             return;
 
         try {
-            if (!await _schema.ExistsAsync(ct).ConfigureAwait(false)) {
+            if (!_dataSource.Exists(Table)) {
                 _logger.LogDebug("Kontext maintenance tick skipped: the memories table does not exist yet.");
                 return;
             }
 
-            var (totalRows, vectorIndexRows) = await _schema.GetMaintenanceStateAsync(ct).ConfigureAwait(false);
+            var info = _dataSource.GetIndexInfo(Table);
 
             var now    = _timeProvider.GetUtcNow();
-            var action = Decide(totalRows, vectorIndexRows, _options, _lastRetrain, now);
+            var action = Decide(info.TotalRows, info.RowsIndexed, _options, _lastRetrain, now);
 
             switch (action) {
                 case KontextMaintenanceAction.EnsureVectorIndex: {
-                    var current = await _schema.EnsureVectorIndexAsync(ct).ConfigureAwait(false);
+                    var current = _dataSource.EnsureVectorIndex(Table, Column);
 
                     // A creation IS a full train: when the index was missing and now exists, start
                     // its retrain clock here so the first time-based rebuild falls one interval
                     // after creation instead of immediately following it.
-                    if (vectorIndexRows is null && current)
+                    if (info.RowsIndexed is null && current)
                         _lastRetrain = now;
 
                     break;
                 }
 
                 case KontextMaintenanceAction.RetrainVectorIndex:
-                    await _schema.RetrainVectorIndexAsync(ct).ConfigureAwait(false);
+                    _dataSource.RetrainVectorIndex(Table, Column);
 
                     // Advance only after the rebuild landed — a failed retrain must stay due.
                     _lastRetrain = now;
                     break;
             }
 
-            // Compaction and vacuum are cadence-independent, always-on hygiene — they run on
-            // every tick regardless of what the index needed.
-            await _schema.CompactAsync(ct).ConfigureAwait(false);
-            await _schema.VacuumAsync(_options.VacuumRetention, _options.VacuumRetainVersions, ct).ConfigureAwait(false);
+            // Compaction is cadence-independent, always-on hygiene — it runs on every tick
+            // regardless of what the index needed.
+            _dataSource.Compact(Table);
         } catch (Exception ex) {
             // A background maintenance tick must never surface an exception onto the timer
             // thread; the next tick retries whatever this one left undone.
@@ -179,10 +187,10 @@ public enum KontextMaintenanceAction {
     /// <summary>The vector index needs nothing on this tick.</summary>
     None,
 
-    /// <summary>Run <see cref="KontextSchema.EnsureVectorIndexAsync"/>: create the missing index, or fold the unindexed tail into the existing one.</summary>
+    /// <summary>Run <see cref="KontextIndexMaintenance.EnsureVectorIndex"/>: create the missing index, or fold the unindexed tail into the existing one.</summary>
     EnsureVectorIndex,
 
-    /// <summary>Run <see cref="KontextSchema.RetrainVectorIndexAsync"/>: the time-based full rebuild is due.</summary>
+    /// <summary>Run <see cref="KontextIndexMaintenance.RetrainVectorIndex"/>: the time-based full rebuild is due.</summary>
     RetrainVectorIndex,
 }
 
@@ -205,16 +213,6 @@ public sealed class KontextMaintenanceOptions {
 
     /// <summary>The time-based full retrain cadence. Default is 24 hours.</summary>
     public TimeSpan RetrainInterval { get; set; } = TimeSpan.FromHours(24);
-
-    /// <summary>
-    /// The VACUUM LANCE older_than window. Default is 14 days. Must stay comfortably longer than
-    /// any plausible connection lifetime: an aggressive vacuum breaks the cached dataset views
-    /// open connections still hold (the stale-handle failure the pool then has to recycle).
-    /// </summary>
-    public TimeSpan VacuumRetention { get; set; } = TimeSpan.FromDays(14);
-
-    /// <summary>The VACUUM LANCE retain_n_versions count. Default is 3.</summary>
-    public int VacuumRetainVersions { get; set; } = 3;
 
     /// <summary>The optional logger factory for tick diagnostics; when null, nothing is logged.</summary>
     public ILoggerFactory? LoggerFactory { get; set; }

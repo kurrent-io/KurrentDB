@@ -6,6 +6,7 @@ using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Modules.Records;
 using Kurrent.Kontext.Modules.Records.Data;
+using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Surge;
 using Kurrent.Surge.Schema;
@@ -20,13 +21,12 @@ public class KontextRecordsWriterTests {
 	[Test]
 	public async ValueTask writes_one_row_per_decodable_record_with_one_lance_commit(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
-		await schema.CreateAsync(cancellationToken);
+		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
 
-		await using var connection = pool.OpenLanceWriter();
+		await using var connection = dataSources.OpenLanceWriter();
 
 		using var writer = NewWriter(connection);
 
@@ -75,13 +75,12 @@ public class KontextRecordsWriterTests {
 	public async ValueTask batch_and_checkpoint_commit_and_revert_together(CancellationToken cancellationToken) {
 		// Arrange — the indexer's exact loop shape: writer flush + checkpoint MERGE in one
 		// transaction on the lance-redirected connection.
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
-		await schema.CreateAsync(cancellationToken);
+		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
 
-		await using var connection = pool.OpenLanceWriter();
+		await using var connection = dataSources.OpenLanceWriter();
 
 		var checkpoints = new KontextCheckpointStore("records-writer-test");
 		checkpoints.EnsureSchema(connection);
@@ -116,13 +115,12 @@ public class KontextRecordsWriterTests {
 	[Test]
 	public async ValueTask extractor_failure_skips_the_record_and_keeps_indexing(CancellationToken cancellationToken) {
 		// Arrange
-		using var dir  = new TempDir();
-		using var pool = NewPool(dir.Path);
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
 
-		var schema = new KontextRecordsSchema(pool, new() { Dimension = 4 });
-		await schema.CreateAsync(cancellationToken);
+		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
 
-		await using var connection = pool.OpenLanceWriter();
+		await using var connection = dataSources.OpenLanceWriter();
 
 		using var writer = new KontextRecordsWriter(
 			connection,
@@ -189,8 +187,7 @@ public class KontextRecordsWriterTests {
 	static int CountManifests(string storagePath, string dataset) =>
 		Directory.GetFiles(Path.Combine(storagePath, dataset), "*.manifest", SearchOption.AllDirectories).Length;
 
-	static KontextConnectionPool NewPool(string dir) =>
-		new(dir);
+	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
 
 	/// <summary>
 	/// Deterministic 4-dim embeddings: a unit vector on the axis picked by the content's length,
