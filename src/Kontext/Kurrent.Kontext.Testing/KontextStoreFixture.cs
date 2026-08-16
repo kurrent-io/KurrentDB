@@ -13,7 +13,7 @@ namespace Kurrent.Kontext.Testing;
 
 /// <summary>
 /// A REAL DuckDB + Lance store with the REAL pMM12 embedding model behind it: owns the temp directory,
-/// the connection pool, the schema and the generator, and is the one place that embeds content before
+/// the data sources, the schema and the generator, and is the one place that embeds content before
 /// seeding — every suite and benchmark that ranks on real vectors goes through it.
 /// </summary>
 /// <remarks>
@@ -23,21 +23,24 @@ namespace Kurrent.Kontext.Testing;
 public sealed class KontextStoreFixture : IAsyncInitializer, IAsyncDisposable {
 	readonly SentencePieceOnnxEmbeddingGenerator _embeddingGenerator = InterimPmm12.CreateEmbeddingGenerator();
 
-	TempDir?               _dir;
-	KontextConnectionPool? _pool;
+	TempDir?            _dir;
+	KontextDataSource? _dataSources;
 
 	public KontextDataStore Store { get; private set; } = null!;
+
+	/// <summary>The engine door — benchmarks use it to reshape indexes between phases.</summary>
+	public KontextDataSource DataSources => _dataSources ?? throw new InvalidOperationException("The fixture is not initialized.");
 
 	/// <summary>The model the seeds were embedded with — the vector leg must query with the same one.</summary>
 	public EmbeddingGenerator EmbeddingGenerator => _embeddingGenerator;
 
 	public async Task InitializeAsync() {
-		_dir  = new TempDir();
-		_pool = MemorySeeding.NewPool(_dir.Path);
+		_dir         = new TempDir();
+		_dataSources = MemorySeeding.NewDataSources(_dir.Path);
 
-		await MemorySeeding.CreateSchema(_pool, Dimension(_embeddingGenerator));
+		await MemorySeeding.CreateSchema(_dataSources);
 
-		Store = new(_pool);
+		Store = new(_dataSources);
 	}
 
 	/// <summary>
@@ -48,19 +51,13 @@ public sealed class KontextStoreFixture : IAsyncInitializer, IAsyncDisposable {
 		var embeddings = await _embeddingGenerator.GenerateAsync(rows.Select(row => row.Content).ToList());
 
 		MemorySeeding.Insert(
-			_pool ?? throw new InvalidOperationException("The fixture is not initialized."),
+			_dataSources ?? throw new InvalidOperationException("The fixture is not initialized."),
 			[.. rows.Zip(embeddings, (row, embedding) => row with { Embedding = embedding.Vector.ToArray() })]);
 	}
 
-	/// <summary>Read from the model's real output by the generator's warm-up probe, never hard-coded.</summary>
-	static int Dimension(EmbeddingGenerator generator) =>
-		generator.GetService(typeof(EmbeddingGeneratorMetadata)) is EmbeddingGeneratorMetadata { DefaultModelDimensions: { } dimension }
-			? dimension
-			: throw new InvalidOperationException("The embedding generator does not report a dimension, so the schema cannot be sized.");
-
 	public ValueTask DisposeAsync() {
 		// The directory can only go once nothing holds a handle into the engine files.
-		_pool?.Dispose();
+		_dataSources?.Dispose();
 		_embeddingGenerator.Dispose();
 		_dir?.Dispose();
 

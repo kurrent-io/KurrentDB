@@ -67,6 +67,49 @@ public class RetrievalRankingTests {
 	}
 
 	[Test]
+	public async ValueTask focused_beats_the_shipped_hybrid(CancellationToken ct) {
+		// The 2026-08-15 hill-climb winner: alpha 0.45, no MMR. Both chains are single-leg and
+		// measure deterministically, so the comparison holds without a tolerance band.
+		var focused = await Corpus.Evaluate(FocusedPipeline(), ct: ct);
+		var hybrid  = await Corpus.Evaluate(HybridPipeline(), ct: ct);
+
+		Report("focused", focused);
+		Report("hybrid", hybrid);
+
+		// Assert
+		await Assert.That(RankingMetrics.RecallAt(focused, 5))
+			.IsGreaterThanOrEqualTo(RankingMetrics.RecallAt(hybrid, 5));
+		await Assert.That(RankingMetrics.NdcgAt(focused, 10))
+			.IsGreaterThanOrEqualTo(RankingMetrics.NdcgAt(hybrid, 10));
+
+		IKontextRetriever FocusedPipeline() =>
+			KontextRetriever.New().Focused(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+
+		IKontextRetriever HybridPipeline() =>
+			KontextRetriever.New().Hybrid(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+	}
+
+	[Test]
+	public async ValueTask shipped_hybrid_beats_the_legacy_baseline(CancellationToken ct) {
+		// Production wires the Hybrid chain (CreateDefaultRetriever), not Default — this test is
+		// the three-way comparison the composition decision reads.
+		var hybrid  = await Corpus.Evaluate(HybridPipeline(), ct: ct);
+		var current = await Corpus.Evaluate(DefaultPipeline(), ct: ct);
+		var legacy  = await Corpus.Evaluate(LegacyPipeline(), ct: ct);
+
+		Report("hybrid", hybrid);
+		Report("default", current);
+		Report("legacy", legacy);
+
+		// Assert
+		await Assert.That(RankingMetrics.NdcgAt(hybrid, 10))
+			.IsGreaterThan(RankingMetrics.NdcgAt(legacy, 10));
+
+		IKontextRetriever HybridPipeline() =>
+			KontextRetriever.New().Hybrid(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+	}
+
+	[Test]
 	public async ValueTask default_pipeline_beats_the_legacy_baseline(CancellationToken ct) {
 		// Arrange + Act
 		var current = await Corpus.Evaluate(DefaultPipeline(), ct: ct);

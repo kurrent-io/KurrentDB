@@ -14,4 +14,8 @@
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Kurrent.Kontext.Retrieval.csproj.DotSettings" />
+  </ItemGroup>
 </Project>

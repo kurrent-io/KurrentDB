@@ -82,6 +82,30 @@ public static class KontextRetrieverBuilderExtensions {
         }
 
         /// <summary>
+        /// The shipped chain: the engine's alpha blend, BM25 reread, and modulation — no MMR.
+        /// Deliberately not configurable: the knobs are the 2026-08-15 LoCoMo hill-climb optimum
+        /// (recall@5 0.4889 vs 0.4622 for hybrid α 0.5; the diversity reorder was costing recall),
+        /// and a tuned variant is a different chain — compose it with <see cref="Hybrid(IMemoryIndex,EmbeddingGenerator,KontextRetrievalOptions)"/>
+        /// or the builder directly.
+        /// </summary>
+        /// <param name="index">The memories read model the hybrid leg queries.</param>
+        /// <param name="embeddingGenerator">The generator the vector half embeds the query with — the same model that embedded the stored memories.</param>
+        /// <param name="time">The clock the planner ages candidates against; null uses the system clock.</param>
+        public KontextRetrieverBuilder Focused(
+            IMemoryIndex index,
+            EmbeddingGenerator embeddingGenerator,
+            TimeProvider? time = null
+        ) {
+            const double measuredAlpha = 0.45;
+
+            return builder
+                .Planner(new OverfetchOptions(), time)
+                .AddSearch(new HybridSearch(index, embeddingGenerator, measuredAlpha))
+                .AddStage(Bm25Reranker.Create())
+                .AddStage(CognitiveModulator.Create());
+        }
+
+        /// <summary>
         /// The legacy chain, kept as the baseline the default is measured against: a fixed
         /// candidate floor, normalized fusion, and no BM25 reread or modulation.
         /// </summary>

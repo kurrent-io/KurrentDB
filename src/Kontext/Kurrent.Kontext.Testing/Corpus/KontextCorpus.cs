@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
 using TUnit.Core.Interfaces;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
@@ -25,6 +26,9 @@ public sealed class KontextCorpus : IAsyncInitializer, IAsyncDisposable {
 
 	public KontextDataStore Store => _store.Store;
 
+	/// <summary>The engine door for index experiments.</summary>
+	public KontextDataSource DataSources => _store.DataSources;
+
 	/// <summary>The model that embedded the corpus — the vector leg must query with the same one.</summary>
 	public EmbeddingGenerator EmbeddingGenerator => _store.EmbeddingGenerator;
 
@@ -45,6 +49,23 @@ public sealed class KontextCorpus : IAsyncInitializer, IAsyncDisposable {
 				Importance: Contracts.MemoryImportance.Normal,
 				RetainedAt: memory.RetainedAt)),
 		]);
+
+		// The schema creates content_fts on the empty table, so every seeded row lands in the
+		// unindexed tail — where lance_fts returns the FIRST k rows by scan arrival, not the top
+		// k by score (probed 2026-08-16: a top-scoring needle vanishes, membership varies per
+		// scan). Rebuilding after the seed puts every ranking measurement on the real index.
+		RebuildContentFts();
+
+		void RebuildContentFts() =>
+			DataSources.Execute(connection => {
+				using var command = connection.CreateCommand();
+				command.CommandText =
+					"""
+					CREATE INDEX content_fts ON ldb.main.memories (content) USING INVERTED
+					WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
+					""";
+				command.ExecuteNonQuery();
+			});
 	}
 
 	/// <summary>Runs every question through a pipeline and pairs what came back with what should have.</summary>

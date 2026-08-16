@@ -4,10 +4,9 @@
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
-/// The default pipeline's knobs, gathered so a host can tune the standard chain without
-/// rebuilding it: register an instance before <c>AddKontext</c> and the default pipeline picks it
-/// up. Hosts composing their own pipeline (via the <c>AddKontextRetrieval</c> configure hook) own
-/// their options instead.
+/// The knobs of the tunable chains (<c>Default</c>, <c>Hybrid</c>, <c>Legacy</c>). The shipped
+/// <c>Focused</c> chain is pinned to its measured optimum and reads none of these — a host that
+/// wants a tuned pipeline registers its own <c>IKontextRetriever</c>, which beats the default.
 /// </summary>
 public sealed class KontextRetrievalOptions {
     /// <summary>How far past the requested limit the searches over-fetch before fusion.</summary>

@@ -13,7 +13,8 @@ namespace Kurrent.Kontext.Retrieval;
 public sealed class HybridSearch(
     IMemoryIndex index,
     EmbeddingGenerator embeddingGenerator,
-    double alpha = 0.5
+    double alpha = 0.5,
+    Action<HybridSearchOptions>? tune = null
 ) : ISearch {
     public string Name => RetrievalSources.Hybrid;
 
@@ -21,10 +22,14 @@ public sealed class HybridSearch(
         // Hybrid is asked for exactly the pool it should return — no oversampling at this
         // surface. How the engine staffs its internal legs is the engine's business.
         var options = new HybridSearchOptions {
-            Limit = query.PoolSize, // we can  remove this cause no oversampling...
+            Limit = query.PoolSize, // we can remove this cause no oversampling...
             K     = query.PoolSize,
             Alpha = alpha,
         };
+
+        // The engine-knob escape hatch (use_index, nprobs, refine_factor) — benchmarks and
+        // parity checks reach past the per-query defaults here.
+        tune?.Invoke(options);
 
         var embedding = await embeddingGenerator
             .EmbedQueryAsync(query.Text, ct)
