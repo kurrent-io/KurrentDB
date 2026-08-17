@@ -24,10 +24,10 @@ public class Bm25RerankerTests {
 			Fixtures.Scored("c", 0.7, content: "we had a picnic by the lake"),
 		];
 
-		var reranker = Bm25Reranker.Create(static options => options.IdentityWeight = 0);
+		var reranker = Bm25Reranker<NativeScale>.Create(static options => options.IdentityWeight = 0);
 
 		// Act
-		var result = await reranker.ProcessAsync(Fixtures.Query("picnic"), pool);
+		var result = await reranker.Run(pool, Fixtures.Query("picnic"));
 
 		// Assert
 		await Assert.That(result[0].Memory.MemoryId).IsEqualTo("c");
@@ -41,9 +41,9 @@ public class Bm25RerankerTests {
 			Fixtures.Scored("c", 0.7, content: "another picnic story"),
 		];
 
-		var reranker = Bm25Reranker.Create(static options => options.Bm25Weight = 0);
+		var reranker = Bm25Reranker<NativeScale>.Create(static options => options.Bm25Weight = 0);
 
-		var result = await reranker.ProcessAsync(Fixtures.Query("picnic"), pool);
+		var result = await reranker.Run(pool, Fixtures.Query("picnic"));
 
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["a", "b", "c"], CollectionOrdering.Matching);
 	}
@@ -57,13 +57,13 @@ public class Bm25RerankerTests {
 			Fixtures.Scored("short", 0.8, content: "picnic today"),
 		];
 
-		var penalizing = await Bm25Reranker.Create(static options => {
+		var penalizing = await Bm25Reranker<NativeScale>.Create(static options => {
 			options.B              = 0.75;
 			options.IdentityWeight = 0;
-		}).ProcessAsync(Fixtures.Query("picnic"), pool);
+		}).Run(pool, Fixtures.Query("picnic"));
 
-		var flat = await Bm25Reranker.Create(static options => options.IdentityWeight = 0)
-			.ProcessAsync(Fixtures.Query("picnic"), pool);
+		var flat = await Bm25Reranker<NativeScale>.Create(static options => options.IdentityWeight = 0)
+			.Run(pool, Fixtures.Query("picnic"));
 
 		// Assert
 		await Assert.That(penalizing[0].Memory.MemoryId).IsEqualTo("short");
@@ -77,7 +77,7 @@ public class Bm25RerankerTests {
 			Fixtures.Scored("miss", 0.8, content: "nothing relevant here"),
 		];
 
-		var result = await Bm25Reranker.Create().ProcessAsync(Fixtures.Query("picnic"), pool);
+		var result = await Bm25Reranker<NativeScale>.Create().Run(pool, Fixtures.Query("picnic"));
 
 		var byId = result.ToDictionary(scored => scored.Memory.MemoryId);
 
@@ -89,7 +89,7 @@ public class Bm25RerankerTests {
 	public async ValueTask a_single_candidate_pool_passes_through_untouched() {
 		IReadOnlyList<ScoredMemory> pool = [Fixtures.Scored("only", 0.9)];
 
-		var result = await Bm25Reranker.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await Bm25Reranker<NativeScale>.Create().Run(pool);
 
 		await Assert.That(result).IsEquivalentTo(pool, CollectionOrdering.Matching);
 	}

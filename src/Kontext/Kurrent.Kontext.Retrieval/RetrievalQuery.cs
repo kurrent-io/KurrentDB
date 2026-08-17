@@ -19,8 +19,9 @@ public sealed record RetrievalQuery {
 
     /// <summary>
     /// Memories scoring below this after the full pipeline are dropped. 0 = keep everything that
-    /// ranked. The scale is pipeline-dependent — raw BM25 (keyword-only), RRF sums (~0.01–0.03), or
-    /// [0,1] (cognitive/additive) — so never carry a nonzero cutoff across pipelines in a sweep.
+    /// ranked. The scale is the chain's final <see cref="IScoreScale"/> — the type argument of the
+    /// chain's <c>CutStep</c> — so never carry a nonzero cutoff across chains that end on
+    /// different scales.
     /// </summary>
     public double MinScore { get; init; }
 

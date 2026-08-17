@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -16,21 +18,23 @@ namespace Kurrent.Kontext.Retrieval;
 /// <para>Certainty multiplies on purpose: a contradicted lie loses decisively while strong gossip may still
 /// outrank a stale observation on the base score.</para>
 /// </summary>
-public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRetrievalStage {
+public sealed class CognitiveModulator<TIn>(CognitiveModulationOptions options) : IStep<Pool<TIn>, Pool<UnitScale>> where TIn : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static CognitiveModulator Create(CognitiveModulationOptions options) =>
+    public static CognitiveModulator<TIn> Create(CognitiveModulationOptions options) =>
         new(options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static CognitiveModulator Create(Action<CognitiveModulationOptions>? configure = null) {
+    public static CognitiveModulator<TIn> Create(Action<CognitiveModulationOptions>? configure = null) {
         var options = new CognitiveModulationOptions();
         configure?.Invoke(options);
         return Create(options);
     }
 
-    public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+    public ValueTask<Pool<UnitScale>> Execute(Pool<TIn> input, CancellationToken ct) {
+        var (query, pool) = (input.Query.Plan, input.Memories);
+
         if (pool.Count == 0)
-            return ValueTask.FromResult(pool);
+            return new(new Pool<UnitScale>(input.Query, pool));
 
         var raws = pool.Select(scored => new {
                 Scored     = scored,
@@ -78,7 +82,7 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
             .ThenBy(scored => scored.Memory.MemoryId, StringComparer.Ordinal)
             .ToList();
 
-        return ValueTask.FromResult(modulated);
+        return new(new Pool<UnitScale>(input.Query, modulated));
     }
 
     double RecencyOf(Contracts.StoredMemory memory, DateTimeOffset asOf) =>

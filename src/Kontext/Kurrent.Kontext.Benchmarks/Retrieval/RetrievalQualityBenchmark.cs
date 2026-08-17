@@ -11,6 +11,9 @@ namespace Benchmarks.Retrieval;
 sealed class RetrievalQualityBenchmark(CorpusFixture corpus) {
 	public const int Limit = 10;
 
+	public async ValueTask<QualityRun> Run(KontextRetriever retriever) =>
+		await Run(retriever.Variant, retriever);
+
 	public async ValueTask<QualityRun> Run(string name, IKontextRetriever retriever) {
 		// Warmup, untimed.
 		await Retrieve(retriever, corpus.Questions[0]);

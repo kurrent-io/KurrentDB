@@ -111,3 +111,103 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
         ).AsTask();
     }
 }
+
+/// <summary>
+/// v2 of the Kontext store: the entities read model — three lance tables and their eager
+/// indexes. <c>entities</c> holds one row per resolved entity, <c>entity_mentions</c> the
+/// append-only provenance, and <c>entity_links</c> the suspected-duplicate pairs awaiting
+/// review (the SAME_AS ledger).
+///
+/// No vector index on purpose: entity similarity search runs as an exact scan
+/// (array_cosine_similarity), which is correct at any size and fast at the entity counts a
+/// node-local read model sees. The day that stops being true, the memories table's lazy
+/// IVF_HNSW_PQ lifecycle is the template.
+///
+/// Timestamps are BIGINT Unix epoch MILLISECONDS (UTC) — v1's rule, applied unchanged.
+/// <c>aliases</c> holds NORMALIZED surface forms (lowercase, collapsed whitespace) including
+/// the canonical one, so alias containment and normalized-name equality speak the same key.
+/// <c>subtype</c> uses '' for none — empty-string sentinels over NULLs on VARCHARs, the
+/// memories lifecycle columns' precedent. Aliases gets LABEL_LIST like the memories tags —
+/// dormant until the engine pushes containment down, covered from day one.
+/// </summary>
+public sealed class KontextEntitySchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
+    public int Version => 2;
+
+    // The v1 version-retention policy, applied to the entity tables — frozen with the step.
+    const int    CleanupIntervalCommits = 1000;
+    const string CleanupOlderThan       = "1h";
+    const int    CleanupRetainVersions  = 3;
+
+    public Task ExecuteAsync(IDuckDBSchemaExecutor executor, CancellationToken ct = default) {
+        var script =
+            $"""
+            CREATE TABLE IF NOT EXISTS ldb.main.entities (
+              entity_id       VARCHAR,
+              name            VARCHAR,
+              normalized_name VARCHAR,
+              entity_type     VARCHAR,
+              subtype         VARCHAR,
+              aliases         VARCHAR[],
+              mention_count   BIGINT,
+              confidence      DOUBLE,
+              first_seen      BIGINT,
+              last_seen       BIGINT,
+              log_position    BIGINT,
+              embedding       FLOAT[{KontextSchemaTask.Dimension}]);
+
+            CREATE INDEX entity_id_idx       ON ldb.main.entities (entity_id)       USING BTREE      WITH (replace = true);
+            CREATE INDEX normalized_name_idx ON ldb.main.entities (normalized_name) USING BTREE      WITH (replace = true);
+            CREATE INDEX entity_type_idx     ON ldb.main.entities (entity_type)     USING BTREE      WITH (replace = true);
+            CREATE INDEX aliases_idx         ON ldb.main.entities (aliases)         USING LABEL_LIST WITH (replace = true);
+
+            ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            );
+
+            CREATE TABLE IF NOT EXISTS ldb.main.entity_mentions (
+              entity_id    VARCHAR,
+              memory_id    VARCHAR,
+              surface      VARCHAR,
+              start_pos    INTEGER,
+              end_pos      INTEGER,
+              confidence   DOUBLE,
+              extractor    VARCHAR,
+              retained_at  BIGINT,
+              log_position BIGINT);
+
+            CREATE INDEX mention_entity_id_idx ON ldb.main.entity_mentions (entity_id) USING BTREE WITH (replace = true);
+            CREATE INDEX mention_memory_id_idx ON ldb.main.entity_mentions (memory_id) USING BTREE WITH (replace = true);
+
+            ALTER TABLE ldb.main.entity_mentions SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            );
+
+            CREATE TABLE IF NOT EXISTS ldb.main.entity_links (
+              source_entity_id VARCHAR,
+              target_entity_id VARCHAR,
+              confidence       DOUBLE,
+              method           VARCHAR,
+              status           VARCHAR,
+              created_at       BIGINT,
+              log_position     BIGINT);
+
+            CREATE INDEX link_source_id_idx ON ldb.main.entity_links (source_entity_id) USING BTREE WITH (replace = true);
+            CREATE INDEX link_target_id_idx ON ldb.main.entity_links (target_entity_id) USING BTREE WITH (replace = true);
+            CREATE INDEX link_status_idx    ON ldb.main.entity_links (status)           USING BTREE WITH (replace = true);
+
+            ALTER TABLE ldb.main.entity_links SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            )
+            """;
+
+        return executor.ExecuteAsync(
+            connection => connection.ExecuteAdHocNonQuery(script, multipleStatements: true), ct
+        ).AsTask();
+    }
+}

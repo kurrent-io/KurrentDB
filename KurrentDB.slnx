@@ -11,6 +11,7 @@
     <Project Path="src/Kontext/Kurrent.Kontext.Benchmarks/Kurrent.Kontext.Benchmarks.csproj" />
     <Project Path="src/Kontext/Kurrent.Kontext.Contracts/Kurrent.Kontext.Contracts.csproj" />
     <Project Path="src/Kontext/Kurrent.Kontext.Embeddings/Kurrent.Kontext.Embeddings.csproj" />
+    <Project Path="src/Kontext/Kurrent.Kontext.Pipelines/Kurrent.Kontext.Pipelines.csproj" />
     <Project Path="src/Kontext/Kurrent.Kontext.Retrieval/Kurrent.Kontext.Retrieval.csproj" />
     <Project Path="src/Kontext/Kurrent.Kontext/Kurrent.Kontext.csproj" />
     <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />

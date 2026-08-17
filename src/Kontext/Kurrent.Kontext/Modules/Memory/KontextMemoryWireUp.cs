@@ -6,6 +6,8 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
+using Kurrent.Kontext.Modules.Entities;
+using Kurrent.Kontext.Modules.Entities.Data;
 using Kurrent.Kontext.Modules.Records;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Surge.Schema;
@@ -150,6 +152,7 @@ public static class KontextMemoryWireUp {
 
             services.AddKontextMemoryProjector();
             services.AddKontextRecordsIndexer();
+            services.AddKontextEntityProjector();
 
             return services;
         }
@@ -232,19 +235,48 @@ static class KontextRetrievalServiceCollectionExtensions {
     /// <param name="services">The service collection.</param>
     extension(IServiceCollection services) {
         public IServiceCollection AddKontextRetrieval() {
-            // First-wins: a pre-registered IKontextRetriever (composed directly with
-            // KontextRetriever.New()) beats the shipped Focused chain.
-            services.TryAddSingleton<IKontextRetriever>(CreateDefaultRetriever);
+            // First-wins: a pre-registered IKontextRetriever (composed directly from the pipeline
+            // steps) beats the catalogue resolution of the configured variant.
+            services.TryAddSingleton<IKontextRetriever>(CreateCatalogueRetriever);
 
             return services;
         }
     }
 
-    static IKontextRetriever CreateDefaultRetriever(IServiceProvider sp) =>
-        KontextRetriever.New()
-            .Focused(
-                sp.GetRequiredService<KontextDataStore>(),
-                sp.GetRequiredService<EmbeddingGenerator>(),
-                sp.GetService<TimeProvider>())
-            .Build();
+    static IKontextRetriever CreateCatalogueRetriever(IServiceProvider sp) {
+        var options = ResolveServices(sp.GetService<KontextRetrievalOptions>() ?? new KontextRetrievalOptions(), sp);
+
+        if (!RetrieverCatalogue.TryGetRetriever(options.Variant, out var item))
+            throw new InvalidOperationException(
+                $"Unknown retriever variant '{options.Variant}'. Known variants: {string.Join(", ", RetrieverCatalogue.VariantNames())}.");
+
+        return item.Create(new(
+            sp.GetService<IMemoryIndex>() ?? sp.GetRequiredService<KontextDataStore>(),
+            sp.GetRequiredService<EmbeddingGenerator>(),
+            options) {
+            Entities = ResolveEntityIndex(sp),
+        });
+    }
+
+    /// <summary>
+    /// The entity-signal port, if this host has an entities read model at all: a registered
+    /// <see cref="IEntityIndex"/> wins, otherwise the entity projector's own store is adapted.
+    /// Resolved, not registered — a host without <c>AddKontextEntityProjector</c> has no store to
+    /// adapt, and absent must mean the entity stage falls through and the chain ranks exactly as it
+    /// did before entities existed.
+    /// </summary>
+    static IEntityIndex? ResolveEntityIndex(IServiceProvider sp) =>
+        sp.GetService<IEntityIndex>()
+     ?? (sp.GetService<KontextEntityStore>() is { } store ? new KontextEntityIndex(store) : null);
+
+    /// <summary>
+    /// Applies service-provider-resolved services to the options as overrides. Each service only
+    /// overrides the corresponding option if it is registered.
+    /// </summary>
+    static KontextRetrievalOptions ResolveServices(KontextRetrievalOptions options, IServiceProvider sp) {
+        if (sp.GetService<TimeProvider>() is { } time)
+            options.Time = time;
+
+        return options;
+    }
 }

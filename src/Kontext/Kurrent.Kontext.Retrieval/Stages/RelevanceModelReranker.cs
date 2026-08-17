@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -11,21 +13,23 @@ namespace Kurrent.Kontext.Retrieval;
 /// memory-ness then scales this relevance instead of a score-replacing model overwriting a score
 /// memory-ness already shaped.
 /// </summary>
-public sealed class RelevanceModelReranker(IRelevanceModel model, RelevanceModelRerankerOptions options) : IRetrievalStage {
+public sealed class RelevanceModelReranker<TIn>(IRelevanceModel model, RelevanceModelRerankerOptions options) : IStep<Pool<TIn>, Pool<NativeScale>> where TIn : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static RelevanceModelReranker Create(IRelevanceModel model, RelevanceModelRerankerOptions options) =>
+    public static RelevanceModelReranker<TIn> Create(IRelevanceModel model, RelevanceModelRerankerOptions options) =>
         new(model, options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static RelevanceModelReranker Create(IRelevanceModel model, Action<RelevanceModelRerankerOptions>? configure = null) {
+    public static RelevanceModelReranker<TIn> Create(IRelevanceModel model, Action<RelevanceModelRerankerOptions>? configure = null) {
         var options = new RelevanceModelRerankerOptions();
         configure?.Invoke(options);
         return Create(model, options);
     }
 
-    public async ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+    public async ValueTask<Pool<NativeScale>> Execute(Pool<TIn> input, CancellationToken ct) {
+        var (query, pool) = (input.Query.Plan, input.Memories);
+
         if (pool.Count == 0)
-            return pool;
+            return new(input.Query, pool);
 
         var head = pool.Take(options.CandidateCap).ToList();
         var tail = pool.Skip(options.CandidateCap);
@@ -43,7 +47,7 @@ public sealed class RelevanceModelReranker(IRelevanceModel model, RelevanceModel
             .OrderByDescending(scored => scored.Score)
             .ThenBy(scored => scored.Memory.MemoryId, StringComparer.Ordinal);
 
-        return reranked.Concat(tail).ToList();
+        return new(input.Query, reranked.Concat(tail).ToList());
     }
 }
 

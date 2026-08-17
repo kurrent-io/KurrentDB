@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -11,21 +13,23 @@ namespace Kurrent.Kontext.Retrieval;
 /// <para>Reorder-only: changes positions, never scores. Belongs at the end of the chain.</para>
 /// <para>Similarity defaults to word-level Jaccard on content — document embeddings are not read back from the store.</para>
 /// </summary>
-public sealed class MmrReorderer(MmrReordererOptions options) : IRetrievalStage {
+public sealed class MmrReorderer<TScale>(MmrReordererOptions options) : IStep<Pool<TScale>, Pool<TScale>> where TScale : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static MmrReorderer Create(MmrReordererOptions options) =>
+    public static MmrReorderer<TScale> Create(MmrReordererOptions options) =>
         new(options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static MmrReorderer Create(Action<MmrReordererOptions>? configure = null) {
+    public static MmrReorderer<TScale> Create(Action<MmrReordererOptions>? configure = null) {
         var options = new MmrReordererOptions();
         configure?.Invoke(options);
         return Create(options);
     }
 
-    public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+    public ValueTask<Pool<TScale>> Execute(Pool<TScale> input, CancellationToken ct) {
+        var pool = input.Memories;
+
         if (pool.Count <= 1)
-            return ValueTask.FromResult(pool);
+            return new(input);
 
         var scoreMin = pool.Min(scored => scored.Score);
         var scoreMax = pool.Max(scored => scored.Score);
@@ -81,7 +85,7 @@ public sealed class MmrReorderer(MmrReordererOptions options) : IRetrievalStage 
             }
         }
 
-        return ValueTask.FromResult<IReadOnlyList<ScoredMemory>>(selected);
+        return new(new Pool<TScale>(input.Query, selected));
     }
 }
 

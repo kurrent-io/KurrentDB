@@ -15,7 +15,7 @@ public class BoostedModulatorTests {
 			Fixtures.Scored("floor", 0.0),
 		];
 
-		var result = await BoostedModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await BoostedModulator<NativeScale>.Create().Run(pool);
 
 		await Assert.That(Fixtures.Ids(result)[0]).IsEqualTo("leader");
 	}
@@ -28,7 +28,7 @@ public class BoostedModulatorTests {
 			Fixtures.Scored("mid", 0.7, age: TimeSpan.FromDays(90)),
 		];
 
-		var result = await BoostedModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await BoostedModulator<NativeScale>.Create().Run(pool);
 
 		// rank seeds 1.0 / 0.55 / 0.1 keep the incoming order despite fresh being maximally fresh
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["stale", "fresh", "mid"], CollectionOrdering.Matching);

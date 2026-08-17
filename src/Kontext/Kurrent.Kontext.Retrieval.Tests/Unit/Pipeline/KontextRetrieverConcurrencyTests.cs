@@ -21,7 +21,7 @@ public class KontextRetrieverConcurrencyTests {
 		var vector  = new HandshakeSearch(RetrievalSources.Vector, vectorEntered, keywordEntered.Task, Fixtures.Candidate("a", 0.9));
 		var keyword = new HandshakeSearch(RetrievalSources.Keyword, keywordEntered, vectorEntered.Task, Fixtures.Candidate("b", 0.8));
 
-		var retriever = KontextRetriever.New().AddSearch(vector).AddSearch(keyword).Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [vector, keyword]);
 
 		// If the searches ran one at a time, the second would never start and each side's await of
 		// the other's TCS would hang forever, so bound it: a regression fails fast instead of
@@ -42,7 +42,7 @@ public class KontextRetrieverConcurrencyTests {
 		var vector  = new TokenCapturingSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.9));
 		var keyword = new TokenCapturingSearch(RetrievalSources.Keyword, Fixtures.Candidate("b", 0.8));
 
-		var retriever = KontextRetriever.New().AddSearch(vector).AddSearch(keyword).Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [vector, keyword]);
 
 		await retriever.RetrieveAsync(new() { Text = "query" }, cts.Token);
 
@@ -57,11 +57,7 @@ public class KontextRetrieverConcurrencyTests {
 		var planner = new TokenCapturingPlanner();
 		var stage   = new TokenCapturingStage();
 
-		var retriever = KontextRetriever.New()
-			.Planner(planner)
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.9)))
-			.AddStage(stage)
-			.Build();
+		var retriever = Chains.Retriever(planner, new IdentityFuser(), [new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.9))], stage);
 
 		await retriever.RetrieveAsync(new() { Text = "query" }, cts.Token);
 
@@ -77,10 +73,10 @@ public class KontextRetrieverConcurrencyTests {
 		// The vector leg would happily return "a"; the keyword leg actually honours the token and
 		// never completes on its own. If cancellation were swallowed, retrieval would return the
 		// vector-only pool instead of throwing.
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.9)))
-			.AddSearch(new CancellationHonoringSearch(RetrievalSources.Keyword))
-			.Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [
+			new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.9)),
+			new CancellationHonoringSearch(RetrievalSources.Keyword),
+		]);
 
 		await Assert.That(async () => await retriever.RetrieveAsync(new() { Text = "query" }, cts.Token))
 			.Throws<TaskCanceledException>();
@@ -94,7 +90,7 @@ public class KontextRetrieverConcurrencyTests {
 		var fast = new GatedSearch(RetrievalSources.Vector, Task.CompletedTask, Fixtures.Candidate("fast", 1.0), finished: fastDone);
 		var slow = new GatedSearch(RetrievalSources.Keyword, slowGate.Task, Fixtures.Candidate("slow", 1.0));
 
-		var retriever = KontextRetriever.New().AddSearch(fast).AddSearch(slow).Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [fast, slow]);
 
 		var retrieval = retriever.RetrieveAsync(new() { Text = "query" }).AsTask();
 
@@ -116,7 +112,7 @@ public class KontextRetrieverConcurrencyTests {
 		var survivor = new GatedSearch(RetrievalSources.Vector, survivorGate.Task, Fixtures.Candidate("a", 0.9));
 		var throwing = new SignalingThrowingSearch(RetrievalSources.Keyword, thrown);
 
-		var retriever = KontextRetriever.New().AddSearch(survivor).AddSearch(throwing).Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [survivor, throwing]);
 
 		var retrieval = retriever.RetrieveAsync(new() { Text = "query" }).AsTask();
 
@@ -141,7 +137,7 @@ public class KontextRetrieverConcurrencyTests {
 		var vector  = new GatedSearch(RetrievalSources.Vector, vectorGate.Task, Fixtures.Candidate("both", 0.9));
 		var keyword = new FakeSearch(RetrievalSources.Keyword, Fixtures.Candidate("both", 12.0));
 
-		var retriever = KontextRetriever.New().AddSearch(vector).AddSearch(keyword).Build();
+		var retriever = Chains.Retriever(ReciprocalRankFuser.Create(), [vector, keyword]);
 
 		var retrieval = retriever.RetrieveAsync(new() { Text = "query" }).AsTask();
 		vectorGate.SetResult();
@@ -196,12 +192,12 @@ sealed class TokenCapturingPlanner : IQueryPlanner {
 	}
 }
 
-sealed class TokenCapturingStage : IRetrievalStage {
+sealed class TokenCapturingStage : IStep<Pool<NativeScale>, Pool<NativeScale>> {
 	public CancellationToken SeenToken { get; private set; }
 
-	public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+	public ValueTask<Pool<NativeScale>> Execute(Pool<NativeScale> input, CancellationToken ct) {
 		SeenToken = ct;
-		return ValueTask.FromResult(pool);
+		return new(input);
 	}
 }
 

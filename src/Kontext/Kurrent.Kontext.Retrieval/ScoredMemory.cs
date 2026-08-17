@@ -48,6 +48,9 @@ public sealed record ScoreBreakdown {
     /// <summary>The alpha-weighted sum of the normalized dimensions, before certainty.</summary>
     public double? BaseScore { get; init; }
 
+    /// <summary>The entity overlap 1 − Π(1−wᵢ) in [0,1]; null when no entity the question named reached this memory.</summary>
+    public double? EntitySignal { get; init; }
+
     /// <summary>The reordering stage's own score (e.g. the MMR value) when it reordered the list.</summary>
     public double? ReorderScore { get; init; }
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -8,21 +10,23 @@ namespace Kurrent.Kontext.Retrieval;
 /// <para>Keeps only the union of the two top-<see cref="RankFusionRerankerOptions.PoolSize"/> pools,
 /// normalized against the two-leg maximum. Candidates outside both pools are dropped.</para>
 /// </summary>
-public sealed class RankFusionReranker(IRelevanceModel model, RankFusionRerankerOptions options) : IRetrievalStage {
+public sealed class RankFusionReranker<TIn>(IRelevanceModel model, RankFusionRerankerOptions options) : IStep<Pool<TIn>, Pool<UnitScale>> where TIn : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static RankFusionReranker Create(IRelevanceModel model, RankFusionRerankerOptions options) =>
+    public static RankFusionReranker<TIn> Create(IRelevanceModel model, RankFusionRerankerOptions options) =>
         new(model, options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static RankFusionReranker Create(IRelevanceModel model, Action<RankFusionRerankerOptions>? configure = null) {
+    public static RankFusionReranker<TIn> Create(IRelevanceModel model, Action<RankFusionRerankerOptions>? configure = null) {
         var options = new RankFusionRerankerOptions();
         configure?.Invoke(options);
         return Create(model, options);
     }
 
-    public async ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+    public async ValueTask<Pool<UnitScale>> Execute(Pool<TIn> input, CancellationToken ct) {
+        var (query, pool) = (input.Query.Plan, input.Memories);
+
         if (pool.Count == 0)
-            return pool;
+            return new(input.Query, pool);
 
         var modelScores = await model.ScoreAsync(query.Text, pool.Select(scored => scored.Memory.Content).ToList(), ct).ConfigureAwait(false);
 
@@ -47,7 +51,7 @@ public sealed class RankFusionReranker(IRelevanceModel model, RankFusionReranker
 
         var maxScore = 2.0 / (options.K + 1);
 
-        return pool
+        IReadOnlyList<ScoredMemory> reranked = pool
             .Select((scored, index) => (Scored: scored, ModelScore: modelScores[index]))
             .Where(entry => fused.ContainsKey(entry.Scored.Memory.MemoryId))
             .Select(entry => entry.Scored with {
@@ -57,6 +61,8 @@ public sealed class RankFusionReranker(IRelevanceModel model, RankFusionReranker
             .OrderByDescending(scored => scored.Score)
             .ThenBy(scored => scored.Memory.MemoryId, StringComparer.Ordinal)
             .ToList();
+
+        return new(input.Query, reranked);
     }
 }
 

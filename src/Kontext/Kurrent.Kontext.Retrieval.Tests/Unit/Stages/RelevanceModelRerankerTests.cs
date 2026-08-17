@@ -14,8 +14,8 @@ public class RelevanceModelRerankerTests {
 			Fixtures.Scored("d", 0.6),
 		];
 
-		var reranker = RelevanceModelReranker.Create(new FakeRelevanceModel(0.1, 0.9), options => options.CandidateCap = 2);
-		var result   = await reranker.ProcessAsync(Fixtures.Query(), pool);
+		var reranker = RelevanceModelReranker<NativeScale>.Create(new FakeRelevanceModel(0.1, 0.9), options => options.CandidateCap = 2);
+		var result   = await reranker.Run(pool);
 
 		// the model demotes a below b inside the head; the tail keeps its order below both
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["b", "a", "c", "d"], CollectionOrdering.Matching);
@@ -28,8 +28,8 @@ public class RelevanceModelRerankerTests {
 	public async ValueTask throws_on_score_count_mismatch() {
 		IReadOnlyList<ScoredMemory> pool = [Fixtures.Scored("a", 0.9), Fixtures.Scored("b", 0.8)];
 
-		var reranker = RelevanceModelReranker.Create(new FakeRelevanceModel(0.5));
+		var reranker = RelevanceModelReranker<NativeScale>.Create(new FakeRelevanceModel(0.5));
 
-		await Assert.That(async () => await reranker.ProcessAsync(Fixtures.Query(), pool)).Throws<InvalidOperationException>();
+		await Assert.That(async () => await reranker.Run(pool)).Throws<InvalidOperationException>();
 	}
 }

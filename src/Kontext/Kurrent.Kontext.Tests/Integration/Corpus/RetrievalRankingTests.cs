@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
 using Kurrent.Kontext.Retrieval;
 using Serilog;
 
@@ -83,10 +84,10 @@ public class RetrievalRankingTests {
 			.IsGreaterThanOrEqualTo(RankingMetrics.NdcgAt(hybrid, 10));
 
 		IKontextRetriever FocusedPipeline() =>
-			KontextRetriever.New().Focused(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+			KontextRetriever.Focused(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator));
 
 		IKontextRetriever HybridPipeline() =>
-			KontextRetriever.New().Hybrid(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+			KontextRetriever.Hybrid(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator));
 	}
 
 	[Test]
@@ -106,7 +107,7 @@ public class RetrievalRankingTests {
 			.IsGreaterThan(RankingMetrics.NdcgAt(legacy, 10));
 
 		IKontextRetriever HybridPipeline() =>
-			KontextRetriever.New().Hybrid(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+			KontextRetriever.Hybrid(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator));
 	}
 
 	[Test]
@@ -134,21 +135,23 @@ public class RetrievalRankingTests {
 			RankingMetrics.NdcgAt(outcomes, 10));
 
 	IKontextRetriever DefaultPipeline() =>
-		KontextRetriever.New().Default(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+		KontextRetriever.Default(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator));
 
 	IKontextRetriever LegacyPipeline() =>
-		KontextRetriever.New().Legacy(Corpus.Store, Corpus.EmbeddingGenerator).Build();
+		KontextRetriever.Legacy(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator));
 
 	/// <summary>One leg, same stages — the ablation the fusion is measured against.</summary>
 	IKontextRetriever SingleLegPipeline(bool vectorLeg) =>
-		KontextRetriever.New()
-			.AddSearch(vectorLeg
-				? new VectorSearch(Corpus.Store, Corpus.EmbeddingGenerator)
-				: new KeywordSearch(Corpus.Store))
-			.AddStage(Bm25Reranker.Create())
-			.AddStage(CognitiveModulator.Create())
-			.AddStage(MmrReorderer.Create())
-			.Build();
+		KontextRetriever.From(vectorLeg ? "vector-only" : "keyword-only",
+			PlanStep.Default()
+				.Then(new SearchStep(vectorLeg
+					? new VectorSearch(Corpus.Store, Corpus.EmbeddingGenerator)
+					: new KeywordSearch(Corpus.Store)))
+				.Then(new FuseStep<NativeScale>(new IdentityFuser()))
+				.Then(Bm25Reranker<NativeScale>.Create())
+				.Then(CognitiveModulator<RrfScale>.Create())
+				.Then(MmrReorderer<UnitScale>.Create())
+				.Then(new CutStep<UnitScale>()));
 
 	#endregion // Test Infrastructure
 }

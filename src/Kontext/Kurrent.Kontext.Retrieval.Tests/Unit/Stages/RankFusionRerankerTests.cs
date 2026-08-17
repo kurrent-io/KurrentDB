@@ -10,7 +10,7 @@ public class RankFusionRerankerTests {
 		var pool  = Pool(3);
 		var model = new FakeRelevanceModel(0.1, 0.9, 0.5);
 
-		var refined = await RankFusionReranker.Create(model).ProcessAsync(Fixtures.Query(), pool);
+		var refined = await RankFusionReranker<NativeScale>.Create(model).Run(pool);
 
 		// incoming ranks m01 m02 m03, model ranks m02 m03 m01:
 		// m02 = 1/62 + 1/61, m01 = 1/61 + 1/63, m03 = 1/63 + 1/62
@@ -26,7 +26,7 @@ public class RankFusionRerankerTests {
 		// The model agrees with the incoming order, so both top-20s are the first 20 members.
 		var model = new FakeRelevanceModel(Enumerable.Range(1, 25).Select(i => 1.0 - i * 0.01).ToArray());
 
-		var refined = await RankFusionReranker.Create(model).ProcessAsync(Fixtures.Query(), pool);
+		var refined = await RankFusionReranker<NativeScale>.Create(model).Run(pool);
 
 		await Assert.That(Fixtures.Ids(refined)).IsEquivalentTo(pool.Take(20).Select(scored => scored.Memory.MemoryId).ToList(), CollectionOrdering.Matching);
 	}

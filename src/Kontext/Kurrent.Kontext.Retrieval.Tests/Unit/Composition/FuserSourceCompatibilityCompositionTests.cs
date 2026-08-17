@@ -7,11 +7,12 @@ namespace Kurrent.Kontext.Retrieval.Tests.Composition;
 public class FuserSourceCompatibilityCompositionTests {
 	[Test]
 	public async ValueTask additive_fusion_rejects_a_hybrid_leg_at_the_pipeline_level() {
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("v", 0.9)))
-			.AddSearch(new FakeSearch(RetrievalSources.Hybrid, Fixtures.Candidate("h", 0.8)))
-			.Fuser(AdditiveNormalizedFuser.Create())
-			.Build();
+		var retriever = Chains.Retriever(
+			AdditiveNormalizedFuser.Create(),
+			[
+				new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("v", 0.9)),
+				new FakeSearch(RetrievalSources.Hybrid, Fixtures.Candidate("h", 0.8)),
+			]);
 
 		// additive fusion only calibrates vector and keyword; an engine-hybrid leg has no sigmoid
 		await Assert.That(async () => await retriever.RetrieveAsync(new() { Text = "query" })).Throws<NotSupportedException>();
@@ -19,14 +20,15 @@ public class FuserSourceCompatibilityCompositionTests {
 
 	[Test]
 	public async ValueTask additive_fusion_accepts_the_two_legs_it_calibrates() {
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.8)))
-			.AddSearch(new FakeSearch(RetrievalSources.Keyword, Fixtures.Candidate("a", 5.0)))
-			.Fuser(AdditiveNormalizedFuser.Create(static options => {
+		var retriever = Chains.Retriever(
+			AdditiveNormalizedFuser.Create(static options => {
 				options.Midpoint  = 5.0;
 				options.Steepness = 0.7;
-			}))
-			.Build();
+			}),
+			[
+				new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("a", 0.8)),
+				new FakeSearch(RetrievalSources.Keyword, Fixtures.Candidate("a", 5.0)),
+			]);
 
 		var result = await retriever.RetrieveAsync(new() { Text = "query" });
 
@@ -36,25 +38,26 @@ public class FuserSourceCompatibilityCompositionTests {
 
 	[Test]
 	public async ValueTask identity_fusion_rejects_a_second_leg_at_the_pipeline_level() {
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("v", 0.9)))
-			.AddSearch(new FakeSearch(RetrievalSources.Keyword, Fixtures.Candidate("k", 12.0)))
-			.Fuser(new IdentityFuser())
-			.Build();
+		var retriever = Chains.Retriever(
+			new IdentityFuser(),
+			[
+				new FakeSearch(RetrievalSources.Vector, Fixtures.Candidate("v", 0.9)),
+				new FakeSearch(RetrievalSources.Keyword, Fixtures.Candidate("k", 12.0)),
+			]);
 
 		await Assert.That(async () => await retriever.RetrieveAsync(new() { Text = "query" })).Throws<InvalidOperationException>();
 	}
 
 	[Test]
-	public async ValueTask a_lone_hybrid_leg_passes_its_own_scores_through_the_default_fuser() {
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Hybrid, Fixtures.Candidate("h", 0.8), Fixtures.Candidate("i", 0.6)))
-			.Build();
+	public async ValueTask a_lone_hybrid_leg_passes_its_own_scores_through_identity_fusion() {
+		var retriever = Chains.Retriever(
+			new IdentityFuser(),
+			[new FakeSearch(RetrievalSources.Hybrid, Fixtures.Candidate("h", 0.8), Fixtures.Candidate("i", 0.6))]);
 
 		var result = await retriever.RetrieveAsync(new() { Text = "query" });
 
-		// the builder defaults a single-search pipeline to IdentityFuser, so hybrid is only a problem
-		// once a fuser that calibrates per-source sees it
+		// a single-leg chain fuses with IdentityFuser, so hybrid is only a problem once a fuser
+		// that calibrates per-source sees it
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["h", "i"], CollectionOrdering.Matching);
 		await Assert.That(result[0].Score).IsEqualTo(0.8);
 	}

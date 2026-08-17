@@ -22,10 +22,10 @@ public class HybridRankingTests {
     public async ValueTask hybrid_chain_measures_against_the_default_chain(CancellationToken ct) {
         // Arrange
         (string Label, IKontextRetriever Retriever)[] compositions = [
-            ("default rrf", KontextRetriever.New().Default(Corpus.Store, Corpus.EmbeddingGenerator).Build()),
+            ("default rrf", KontextRetriever.Default(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator))),
             .. from alpha in (double[]) [0.3, 0.4, 0.5]
                select ($"hybrid a={alpha:F1}",
-                       KontextRetriever.New().Hybrid(Corpus.Store, Corpus.EmbeddingGenerator, options => options.Alpha = alpha).Build()),
+                       (IKontextRetriever) KontextRetriever.Hybrid(RetrieverParts.Of(Corpus.Store, Corpus.EmbeddingGenerator, options => options.Alpha = alpha))),
         ];
 
         var expectedOutcomes = Corpus.Questions.Count;

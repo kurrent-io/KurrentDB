@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Pipelines;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -12,21 +14,23 @@ namespace Kurrent.Kontext.Retrieval;
 /// <para>Base is the pool-normalized running score. A degenerate pool (every score identical) falls back
 /// to a rank seed so the boosts modulate a real gradient instead of becoming a pure recency sort.</para>
 /// </summary>
-public sealed class BoostedModulator(BoostModulationOptions options) : IRetrievalStage {
+public sealed class BoostedModulator<TIn>(BoostModulationOptions options) : IStep<Pool<TIn>, Pool<UnitScale>> where TIn : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static BoostedModulator Create(BoostModulationOptions options) =>
+    public static BoostedModulator<TIn> Create(BoostModulationOptions options) =>
         new(options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static BoostedModulator Create(Action<BoostModulationOptions>? configure = null) {
+    public static BoostedModulator<TIn> Create(Action<BoostModulationOptions>? configure = null) {
         var options = new BoostModulationOptions();
         configure?.Invoke(options);
         return Create(options);
     }
 
-    public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+    public ValueTask<Pool<UnitScale>> Execute(Pool<TIn> input, CancellationToken ct) {
+        var (query, pool) = (input.Query.Plan, input.Memories);
+
         if (pool.Count == 0)
-            return ValueTask.FromResult(pool);
+            return new(new Pool<UnitScale>(input.Query, pool));
 
         var relevanceMin = pool.Min(scored => scored.Score);
         var relevanceMax = pool.Max(scored => scored.Score);
@@ -57,7 +61,7 @@ public sealed class BoostedModulator(BoostModulationOptions options) : IRetrieva
             .ThenBy(scored => scored.Memory.MemoryId, StringComparer.Ordinal)
             .ToList();
 
-        return ValueTask.FromResult(modulated);
+        return new(new Pool<UnitScale>(input.Query, modulated));
     }
 
     // 1.0 for the pool's first candidate down to 0.1 for its last — the passthrough seed.

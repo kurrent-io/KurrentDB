@@ -3,7 +3,7 @@
 
 namespace Kurrent.Kontext.Retrieval.Tests.Fakes;
 
-sealed class RescoringStage(Func<ScoredMemory, double> rescore) : IRetrievalStage {
-	public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) =>
-		ValueTask.FromResult<IReadOnlyList<ScoredMemory>>(pool.Select(scored => scored with { Score = rescore(scored) }).ToList());
+sealed class RescoringStage(Func<ScoredMemory, double> rescore) : IStep<Pool<NativeScale>, Pool<NativeScale>> {
+	public ValueTask<Pool<NativeScale>> Execute(Pool<NativeScale> input, CancellationToken ct) =>
+		new(input with { Memories = [.. input.Memories.Select(scored => scored with { Score = rescore(scored) })] });
 }

@@ -7,16 +7,38 @@ namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
 public class StageInvariantTests {
-	public static IEnumerable<Func<IRetrievalStage>> Stages() {
-		yield return () => CognitiveModulator.Create();
-		yield return () => BoostedModulator.Create();
-		yield return () => MmrReorderer.Create();
-		yield return () => RelevanceModelReranker.Create(new FakeRelevanceModel(content => content.Length / 100.0));
-		yield return () => Bm25Reranker.Create();
+	public static IEnumerable<Func<StageCase>> Stages() {
+		yield return () => StageCase.Of(CognitiveModulator<NativeScale>.Create());
+		yield return () => StageCase.Of(BoostedModulator<NativeScale>.Create());
+		yield return () => StageCase.Of(MmrReorderer<NativeScale>.Create());
+		yield return () => StageCase.Of(RelevanceModelReranker<NativeScale>.Create(new FakeRelevanceModel(content => content.Length / 100.0)));
+		yield return () => StageCase.Of(Bm25Reranker<NativeScale>.Create());
+		yield return () => StageCase.Of(EntityModulator<NativeScale>.Create(EntitiesNamedByTheDefaultQuery()));
+		yield return () => StageCase.Of(SeatAllocator<NativeScale>.Create(CapsTheInvariantPoolsFillExactly()));
 	}
 
+	// The invariant pools run under Fixtures.Query()'s "query" text, so the fake files an entity
+	// under exactly that surface — the nudge has to actually fire for the invariants to mean anything.
+	static FakeEntityIndex EntitiesNamedByTheDefaultQuery() =>
+		new FakeEntityIndex()
+			.Named("query", "ent-a")
+			.Note("ent-a", "ent-b", 0.84)
+			.Mentions("ent-a", "a")
+			.Mentions("ent-b", "b");
+
+	// The invariant pools run under Fixtures.Query()'s limit of 10, so 0.1 buys each capped kind
+	// exactly one seat — the quota is consumed to its ceiling rather than merely computed, and the
+	// pool still comes back whole because Pool() holds one candidate of each capped kind.
+	static SeatAllocationOptions CapsTheInvariantPoolsFillExactly() =>
+		new() {
+			MaxShares = {
+				[Contracts.MemoryType.Observation] = 0.1,
+				[Contracts.MemoryType.Hearsay]     = 0.1,
+			},
+		};
+
 	static readonly IReadOnlyDictionary<Type, string> ExcludedStages = new Dictionary<Type, string> {
-		[typeof(RankFusionReranker)] =
+		[typeof(RankFusionReranker<>)] =
 			"Prunes to the union of the two top-PoolSize legs, so preserves_pool_membership cannot hold by design. Covered by RankFusionRerankerTests.",
 	};
 
@@ -33,32 +55,32 @@ public class StageInvariantTests {
 	];
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask empty_pool_passes_through(IRetrievalStage stage) {
-		var result = await stage.ProcessAsync(Fixtures.Query(), []);
+	public async ValueTask empty_pool_passes_through(StageCase stage) {
+		var result = await stage.Run([]);
 
 		await Assert.That(result).IsEmpty();
 	}
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask preserves_pool_membership(IRetrievalStage stage) {
-		var result = await stage.ProcessAsync(Fixtures.Query(), Pool());
+	public async ValueTask preserves_pool_membership(StageCase stage) {
+		var result = await stage.Run(Pool());
 
 		await Assert.That(Fixtures.Ids(result).Order().ToList()).IsEquivalentTo(["a", "b", "c"], CollectionOrdering.Matching);
 	}
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask is_deterministic(IRetrievalStage stage) {
-		var first  = await stage.ProcessAsync(Fixtures.Query(), Pool());
-		var second = await stage.ProcessAsync(Fixtures.Query(), Pool());
+	public async ValueTask is_deterministic(StageCase stage) {
+		var first  = await stage.Run(Pool());
+		var second = await stage.Run(Pool());
 
 		await Assert.That(first.Select(scored => (scored.Memory.MemoryId, scored.Score)).ToList())
 			.IsEquivalentTo(second.Select(scored => (scored.Memory.MemoryId, scored.Score)).ToList(), CollectionOrdering.Matching);
 	}
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask preserves_fusion_provenance(IRetrievalStage stage) {
+	public async ValueTask preserves_fusion_provenance(StageCase stage) {
 		var pool   = FusedPool();
-		var result = await stage.ProcessAsync(Fixtures.Query(), pool);
+		var result = await stage.Run(pool);
 
 		foreach (var scored in result) {
 			var incoming = Incoming(pool, scored);
@@ -76,13 +98,13 @@ public class StageInvariantTests {
 	}
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask never_nulls_a_populated_breakdown_field(IRetrievalStage stage) {
+	public async ValueTask never_nulls_a_populated_breakdown_field(StageCase stage) {
 		var fields = NullableBreakdownFields();
 		var pool   = FusedPool().Select(FullyPopulated).ToList();
 
 		await Assert.That(fields.Where(field => field.GetValue(pool[0].Breakdown) is null).Select(field => field.Name).Order().ToList()).IsEmpty();
 
-		var result = await stage.ProcessAsync(Fixtures.Query(), pool);
+		var result = await stage.Run(pool);
 		var nulled = new List<string>();
 
 		foreach (var scored in result) {
@@ -97,8 +119,8 @@ public class StageInvariantTests {
 	}
 
 	[Test, MethodDataSource(nameof(Stages))]
-	public async ValueTask single_member_pool_keeps_its_member_and_a_finite_score(IRetrievalStage stage) {
-		var result = await stage.ProcessAsync(Fixtures.Query(), [Fixtures.ScoredFrom("only", 0.42, "a lone candidate")]);
+	public async ValueTask single_member_pool_keeps_its_member_and_a_finite_score(StageCase stage) {
+		var result = await stage.Run([Fixtures.ScoredFrom("only", 0.42, "a lone candidate")]);
 
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["only"], CollectionOrdering.Matching);
 		await Assert.That(double.IsFinite(result[0].Score)).IsTrue();
@@ -107,7 +129,7 @@ public class StageInvariantTests {
 	[Test]
 	public async ValueTask every_stage_is_covered_or_consciously_excluded() {
 		var classified = Stages()
-			.Select(factory => factory().GetType())
+			.Select(factory => factory().OpenType)
 			.Concat(ExcludedStages.Keys)
 			.ToHashSet();
 
@@ -133,10 +155,17 @@ public class StageInvariantTests {
 		await Assert.That(stale).IsEmpty();
 	}
 
+	// A stage is a public step whose input AND output are pools — the plan/search/fuse/cut steps
+	// carry other states and answer to their own suites.
 	static IEnumerable<Type> ConcreteStages() =>
-		typeof(IRetrievalStage).Assembly
+		typeof(IScoreScale).Assembly
 			.GetTypes()
-			.Where(type => type is { IsClass: true, IsAbstract: false, IsPublic: true } && typeof(IRetrievalStage).IsAssignableFrom(type));
+			.Where(type => type is { IsClass: true, IsAbstract: false, IsPublic: true } && type.GetInterfaces().Any(IsPoolStep));
+
+	static bool IsPoolStep(Type contract) =>
+		contract.IsGenericType
+	 && contract.GetGenericTypeDefinition() == typeof(IStep<,>)
+	 && contract.GetGenericArguments().All(static arg => arg.IsGenericType && arg.GetGenericTypeDefinition() == typeof(Pool<>));
 
 	static IReadOnlyList<PropertyInfo> NullableBreakdownFields() =>
 		typeof(ScoreBreakdown)
@@ -157,9 +186,21 @@ public class StageInvariantTests {
 				Certainty      = 0.88,
 				BaseScore      = 0.99,
 				ReorderScore   = 1.11,
+				EntitySignal   = 0.42,
 			},
 		};
 
 	static ScoredMemory Incoming(IEnumerable<ScoredMemory> pool, ScoredMemory scored) =>
 		pool.Single(candidate => candidate.Memory.MemoryId == scored.Memory.MemoryId);
+}
+
+/// <summary>One stage under invariant test: its open generic type for the coverage sweep, and a runner over a bare pool.</summary>
+public sealed record StageCase(string Name, Type OpenType, Func<IReadOnlyList<ScoredMemory>, ValueTask<IReadOnlyList<ScoredMemory>>> Run) {
+	public static StageCase Of<TOut>(IStep<Pool<NativeScale>, Pool<TOut>> stage) where TOut : IScoreScale {
+		var open = stage.GetType().GetGenericTypeDefinition();
+
+		return new(open.Name[..open.Name.IndexOf('`')], open, pool => stage.Run(pool));
+	}
+
+	public override string ToString() => Name;
 }

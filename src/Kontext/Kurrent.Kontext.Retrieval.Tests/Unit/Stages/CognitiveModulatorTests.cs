@@ -20,7 +20,7 @@ public class CognitiveModulatorTests {
 			synth,
 		];
 
-		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await CognitiveModulator<NativeScale>.Create().Run(pool);
 		var byId   = result.ToDictionary(scored => scored.Memory.MemoryId);
 
 		// synth = mean(obs 1.0, gossip 0.25, unresolved 0.5, record 0.9) = 0.6625
@@ -39,7 +39,7 @@ public class CognitiveModulatorTests {
 			Fixtures.Scored("c", 0.2, importance: Contracts.MemoryImportance.Low, age: TimeSpan.FromDays(30)),
 		];
 
-		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await CognitiveModulator<NativeScale>.Create().Run(pool);
 
 		foreach (var scored in result) {
 			var breakdown = scored.Breakdown;

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Benchmarks.Retrieval;
+using Kurrent.Kontext.Pipelines;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Serilog;
@@ -36,7 +37,7 @@ static async ValueTask RunMaxTokensAb() {
 
 			runs.Add(await benchmark.Run(
 				$"focused maxTokens={maxTokens}",
-				KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build()));
+				KontextRetriever.Focused(RetrieverParts.Of(corpus.Store, corpus.EmbeddingGenerator))));
 		}
 
 		QualityReport.PrintMetrics(runs, baseline: runs[^1]);
@@ -110,17 +111,19 @@ static async ValueTask RunDeterminism() {
 		}
 
 		IKontextRetriever Default() =>
-			KontextRetriever.New().Default(corpus.Store, corpus.EmbeddingGenerator).Build();
+			KontextRetriever.Default(RetrieverParts.Of(corpus.Store, corpus.EmbeddingGenerator));
 
 		IKontextRetriever SingleLeg(bool vectorLeg) =>
-			KontextRetriever.New()
-				.AddSearch(vectorLeg
-					? new VectorSearch(corpus.Store, corpus.EmbeddingGenerator)
-					: new KeywordSearch(corpus.Store))
-				.AddStage(Bm25Reranker.Create())
-				.AddStage(CognitiveModulator.Create())
-				.AddStage(MmrReorderer.Create())
-				.Build();
+			KontextRetriever.From(vectorLeg ? "vector" : "keyword",
+				PlanStep.Default()
+					.Then(new SearchStep(vectorLeg
+						? new VectorSearch(corpus.Store, corpus.EmbeddingGenerator)
+						: new KeywordSearch(corpus.Store)))
+					.Then(new FuseStep<RrfScale>(ReciprocalRankFuser.Create()))
+					.Then(Bm25Reranker<RrfScale>.Create())
+					.Then(CognitiveModulator<RrfScale>.Create())
+					.Then(MmrReorderer<UnitScale>.Create())
+					.Then(new CutStep<UnitScale>()));
 	}
 	finally {
 		await Log.CloseAndFlushAsync();
@@ -235,16 +238,15 @@ static async ValueTask RunRetrievalQuality() {
 			OverfetchOptions? overfetch = null,
 			Action<HybridSearchOptions>? engine = null
 		) {
-			var builder = KontextRetriever.New()
-				.Planner(overfetch ?? new OverfetchOptions(), null)
-				.AddSearch(new HybridSearch(corpus.Store, corpus.EmbeddingGenerator, alpha, engine))
-				.AddStage(Bm25Reranker.Create(reranker))
-				.AddStage(CognitiveModulator.Create());
+			var modulated = new PlanStep(new DefaultQueryPlanner(overfetch ?? new OverfetchOptions()))
+				.Then(new SearchStep(new HybridSearch(corpus.Store, corpus.EmbeddingGenerator, alpha, engine)))
+				.Then(new FuseStep<NativeScale>(new IdentityFuser()))
+				.Then(Bm25Reranker<NativeScale>.Create(reranker))
+				.Then(CognitiveModulator<RrfScale>.Create());
 
-			if (mmrLambda is { } lambda)
-				builder = builder.AddStage(MmrReorderer.Create(options => options.Lambda = lambda));
-
-			return builder.Build();
+			return KontextRetriever.From("tuned", mmrLambda is { } lambda
+				? modulated.Then(MmrReorderer<UnitScale>.Create(options => options.Lambda = lambda)).Then(new CutStep<UnitScale>())
+				: modulated.Then(new CutStep<UnitScale>()));
 		}
 
 		// Recall@5 is the mission metric; ndcg@10 breaks ties.

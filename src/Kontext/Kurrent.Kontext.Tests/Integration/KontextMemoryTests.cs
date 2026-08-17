@@ -4,6 +4,7 @@
 using DuckDB.NET.Data;
 using Google.Protobuf;
 using TUnit.Assertions.Enums;
+using Kurrent.Kontext.Pipelines;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
@@ -250,7 +251,11 @@ public class KontextMemoryTests {
 
 	/// <summary>A keyword-only pipeline over the store — recall here is raw BM25, so the seeded vectors never decide a result.</summary>
 	static IKontextRetriever KeywordRetriever(KontextDataStore store) =>
-		KontextRetriever.New().AddSearch(new KeywordSearch(store)).Build();
+		KontextRetriever.From("keyword-only",
+			PlanStep.Default()
+				.Then(new SearchStep(new KeywordSearch(store)))
+				.Then(new FuseStep<NativeScale>(new IdentityFuser()))
+				.Then(new CutStep<NativeScale>()));
 
 	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
 

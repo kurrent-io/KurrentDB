@@ -2,34 +2,38 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.RegularExpressions;
+using Kurrent.Kontext.Pipelines;
 
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
 /// Rereads the fused pool: a fresh Okapi BM25 index is built over just the candidates and its
-/// ranking is rank-fused with the incoming order.
+/// ranking is rank-fused with the incoming order. Rank-only on the way in — any scale composes —
+/// and reciprocal-rank sums on the way out.
 /// <para>Word rarity is computed inside the pool, not the corpus — a query word carried by 3 of 60
 /// on-topic candidates usually marks the answer — so this is a genuinely different signal from a
 /// corpus-wide keyword leg, for the price of one in-memory pass.</para>
 /// </summary>
-public sealed partial class Bm25Reranker(Bm25RerankerOptions options) : IRetrievalStage {
+public sealed class Bm25Reranker<TIn>(Bm25RerankerOptions options) : IStep<Pool<TIn>, Pool<RrfScale>> where TIn : IScoreScale {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
-    public static Bm25Reranker Create(Bm25RerankerOptions options) =>
+    public static Bm25Reranker<TIn> Create(Bm25RerankerOptions options) =>
         new(options);
 
     /// <summary>Creates the stage over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static Bm25Reranker Create(Action<Bm25RerankerOptions>? configure = null) {
+    public static Bm25Reranker<TIn> Create(Action<Bm25RerankerOptions>? configure = null) {
         var opts = new Bm25RerankerOptions();
         configure?.Invoke(opts);
         return Create(opts);
     }
 
-    public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
-        if (pool.Count <= 1)
-            return ValueTask.FromResult(pool);
+    public ValueTask<Pool<RrfScale>> Execute(Pool<TIn> input, CancellationToken ct) {
+        var pool = input.Memories;
 
-        var docs   = pool.Select(scored => Tokenize(scored.Memory.Content)).ToList();
-        var scores = Score(Tokenize(query.Text), docs);
+        if (pool.Count <= 1)
+            return new(new Pool<RrfScale>(input.Query, pool));
+
+        var docs   = pool.Select(scored => Bm25Text.Tokenize(scored.Memory.Content)).ToList();
+        var scores = Score(Bm25Text.Tokenize(input.Query.Plan.Text), docs);
 
         var byBm25 = Enumerable.Range(0, pool.Count)
             .OrderByDescending(index => scores[index])
@@ -45,7 +49,7 @@ public sealed partial class Bm25Reranker(Bm25RerankerOptions options) : IRetriev
             .ThenBy(scored => scored.Memory.MemoryId, StringComparer.Ordinal)
             .ToList();
 
-        return ValueTask.FromResult(reranked);
+        return new(new Pool<RrfScale>(input.Query, reranked));
     }
 
     double[] Score(List<string> queryTokens, List<List<string>> docs) {
@@ -73,8 +77,11 @@ public sealed partial class Bm25Reranker(Bm25RerankerOptions options) : IRetriev
 
         return scores;
     }
+}
 
-    static List<string> Tokenize(string text) =>
+// The regex source generator cannot emit into a generic type, so the tokenizer lives beside the stage.
+static partial class Bm25Text {
+    internal static List<string> Tokenize(string text) =>
         TokenPattern.Matches(text.ToLowerInvariant()).Select(match => match.Value).ToList();
 
     [GeneratedRegex(@"[\p{L}\p{N}]+")]

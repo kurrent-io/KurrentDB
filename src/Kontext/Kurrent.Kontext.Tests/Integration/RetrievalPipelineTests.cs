@@ -83,7 +83,7 @@ public class RetrievalPipelineTests {
 	#region ->> Test Infrastructure <<-
 
 	static IKontextRetriever DefaultPipeline(KontextStoreFixture fixture) =>
-		KontextRetriever.New().Default(fixture.Store, fixture.EmbeddingGenerator).Build();
+		KontextRetriever.Default(RetrieverParts.Of(fixture.Store, fixture.EmbeddingGenerator));
 
 	/// <summary>Uniform metadata so modulation stays neutral — relevance alone decides the ranking.</summary>
 	static MemoryRow Memory(string id, string content) =>

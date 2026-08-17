@@ -35,7 +35,7 @@ public class NonFiniteScoreCompositionTests {
 			Fixtures.Scored("c", double.NaN, "completely different topic about databases entirely"),
 		];
 
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		// non-finite relevance drops to 0, so every first-step value ties at 0 and pool order wins;
 		// from there diversity alone decides and a-dup, sharing 7 of 9 tokens with a, sinks last
@@ -61,7 +61,7 @@ public class NonFiniteScoreCompositionTests {
 		];
 
 		var pool   = fuser.Fuse(sets, Fixtures.Query());
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		await Assert.That(double.IsNaN(pool[0].Score)).IsTrue();
 		await Assert.That(Fixtures.Ids(result).Order().ToList()).IsEquivalentTo(["a", "b", "c"], CollectionOrdering.Matching);

@@ -13,13 +13,15 @@ public class ProvenanceSurvivalCompositionTests {
 
 	[Test]
 	public async ValueTask fusion_provenance_outlives_modulation_and_reordering() {
-		var retriever = KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector, new SearchCandidate(Alpha, 0.9), new SearchCandidate(Bravo, 0.8)))
-			.AddSearch(new FakeSearch(RetrievalSources.Keyword, new SearchCandidate(Bravo, 12.0), new SearchCandidate(Alpha, 5.0)))
-			.Fuser(ReciprocalRankFuser.Create())
-			.AddStage(CognitiveModulator.Create())
-			.AddStage(MmrReorderer.Create())
-			.Build();
+		var retriever = KontextRetriever.From("modulated-reordered",
+			PlanStep.Default()
+				.Then(new SearchStep(
+					new FakeSearch(RetrievalSources.Vector, new SearchCandidate(Alpha, 0.9), new SearchCandidate(Bravo, 0.8)),
+					new FakeSearch(RetrievalSources.Keyword, new SearchCandidate(Bravo, 12.0), new SearchCandidate(Alpha, 5.0))))
+				.Then(new FuseStep<RrfScale>(ReciprocalRankFuser.Create()))
+				.Then(CognitiveModulator<RrfScale>.Create())
+				.Then(MmrReorderer<UnitScale>.Create())
+				.Then(new CutStep<UnitScale>()));
 
 		var result = await retriever.RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now });
 		var top    = result[0];

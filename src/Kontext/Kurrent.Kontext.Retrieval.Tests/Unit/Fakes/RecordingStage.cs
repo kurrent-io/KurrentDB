@@ -3,9 +3,9 @@
 
 namespace Kurrent.Kontext.Retrieval.Tests.Fakes;
 
-sealed class RecordingStage(string name, List<string> calls) : IRetrievalStage {
-	public ValueTask<IReadOnlyList<ScoredMemory>> ProcessAsync(PlannedQuery query, IReadOnlyList<ScoredMemory> pool, CancellationToken ct = default) {
+sealed class RecordingStage(string name, List<string> calls) : IStep<Pool<NativeScale>, Pool<NativeScale>> {
+	public ValueTask<Pool<NativeScale>> Execute(Pool<NativeScale> input, CancellationToken ct) {
 		calls.Add(name);
-		return ValueTask.FromResult(pool);
+		return new(input);
 	}
 }

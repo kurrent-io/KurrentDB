@@ -14,7 +14,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("d", 0.1, "unrelated filler entry mentioning penguins"),
 		];
 
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		// a-dup shares 7 of 9 tokens with a, so the diverse c leapfrogs it; scores stay untouched
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["a", "c", "a-dup", "d"], CollectionOrdering.Matching);
@@ -32,7 +32,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("s4", 0.2, "the quick brown fox jumps over the lazy rat"),
 		];
 
-		var result = await MmrReorderer.Create(options => options.Lambda = 1).ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create(options => options.Lambda = 1).Run(pool);
 
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["s1", "s2", "s3", "s4"], CollectionOrdering.Matching);
 
@@ -55,7 +55,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("p3", 0.6, "iota kappa lambda mu"),
 		];
 
-		var result = await MmrReorderer.Create(options => options.Lambda = 0).ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create(options => options.Lambda = 0).Run(pool);
 
 		// λ=0 zeroes the relevance term, and maxSimToSelected starts at 0 for everyone, so every
 		// candidate's value is 0 on step one; the loop only replaces bestIndex on a strict `>`,
@@ -83,11 +83,11 @@ public class MmrReordererTests {
 
 		// at λ=0.95 the diversity penalty on a-dup (0.05 * 7/9 ≈ 0.039) is too small to close the
 		// relevance gap to c (17/18 ≈ .944 vs 8/9 ≈ .889): a-dup stays put right after a
-		var high = await MmrReorderer.Create(options => options.Lambda = 0.95).ProcessAsync(Fixtures.Query(), pool);
+		var high = await MmrReorderer<NativeScale>.Create(options => options.Lambda = 0.95).Run(pool);
 		await Assert.That(Fixtures.Ids(high)).IsEquivalentTo(["a", "a-dup", "c", "d"], CollectionOrdering.Matching);
 
 		// at λ=0.7 the same penalty (0.3 * 7/9 ≈ .233) is large enough: c leapfrogs a-dup
-		var low = await MmrReorderer.Create(options => options.Lambda = 0.7).ProcessAsync(Fixtures.Query(), pool);
+		var low = await MmrReorderer<NativeScale>.Create(options => options.Lambda = 0.7).Run(pool);
 		await Assert.That(Fixtures.Ids(low)).IsEquivalentTo(["a", "c", "a-dup", "d"], CollectionOrdering.Matching);
 	}
 
@@ -102,7 +102,7 @@ public class MmrReordererTests {
 		];
 
 		var scoresById = pool.ToDictionary(scored => scored.Memory.MemoryId, scored => scored.Score);
-		var result     = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result     = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		await Assert.That(result.Count).IsEqualTo(pool.Count);
 
@@ -120,7 +120,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("C", 0.5, "C"),
 		];
 
-		var byDefault = await MmrReorderer.Create(options => options.Lambda = 0.5).ProcessAsync(Fixtures.Query(), pool);
+		var byDefault = await MmrReorderer<NativeScale>.Create(options => options.Lambda = 0.5).Run(pool);
 		await Assert.That(Fixtures.Ids(byDefault)).IsEquivalentTo(["A", "B", "C"], CollectionOrdering.Matching);
 
 		var calls = 0;
@@ -134,10 +134,10 @@ public class MmrReordererTests {
 		// rel(A)=1, rel(B)=0.8, rel(C)=0 (min=0.5, max=1.0, range=0.5); A is picked first as before,
 		// but B's diversity penalty (0.5 * 1.0 = 0.5) now drags it below C (0.5*0.8-0.5=-0.1 < 0=C),
 		// so C leapfrogs B — a reordering the inert Jaccard default could never produce on this pool
-		var withCustom = await MmrReorderer.Create(options => {
+		var withCustom = await MmrReorderer<NativeScale>.Create(options => {
 			options.Lambda     = 0.5;
 			options.Similarity = CountingLookup;
-		}).ProcessAsync(Fixtures.Query(), pool);
+		}).Run(pool);
 
 		await Assert.That(Fixtures.Ids(withCustom)).IsEquivalentTo(["A", "C", "B"], CollectionOrdering.Matching);
 
@@ -162,7 +162,7 @@ public class MmrReordererTests {
 			return ScoreNormalization.JaccardSimilarity(left, right);
 		}
 
-		await MmrReorderer.Create(options => options.Similarity = Counting).ProcessAsync(Fixtures.Query(), pool);
+		await MmrReorderer<NativeScale>.Create(options => options.Similarity = Counting).Run(pool);
 
 		// the running maxSimToSelected is updated once per pick against every still-unpicked
 		// candidate, so each of the n picks costs (n - step - 1) calls: (n-1) + (n-2) + ... + 0
@@ -183,7 +183,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("e3", 0.42, "iota kappa lambda mu"),
 		];
 
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		// e0 wins the opening all-zero tie on index order; e1 is its byte-identical duplicate
 		// (Jaccard 1.0) so it is maximally penalized and picked last; e2 and e3 are disjoint from
@@ -200,7 +200,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("y", 0.85, "the quick brown fox jumps over the lazy cat"),
 		];
 
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["x", "y"], CollectionOrdering.Matching);
 
@@ -227,7 +227,7 @@ public class MmrReordererTests {
 			Fixtures.Scored("i4", 0.1, content),
 		];
 
-		var result = await MmrReorderer.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await MmrReorderer<NativeScale>.Create().Run(pool);
 
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["i1", "i2", "i3", "i4"], CollectionOrdering.Matching);
 

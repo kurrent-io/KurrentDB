@@ -14,11 +14,11 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Critical),
 		];
 
-		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
+		var options = CognitiveModulator<NativeScale>.Create(o => o.ImportanceWeights = new() {
 			[Contracts.MemoryImportance.Critical] = 1.0,
 		});
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.ImportanceRaw!.Value).IsEqualTo(1.0);
 	}
@@ -29,9 +29,9 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Normal),
 		];
 
-		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new());
+		var options = CognitiveModulator<NativeScale>.Create(o => o.ImportanceWeights = new());
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.ImportanceRaw!.Value).IsEqualTo(0.5);
 	}
@@ -42,11 +42,11 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, importance: (Contracts.MemoryImportance) 999),
 		];
 
-		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
+		var options = CognitiveModulator<NativeScale>.Create(o => o.ImportanceWeights = new() {
 			[Contracts.MemoryImportance.Normal] = 0.5,
 		});
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.ImportanceRaw!.Value).IsEqualTo(0.5);
 	}
@@ -59,11 +59,11 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, type: Contracts.MemoryType.Observation),
 		];
 
-		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new() {
+		var options = CognitiveModulator<NativeScale>.Create(o => o.CertaintyWeights = new() {
 			[Contracts.MemoryType.Observation] = 1.0,
 		});
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.Certainty!.Value).IsEqualTo(1.0);
 	}
@@ -74,9 +74,9 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, type: Contracts.MemoryType.Fact),
 		];
 
-		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new());
+		var options = CognitiveModulator<NativeScale>.Create(o => o.CertaintyWeights = new());
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.Certainty!.Value).IsEqualTo(0.5);
 	}
@@ -87,11 +87,11 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("a", 0.5, type: (Contracts.MemoryType) 999),
 		];
 
-		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new() {
+		var options = CognitiveModulator<NativeScale>.Create(o => o.CertaintyWeights = new() {
 			[Contracts.MemoryType.Unspecified] = 0.5,
 		});
 
-		var result = await options.ProcessAsync(Fixtures.Query(), pool);
+		var result = await options.Run(pool);
 
 		await Assert.That(result[0].Breakdown.Certainty!.Value).IsEqualTo(0.5);
 	}
@@ -116,8 +116,8 @@ public class ModulationOptionsTests {
 			citingObs,
 		];
 
-		var present = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), poolWithCitedMemory);
-		var absent  = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), poolWithoutCitedMemory);
+		var present = await CognitiveModulator<NativeScale>.Create().Run(poolWithCitedMemory);
+		var absent  = await CognitiveModulator<NativeScale>.Create().Run(poolWithoutCitedMemory);
 
 		// "obs" resolved: certainty = mean(Observation 1.0) = 1.0
 		await Assert.That(present.Single(scored => scored.Memory.MemoryId == "synth").Breakdown.Certainty!.Value).IsEqualTo(1.0);
@@ -140,8 +140,8 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("obs", 0.5, type: Contracts.MemoryType.Observation),
 		];
 
-		var resultAlone      = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), alone);
-		var resultWithCompany = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), withCompany);
+		var resultAlone      = await CognitiveModulator<NativeScale>.Create().Run(alone);
+		var resultWithCompany = await CognitiveModulator<NativeScale>.Create().Run(withCompany);
 
 		// RecordCitationCertainty = 0.9, regardless of what else is (or isn't) in the pool
 		await Assert.That(resultAlone.Single(scored => scored.Memory.MemoryId == "synth").Breakdown.Certainty!.Value).IsEqualTo(0.9);
@@ -158,7 +158,7 @@ public class ModulationOptionsTests {
 			synth,
 		];
 
-		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await CognitiveModulator<NativeScale>.Create().Run(pool);
 
 		// mean(obs 1.0, gossip 0.25, unresolved 0.5) = 1.75 / 3
 		await Assert.That(result.Single(scored => scored.Memory.MemoryId == "synth").Breakdown.Certainty!.Value)
@@ -176,7 +176,7 @@ public class ModulationOptionsTests {
 			Fixtures.Scored("outer", 0.5, type: Contracts.MemoryType.Summary, cites: ["innerCited"]),
 		];
 
-		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);
+		var result = await CognitiveModulator<NativeScale>.Create().Run(pool);
 		var byId   = result.ToDictionary(scored => scored.Memory.MemoryId);
 
 		await Assert.That(byId["innerCited"].Breakdown.Certainty!.Value).IsEqualTo(0.25);

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Pipelines\Kurrent.Kontext.Pipelines.csproj" />
   </ItemGroup>
 
   <ItemGroup>

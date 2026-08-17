@@ -19,6 +19,7 @@
 		<Using Include="TUnit.Core" />
 		<Using Include="TUnit.Assertions.Enums" />
 		<Using Include="KurrentDB.Testing" />
+		<Using Include="Kurrent.Kontext.Pipelines" />
 		<Using Include="Kurrent.Kontext.Retrieval.Tests.Fakes" />
 	</ItemGroup>
 

@@ -12,19 +12,22 @@ public class RerankerScaleCompositionTests {
 	static readonly Contracts.StoredMemory Bravo   = Fixtures.Memory("b", "bravo passage about query planning");
 	static readonly Contracts.StoredMemory Charlie = Fixtures.Memory("c", "charlie passage about rank fusion");
 
-	static KontextRetrieverBuilder Pipeline(IRelevanceModel model) =>
-		KontextRetriever.New()
-			.AddSearch(new FakeSearch(RetrievalSources.Vector,
-				new SearchCandidate(Alpha, 0.9),
-				new SearchCandidate(Bravo, 0.8),
-				new SearchCandidate(Charlie, 0.7)))
-			.AddSearch(new FakeSearch(RetrievalSources.Keyword,
-				new SearchCandidate(Alpha, 12.0),
-				new SearchCandidate(Bravo, 10.0),
-				new SearchCandidate(Charlie, 9.0)))
-			.Fuser(ReciprocalRankFuser.Create())
-			.AddStage(RelevanceModelReranker.Create(model, static options => options.CandidateCap = 2))
-			.AddStage(CognitiveModulator.Create());
+	static KontextRetriever Pipeline(IRelevanceModel model) =>
+		KontextRetriever.From("reranked-modulated",
+			PlanStep.Default()
+				.Then(new SearchStep(
+					new FakeSearch(RetrievalSources.Vector,
+						new SearchCandidate(Alpha, 0.9),
+						new SearchCandidate(Bravo, 0.8),
+						new SearchCandidate(Charlie, 0.7)),
+					new FakeSearch(RetrievalSources.Keyword,
+						new SearchCandidate(Alpha, 12.0),
+						new SearchCandidate(Bravo, 10.0),
+						new SearchCandidate(Charlie, 9.0))))
+				.Then(new FuseStep<RrfScale>(ReciprocalRankFuser.Create()))
+				.Then(RelevanceModelReranker<RrfScale>.Create(model, static options => options.CandidateCap = 2))
+				.Then(CognitiveModulator<NativeScale>.Create())
+				.Then(new CutStep<UnitScale>()));
 
 	[Test]
 	public async ValueTask an_unjudged_tail_min_maxes_to_zero_relevance_below_a_well_rated_head() {
@@ -34,7 +37,7 @@ public class RerankerScaleCompositionTests {
 			[Charlie.Content] = 0.99,
 		});
 
-		var result = await Pipeline(model).Build().RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now });
+		var result = await Pipeline(model).RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now });
 		var byId   = result.ToDictionary(scored => scored.Memory.MemoryId);
 
 		// the cap stops at the top two, so charlie never reaches the model — the 0.99 it would have
@@ -68,7 +71,7 @@ public class RerankerScaleCompositionTests {
 		];
 
 		var pool     = ReciprocalRankFuser.Create().Fuse(sets, Fixtures.Query());
-		var reranked = await RelevanceModelReranker.Create(model, static options => options.CandidateCap = 2).ProcessAsync(Fixtures.Query(), pool);
+		var reranked = await RelevanceModelReranker<RrfScale>.Create(model, static options => options.CandidateCap = 2).Run(pool);
 
 		// the concat puts the tail last by construction, so the pool leaves the stage NOT in
 		// descending score order — 0.02, 0.01, 0.0317
@@ -77,7 +80,7 @@ public class RerankerScaleCompositionTests {
 		await Assert.That(reranked[1].Score).IsEqualTo(0.01).Within(1e-12);
 		await Assert.That(reranked[2].Score).IsEqualTo(2.0 / 63).Within(1e-12);
 
-		var result = await Pipeline(model).Build().RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now });
+		var result = await Pipeline(model).RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now });
 
 		// and once a modulator reads that axis, the memory the model never saw takes first place
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["c", "a", "b"], CollectionOrdering.Matching);
