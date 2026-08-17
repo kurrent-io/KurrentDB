@@ -6,7 +6,7 @@ using Kurrent.Kontext.Modules.Entities.Data;
 namespace Kurrent.Kontext.Tests.Integration.Modules.Entities.Data;
 
 /// <summary>
-/// Behavioural tests for <see cref="KontextEntitySchemaTask"/> and <see cref="KontextEntityStore"/>
+/// Behavioural tests for <see cref="KontextSchemaTask"/> and <see cref="KontextEntityStore"/>
 /// against a REAL DuckDB + Lance engine. The store is read-only, so each test seeds the entity
 /// tables directly with SQL — exactly how the projector will write them. Probe geometry is
 /// hand-written 4-dim, zero-padded to the schema's dimension by <see cref="EntitySeeding.Embedding"/>.

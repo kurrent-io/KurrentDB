@@ -24,8 +24,7 @@ public sealed class KontextSchemaBootstrap(KontextDataSource dataSource, ILogger
 
             // The stream. Append at the bottom; versions never reuse, bodies never change.
             Steps = [
-                new KontextSchemaTask(),       // v1 — tables, eager indexes, retention policy
-                new KontextEntitySchemaTask(), // v2 — the entities read model
+                new KontextSchemaTask(), // v1 — tables, eager indexes, retention policy
             ],
         }).EnsureAsync(ct);
 }

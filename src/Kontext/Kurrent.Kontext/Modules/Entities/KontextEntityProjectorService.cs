@@ -33,7 +33,7 @@ public delegate Task<EntityExtractionPipeline> EntityExtractionPipelineFactory(I
 ///
 /// A separate projector on purpose: entities lag memories independently, replay independently
 /// (a rebuild re-derives every entity from memory history), and extraction cost never sits in
-/// the memory read model's path. The schema is the bootstrap's (<see cref="KontextEntitySchemaTask"/>);
+/// the memory read model's path. The schema is the bootstrap's (<see cref="KontextSchemaTask"/>);
 /// the projector only ever writes tables the migration stream already created.
 ///
 /// Owns the write surface, and lends it: the loop binds its connection to

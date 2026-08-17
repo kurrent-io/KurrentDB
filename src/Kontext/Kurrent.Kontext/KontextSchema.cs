@@ -11,13 +11,28 @@ namespace Kurrent.Kontext.Data;
 // New steps are appended to THIS file and registered in KontextSchemaBootstrap.
 
 /// <summary>
-/// v1 of the Kontext store: the memories and records lance tables and their eager indexes.
-/// The vector indexes are NOT here — they have a training floor, so they cannot exist on a
-/// fresh store; <see cref="KontextIndexMaintenance"/> and the records indexer own their
-/// lifecycle.
+/// v1 of the Kontext store: five lance tables and their eager indexes. <c>memories</c> and
+/// <c>records</c> are the retrieval surface; the entities read model is <c>entities</c>
+/// (one row per resolved entity), <c>entity_mentions</c> (the append-only provenance), and
+/// <c>entity_links</c> (the suspected-duplicate pairs awaiting review — the SAME_AS ledger).
+///
+/// Vector indexes are absent by design, for two different reasons. On memories and records
+/// they have a training floor, so they cannot exist on a fresh store —
+/// <see cref="KontextIndexMaintenance"/> and the records indexer own their lifecycle. On
+/// entities there is none on purpose: entity similarity search runs as an exact scan
+/// (array_cosine_similarity), which is correct at any size and fast at the entity counts a
+/// node-local read model sees. The day that stops being true, the memories table's lazy
+/// IVF_HNSW_PQ lifecycle is the template.
 ///
 /// Idempotent despite RunOnce: journal recording is at-least-once, and stores deployed
 /// before the migration stream existed already carry these tables over an empty journal.
+///
+/// Conventions:
+/// - timestamps are BIGINT Unix epoch MILLISECONDS (UTC)
+/// - <c>aliases</c> holds NORMALIZED surface forms (lowercase, collapsed whitespace)
+///   including the canonical one, so alias containment and normalized-name equality speak
+///   the same key
+/// - <c>subtype</c> uses '' for none — empty-string sentinels over NULLs on VARCHARs
 ///
 /// Addressing rules (the lance extension's dual addressing):
 /// - table DDL uses the qualified name (ldb.main.* — hardcoded, matching store and writer)
@@ -100,47 +115,11 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             CREATE INDEX content_fts      ON ldb.main.records (content)      USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
 
             ALTER TABLE ldb.main.records SET AUTO_CLEANUP WITH (
-                interval        = {CleanupIntervalCommits}, 
-                older_than      = '{CleanupOlderThan}', 
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
                 retain_versions = {CleanupRetainVersions}
-            )
-            """;
-        
-        return executor.ExecuteAsync(
-            connection => connection.ExecuteAdHocNonQuery(script, multipleStatements: true), ct
-        ).AsTask();
-    }
-}
+            );
 
-/// <summary>
-/// v2 of the Kontext store: the entities read model — three lance tables and their eager
-/// indexes. <c>entities</c> holds one row per resolved entity, <c>entity_mentions</c> the
-/// append-only provenance, and <c>entity_links</c> the suspected-duplicate pairs awaiting
-/// review (the SAME_AS ledger).
-///
-/// No vector index on purpose: entity similarity search runs as an exact scan
-/// (array_cosine_similarity), which is correct at any size and fast at the entity counts a
-/// node-local read model sees. The day that stops being true, the memories table's lazy
-/// IVF_HNSW_PQ lifecycle is the template.
-///
-/// Timestamps are BIGINT Unix epoch MILLISECONDS (UTC) — v1's rule, applied unchanged.
-/// <c>aliases</c> holds NORMALIZED surface forms (lowercase, collapsed whitespace) including
-/// the canonical one, so alias containment and normalized-name equality speak the same key.
-/// <c>subtype</c> uses '' for none — empty-string sentinels over NULLs on VARCHARs, the
-/// memories lifecycle columns' precedent. Aliases gets LABEL_LIST like the memories tags —
-/// dormant until the engine pushes containment down, covered from day one.
-/// </summary>
-public sealed class KontextEntitySchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
-    public int Version => 2;
-
-    // The v1 version-retention policy, applied to the entity tables — frozen with the step.
-    const int    CleanupIntervalCommits = 1000;
-    const string CleanupOlderThan       = "1h";
-    const int    CleanupRetainVersions  = 3;
-
-    public Task ExecuteAsync(IDuckDBSchemaExecutor executor, CancellationToken ct = default) {
-        var script =
-            $"""
             CREATE TABLE IF NOT EXISTS ldb.main.entities (
               entity_id       VARCHAR,
               name            VARCHAR,
@@ -153,7 +132,7 @@ public sealed class KontextEntitySchemaTask : IMigrationStep<IDuckDBSchemaExecut
               first_seen      BIGINT,
               last_seen       BIGINT,
               log_position    BIGINT,
-              embedding       FLOAT[{KontextSchemaTask.Dimension}]);
+              embedding       FLOAT[{Dimension}]);
 
             CREATE INDEX entity_id_idx       ON ldb.main.entities (entity_id)       USING BTREE      WITH (replace = true);
             CREATE INDEX normalized_name_idx ON ldb.main.entities (normalized_name) USING BTREE      WITH (replace = true);

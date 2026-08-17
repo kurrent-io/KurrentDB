@@ -11,11 +11,11 @@ namespace Kurrent.Kontext.Testing;
 /// <summary>
 /// Seeds the entities read model exactly how the entity projector writes it, mirroring
 /// <see cref="MemorySeeding"/>: the store is read-only, so suites create the schema through
-/// <see cref="KontextEntitySchemaTask"/> and insert rows directly with SQL.
+/// <see cref="KontextSchemaTask"/> and insert rows directly with SQL.
 /// </summary>
 public static class EntitySeeding {
 	public static ValueTask CreateSchema(KontextDataSource dataSource) =>
-		new(new KontextEntitySchemaTask().ExecuteAsync(dataSource));
+		new(new KontextSchemaTask().ExecuteAsync(dataSource));
 
 	/// <summary>
 	/// Zero-pads a hand-written probe to the schema's FLOAT[N] — cosine over zero-padded vectors
