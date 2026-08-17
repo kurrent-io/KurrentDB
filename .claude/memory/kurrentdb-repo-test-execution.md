@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-13T13:23:17.379Z
+  modified: 2026-08-17T15:11:44.474Z
 ---
 
 Verified 2026-07-21: `scripts/testing/test-runner.cs` now EXISTS in the kurrentdb repo (Sérgio added
@@ -56,9 +56,13 @@ with xunit filters `--filter-namespace` / `--filter-class` / `--filter-method` /
 Full Connectors suite ≈52s / 150 tests; the `KurrentDB.Connectors.Tests.System` namespace (27 tests,
 leadership + node lifetime) ≈21s.
 
-`KurrentDB.Ammeter` unit-category tests fail en masse on macOS (223 failures, all 0ms) from a
-hardcoded Windows path in its config — `D:/Kurrent/cluster/certs/node3/node.key`. Pre-existing
-environment issue, unrelated to whatever you changed; its integration-category tests pass.
+`KurrentDB.Ammeter` runs an EMBEDDED SECURE node (its `appsettings.json` sets `Node:Insecure:false`),
+so it needs the repo-root `certs/` tree. Generate it once per machine with `docker compose run --rm
+cert-gen`; it is gitignored, and the csproj copies it into the test output beside the binaries.
+Without it every ammeter test dies at node startup. `KurrentDB.Api.V2.Tests` has NO `appsettings.json`,
+so `NodeShimOptions.Insecure` defaults to `true` — it needs no certs. FIXED 2026-08-17: the paths were
+hardcoded Windows absolutes (`D:/Kurrent/cluster/certs/...`) and had never run outside Windows since
+they landed in 9dcba92d8; they are now relative to the test output dir.
 
 Kontext tests (2026-07-21 evening): `Kurrent.Kontext.Tests` = 57, ALL integration (V1 unit tests
 + TestVectorStore deleted with the Experiments purge; KontextMemory now has 9 integration tests
