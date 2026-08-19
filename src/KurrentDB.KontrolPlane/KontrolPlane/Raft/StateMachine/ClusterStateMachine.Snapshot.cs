@@ -70,8 +70,17 @@ partial class ClusterStateMachine {
 		return newSnapshot;
 	}
 
-	private Task SaveSnapshotAsync(ClusterState clusterState, CommandInfo info, CancellationToken token)
-		=> Task.Run(() => SaveSnapshot(clusterState, info), token);
+	private Task SaveSnapshotAsync(ClusterState clusterState, CommandInfo info, CancellationToken token) {
+		Task task;
+		if (clusterState.TryAcquire()) {
+			task = Task.Run(() => SaveSnapshot(clusterState, info), token);
+			task.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(clusterState.Release);
+		} else {
+			task = Task.CompletedTask;
+		}
+
+		return task;
+	}
 
 	private void SaveSnapshot(ClusterState clusterState, in CommandInfo info) {
 		var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
