@@ -181,6 +181,7 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <!-- Override vulnerable transitive from `Microsoft.Data.Sqlite` -->
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     <PackageVersion Include="System.ComponentModel.Composition" Version="10.0.0" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
