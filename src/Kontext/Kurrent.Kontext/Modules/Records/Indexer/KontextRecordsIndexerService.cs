@@ -8,7 +8,6 @@ using KurrentDB.Core.Hosting;
 using KurrentDB.Core.Hosting.Experimental;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Kontext.Modules.Records;
@@ -24,18 +23,6 @@ public sealed class KontextRecordsIndexerService(IServiceProvider services, Node
             Services.GetRequiredService<KontextDataSource>(),
             Services.GetRequiredService<IConsumerBuilder>(),
             Services.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
-            Services.GetRequiredService<RecordContentExtractor>(),
             Services.GetRequiredService<ILoggerFactory>()
         ).RunUntilStopped(stoppingToken);
-}
-
-public static class KontextRecordsIndexerWireUpExtensions {
-    extension(IServiceCollection services) {
-        public IServiceCollection AddKontextRecordsIndexer(RecordContentExtractor? extractContent = null) {
-            services.AddSystemReadiness();
-            services.TryAddSingleton<RecordContentExtractor>(extractContent ?? KontextRecordsContent.Json);
-            services.AddHostedService(sp => new KontextRecordsIndexerService(sp));
-            return services;
-        }
-    }
 }

@@ -3,5 +3,7 @@
 
 namespace Kurrent.Kontext.Infrastructure.Data.Migrations;
 
-/// <summary>One journal entry: what ran and how long it took. The journal supplies the clock.</summary>
-public readonly record struct ExecutedMigration(int Version, string Name, TimeSpan Duration);
+/// <summary>
+/// One journal entry: which key ran and how long it took. The journal supplies the clock.
+/// </summary>
+public readonly record struct ExecutedMigration(uint Version, string Key, string Script, TimeSpan Duration);

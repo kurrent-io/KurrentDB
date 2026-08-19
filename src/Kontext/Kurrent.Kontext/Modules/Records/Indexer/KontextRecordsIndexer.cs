@@ -3,10 +3,13 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.LanceDB;
 using Kurrent.Kontext.Modules.Records.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Client;
 using Kurrent.Surge.Consumers.Configuration;
+using Kurrent.Surge.Schema;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +17,7 @@ namespace Kurrent.Kontext.Modules.Records;
 
 /// <summary>
 /// The whole-log records indexer: consumes <c>$all</c> through a Surge consumer (system events
-/// filtered server-side), extracts searchable text through the <see cref="RecordContentExtractor"/>,
+/// filtered server-side), flattens each payload through the <see cref="KontextRecordsWriter"/>,
 /// embeds each batch, and appends into <c>ldb.main.records</c>. Each batch and its checkpoint
 /// share ONE transaction on the lance-redirected writer connection — they commit or revert
 /// together, so resume is a plain checkpoint load.
@@ -27,7 +30,6 @@ public sealed class KontextRecordsIndexer(
     KontextDataSource dataSource,
     IConsumerBuilder consumerBuilder,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
-    RecordContentExtractor extractContent,
     ILoggerFactory loggerFactory
 ) {
     // Changing the key orphans the stored checkpoint and replays the index from the start.
@@ -35,10 +37,12 @@ public sealed class KontextRecordsIndexer(
 
     const int BatchSize = 500;
 
-    static readonly TimeSpan BatchWindow         = TimeSpan.FromSeconds(5);
+    const string RecordsTable = "ldb.main.records";
+
+    static readonly TimeSpan BatchWindow              = TimeSpan.FromSeconds(5);
     static readonly TimeSpan IndexMaintenanceThrottle = TimeSpan.FromSeconds(30);
-    static readonly TimeSpan InitialRestartDelay = TimeSpan.FromSeconds(5);
-    static readonly TimeSpan MaximumRestartDelay = TimeSpan.FromSeconds(60);
+    static readonly TimeSpan InitialRestartDelay      = TimeSpan.FromSeconds(5);
+    static readonly TimeSpan MaximumRestartDelay      = TimeSpan.FromSeconds(60);
 
     readonly ILogger _log = loggerFactory.CreateLogger<KontextRecordsIndexer>();
 
@@ -76,8 +80,8 @@ public sealed class KontextRecordsIndexer(
         _log.LogInformation("Records indexer starting from {StartPosition}", startPosition);
 
         using var writer = new KontextRecordsWriter(
-            connection, extractContent, embeddings,
-            new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
+            connection, embeddings,
+            new() { Dimensions = KontextIndexConstants.VectorsDimension },
             loggerFactory.CreateLogger<KontextRecordsWriter>());
 
         await using var consumer = consumerBuilder
@@ -93,22 +97,32 @@ public sealed class KontextRecordsIndexer(
 
         var lastOptimize = TimeProvider.System.GetTimestamp();
 
-        await foreach (var batch in consumer.Records(ct).ReadBatches(BatchSize, BatchWindow, ct).ConfigureAwait(false)) {
-            var written = 0;
+        var batches = consumer.Records(ct)
+            .Where(static record => record.Value is ReadResponse 
+                                 || record.SchemaInfo.SchemaDataFormat == SchemaDataFormat.Json)
+            .ReadBatched(
+                BatchSize, BatchWindow,
+                classify: static record => record.Value is ReadResponse
+                    ? BatchAction<SurgeRecord, IndexBatch>.FlushThenYield(new([], record.Position))
+                    : BatchAction<SurgeRecord, IndexBatch>.Batch(record),
+                batchToOutput: static records => new(records, records[^1].Position),
+                ct);
 
-            // Data and checkpoint in ONE transaction on the single catalog a lance-writing
-            // transaction may touch — probed: the appender flush and the checkpoint MERGE
-            // commit or revert together. batch[^1] may be a control record, whose position
-            // still advances the checkpoint through skipped stretches.
+        await foreach (var batch in batches.ConfigureAwait(false)) {
+            if (batch.Records.Count == 0) {
+                checkpoints.Store(connection, batch.Position);
+                continue;
+            }
+
+            int written;
+
             using (var tx = connection.BeginTransaction()) {
-                written = await writer.ProjectAsync(batch, ct).ConfigureAwait(false);
-
-                checkpoints.Store(connection, batch[^1].Position);
-
+                written = await writer.ProjectAsync(batch.Records, ct).ConfigureAwait(false);
+                checkpoints.Store(connection, batch.Position);
                 tx.CommitOnDispose();
             }
 
-            _log.LogDebug("Records indexer committed {Written} of {BatchSize} records", written, batch.Count);
+            _log.LogDebug("Records indexer committed {Written} of {BatchSize} records", written, batch.Records.Count);
 
             if (written == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
                 continue;
@@ -116,10 +130,17 @@ public sealed class KontextRecordsIndexer(
             // FTS first — over unfolded rows lance_fts returns the first k rows by scan
             // arrival, not the top k by score, so the fold is correctness; the vector fold
             // is only latency.
-            dataSource.EnsureInvertedIndex("records");
-            dataSource.EnsureVectorIndex("records", "embedding");
+            connection.EnsureInvertedIndex(RecordsTable, "data");
+            connection.EnsureInvertedIndex(RecordsTable, "content");
+
+            connection.EnsureVectorIndex(RecordsTable, "embedding", new LanceIvfPqIndexOptions {
+                NumSubVectors = KontextIndexConstants.VectorsDimension / 8,
+                NumPartitions = LancePartitions.For(connection.GetTableInfo(RecordsTable)?.RowCount ?? 0),
+            });
 
             lastOptimize = TimeProvider.System.GetTimestamp();
         }
     }
+
+    readonly record struct IndexBatch(IReadOnlyList<SurgeRecord> Records, RecordPosition Position);
 }

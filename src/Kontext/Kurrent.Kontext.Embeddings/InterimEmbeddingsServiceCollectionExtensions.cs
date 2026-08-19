@@ -17,17 +17,17 @@ namespace Kurrent.Kontext.Embeddings;
 /// <see cref="OnnxModelRegistry"/>, no on-disk cache, and zero coupling to the legacy prototype loader.
 /// <para>
 /// When the downloader lands the registry path takes over: point <c>AddOnnxModelRegistry</c> at the populated
-/// cache directory, switch to the <c>(OnnxModelRegistry, options)</c> constructor, and delete this helper, the
+/// cache directory, switch <see cref="Pmm12EmbeddingGenerator"/> to the registry, and delete this helper, the
 /// build-time embed target, and <see cref="KontextModelsAssembly"/>. Only the acquire side changes.
 /// </para>
 /// </summary>
 public static class InterimEmbeddingsServiceCollectionExtensions {
 	extension(IServiceCollection services) {
 		/// <summary>
-		/// Registers the interim multilingual generator — <see cref="InterimPmm12"/> read from the embedded
-		/// models assembly and run through the SentencePiece / XLM-R generator (implementation C).
+		/// Registers the interim multilingual generator — <see cref="Pmm12EmbeddingGenerator"/> read from the
+		/// embedded models assembly and run through the SentencePiece / XLM-R generator (implementation C).
 		/// </summary>
 		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddInterimPmm12Embeddings() =>
-			services.AddEmbeddingGenerator(_ => InterimPmm12.CreateEmbeddingGenerator());
+			services.AddEmbeddingGenerator(_ => new Pmm12EmbeddingGenerator());
 	}
 }

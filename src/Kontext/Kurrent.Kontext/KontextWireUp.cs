@@ -1,0 +1,105 @@
+using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Embeddings;
+using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Modules.Memory;
+using Kurrent.Kontext.Modules.Records;
+using KurrentDB.Core;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Core.Hosting.Experimental;
+using KurrentDB.Core.Settings;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+
+namespace Kurrent.Kontext;
+
+public static class KontextWireUp {
+    extension(IServiceCollection services) {
+        public IServiceCollection AddKontext(IConfiguration configuration) {
+            var options = services.AddKontextOptions(configuration);
+            
+            return services
+                .AddSystemReadiness()
+                .AddSystemStartupManager()
+                .AddKontextStorage()
+                .AddKontextEmbeddings(options.Embeddings)
+                .AddKontextMemory()
+                .AddKontextRecords();
+        }
+
+        KontextOptions AddKontextOptions(IConfiguration configuration) {
+            var options = configuration.GetSection(KontextOptions.SectionName).Get<KontextOptions>() ?? new();
+            services.AddSingleton(options);
+            services.TryAddSingleton<KontextMemoryOptions>();
+            return options;
+        }
+
+        IServiceCollection AddSystemStartupManager() {
+            services.TryAddSingleton<SystemStartupManager>();
+            
+            // IHostedService is a multi-registration service type: TryAdd would find another hosted
+            // service and skip. AddHostedService(factory) uses TryAddEnumerable, which dedupes on the
+            // implementation type instead.
+            services.AddHostedService(sp => sp.GetRequiredService<SystemStartupManager>());
+
+            // Factory, not TryAddSingleton<TService, TImpl>: the latter builds a second instance whose
+            // completion source nothing ever signals.
+            services.TryAddSingleton<IStartupWorkCompletionMonitor>(sp => sp.GetRequiredService<SystemStartupManager>());
+
+            return services;
+        }
+        
+        IServiceCollection AddKontextStorage() {
+            services.AddSingleton<KontextDataSource>(sp => {
+                var database    = sp.GetRequiredService<ClusterVNodeOptions>().Database;
+                var indexPath   = database.Index ?? Path.Combine(database.Db, ESConsts.DefaultIndexDirectoryName);
+                var storagePath = Path.Combine(indexPath, "kontext");
+
+                // The filename must match DuckDBConnectionPoolLifetime's own composition of the
+                // node's database path, or the read-only attach points at nothing.
+                var sharedDatabasePath = Path.Combine(database.Db, "kurrent.ddb");
+
+                return new(storagePath, $"{storagePath}.tmp", sharedDatabasePath);
+            });
+            
+            services.AddSystemStartupTask("Kontext Migrations", static async (node, sp, ct) => {
+                var dataSource = sp.GetRequiredService<KontextDataSource>();
+                var logger     = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KontextMigrations");
+                var migrations = KontextMigrations.CreateEngine(dataSource, logger);
+                await migrations.EnsureAsync(ct);
+            });
+            
+            return services;
+        }
+
+        IServiceCollection AddKontextEmbeddings(KontextEmbeddingsOptions options) {
+            services.AddKontextEmbeddings(
+                options.Provider,
+                options.Local,
+                options.OpenAI,
+                options.Ollama,
+                options.GoogleVertexAI,
+                options.AmazonBedrock);
+
+            // TODO SS: this is stupid...
+            services.AddSystemStartupTask("Kontext Embeddings Validation", static async (_, sp, ct) => {
+                var generator = sp.GetRequiredService<EmbeddingGenerator>();
+                var options   = sp.GetRequiredService<KontextOptions>();
+                await generator.EnsureDimensionAsync(options.Embeddings.Dimension, ct); 
+            });
+            
+            return services;
+        }
+    }
+
+    extension(IApplicationBuilder app) {
+        /// <summary>The application-builder counterpart to AddKontext: fans out to each module's own
+        /// pipeline wireup. Records contributes nothing here — it is a hosted service only.</summary>
+        public IApplicationBuilder UseKontext() =>
+            app.UseKontextMemory();
+    }
+}

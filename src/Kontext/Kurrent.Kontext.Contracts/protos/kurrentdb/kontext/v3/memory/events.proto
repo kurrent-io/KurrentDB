@@ -34,22 +34,6 @@ message MemoriesRetained {
   }
 }
 
-// Emitted by Retract: the memory (and any derived memories cascaded with it) removed from the
-// active set.
-message MemoryRetracted {
-  // the memory that was explicitly retracted
-  string memory_id = 1;
-
-  // why the memory was retracted (carried from RetractRequest.reason)
-  string reason = 2;
-
-  // memory_id plus every derived memory removed by the cascade
-  repeated string retracted_memory_ids = 3;
-
-  // when the retraction was recorded
-  google.protobuf.Timestamp retracted_at = 4;
-}
-
 // MemoriesRecalled is written on every recall. It is NOT an audit convenience — it is the
 // load-bearing mechanism behind retrieval, and it exists for two reasons, both rooted in the
 // generative-agents retrieval model (Park et al., 2023, "Generative Agents: Interactive Simulacra
@@ -125,8 +109,7 @@ message MemoriesAccessed {
   google.protobuf.Timestamp accessed_at = 2;
 }
 
-// Emitted when an async Reflect pass completes: the memories it synthesized, superseded, and
-// retracted.
+// Emitted when an async Reflect pass completes: the memories it synthesized and superseded.
 message ReflectionCompleted {
   // correlates to the ReflectRequest
   string query_id = 1;
@@ -136,9 +119,6 @@ message ReflectionCompleted {
 
   // ids of memories superseded
   repeated string superseded_memory_ids = 3;
-
-  // ids of memories retracted
-  repeated string retracted_memory_ids = 4;
 
   // when the reflection pass finished
   google.protobuf.Timestamp completed_at = 5;

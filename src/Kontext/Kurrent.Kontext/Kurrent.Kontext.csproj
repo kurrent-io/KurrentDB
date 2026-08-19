@@ -53,8 +53,6 @@
   </ItemGroup>
     
   <ItemGroup>
-    <Folder Include=".scratch\" />
-    <Folder Include="Infrastructure\Data\Migrations\DuckDB\" />
     <Folder Include="Modules\Entities\" />
   </ItemGroup>
 

@@ -17,14 +17,17 @@ namespace Kurrent.Kontext.Testing;
 /// Shared PerTestSession: the cost is all up-front (419 sequential ONNX embeds, one schema build)
 /// and nothing a test does mutates it.
 /// </summary>
-public sealed class KontextCorpus(Action<SentencePieceOnnxOptions>? embeddingOptions) : IAsyncInitializer, IAsyncDisposable {
+public sealed class KontextCorpus(
+	Action<SentencePieceOnnxOptions>? embeddingOptions,
+	EmbeddingModelFactory? embeddingModel = null
+) : IAsyncInitializer, IAsyncDisposable {
 	const string CorpusFile = "locomo-conv26.json";
 
 	// ClassDataSource<T> requires a true parameterless constructor — an optional parameter
 	// does not satisfy the TUnit analyzer.
 	public KontextCorpus() : this(null) { }
 
-	readonly KontextStoreFixture _store = new(embeddingOptions);
+	readonly KontextStoreFixture _store = new(embeddingOptions, embeddingModel);
 
 	/// <summary>The committed corpus as loaded: memories, questions and ground truth.</summary>
 	public CorpusFixture Data { get; private set; } = null!;

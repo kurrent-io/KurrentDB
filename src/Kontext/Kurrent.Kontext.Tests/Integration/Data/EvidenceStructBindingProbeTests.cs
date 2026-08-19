@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DuckDB.NET.Data;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 
 namespace Kurrent.Kontext.Tests.Data;
@@ -16,8 +17,9 @@ namespace Kurrent.Kontext.Tests.Data;
 /// decoder error. Evidence is a oneof, so sparse fields varying across elements in one list is not
 /// an edge case — it is every memory that cites more than one kind of source.
 ///
-/// This test asserts the LIMITATION. It turns red the day the decoder is fixed, which is exactly
-/// when moving evidence to STRUCT[] becomes worth revisiting.
+/// The decoder limitation this probe was written to pin is FIXED: a sparse STRUCT[] now reads
+/// back. The probe stays as the regression guard, and moving evidence off VARCHAR[] canonical
+/// JSON to a real STRUCT[] is now viable.
 /// </summary>
 [Category("Integration")]
 [Timeout(30_000)]
@@ -27,7 +29,7 @@ public class EvidenceStructBindingProbeTests {
 		"STRUCT(kind VARCHAR, memory_id VARCHAR, repo VARCHAR, commit VARCHAR, uri VARCHAR)[]";
 
 	[Test]
-	public async ValueTask struct_list_writes_but_cannot_be_read_back_when_fields_are_sparse(CancellationToken cancellationToken) {
+	public async ValueTask struct_list_round_trips_when_fields_are_sparse(CancellationToken cancellationToken) {
 		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
@@ -55,11 +57,9 @@ public class EvidenceStructBindingProbeTests {
 			});
 		});
 
-		// Assert — the write half is fine, so this is a decode limitation and not bad SQL.
+		// Assert — both halves work now: the sparse child array decodes.
 		await Assert.That(write).IsEqualTo("OK");
-
-		// The engine's own wording, pinned: an internal error naming the sparse child array.
-		await Assert.That(read).Contains("Incorrect array length for StructArray");
+		await Assert.That(read).IsEqualTo("OK");
 	}
 
 	static string Try(Action action) {

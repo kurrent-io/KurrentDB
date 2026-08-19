@@ -15,6 +15,7 @@ public sealed class KontextOptions {
     public bool Enabled { get; set; }
 
     public KontextEmbeddingsOptions Embeddings { get; set; } = new();
+
 }
 
 /// <summary>

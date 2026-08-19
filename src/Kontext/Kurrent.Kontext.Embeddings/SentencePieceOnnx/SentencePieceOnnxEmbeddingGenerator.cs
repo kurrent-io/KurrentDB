@@ -18,7 +18,6 @@ namespace Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 /// </summary>
 public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 	const string ProviderName = "kontext-sentencepiece-onnx";
-	const string DefaultModelId = "multilingual-e5-small";
 
 	// XLM-R / fairseq special-token ids (see HuggingFace XLMRobertaTokenizer's id layout).
 	const int Bos = 0;          // <s>
@@ -34,13 +33,22 @@ public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 	readonly EmbeddingGeneratorMetadata _metadata;
 
 	/// <summary>
-	/// Resolves the model named by <see cref="SentencePieceOnnxOptions.ModelId"/> (defaulting to
-	/// <c>multilingual-e5-small</c>) from <paramref name="registry"/> and builds the generator. The main entry
-	/// point; resolution is cheap and nothing is read until this constructor runs, so no model bytes move at
-	/// DI-registration time.
+	/// Resolves the model named by <see cref="SentencePieceOnnxOptions.ModelId"/> from
+	/// <paramref name="registry"/> and builds the generator. The main entry point; resolution is cheap and
+	/// nothing is read until this constructor runs, so no model bytes move at DI-registration time.
 	/// </summary>
 	public SentencePieceOnnxEmbeddingGenerator(OnnxModelRegistry registry, SentencePieceOnnxOptions? options = null)
-		: this(registry.Get((options ?? new SentencePieceOnnxOptions()).ModelId ?? DefaultModelId), options) { }
+		: this(registry.Get(RequiredModelId(options)), options) { }
+
+	// Every model in this family carries its own pooling mode, token window and input prefix, so a
+	// default model id would silently embed with one model's weights under another's conventions.
+	static string RequiredModelId(SentencePieceOnnxOptions? options) =>
+		options?.ModelId is { Length: > 0 } modelId
+			? modelId
+			: throw new InvalidOperationException(
+				$"{nameof(SentencePieceOnnxOptions)}.{nameof(SentencePieceOnnxOptions.ModelId)} is required when "
+			  + "resolving from the registry. Name the model explicitly, or use a model-specific generator such "
+			  + $"as {nameof(Pmm12EmbeddingGenerator)}.");
 
 	/// <summary>
 	/// Builds the generator directly from a resolved <see cref="OnnxModel"/> (handy for tests). Reads the ONNX

@@ -26,8 +26,6 @@ public sealed class StoredMemory {
 
 	public DateTimeOffset? LastAccessedAt { get; set; }
 
-	public DateTimeOffset? RetractedAt { get; set; }
-
 	public DateTimeOffset? SupersededAt { get; set; }
 
 	public string? SupersededBy { get; set; }

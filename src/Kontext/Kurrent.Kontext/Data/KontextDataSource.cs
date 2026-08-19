@@ -1,18 +1,18 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Kontext.Infrastructure.Data.Migrations.DuckDB;
+using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.Migrations.DuckLance;
 using Kurrent.Quack;
 using Polly;
-using Polly.Retry;
 
-namespace Kurrent.Kontext.Infrastructure.Data;
+namespace Kurrent.Kontext.Data;
 
 /// <summary>
 /// Kontext's data sources. The engine needs no file of its own — everything durable lives in
 /// Lance — so both are in-memory engines that reach their data through attachments.
 /// </summary>
-public sealed class KontextDataSource : IDuckDBSchemaExecutor, IDisposable {
+public sealed class KontextDataSource : IDuckLanceSchemaExecutor, IDisposable {
     public const string LanceAlias  = "ldb";
     public const string SharedAlias = "kdb";
 

@@ -42,7 +42,7 @@ service MemoryService {
   //
   // EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always runs a hybrid search
   // for each memory you store and hands back the closest LIVE memories in `related` (nearest first,
-  // capped by configuration). Live means the tip of a supersession chain — superseded and retracted
+  // capped by configuration). Live means the tip of a supersession chain — superseded
   // memories never appear. The server does not adjudicate: it will not merge, block, or deduplicate
   // anything. It reports; YOU DECIDE. Reading `related` is part of making this call, not a
   // courtesy — ignore it and you leave near-duplicates for the scheduled "dream" pass to clean up.
@@ -52,7 +52,6 @@ service MemoryService {
   //     with `supersedes: [neighbour_id]`, carrying the UNION of its citations and yours. This is
   //     consolidation: re-encountering a belief is corroboration and should be recorded, not
   //     discarded.
-  //   - You brought NOTHING NEW → `retract` the copy you just created, reason "duplicate of {id}".
   // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
   // to act on when you need its evidence to build the successor.
   //
@@ -67,39 +66,6 @@ service MemoryService {
   // retaining the same content twice creates two memories, which is why you must act on `related`.
   // Reporting neighbours does NOT touch their recency clocks (see THE ACCESS RULE).
   rpc Retain(RetainRequest) returns (RetainResponse);
-
-  // TOOL — retract
-  //
-  // Take back a memory that should not exist at all — it was never true, or it must be forgotten.
-  //
-  // FIRST ASK: is there a corrected / newer memory to replace it with? If YES, do NOT retract —
-  // `retain` the corrected memory with `supersedes: [old_id]`. That is the common case ("I know
-  // better now"): supersede keeps the old one as readable history and the successor wins on recency.
-  // Retract is the NARROW escape hatch for the cases supersede cannot express:
-  //   - Wrong with NO replacement — the thing is simply false and there is nothing true to put in
-  //     its place (retracting avoids inventing an "it is NOT true that…" anti-fact).
-  //   - Forget it — a removal for privacy/PII, not a correction.
-  //   - Cascade — you need memories derived from this one to go with it (below).
-  //   - A duplicate you just created — after `retain` reported a neighbour you had nothing to add
-  //     to.
-  //
-  // In one line: supersede = "I know better now" (has a replacement, preserves history, no cascade);
-  // retract = "this shouldn't be here at all" (no replacement, HIDES it, and CASCADES to anything
-  // derived from it — a SUMMARY that cited it is retracted too, its evidence having vanished). It is
-  // the only "hide" primitive: retracted memories stop surfacing in `recall`.
-  //
-  // An OPEN_QUESTION that went moot needs no retraction — let it decay. Retract one only if you
-  // want it gone now.
-  //
-  // Example: retract { memory_id: "01J...", reason: "there was never a 3pm meeting" }
-  //
-  // Returns: `retracted_memory_ids` — this memory plus everything the cascade removed.
-  //
-  // Safety: DESTRUCTIVE (removes memories from the active set) and cascading. Idempotent:
-  // retracting an already-retracted memory changes nothing. Never physically deleted — the record
-  // stays on the stream, but retracted memories stop surfacing in `recall` and `recollect`; only
-  // `reclaim` by exact id still returns them.
-  rpc Retract(RetractRequest) returns (RetractResponse);
 
   // TOOL — recall — search by MEANING (input: a natural-language `query`).
   // Not `reclaim` (that's by id) · not `recollect` (that's by type/tag, no ranking).
@@ -116,7 +82,7 @@ service MemoryService {
   //
   // Results come back ranked best-first: treat the order as the system's confidence, and each
   // memory's `memory_type` as how far to trust it (a firsthand OBSERVATION outranks HEARSAY you
-  // have not verified). You only ever get what is currently true here — retracted and superseded
+  // have not verified). You only ever get what is currently true here — superseded
   // memories never surface. Want the full record (evidence, reasoning)? Set `include_full`, or
   // follow up with `reclaim` by id.
   //
@@ -150,7 +116,7 @@ service MemoryService {
   //
   // Example: reclaim { ids: ["01J...", "01K..."] }
   //
-  // Returns: a stream of StoredMemory (the full folded records), including retracted or superseded
+  // Returns: a stream of StoredMemory (the full folded records), including superseded
   // ones — you asked for them by id, so they are not hidden here. Ids that don't exist are simply
   // absent from the stream (never an error); diff the returned ids against what you asked for to
   // see which missed.
@@ -172,7 +138,7 @@ service MemoryService {
   //          value: "kurrent--kurrentdb" }], limit: 50 }
   //
   // Returns: a stream of StoredMemory matching the filters — `types` is any-of (empty = any type),
-  // all supplied `tags` must be present. Retracted memories are never returned (they were mistakes;
+  // all supplied `tags` must be present.
   // only `reclaim` by exact id still surfaces them). Ordered by `sort` (default: newest-retained
   // first); reverse with `direction`.
   //
@@ -184,16 +150,16 @@ service MemoryService {
   //
   // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
   // memories from what it finds — a FACT, USER_PROFILE, PREFERENCE, or SUMMARY that cites the
-  // memories it rests on — and may retract or supersede the ones the new insight subsumes.
+  // memories it rests on — and may supersede the ones the new insight subsumes.
   // Reflection is the operation that produces derived memories; there is no "reflection" memory
   // type. Reach for it periodically, when a pile of observations wants to become a durable
   // conclusion — not on every turn.
   //
   // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
   //
-  // Returns: the ids it `synthesized`, `superseded`, and `retracted`.
+  // Returns: the ids it `synthesized` and `superseded`.
   //
-  // Safety: WRITES new memories and is DESTRUCTIVE (may retract/supersede). Long-running — it
+  // Safety: WRITES new memories and is DESTRUCTIVE (may supersede). Long-running — it
   // reasons over many memories; expect it to run asynchronously and report progress rather than
   // return instantly (completion is signalled by events.proto ReflectionCompleted). Not idempotent.
   rpc Reflect(ReflectRequest) returns (ReflectResponse);
@@ -220,7 +186,7 @@ message RetainResponse {
 
     // Existing LIVE memories closest to the one just stored, nearest first, capped by server
     // configuration. Live means the tip of a supersession chain. Advisory: the server does not act
-    // on these, you do — supersede when you brought new support, retract your copy when you did
+    // on these, you do — supersede when you brought new support when you did
     // not. Populated on every retain; reading it is part of the call.
     repeated RelatedMemory related = 2;
   }
@@ -235,28 +201,6 @@ message RetainResponse {
     // what you just stored, without a round trip. `reclaim` it when you need evidence/reasoning.
     LeanMemory memory = 2;
   }
-}
-
-//===================================================================
-// Retract
-//===================================================================
-
-// Retract invalidates a memory; memories derived from it (e.g. reflections that cite it)
-// are retracted in the same cascade.
-message RetractRequest {
-  // Required. The memory to take back.
-  string memory_id = 1;
-
-  // Why you're taking this back (e.g. "user corrected me", "verified false in commit abc",
-  // "duplicate of 01J..."). Encouraged: it's the only record of why the memory is gone, it stops
-  // you relitigating it later, and it explains the cascade when derived memories are retracted
-  // with it.
-  string reason = 2;
-}
-
-message RetractResponse {
-  // The retracted memory and any derived memories retracted by the cascade
-  repeated string retracted_memory_ids = 1;
 }
 
 //===================================================================
@@ -398,7 +342,4 @@ message ReflectResponse {
 
   // ids of memories superseded
   repeated string superseded_memory_ids = 3;
-
-  // ids of memories retracted
-  repeated string retracted_memory_ids = 4;
 }

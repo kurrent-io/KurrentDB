@@ -40,7 +40,7 @@ public static class KontextEmbeddingsServiceCollectionExtensions {
 		/// The Local path: disk-cached models through the <see cref="OnnxModelRegistry"/> when one is
 		/// configured; the shipped interim model otherwise — zero-config local embeddings either way.
 		/// </summary>
-		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddLocalOnnxEmbeddings(LocalEmbeddingsOptions options) {
+        EmbeddingGeneratorBuilder<string, Embedding<float>> AddLocalOnnxEmbeddings(LocalEmbeddingsOptions options) {
 			if (string.IsNullOrWhiteSpace(options.ModelsDirectory) && options.Models.Count == 0)
 				return services.AddInterimPmm12Embeddings();
 

@@ -12,7 +12,7 @@ public delegate Task AppendEvent(object evt, CancellationToken ct = default);
 /// <summary>
 /// The transport-neutral memory service, composed over the projector-owned
 /// <see cref="KontextDataStore"/> read model. The store only READS the lance table the projector
-/// writes, so every operation that mutates memory state — retain, retract, and the recall
+/// writes, so every operation that mutates memory state — retain and the recall
 /// reconsolidation touches — is not implemented here: writes go through the KurrentDB log and land
 /// in the read model via the projector, a path this service does not own yet.
 ///
@@ -33,9 +33,6 @@ public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retr
 
 	public ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default) =>
 		throw new NotImplementedException("Retain writes memories; the read model is projector-owned — retain goes through the KurrentDB log once the write path lands.");
-
-	public ValueTask<Contracts.RetractResponse> RetractAsync(Contracts.RetractRequest request, CancellationToken ct = default) =>
-		throw new NotImplementedException("Retract mutates memories; the read model is projector-owned — retract goes through the KurrentDB log once the write path lands.");
 
 	public async ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
 		var response = new Contracts.RecallResponse {

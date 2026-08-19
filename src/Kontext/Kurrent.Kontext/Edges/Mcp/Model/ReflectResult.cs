@@ -10,5 +10,4 @@ public sealed class ReflectResult {
 
 	public IReadOnlyList<string> SupersededMemoryIds { get; set; } = [];
 
-	public IReadOnlyList<string> RetractedMemoryIds { get; set; } = [];
 }

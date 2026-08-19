@@ -42,7 +42,7 @@ public class KontextMemoryWriterTests {
 
 		var retained          = NewRetained("m1", "first belief", Base);
 		var expectedMemory    = retained.Memories[0].Memory;
-		var expectedEmbedding = FakeEmbeddingGenerator.Embed(expectedMemory.Content);
+		var expectedEmbedding = await KontextTestEmbeddings.Embed(expectedMemory.Content, cancellationToken);
 
 		// Act — two retains, ONE batch, one write transaction.
 		await Project(writer,
@@ -62,7 +62,6 @@ public class KontextMemoryWriterTests {
 		await Assert.That(stored.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
 		await Assert.That(stored.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base);
-		await Assert.That(stored.RetractedAt).IsNull();
 		await Assert.That(stored.SupersededAt).IsNull();
 		await Assert.That(stored.SupersededBy).IsEqualTo("");
 
@@ -143,7 +142,7 @@ public class KontextMemoryWriterTests {
 
 	[Test]
 	public async ValueTask retain_replay_refreshes_the_embedding_in_place(CancellationToken cancellationToken) {
-		// Arrange — the original pass wrote m1 with the standard fake model.
+		// Arrange — the original pass wrote m1 with its first body.
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
@@ -151,17 +150,18 @@ public class KontextMemoryWriterTests {
 
 		using var connection = dataSources.OpenLanceWriter();
 
-		var record = CreateRecord(NewRetained("m1", "first belief", Base), position: 100);
+		await Project(NewWriter(connection), CreateRecord(NewRetained("m1", "first belief", Base), position: 100));
 
-		await Project(NewWriter(connection), record);
+		var revisedContent  = "a materially different belief";
+		var expectedVector  = await KontextTestEmbeddings.Embed(revisedContent, cancellationToken);
 
-		// Act — replay the same record through a writer whose model produces DIFFERENT vectors:
-		// the in-place re-embed path (an embedding-model migration without dropping the table).
-		await Project(new KontextMemoryWriter(connection, new ShiftedEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = 4 }), record);
+		// Act — replay the same id at the same position with a revised body: the matched arm owns
+		// the content columns, so it must rewrite content and embedding together rather than
+		// leaving the first pass's vector behind.
+		await Project(NewWriter(connection), CreateRecord(NewRetained("m1", revisedContent, Base), position: 100));
 
-		// Assert — still one row, its embedding refreshed to the new model's vector.
-		var (logPosition, embeddingMatches, _) = ReadProjectionStamp(
-			dataSources, "m1", ShiftedEmbeddingGenerator.Embed("first belief"), citedId: "cited-1");
+		// Assert — still one row, its embedding refreshed to the revised body's vector.
+		var (logPosition, embeddingMatches, _) = ReadProjectionStamp(dataSources, "m1", expectedVector, citedId: "cited-1");
 
 		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 		await Assert.That(embeddingMatches).IsTrue();
@@ -232,46 +232,6 @@ public class KontextMemoryWriterTests {
 
 		await Assert.That(successor!.Supersedes).Contains("m1");
 		await Assert.That(successor.SupersededAt).IsNull();
-	}
-
-	[Test]
-	public async ValueTask retraction_in_the_same_batch_marks_every_cascaded_row(CancellationToken cancellationToken) {
-		// Arrange + Act — two retains and the retraction cascading over both, ONE batch.
-		using var dir         = new TempDir();
-		using var dataSources = NewDataSources(dir.Path);
-
-		await MemorySeeding.CreateSchema(dataSources);
-
-		using var connection = dataSources.OpenLanceWriter();
-
-		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
-
-		var retractedAt = Base.AddHours(3);
-
-		var retracted = new Contracts.MemoryRetracted {
-			MemoryId           = "m1",
-			Reason             = "test cascade",
-			RetractedMemoryIds = { "m1", "m2" },
-			RetractedAt        = Timestamp.FromDateTimeOffset(retractedAt)
-		};
-
-		await Project(writer,
-			CreateRecord(NewRetained("m1", "first belief", Base), position: 100),
-			CreateRecord(NewRetained("m2", "derived belief", Base.AddHours(1)), position: 200),
-			CreateRecord(retracted, position: 300));
-
-		// Assert — both rows carry the retraction instant and the retracting position.
-		await Assert.That((await store.GetAsync("m1"))!.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
-		await Assert.That((await store.GetAsync("m2"))!.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
-		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
-
-		var listed = await store.ListAsync(
-				[], [], Contracts.RecollectSort.RetainedAt,
-				Contracts.SortDirection.Descending, 10)
-			.ToListAsync();
-
-		await Assert.That(listed).IsEmpty();
 	}
 
 	[Test]
@@ -352,7 +312,7 @@ public class KontextMemoryWriterTests {
 	}
 
 	[Test]
-	public async ValueTask a_memory_born_superseded_and_retracted_in_one_batch_carries_its_terminal_state(CancellationToken cancellationToken) {
+	public async ValueTask a_memory_born_superseded_in_one_batch_carries_its_terminal_state(CancellationToken cancellationToken) {
 		// Arrange — the conjunction case: m1 does not exist, and ONE batch retains it,
 		// supersedes it (via m2), AND retracts it. The single MERGE must insert the row already
 		// carrying the full terminal state — no intermediate live window ever exists.
@@ -367,20 +327,11 @@ public class KontextMemoryWriterTests {
 		var       store  = new KontextDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
-		var retractedAt  = Base.AddHours(3);
-
-		var retracted = new Contracts.MemoryRetracted {
-			MemoryId           = "m1",
-			Reason             = "born terminal",
-			RetractedMemoryIds = { "m1" },
-			RetractedAt        = Timestamp.FromDateTimeOffset(retractedAt)
-		};
 
 		// Act
 		await Project(writer,
 			CreateRecord(NewRetained("m1", "old belief", Base), position: 100),
-			CreateRecord(NewRetained("m2", "new belief", supersededAt, supersedes: "m1"), position: 200),
-			CreateRecord(retracted, position: 300));
+			CreateRecord(NewRetained("m2", "new belief", supersededAt, supersedes: "m1"), position: 200));
 
 		// Assert — one row, both lifecycle facets folded at birth, stamped with the last touch.
 		var stored = await store.GetAsync("m1");
@@ -388,9 +339,8 @@ public class KontextMemoryWriterTests {
 		await Assert.That(ReadRowCount(dataSources, "m1")).IsEqualTo(1L);
 		await Assert.That(stored!.SupersededBy).IsEqualTo("m2");
 		await Assert.That(stored.SupersededAt.ToDateTimeOffset()).IsEqualTo(supersededAt);
-		await Assert.That(stored.RetractedAt.ToDateTimeOffset()).IsEqualTo(retractedAt);
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
-		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
+		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(200UL);
 	}
 
 	#region ->> Test Infrastructure <<-
@@ -464,9 +414,8 @@ public class KontextMemoryWriterTests {
 	static async ValueTask Project(KontextMemoryWriter writer, params SurgeRecord[] batch) =>
 		await writer.ProjectAsync(batch, CancellationToken.None);
 
-	// Dimension 4 matches FakeEmbeddingGenerator's vectors and the test schema.
 	static KontextMemoryWriter NewWriter(DuckDBAdvancedConnection connection) =>
-		new(connection, new FakeEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = 4 });
+		new(connection, KontextTestEmbeddings.Model, KontextTestEmbeddings.Options);
 
 	/// <summary>Reads the write-side columns the store never surfaces, in one round trip.</summary>
 	static (ulong LogPosition, bool EmbeddingMatches, bool CitesSource) ReadProjectionStamp(
@@ -475,9 +424,9 @@ public class KontextMemoryWriterTests {
 		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText =
-				"""
+				$"""
 				SELECT log_position,
-				       embedding = CAST($expected_embedding AS FLOAT[4]),
+				       embedding = CAST($expected_embedding AS FLOAT[{KontextIndexConstants.VectorsDimension}]),
 				       list_contains(cited_memory_ids, $cited_id)
 				FROM ldb.main.memories
 				WHERE memory_id = $memory_id
@@ -510,60 +459,6 @@ public class KontextMemoryWriterTests {
 
 	static KontextDataSource NewDataSources(string dir) =>
 		MemorySeeding.NewDataSources(dir);
-
-	/// <summary>
-	/// Deterministic 4-dim embeddings: a unit vector on the axis picked by the content's length,
-	/// so a test can recompute the exact vector the writer wrote and compare it in SQL.
-	/// </summary>
-	sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
-		public static float[] Embed(string content) {
-			var vector = new float[4];
-			vector[content.Length % 4] = 1f;
-			return vector;
-		}
-
-		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
-		) {
-			var results = new GeneratedEmbeddings<Embedding<float>>();
-
-			foreach (var value in values)
-				results.Add(new Embedding<float>(Embed(value)));
-
-			return Task.FromResult(results);
-		}
-
-		public object? GetService(System.Type serviceType, object? serviceKey = null) => null;
-
-		public void Dispose() { }
-	}
-
-	/// <summary>
-	/// A second "model": same shape as <see cref="FakeEmbeddingGenerator"/> with the axis shifted
-	/// by one — the replay-re-embed test proves the matched arm swapped the stored vector.
-	/// </summary>
-	sealed class ShiftedEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
-		public static float[] Embed(string content) {
-			var vector = new float[4];
-			vector[(content.Length + 1) % 4] = 1f;
-			return vector;
-		}
-
-		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
-		) {
-			var results = new GeneratedEmbeddings<Embedding<float>>();
-
-			foreach (var value in values)
-				results.Add(new Embedding<float>(Embed(value)));
-
-			return Task.FromResult(results);
-		}
-
-		public object? GetService(System.Type serviceType, object? serviceKey = null) => null;
-
-		public void Dispose() { }
-	}
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

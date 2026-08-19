@@ -1,30 +1,23 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.LanceDB;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kurrent.Kontext.Data;
 
-/// <summary>
-/// The memories dataset's background maintenance loop: on a fixed cadence it folds the FTS
-/// tail into the inverted index, creates the vector index once the table has grown enough rows
-/// to train one, folds newly written rows into it (or periodically retrains it), and runs
-/// always-on dataset compaction. Version pruning is NOT here — it is the dataset's own
-/// AUTO_CLEANUP policy, set by the schema.
-///
-/// The split mirrors the rest of the data layer:
-/// - <see cref="KontextIndexMaintenance"/> owns every maintenance statement — this class issues no SQL
-/// - this class owns the clock, the tick cadence, and the pure per-tick decision (<see cref="Decide"/>)
-///
-/// A tick never throws: every failure is logged and the next tick simply tries again — which is
-/// also the commit-conflict story. A maintenance operation that loses a Lance commit race against
-/// the projector fails its tick, and the cadence IS the retry.
-/// </summary>
-public sealed class KontextMaintenanceScheduler : IDisposable {
-    const string Table  = "memories";
-    const string Column = "embedding";
+public sealed class KontextIndexJanitor : IDisposable {
+    const string Table     = "memories";
+    const string Column    = "embedding";
+    const string FtsColumn = "content";
+
+    const string QualifiedTable = "ldb.main.memories";
+
+    static readonly LanceIvfPqIndexOptions MemoriesIndexOptions = new() {
+        NumSubVectors = KontextIndexConstants.VectorsDimension / 8,
+        NumPartitions = 1,
+    };
 
     readonly KontextDataSource         _dataSource;
     readonly ILogger                   _logger;
@@ -41,14 +34,14 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
     // Interlocked non-overlap gate: 0 = idle, 1 = a tick is running.
     int _tickGate;
 
-    public KontextMaintenanceScheduler(KontextDataSource dataSource, KontextMaintenanceOptions options, TimeProvider? timeProvider = null) {
+    public KontextIndexJanitor(KontextDataSource dataSource, KontextMaintenanceOptions options, TimeProvider? timeProvider = null) {
         _dataSource = dataSource;
         _options    = options;
 
         // Tests supply a fake TimeProvider for deterministic clocks and timers.
         _timeProvider = timeProvider ?? TimeProvider.System;
 
-        _logger = options.LoggerFactory?.CreateLogger(typeof(KontextMaintenanceScheduler)) ?? NullLogger.Instance;
+        _logger = options.LoggerFactory?.CreateLogger(typeof(KontextIndexJanitor)) ?? NullLogger.Instance;
 
         // Start the retrain clock now, so the first retrain falls one RetrainInterval into the
         // future rather than on the first tick.
@@ -106,46 +99,48 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
             return;
 
         try {
-            if (!_dataSource.Exists(Table)) {
-                _logger.LogDebug("Kontext maintenance tick skipped: the memories table does not exist yet.");
-                return;
-            }
-
-            // The FTS tail is a correctness hole — over unfolded rows lance_fts returns the
-            // first k rows by scan arrival, not the top k by score — so the fold runs FIRST,
-            // always-on and never cadence-gated: a vector-index failure later in the tick must
-            // not starve it. A zero tail is an engine no-op (no new dataset version).
-            _dataSource.EnsureInvertedIndex(Table);
-
-            var info = _dataSource.GetVectorIndexInfo(Table);
-
-            var now    = _timeProvider.GetUtcNow();
-            var action = Decide(info.TotalRows, info.RowsIndexed, _options, _lastRetrain, now);
-
-            switch (action) {
-                case KontextMaintenanceAction.EnsureVectorIndex: {
-                    var current = _dataSource.EnsureVectorIndex(Table, Column);
-
-                    // A creation IS a full train: when the index was missing and now exists, start
-                    // its retrain clock here so the first time-based rebuild falls one interval
-                    // after creation instead of immediately following it.
-                    if (info.RowsIndexed is null && current)
-                        _lastRetrain = now;
-
-                    break;
+            _dataSource.Execute(connection => {
+                if (connection.GetTableInfo(QualifiedTable) is not { } info) {
+                    _logger.LogDebug("Kontext maintenance tick skipped: the memories table does not exist yet.");
+                    return;
                 }
 
-                case KontextMaintenanceAction.RetrainVectorIndex:
-                    _dataSource.RetrainVectorIndex(Table, Column);
+                // The FTS tail is a correctness hole — over unfolded rows lance_fts returns the
+                // first k rows by scan arrival, not the top k by score — so the fold runs FIRST,
+                // always-on and never cadence-gated: a vector-index failure later in the tick must
+                // not starve it. A zero tail is an engine no-op (no new dataset version).
+                connection.EnsureInvertedIndex(QualifiedTable, FtsColumn);
 
-                    // Advance only after the rebuild landed — a failed retrain must stay due.
-                    _lastRetrain = now;
-                    break;
-            }
+                var index = info.FindIndex(LanceIndexNames.Vector(Column));
 
-            // Compaction is cadence-independent, always-on hygiene — it runs on every tick
-            // regardless of what the index needed.
-            _dataSource.Compact(Table);
+                var now    = _timeProvider.GetUtcNow();
+                var action = Decide(info.RowCount, index?.RowsIndexed, _options, _lastRetrain, now);
+
+                switch (action) {
+                    case KontextMaintenanceAction.EnsureVectorIndex: {
+                        var current = connection.EnsureVectorIndex(QualifiedTable, Column, MemoriesIndexOptions);
+
+                        // A creation IS a full train: when the index was missing and now exists, start
+                        // its retrain clock here so the first time-based rebuild falls one interval
+                        // after creation instead of immediately following it.
+                        if (index?.RowsIndexed is null && current)
+                            _lastRetrain = now;
+
+                        break;
+                    }
+
+                    case KontextMaintenanceAction.RetrainVectorIndex:
+                        connection.OptimizeIndex(QualifiedTable, LanceIndexNames.Vector(Column), options => options.Mode = LanceOptimizeMode.Retrain);
+
+                        // Advance only after the rebuild landed — a failed retrain must stay due.
+                        _lastRetrain = now;
+                        break;
+                }
+
+                // Compaction is cadence-independent, always-on hygiene — it runs on every tick
+                // regardless of what the index needed.
+                connection.CompactTable(QualifiedTable);
+            });
         } catch (Exception ex) {
             // A background maintenance tick must never surface an exception onto the timer
             // thread; the next tick retries whatever this one left undone.
@@ -189,7 +184,7 @@ public sealed class KontextMaintenanceScheduler : IDisposable {
     }
 }
 
-/// <summary>The maintenance <see cref="KontextMaintenanceScheduler.Decide"/> picks for the vector index on one tick.</summary>
+/// <summary>The maintenance <see cref="KontextIndexJanitor.Decide"/> picks for the vector index on one tick.</summary>
 public enum KontextMaintenanceAction {
     /// <summary>The vector index needs nothing on this tick.</summary>
     None,

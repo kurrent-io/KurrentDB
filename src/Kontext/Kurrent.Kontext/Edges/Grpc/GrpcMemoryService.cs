@@ -14,9 +14,6 @@ public sealed class GrpcMemoryService(IKontextMemory service) : Contracts.Memory
 	public override async Task<Contracts.RetainResponse> Retain(Contracts.RetainRequest request, ServerCallContext context) =>
 		await service.RetainAsync(request, context.CancellationToken).ConfigureAwait(false);
 
-	public override async Task<Contracts.RetractResponse> Retract(Contracts.RetractRequest request, ServerCallContext context) =>
-		await service.RetractAsync(request, context.CancellationToken).ConfigureAwait(false);
-
 	public override async Task<Contracts.RecallResponse> Recall(Contracts.RecallRequest request, ServerCallContext context) =>
 		await service.RecallAsync(request, context.CancellationToken).ConfigureAwait(false);
 

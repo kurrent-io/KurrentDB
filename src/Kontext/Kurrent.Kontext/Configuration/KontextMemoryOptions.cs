@@ -22,7 +22,7 @@ public sealed class KontextMemoryOptions {
 /// request path when <see cref="BatchSize"/> distinct memories are pending, when the oldest pending
 /// touch has waited <see cref="BatchWait"/>, or when the service disposes. The trade-off is
 /// visibility: a concurrently read record may show a slightly stale last-accessed time, and a crash
-/// loses pending refreshes — never memory data. Retains and retracts are never buffered.
+/// loses pending refreshes — never memory data. Retains are never buffered.
 /// </summary>
 public sealed class TouchBufferOptions {
 	/// <summary>Buffering is opt-in; when false (the default) touches are written before the operation returns.</summary>

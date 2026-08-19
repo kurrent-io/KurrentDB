@@ -35,7 +35,6 @@ public sealed class KontextMemoryWriter(
         public long              RetainedAt   { get; private set; }
         public string?           SupersededBy { get; private set; }
         public long              SupersededAt { get; private set; }
-        public long?             RetractedAt  { get; private set; }
         public long?             RecalledAt   { get; private set; }
         public long              LogPosition  { get; private set; }
 
@@ -57,8 +56,6 @@ public sealed class KontextMemoryWriter(
             SupersededBy = supersededBy;
             SupersededAt = supersededAt;
         }
-
-        public void Retract(long retractedAt) => RetractedAt = retractedAt;
 
         public void Recall(long recalledAt) => RecalledAt = recalledAt;
 
@@ -93,14 +90,6 @@ public sealed class KontextMemoryWriter(
                         foreach (var supersededId in entry.Memory.Supersedes)
                             Touch(supersededId, position).Supersede(entry.MemoryId, retainedAt);
                     }
-
-                    break;
-                }
-
-                case MemoryRetracted retraction: {
-                    var retractedAt = KontextDataStore.EncodeTimestamp(retraction.RetractedAt);
-                    foreach (var memoryId in retraction.RetractedMemoryIds)
-                        Touch(memoryId, position).Retract(retractedAt);
 
                     break;
                 }
@@ -151,10 +140,10 @@ public sealed class KontextMemoryWriter(
     //   the batch retained the id (a full replay rewrites content and embeddings) and keeps the
     //   target's otherwise
     // - the fold facets own the lifecycle columns: flags OR in, timestamps coalesce in — a
-    //   replayed retain cannot resurrect a memory that later events retracted or superseded
+    //   replayed retain cannot resurrect a memory that later events superseded
     //
-    // The insert arm writes the terminal batch state directly: a memory retained and retracted
-    // in one batch is born retracted. last_accessed_at seeds to retained_at at birth unless the
+    // The insert arm writes the terminal batch state directly: a memory retained and superseded
+    // in one batch is born superseded. last_accessed_at seeds to retained_at at birth unless the
     // same batch already recalled it; on match a retain never touches the recency clock — only
     // recalls advance it. A fold-only source row that matches nothing does nothing: the
     // NOT MATCHED arm is guarded on the retain facet.
@@ -178,7 +167,6 @@ public sealed class KontextMemoryWriter(
                  unnest(CAST($retained_ats AS BIGINT[])) AS retained_at,
                  unnest(CAST($superseded_bys AS VARCHAR[])) AS superseded_by,
                  unnest(CAST($superseded_ats AS BIGINT[])) AS superseded_at,
-                 unnest(CAST($retracted_ats AS BIGINT[])) AS retracted_at,
                  unnest(CAST($recalled_ats AS BIGINT[])) AS recalled_at,
                  unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
@@ -187,14 +175,13 @@ public sealed class KontextMemoryWriter(
                  memory_id, memory_type, content, importance,
                  tags, reasoning, evidence, cited_memory_ids, supersedes,
                  validity_start, validity_end, retained_at, last_accessed_at,
-                 is_retracted, retracted_at, is_superseded, superseded_at, superseded_by,
+                 is_superseded, superseded_at, superseded_by,
                  log_position, embedding)
              VALUES (
                  s.memory_id, s.memory_type, s.content, s.importance,
                  s.tags, s.reasoning, s.evidence, s.cited_memory_ids, s.supersedes,
                  s.validity_start, s.validity_end, s.retained_at,
                  coalesce(s.recalled_at, s.retained_at),
-                 s.retracted_at IS NOT NULL, s.retracted_at,
                  s.superseded_by IS NOT NULL, s.superseded_at, coalesce(s.superseded_by, ''),
                  s.log_position,
                  CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) END)
@@ -212,8 +199,6 @@ public sealed class KontextMemoryWriter(
                , retained_at      = CASE WHEN s.retained THEN s.retained_at ELSE t.retained_at END
                , embedding        = CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) ELSE t.embedding END
                , last_accessed_at = coalesce(s.recalled_at, t.last_accessed_at)
-               , is_retracted     = t.is_retracted OR s.retracted_at IS NOT NULL
-               , retracted_at     = coalesce(s.retracted_at, t.retracted_at)
                , is_superseded    = t.is_superseded OR s.superseded_by IS NOT NULL
                , superseded_at    = coalesce(s.superseded_at, t.superseded_at)
                , superseded_by    = coalesce(s.superseded_by, t.superseded_by)
@@ -236,7 +221,6 @@ public sealed class KontextMemoryWriter(
         var retainedAts     = new List<long?>(count);
         var supersededBys   = new List<string?>(count);
         var supersededAts   = new List<long?>(count);
-        var retractedAts    = new List<long?>(count);
         var recalledAts     = new List<long?>(count);
         var logPositions    = new List<long>(count);
         var batchEmbeddings = new List<float[]>(count);
@@ -262,7 +246,6 @@ public sealed class KontextMemoryWriter(
             retainedAts.Add(memory is not null ? pendingMemory.RetainedAt : null);
             supersededBys.Add(pendingMemory.SupersededBy);
             supersededAts.Add(pendingMemory.SupersededBy is not null ? pendingMemory.SupersededAt : null);
-            retractedAts.Add(pendingMemory.RetractedAt);
             recalledAts.Add(pendingMemory.RecalledAt);
             logPositions.Add(pendingMemory.LogPosition);
             batchEmbeddings.Add(pendingMemory.Embedding);
@@ -285,7 +268,6 @@ public sealed class KontextMemoryWriter(
         command.Parameters.Add(new("retained_ats", retainedAts));
         command.Parameters.Add(new("superseded_bys", supersededBys));
         command.Parameters.Add(new("superseded_ats", supersededAts));
-        command.Parameters.Add(new("retracted_ats", retractedAts));
         command.Parameters.Add(new("recalled_ats", recalledAts));
         command.Parameters.Add(new("log_positions", logPositions));
         command.Parameters.Add(new("embeddings", batchEmbeddings));

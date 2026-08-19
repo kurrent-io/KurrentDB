@@ -7,6 +7,7 @@ using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.LanceDB;
 using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -52,7 +53,6 @@ public class KontextDataStoreTests {
 		await Assert.That(stored.Validity.PerceivedEnd.ToDateTimeOffset()).IsEqualTo(Base.AddHours(24));
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(1));
 		await Assert.That(stored.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(30));
-		await Assert.That(stored.RetractedAt).IsNull();
 		await Assert.That(stored.SupersededAt).IsNull();
 		await Assert.That(stored.SupersededBy).IsEqualTo("");
 	}
@@ -66,7 +66,6 @@ public class KontextDataStoreTests {
 
 		// Act + Assert
 		await Assert.That(await store.GetAsync("no-such-memory")).IsNull();
-		await Assert.That((await store.GetAsync("m3"))!.RetractedAt).IsNotNull();
 
 		var superseded = await store.GetAsync("m4");
 		await Assert.That(superseded!.SupersededAt).IsNotNull();
@@ -101,7 +100,7 @@ public class KontextDataStoreTests {
 			.ToListAsync();
 
 		// Assert
-		await Assert.That(memories.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m1", "m5"], CollectionOrdering.Matching);
+		await Assert.That(memories.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m3", "m2", "m4", "m1", "m5"], CollectionOrdering.Matching);
 	}
 
 	[Test]
@@ -117,7 +116,7 @@ public class KontextDataStoreTests {
 				Contracts.RecollectSort.RetainedAt, Contracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
-		await Assert.That(byTypes.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m4", "m1"], CollectionOrdering.Matching);
+		await Assert.That(byTypes.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m3", "m4", "m1"], CollectionOrdering.Matching);
 
 		// ALL tags must be present: work:alpha AND team:blue.
 		var byTags = await store.ListAsync(
@@ -141,7 +140,7 @@ public class KontextDataStoreTests {
 				Contracts.SortDirection.Ascending, 10)
 			.ToListAsync();
 
-		await Assert.That(byImportance.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m1", "m5"], CollectionOrdering.Matching);
+		await Assert.That(byImportance.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m1", "m3", "m5"], CollectionOrdering.Matching);
 
 		// Last accessed descending, limited to the two freshest.
 		var byAccess = await store.ListAsync(
@@ -225,8 +224,8 @@ public class KontextDataStoreTests {
 			.ToListAsync();
 
 		// Assert
-		await Assert.That(best.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m5", "m6", "m1", "m7", "m4", "m2"], CollectionOrdering.Matching);
-		await Assert.That(evict.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m7", "m1", "m6", "m5"], CollectionOrdering.Matching);
+		await Assert.That(best.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m5", "m3", "m6", "m1", "m7", "m4", "m2"], CollectionOrdering.Matching);
+		await Assert.That(evict.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m7", "m1", "m6", "m3", "m5"], CollectionOrdering.Matching);
 	}
 
 	[Test]
@@ -250,7 +249,7 @@ public class KontextDataStoreTests {
 			.ToListAsync();
 
 		// Assert
-		var expected = new List<string> { "m6", "m7", "m2", "m4", "m1", "m5" };
+		var expected = new List<string> { "m6", "m7", "m3", "m2", "m4", "m1", "m5" };
 
 		await Assert.That(first.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
 		await Assert.That(second.Select(m => m.MemoryId).ToList()).IsEquivalentTo(expected, CollectionOrdering.Matching);
@@ -265,7 +264,7 @@ public class KontextDataStoreTests {
 
 		// Act
 		var hits = await store.SearchAsync(
-				"anything", [1f, 0f, 0f, 0f], [],
+				"anything", MemorySeeding.Vector(1f), [],
 				new() { Alpha = 1, Limit = 2 })
 			.ToListAsync();
 
@@ -285,7 +284,7 @@ public class KontextDataStoreTests {
 
 		// Act
 		var hits = await store.SearchAsync(
-				"projector checkpoint format", [1f, 0f, 0f, 0f], [],
+				"projector checkpoint format", MemorySeeding.Vector(1f), [],
 				new() { Alpha = 0, Limit = 1 })
 			.ToListAsync();
 
@@ -303,11 +302,10 @@ public class KontextDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act
-		var zebra  = await store.SearchAsync("zebra", [0f, 0f, 1f, 0f], []).ToListAsync();
-		var quokka = await store.SearchAsync("quokka", [0f, 0f, 0f, 1f], []).ToListAsync();
+		var zebra  = await store.SearchAsync("zebra", MemorySeeding.Vector(0f, 0f, 1f), []).ToListAsync();
+		var quokka = await store.SearchAsync("quokka", MemorySeeding.Vector(0f, 0f, 0f, 1f), []).ToListAsync();
 
 		// Assert
-		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
 
@@ -320,7 +318,7 @@ public class KontextDataStoreTests {
 
 		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
 		var hits = await store.SearchAsync(
-				"anything", [0f, 1f, 0f, 0f], [Tag("team", "blue")],
+				"anything", MemorySeeding.Vector(0f, 1f), [Tag("team", "blue")],
 				new() { K = 10, Limit = 10 })
 			.ToListAsync();
 
@@ -336,7 +334,7 @@ public class KontextDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act
-		var hits = await store.SearchAsync([1f, 0f, 0f, 0f], [], new() { Limit = 2 }).ToListAsync();
+		var hits = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { Limit = 2 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
@@ -354,11 +352,10 @@ public class KontextDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act
-		var zebra  = await store.SearchAsync([0f, 0f, 1f, 0f], []).ToListAsync();
-		var quokka = await store.SearchAsync([0f, 0f, 0f, 1f], []).ToListAsync();
+		var zebra  = await store.SearchAsync(MemorySeeding.Vector(0f, 0f, 1f), []).ToListAsync();
+		var quokka = await store.SearchAsync(MemorySeeding.Vector(0f, 0f, 0f, 1f), []).ToListAsync();
 
 		// Assert
-		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
 
@@ -370,7 +367,7 @@ public class KontextDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
-		var hits = await store.SearchAsync([0f, 1f, 0f, 0f], [Tag("team", "blue")], new() { K = 10, Limit = 10 }).ToListAsync();
+		var hits = await store.SearchAsync(MemorySeeding.Vector(0f, 1f), [Tag("team", "blue")], new() { K = 10, Limit = 10 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).Order().ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
@@ -406,7 +403,6 @@ public class KontextDataStoreTests {
 		var quokka = await store.SearchAsync("quokka", []).ToListAsync();
 
 		// Assert
-		await Assert.That(zebra.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m3");
 		await Assert.That(quokka.Select(h => h.Memory.MemoryId).ToList()).DoesNotContain("m4");
 	}
 
@@ -437,7 +433,7 @@ public class KontextDataStoreTests {
 
 		// Act
 		var hits = await store.SearchAsync(
-				"anything", [1f, 0f, 0f, 0f], [],
+				"anything", MemorySeeding.Vector(1f), [],
 				new() { Alpha = 1, Limit = 1 })
 			.ToListAsync();
 
@@ -447,20 +443,20 @@ public class KontextDataStoreTests {
 		// The optional knobs must be accepted by the engine: nprobs bounds the IVF probe count,
 		// use_index = false forces the exact brute-force path — same winner either way.
 		var exact = await store.SearchAsync(
-				"anything", [1f, 0f, 0f, 0f], [],
+				"anything", MemorySeeding.Vector(1f), [],
 				new() { Alpha = 1, Limit = 1, Nprobs = 1, UseIndex = false })
 			.ToListAsync();
 
 		await Assert.That(exact[0].Memory.MemoryId).IsEqualTo("m1");
 
 		// The pure vector overload answers through the same trained index: exact-match top-1.
-		var vector = await store.SearchAsync([1f, 0f, 0f, 0f], [], new() { Limit = 1 }).ToListAsync();
+		var vector = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { Limit = 1 }).ToListAsync();
 
 		await Assert.That(vector[0].Memory.MemoryId).IsEqualTo("m1");
 
 		// And its optional knobs must be accepted by the engine too — same winner on the exact path.
 		var vectorExact = await store.SearchAsync(
-				[1f, 0f, 0f, 0f], [],
+				MemorySeeding.Vector(1f), [],
 				new() { Limit = 1, Nprobs = 1, UseIndex = false })
 			.ToListAsync();
 
@@ -496,18 +492,18 @@ public class KontextDataStoreTests {
 		await Seed(dataSources);
 
 		// Act
-		var ready = dataSources.EnsureVectorIndex("memories", "embedding");
+		var ready = dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }));
 
 		// Assert
 		await Assert.That(ready).IsFalse();
-		await Assert.That(dataSources.GetVectorIndexInfo("memories").Name).IsNull();
+		await Assert.That(dataSources.Execute(c => c.GetTableInfo("ldb.main.memories")!.FindIndex(LanceIndexNames.Vector("embedding")))?.Name).IsNull();
 	}
 
 	#region ->> Test Infrastructure <<-
 
 	static Contracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
 
-	/// <summary>Creates the schema through <see cref="KontextSchemaTask"/> and seeds the five fixed rows, then hands back a store over the same data sources.</summary>
+	/// <summary>Creates the schema through <see cref="KontextMigrations"/> and seeds the five fixed rows, then hands back a store over the same data sources.</summary>
 	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS
 		// INVERTED index the keyword tests need) — seeding only inserts rows.
@@ -532,18 +528,16 @@ public class KontextDataStoreTests {
 			  validity_end,
 			  retained_at,
 			  last_accessed_at,
-			  is_retracted,
-			  retracted_at,
 			  is_superseded,
 			  superseded_at,
 			  superseded_by,
 			  embedding)
 			VALUES
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""";
 
 		dataSource.Execute(connection => {
@@ -555,23 +549,23 @@ public class KontextDataStoreTests {
 
 				// m5: earliest retained, freshest access, highest importance; near m1's axis.
 				AddRow(insert, "m5", 2, "quick brown dog runs", 5, ["team:blue"], "", [], [],
-					null, null, Base, Base.AddHours(40), false, null, false, null, "", [0.9f, 0.1f, 0f, 0f]);
+					null, null, Base, Base.AddHours(40), false, null, "", MemorySeeding.Vector(0.9f, 0.1f));
 
 				// m1: the full-field row — evidence with a citation, validity window, two tags.
 				AddRow(insert, "m1", 1, "memory one", 3, ["work:alpha", "team:blue"], "", SeedEvidenceBlobs(), [],
-					Base.AddHours(-24), Base.AddHours(24), Base.AddHours(1), Base.AddHours(30), false, null, false, null, "", [1f, 0f, 0f, 0f]);
+					Base.AddHours(-24), Base.AddHours(24), Base.AddHours(1), Base.AddHours(30), false, null, "", MemorySeeding.Vector(1f));
 
 				// m4: superseded by m2 — visible in listings, marked in reads, hidden from search.
 				AddRow(insert, "m4", 3, "legacy quokka wisdom", 2, ["work:alpha", "team:blue"], "", [], [],
-					null, null, Base.AddHours(2), Base.AddHours(10), false, null, true, Base.AddHours(3), "m2", [0f, 0f, 0f, 1f]);
+					null, null, Base.AddHours(2), Base.AddHours(10), true, Base.AddHours(3), "m2", MemorySeeding.Vector(0f, 0f, 0f, 1f));
 
 				// m2: latest retained, lowest importance.
 				AddRow(insert, "m2", 2, "projector checkpoint format switched", 1, ["work:alpha"], "", [], [],
-					null, null, Base.AddHours(3), Base.AddHours(20), false, null, false, null, "", [0f, 1f, 0f, 0f]);
+					null, null, Base.AddHours(3), Base.AddHours(20), false, null, "", MemorySeeding.Vector(0f, 1f));
 
 				// m3: retracted — hidden from listings and search, still readable by id.
 				AddRow(insert, "m3", 1, "secret zebra fact", 4, [], "", [], [],
-					null, null, Base.AddHours(4), Base.AddHours(4), true, Base.AddHours(5), false, null, "", [0f, 0f, 1f, 0f]);
+					null, null, Base.AddHours(4), Base.AddHours(4), false, null, "", MemorySeeding.Vector(0f, 0f, 1f));
 
 				insert.ExecuteNonQuery();
 			}
@@ -599,8 +593,6 @@ public class KontextDataStoreTests {
 			  validity_end,
 			  retained_at,
 			  last_accessed_at,
-			  is_retracted,
-			  retracted_at,
 			  is_superseded,
 			  superseded_at,
 			  superseded_by,
@@ -619,10 +611,8 @@ public class KontextDataStoreTests {
 			       epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
 			       false,
 			       NULL,
-			       false,
-			       NULL,
 			       '',
-			       CAST([0.1, 0.1, cos(i), sin(i)] AS FLOAT[4])
+			       CAST(list_concat([0.1, 0.1, cos(i), sin(i)], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])
 			FROM range(300) AS t(i)
 			""";
 
@@ -635,8 +625,8 @@ public class KontextDataStoreTests {
 		// The schema component owns the vector index; the fillers above just crossed the
 		// training floor, so the first call must create it. The second call exercises the
 		// other half of the lifecycle against the real engine: index exists => append-optimize.
-		await Assert.That(dataSource.EnsureVectorIndex("memories", "embedding")).IsTrue();
-		await Assert.That(dataSource.EnsureVectorIndex("memories", "embedding")).IsTrue();
+		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
+		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
 	}
 
 	/// <summary>One complete supersession family: L4 (living head) replaced L3, which had consolidated L1 and L2.</summary>
@@ -662,8 +652,6 @@ public class KontextDataStoreTests {
 			  validity_end,
 			  retained_at,
 			  last_accessed_at,
-			  is_retracted,
-			  retracted_at,
 			  is_superseded,
 			  superseded_at,
 			  superseded_by,
@@ -671,16 +659,16 @@ public class KontextDataStoreTests {
 			VALUES
 			  ('L1', 1, 'lineage first belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'),
-			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST([0.0, 0.0, 0.6, 0.8] AS FLOAT[4])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.6, 0.8], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
 			  ('L2', 1, 'lineage second belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'),
-			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST([0.0, 0.0, 0.8, 0.6] AS FLOAT[4])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.8, 0.6], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
 			  ('L3', 1, 'lineage consolidated belief', 2, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L1', 'L2'] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'),
-			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), 'L4', CAST([0.0, 0.0, 0.7, 0.7] AS FLOAT[4])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), 'L4', CAST(list_concat([0.0, 0.0, 0.7, 0.7], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
 			  ('L4', 1, 'lineage current belief', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L3'] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'),
-			   false, NULL, false, NULL, '', CAST([0.0, 0.0, 0.5, 0.9] AS FLOAT[4]))
+			   false, NULL, '', CAST(list_concat([0.0, 0.0, 0.5, 0.9], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384]))
 			""";
 
 		dataSource.Execute(connection => {
@@ -712,8 +700,6 @@ public class KontextDataStoreTests {
 			  validity_end,
 			  retained_at,
 			  last_accessed_at,
-			  is_retracted,
-			  retracted_at,
 			  is_superseded,
 			  superseded_at,
 			  superseded_by,
@@ -721,10 +707,10 @@ public class KontextDataStoreTests {
 			VALUES
 			  ('m6', 1, 'tie row six', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-03 12:00:00+00'),
-			   false, NULL, false, NULL, '', CAST([0.5, 0.5, 0.0, 0.0] AS FLOAT[4])),
+			   false, NULL, '', CAST(list_concat([0.5, 0.5, 0.0, 0.0], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
 			  ('m7', 1, 'tie row seven', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 20:00:00+00'),
-			   false, NULL, false, NULL, '', CAST([0.4, 0.6, 0.0, 0.0] AS FLOAT[4]))
+			   false, NULL, '', CAST(list_concat([0.4, 0.6, 0.0, 0.0], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384]))
 			""";
 
 		dataSource.Execute(connection => {
@@ -743,7 +729,6 @@ public class KontextDataStoreTests {
 		List<string> tags, string reasoning, List<string> evidence, List<string> supersedes,
 		DateTimeOffset? validityStart, DateTimeOffset? validityEnd,
 		DateTimeOffset retainedAt, DateTimeOffset lastAccessedAt,
-		bool isRetracted, DateTimeOffset? retractedAt,
 		bool isSuperseded, DateTimeOffset? supersededAt, string supersededBy,
 		float[] embedding
 	) {
@@ -752,7 +737,7 @@ public class KontextDataStoreTests {
 			memoryId, memoryType, content, importance, tags, reasoning, evidence,
 			supersedes, validityStart?.ToUnixTimeMilliseconds(), validityEnd?.ToUnixTimeMilliseconds(),
 			retainedAt.ToUnixTimeMilliseconds(), lastAccessedAt.ToUnixTimeMilliseconds(),
-			isRetracted, retractedAt?.ToUnixTimeMilliseconds(), isSuperseded, supersededAt?.ToUnixTimeMilliseconds(),
+			isSuperseded, supersededAt?.ToUnixTimeMilliseconds(),
 			supersededBy, embedding,
 		];
 

@@ -10,7 +10,6 @@ using RecollectOptions = Kurrent.Kontext.Mcp.Model.RecollectOptions;
 using ReflectOptions = Kurrent.Kontext.Mcp.Model.ReflectOptions;
 using ReflectResult = Kurrent.Kontext.Mcp.Model.ReflectResult;
 using RetainResult = Kurrent.Kontext.Mcp.Model.RetainResult;
-using RetractResult = Kurrent.Kontext.Mcp.Model.RetractResult;
 using StoredMemory = Kurrent.Kontext.Mcp.Model.StoredMemory;
 
 namespace Kurrent.Kontext.Mcp;
@@ -44,24 +43,6 @@ public sealed class McpMemoryService(IKontextMemory service) {
             .RetainAsync(request, ct)
             .ConfigureAwait(false);
 
-        return ToModel(response);
-    }
-
-    [McpServerTool(
-        Name = "retract", UseStructuredContent = true, Destructive = true,
-        Idempotent = true, OpenWorld = false)]
-    public async ValueTask<RetractResult> RetractAsync(
-        string memoryId,
-        string? reason = null,
-        CancellationToken ct = default
-    ) {
-        var request  = new Contracts.RetractRequest {
-            MemoryId = memoryId,
-            Reason = reason ?? ""
-        };
-        
-        var response = await service.RetractAsync(request, ct).ConfigureAwait(false);
-       
         return ToModel(response);
     }
 

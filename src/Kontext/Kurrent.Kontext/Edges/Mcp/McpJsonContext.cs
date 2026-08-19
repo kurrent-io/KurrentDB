@@ -26,7 +26,6 @@ namespace Kurrent.Kontext.Mcp;
 [JsonSerializable(typeof(RecollectOptions))]
 [JsonSerializable(typeof(ReflectOptions))]
 [JsonSerializable(typeof(RetainResult))]
-[JsonSerializable(typeof(RetractResult))]
 [JsonSerializable(typeof(RecallResult))]
 [JsonSerializable(typeof(ReflectResult))]
 [JsonSerializable(typeof(StoredMemory))]

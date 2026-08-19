@@ -18,7 +18,7 @@ namespace Kurrent.Kontext.Modules.Sessions;
 ///
 /// A tick quietly skips while the transcript tables have not been created yet (a tick that fires
 /// before the host ran <see cref="AgentSessionImporter.CreateAsync"/>), exactly like
-/// <see cref="KontextMaintenanceScheduler"/> skips before its schema exists. Otherwise every tick
+/// <see cref="KontextIndexJanitor"/> skips before its schema exists. Otherwise every tick
 /// just imports — there is no per-tick Decide step. A tick never throws: every failure is logged and
 /// the next tick simply tries again — which is also the offline story, since the first INSTALL of
 /// the community extension needs network.

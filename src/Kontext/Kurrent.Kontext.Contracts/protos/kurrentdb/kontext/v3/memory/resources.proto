@@ -103,9 +103,6 @@ message StoredMemory {
   // When the memory was last accessed (the recency clock; see the ACCESS RULE on MemoryService)
   google.protobuf.Timestamp last_accessed_at = 11;
 
-  // When the memory was retracted
-  google.protobuf.Timestamp retracted_at = 12;
-
   // When the memory was superseded by a newer memory (a Retain that supersedes it)
   google.protobuf.Timestamp superseded_at = 13;
 
@@ -355,7 +352,7 @@ enum MemoryType {
   // Terminates by being ANSWERED, not by being replaced with a better version of itself: retain
   // the answering FACT with `supersedes: [question_id]`. That stretches "supersede" slightly and
   // is deliberate — the behaviour is right and the chain is the audit trail of the answer. When it
-  // is moot rather than answered, let it decay, or `retract` it with a reason if you want it gone
+  // is moot rather than answered, let it decay
   // now.
   //
   // NEVER CITABLE AS EVIDENCE. A claim cannot rest on a question.

@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging;
 namespace Kurrent.Kontext.Infrastructure.Data.Migrations;
 
 /// <summary>
-/// Executes the migration stream: reads the history, plans the steps above the current
-/// version, and runs them in order — recording what ran, when, and how long it took.
-/// That is the whole contract. What a step does, and whether it is safe, is the step
+/// Executes the migration stream: reads the history, checks it still matches the code, plans the
+/// migrations above the current version, and runs them in order — recording which key ran and how
+/// long it took. Then it runs the repeatable migrations, which carry no version and are never
+/// recorded. That is the whole contract. What a migration does, and whether it is safe, is the
 /// author's responsibility.
 ///
 /// <see cref="MigrationEngineOptions{TContext}.ForceReset"/> is the one extra: reset the
@@ -18,65 +19,119 @@ namespace Kurrent.Kontext.Infrastructure.Data.Migrations;
 /// </summary>
 [PublicAPI]
 public abstract partial class MigrationEngine<TContext> where TContext : class {
-    protected readonly TContext                         Context;
-    protected readonly IMigrationJournal                Journal;
-    protected readonly ILogger                          Logger;
     protected readonly MigrationEngineOptions<TContext> Options;
-    protected readonly IMigrationStep<TContext>[]       Steps;
+    protected readonly ILogger                          Logger;
 
     protected MigrationEngine(MigrationEngineOptions<TContext> options) {
         options.EnsureValid();
-        
         Options = options;
-        Steps   = [.. options.Steps.OrderBy(static step => step.Version)];
-        Context = options.Context!;
-        Journal = options.Journal!;
-        Logger  = options.LoggerFactory.CreateLogger<MigrationEngine<TContext>>();
+        Logger  = options.Logger;
     }
 
-    /// <summary>Runs the pending part of the stream. Call ONCE at host bootstrap, before anything queries the store.</summary>
-    public virtual async Task EnsureAsync(CancellationToken ct = default) {
-        if (Options.ForceReset) {
-            LogReset();
+    protected TContext                  Context    => Options.Context;
+    protected IMigrationJournal         Journal    => Options.Journal;
+    protected bool                      ForceReset => Options.ForceReset;
+    protected VersionedMigrations<TContext>  Steps      => Options.Versioned;
+    protected RepeatableMigrations<TContext> Repeatable => Options.Repeatable;
 
+    /// <summary>
+    /// Runs the pending part of the stream. Call ONCE at host bootstrap, before anything queries the store.
+    /// </summary>
+    public virtual async ValueTask EnsureAsync(CancellationToken ct = default) {
+        if (ForceReset) {
+            LogReset();
             await ResetAsync(Context, ct).ConfigureAwait(false);
         }
 
-        await Journal.EnsureAsync(ct).ConfigureAwait(false);
+        await Journal
+            .EnsureAsync(ct)
+            .ConfigureAwait(false);
 
-        var current = await Journal.LoadCurrentVersionAsync(ct).ConfigureAwait(false);
+        var executed = await Journal.ListAsync(ct).ConfigureAwait(false);
+        var current  = Reconcile(executed);
 
-        if (Steps.Length > 0 && current > Steps[^1].Version)
+        var plan = Steps.Where(step => step.Version > current).ToList();
+
+        if (plan.Count == 0)
+            LogUpToDate(current);
+        else
+            await RunStreamAsync(plan, current, ct).ConfigureAwait(false);
+
+        await RunRepeatableAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Checks the recorded history against the stream the code declares, and returns the store's
+    /// current version. Versions come from registration position, so inserting, removing, renaming,
+    /// or reordering a migration silently renumbers everything after it — the recorded key is what
+    /// catches that, before a single statement runs.
+    /// </summary>
+    uint Reconcile(IReadOnlyList<ExecutedMigration> executed) {
+        if (executed.Count == 0)
+            return 0;
+
+        var current = executed.Max(entry => entry.Version);
+
+        if (current > Steps.LastVersion)
             throw new InvalidOperationException(
-                $"The store is at migration version {current} but the stream ends at {Steps[^1].Version}. " +
+                $"The store is at migration version {current} but the stream ends at {Steps.LastVersion}. " +
                 "Downgrades are not supported; the running code is older than the store.");
 
-        // RunOnce steps above the recorded version, plus every RunAlways step — merged in
-        // version order, so a reasserted view still lands after the tables it reads.
-        var plan = Steps.Where(step => step.Type is MigrationStepType.RunAlways || step.Version > current).ToList();
+        foreach (var entry in executed) {
+            var planned = Steps[(int)entry.Version - 1];
 
-        if (plan.Count == 0) {
-            LogUpToDate(current);
-            return;
+            if (planned.Key != entry.Key)
+                throw new InvalidOperationException(
+                    $"Migration v{entry.Version} ran as '{entry.Key}' but the code declares '{planned.Key}'. " +
+                    "The stream was reordered: a migration was inserted, removed, or renamed. Restore it " +
+                    "in place — the stream is append-only.");
         }
 
+        return current;
+    }
+
+    async ValueTask RunStreamAsync(List<PlannedMigration<TContext>> plan, uint current, CancellationToken ct) {
         LogMigrationStarting(current, plan[^1].Version, plan.Count);
 
         foreach (var step in plan)
-            LogPlannedStep(step.Version, step.Name, step.Type);
+            LogPlannedMigration(step.Key);
 
         foreach (var step in plan) {
-            LogExecutingMigration(step.Version, step.Name);
+            LogExecutingMigration(step.Key);
 
-            var started = Stopwatch.GetTimestamp();
+            var started = TimeProvider.System.GetTimestamp();
 
-            await step.ExecuteAsync(Context, ct).ConfigureAwait(false);
+            await step.Migration
+                .ExecuteAsync(Context, ct)
+                .ConfigureAwait(false);
 
-            var duration = Stopwatch.GetElapsedTime(started);
+            var duration = TimeProvider.System.GetElapsedTime(started);
 
-            await Journal.RecordAsync(new(step.Version, step.Name, duration), ct).ConfigureAwait(false);
+            await Journal
+                .RecordAsync(new(step.Version, step.Key, "", duration), ct)
+                .ConfigureAwait(false);
 
-            LogMigrationCompleted(step.Version, step.Name, Math.Round(duration.TotalMilliseconds, 1));
+            LogMigrationCompleted(step.Key, Math.Round(duration.TotalMilliseconds, 1));
+        }
+    }
+
+    // Runs after the stream, so a reasserted form always lands on the shape the stream just built.
+    // Nothing is journaled: a repeatable migration has no version to record, and recording one would
+    // make removing it look like a downgrade on the next boot.
+    async ValueTask RunRepeatableAsync(CancellationToken ct) {
+        foreach (var (migration, continueOnFailure) in Repeatable) {
+            LogExecutingRepeatable(migration.Name);
+
+            var started = TimeProvider.System.GetTimestamp();
+
+            try {
+                await migration.ExecuteAsync(Context, ct).ConfigureAwait(false);
+            } catch (Exception ex) when (ex is not OperationCanceledException && continueOnFailure) {
+                LogRepeatableFailed(ex, migration.Name);
+                continue;
+            }
+
+            LogRepeatableCompleted(migration.Name, Math.Round(TimeProvider.System.GetElapsedTime(started).TotalMilliseconds, 1));
         }
     }
 
@@ -86,23 +141,32 @@ public abstract partial class MigrationEngine<TContext> where TContext : class {
     /// stream is measured against. A store where reset is nonsensical throws
     /// <see cref="NotSupportedException"/>.
     /// </summary>
-    protected abstract Task ResetAsync(TContext context, CancellationToken ct);
+    protected abstract ValueTask ResetAsync(TContext ctx, CancellationToken ct);
 
     [LoggerMessage(LogLevel.Information, "[migrate] FORCE RESET: store torn down, stream replays from zero")]
     partial void LogReset();
 
     [LoggerMessage(LogLevel.Debug, "[migrate] up to date at v{Version}")]
-    partial void LogUpToDate(int version);
+    partial void LogUpToDate(uint version);
 
-    [LoggerMessage(LogLevel.Information, "[migrate] v{CurrentVersion} -> v{TargetVersion}, {StepCount} step(s) pending")]
-    partial void LogMigrationStarting(int currentVersion, int targetVersion, int stepCount);
+    [LoggerMessage(LogLevel.Information, "[migrate] v{CurrentVersion} -> v{TargetVersion}, {StepCount} pending")]
+    partial void LogMigrationStarting(uint currentVersion, uint targetVersion, int stepCount);
 
-    [LoggerMessage(LogLevel.Debug, "[migrate] plan v{Version} {Name} ({Type})")]
-    partial void LogPlannedStep(int version, string name, MigrationStepType type);
+    [LoggerMessage(LogLevel.Debug, "[migrate] plan {Key}")]
+    partial void LogPlannedMigration(string key);
 
-    [LoggerMessage(LogLevel.Information, "[migrate] exec v{Version} {Name}")]
-    partial void LogExecutingMigration(int version, string name);
+    [LoggerMessage(LogLevel.Information, "[migrate] exec {Key}")]
+    partial void LogExecutingMigration(string key);
 
-    [LoggerMessage(LogLevel.Information, "[migrate] done v{Version} {Name} ({ElapsedMs}ms)")]
-    partial void LogMigrationCompleted(int version, string name, double elapsedMs);
+    [LoggerMessage(LogLevel.Information, "[migrate] done {Key} ({ElapsedMs}ms)")]
+    partial void LogMigrationCompleted(string key, double elapsedMs);
+
+    [LoggerMessage(LogLevel.Information, "[migrate] exec repeatable {Name}")]
+    partial void LogExecutingRepeatable(string name);
+
+    [LoggerMessage(LogLevel.Information, "[migrate] done repeatable {Name} ({ElapsedMs}ms)")]
+    partial void LogRepeatableCompleted(string name, double elapsedMs);
+
+    [LoggerMessage(LogLevel.Warning, "[migrate] repeatable {Name} failed; continuing")]
+    partial void LogRepeatableFailed(Exception ex, string name);
 }

@@ -39,7 +39,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///
     /// Recall's view of the world:
-    /// - retracted and superseded memories never surface
+    /// - superseded memories never surface
     /// - every requested tag must be present
     /// - results arrive nearest first: _distance, smaller = closer (squared L2 under the default metric)
     /// </summary>
@@ -88,7 +88,6 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                     validity_end,
                     retained_at,
                     last_accessed_at,
-                    retracted_at,
                     superseded_at,
                     superseded_by,
                     _distance
@@ -96,8 +95,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                                       k := $k,
                                       prefilter := $prefilter,
                                       refine_factor := $refine_factor{nprobs}{useIndex})
-             WHERE is_retracted = false
-               AND is_superseded = false{tagFilter}
+             WHERE is_superseded = false{tagFilter}
              ORDER BY _distance ASC
              LIMIT $limit
              """;
@@ -133,7 +131,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                         results.Add(new(
                             ReadStoredMemory(reader),
                             HybridScore: null,
-                            VectorDistance: Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture),
+                            VectorDistance: Convert.ToDouble(reader.GetValue(14), CultureInfo.InvariantCulture),
                             KeywordScore: null));
                     }
 
@@ -149,7 +147,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// Full-text search: ranks memories by keyword relevance (BM25) alone.
     ///
     /// Recall's view of the world:
-    /// - retracted and superseded memories never surface
+    /// - superseded memories never surface
     /// - every requested tag must be present
     /// - scores are BM25 _score: larger = better, corpus-relative — a gate, not a calibrated threshold
     /// </summary>
@@ -192,15 +190,13 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                    validity_end,
                    retained_at,
                    last_accessed_at,
-                   retracted_at,
                    superseded_at,
                    superseded_by,
                    _score
             FROM lance_fts('ldb.main.memories', 'content', $query,
                            k := $k,
                            prefilter := $prefilter)
-            WHERE is_retracted = false
-              AND is_superseded = false{tagFilter}
+            WHERE is_superseded = false{tagFilter}
             ORDER BY _score DESC
             LIMIT $limit
             """;
@@ -230,7 +226,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                             ReadStoredMemory(reader),
                             HybridScore: null,
                             VectorDistance: null,
-                            KeywordScore: Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture)));
+                            KeywordScore: Convert.ToDouble(reader.GetValue(14), CultureInfo.InvariantCulture)));
                     }
 
                     return results;
@@ -245,7 +241,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// Hybrid search: blends vector similarity and keyword relevance (BM25) for the query.
     ///
     /// Recall's view of the world:
-    /// - retracted and superseded memories never surface
+    /// - superseded memories never surface
     /// - every requested tag must be present
     /// - scores are Lance's _hybrid_score: larger = better, corpus-relative — a gate, not a calibrated threshold
     ///
@@ -303,7 +299,6 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                     validity_end,
                     retained_at,
                     last_accessed_at,
-                    retracted_at,
                     superseded_at,
                     superseded_by,
                     _distance,
@@ -316,8 +311,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                                       alpha := $alpha,
                                       refine_factor := $refine_factor,
                                       oversample_factor := $oversample_factor{nprobs}{useIndex})
-             WHERE is_retracted = false
-               AND is_superseded = false{tagFilter}
+             WHERE is_superseded = false{tagFilter}
              ORDER BY _hybrid_score DESC
              LIMIT $limit
              """;
@@ -355,9 +349,9 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                         // the row leaves its diagnostic column NULL — only the blend is always set.
                         results.Add(new(
                             ReadStoredMemory(reader),
-                            HybridScore: Convert.ToDouble(reader.GetValue(17), CultureInfo.InvariantCulture),
-                            VectorDistance: reader.IsDBNull(15) ? null : Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture),
-                            KeywordScore: reader.IsDBNull(16) ? null : Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture)));
+                            HybridScore: Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture),
+                            VectorDistance: reader.IsDBNull(14) ? null : Convert.ToDouble(reader.GetValue(14), CultureInfo.InvariantCulture),
+                            KeywordScore: reader.IsDBNull(15) ? null : Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture)));
                     }
 
                     return results;
@@ -368,7 +362,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
             yield return hit;
     }
 
-    /// <summary>The stored memory with the given id, or null. Never hides: retracted and superseded memories come back too.</summary>
+    /// <summary>The stored memory with the given id, or null. Never hides: superseded memories come back too.</summary>
     public async ValueTask<Contracts.StoredMemory?> GetAsync(string memoryId, CancellationToken ct = default) => 
         await GetAsync([memoryId], ct).FirstOrDefaultAsync(ct);
 
@@ -388,7 +382,6 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                    validity_end,
                    retained_at,
                    last_accessed_at,
-                   retracted_at,
                    superseded_at,
                    superseded_by
             FROM ldb.main.memories
@@ -466,7 +459,6 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                    validity_end,
                    retained_at,
                    last_accessed_at,
-                   retracted_at,
                    superseded_at,
                    superseded_by
             FROM ldb.main.memories
@@ -491,7 +483,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
 
     /// <summary>
     /// Lists memories by tags (ALL must be present) and types (any of), sorted and limited.
-    /// Retracted memories never come back; superseded ones stay readable history.
+    /// Superseded memories stay readable history.
     ///
     /// Ordering guarantees:
     /// - the order is always total — two identical calls return rows in the same order
@@ -546,12 +538,10 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                    validity_end,
                    retained_at,
                    last_accessed_at,
-                   retracted_at,
                    superseded_at,
                    superseded_by
             FROM ldb.main.memories
-            WHERE is_retracted = false
-              AND (len(CAST($types AS INTEGER[])) = 0 OR array_contains(CAST($types AS INTEGER[]), memory_type))
+            WHERE (len(CAST($types AS INTEGER[])) = 0 OR array_contains(CAST($types AS INTEGER[]), memory_type))
               AND (len(CAST($tags AS VARCHAR[])) = 0 OR array_has_all(tags, CAST($tags AS VARCHAR[])))
             ORDER BY (CASE $sort_key
                         WHEN 'importance'       THEN importance::DOUBLE
@@ -619,7 +609,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     }
 
     // The evidence wire encoding shared with the projector: one citation per VARCHAR[] element, as
-    // protobuf canonical JSON (see the column's note in KontextSchemaTask).
+    // protobuf canonical JSON (see the column's note in MemoriesInitialSchema).
     public static string EncodeEvidence(Contracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
 
     public static Contracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<Contracts.Evidence>(encoded);
@@ -650,7 +640,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     // Reads one row POSITIONALLY, in the SELECT column order, off the validated wire shapes (KB):
     // - VARCHAR[] arrives as List<string>
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
-    // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in KontextSchemaTask)
+    // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in MemoriesInitialSchema)
     // - timestamps are BIGINT Unix epoch milliseconds (UTC) — the schema's one stated rule
     static Contracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
         var stored = new Contracts.StoredMemory {
@@ -661,7 +651,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
             Reasoning      = reader.GetString(5),
             RetainedAt     = DecodeTimestamp(reader, 10),
             LastAccessedAt = DecodeTimestamp(reader, 11),
-            SupersededBy   = reader.GetString(14),
+            SupersededBy   = reader.GetString(13),
         };
 
         stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(4)).Select(DecodeTag));
@@ -679,10 +669,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
         }
 
         if (!reader.IsDBNull(12))
-            stored.RetractedAt = DecodeTimestamp(reader, 12);
-
-        if (!reader.IsDBNull(13))
-            stored.SupersededAt = DecodeTimestamp(reader, 13);
+            stored.SupersededAt = DecodeTimestamp(reader, 12);
 
         return stored;
     }

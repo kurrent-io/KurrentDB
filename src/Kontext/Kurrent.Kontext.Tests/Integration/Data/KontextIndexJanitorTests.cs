@@ -3,6 +3,7 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.LanceDB;
 using Kurrent.Quack;
 using Microsoft.Extensions.Time.Testing;
 
@@ -15,7 +16,7 @@ namespace Kurrent.Kontext.Tests.Data;
 ///   host wires, driving ticks deterministically with TickNowAsync (plus one real-timer smoke test)
 /// </summary>
 [Category("Integration")]
-public class KontextMaintenanceSchedulerTests {
+public class KontextIndexJanitorTests {
 	static readonly DateTimeOffset Now = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
 	#region ->> Decide <<-
@@ -99,7 +100,7 @@ public class KontextMaintenanceSchedulerTests {
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(dataSources.Exists("memories")).IsFalse();
+		await Assert.That(dataSources.Execute(c => c.GetTableInfo("ldb.main.memories") is not null)).IsFalse();
 	}
 
 	[Test]
@@ -161,7 +162,7 @@ public class KontextMaintenanceSchedulerTests {
 			RetrainInterval = TimeSpan.FromHours(24),
 		};
 
-		using var scheduler = new KontextMaintenanceScheduler(dataSources, options, clock);
+		using var scheduler = new KontextIndexJanitor(dataSources, options, clock);
 
 		// The creation tick also starts the retrain clock (a creation IS a full train).
 		await scheduler.TickNowAsync();
@@ -190,11 +191,11 @@ public class KontextMaintenanceSchedulerTests {
 
 		await MemorySeeding.CreateSchema(dataSources);
 		SeedFillers(dataSources, 300, "r");
-		await Assert.That(dataSources.EnsureVectorIndex("memories", "embedding")).IsTrue();
+		await Assert.That(dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
 
 		// Act
-		dataSources.RetrainVectorIndex("memories", "embedding");
-		dataSources.Compact("memories");
+		dataSources.Execute(c => c.OptimizeIndex("ldb.main.memories", LanceIndexNames.Vector("embedding"), options => options.Mode = LanceOptimizeMode.Retrain));
+		dataSources.Execute(c => c.CompactTable("ldb.main.memories"));
 
 		// Assert
 		await Assert.That(Snapshot(dataSources)).IsEqualTo((300L, (string?)"embedding_ivx", (long?)300L));
@@ -214,7 +215,7 @@ public class KontextMaintenanceSchedulerTests {
 		scheduler.Dispose(); // double-dispose is equally safe
 
 		// Assert
-		await Assert.That(dataSources.Exists("memories")).IsFalse();
+		await Assert.That(dataSources.Execute(c => c.GetTableInfo("ldb.main.memories") is not null)).IsFalse();
 	}
 
 	[Test]
@@ -232,7 +233,7 @@ public class KontextMaintenanceSchedulerTests {
 			UnindexedRatioThreshold = 0.01,
 		};
 
-		using var scheduler = new KontextMaintenanceScheduler(dataSources, options);
+		using var scheduler = new KontextIndexJanitor(dataSources, options);
 
 		// Act + Assert
 		await Assert.That(await PollAsync(dataSources, expected: (300L, "embedding_ivx", 300L), TimeSpan.FromSeconds(10))).IsTrue();
@@ -258,14 +259,15 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = NewScheduler(dataSources);
 
-		var before = dataSources.GetFtsIndexInfo("memories");
-		await Assert.That((before.Name, before.UnindexedRows)).IsEqualTo(("content_fts", 300L));
+		var before = dataSources.Execute(c => c.GetTableInfo("ldb.main.memories"))!;
+
+		await Assert.That((before.FindIndex("content_fts")!.Name, before.UnindexedRows("content_fts"))).IsEqualTo(("content_fts", 300L));
 
 		// Act
 		await scheduler.TickNowAsync();
 
 		// Assert
-		var after = dataSources.GetFtsIndexInfo("memories");
+		var after = dataSources.Execute(c => c.GetTableInfo("ldb.main.memories")!.FindIndex(LanceIndexNames.Inverted("content")));
 
 		await Assert.That((after.Name, after.RowsIndexed)).IsEqualTo(("content_fts", (long?)300L));
 	}
@@ -313,7 +315,7 @@ public class KontextMaintenanceSchedulerTests {
 		await scheduler.TickNowAsync();
 
 		// Assert
-		await Assert.That(dataSources.GetFtsIndexInfo("memories").RowsIndexed).IsEqualTo(350L);
+		await Assert.That(dataSources.Execute(c => c.GetTableInfo("ldb.main.memories")!.FindIndex(LanceIndexNames.Inverted("content"))).RowsIndexed).IsEqualTo(350L);
 	}
 
 	#endregion // FTS Fold
@@ -324,7 +326,7 @@ public class KontextMaintenanceSchedulerTests {
 	static KontextMaintenanceAction Decide(long totalRows, long? vectorIndexRows, KontextMaintenanceOptions options, bool retrainDue) {
 		var lastRetrain = retrainDue ? Now - options.RetrainInterval - TimeSpan.FromDays(1) : Now;
 
-		return KontextMaintenanceScheduler.Decide(
+		return KontextIndexJanitor.Decide(
 			totalRows, vectorIndexRows, options,
 			lastRetrain, Now);
 	}
@@ -337,7 +339,7 @@ public class KontextMaintenanceSchedulerTests {
 		};
 
 	/// <summary>An eager scheduler for deterministic ticks: any backlog folds, and the real timer never fires mid-test.</summary>
-	static KontextMaintenanceScheduler NewScheduler(KontextDataSource dataSources) =>
+	static KontextIndexJanitor NewScheduler(KontextDataSource dataSources) =>
 		new(
 			dataSources, new() {
 				TickInterval            = TimeSpan.FromHours(1),
@@ -360,10 +362,13 @@ public class KontextMaintenanceSchedulerTests {
 	}
 
 	/// <summary>The (TotalRows, Name, RowsIndexed) projection the assertions compare — Details JSON is engine noise.</summary>
-	static (long, string?, long?) Snapshot(KontextDataSource dataSources) {
-		var info = dataSources.GetVectorIndexInfo("memories");
-		return (info.TotalRows, info.Name, info.RowsIndexed);
-	}
+	static (long, string?, long?) Snapshot(KontextDataSource dataSources) =>
+		dataSources.Execute(connection => {
+			var info  = connection.GetTableInfo("ldb.main.memories")!;
+			var index = info.FindIndex(LanceIndexNames.Vector("embedding"));
+
+			return (info.RowCount, index?.Name, index?.RowsIndexed);
+		});
 
 	static (long, string?, long?)? TryReadState(KontextDataSource dataSources) {
 		try {
@@ -396,8 +401,6 @@ public class KontextMaintenanceSchedulerTests {
 			   validity_end,
 			   retained_at,
 			   last_accessed_at,
-			   is_retracted,
-			   retracted_at,
 			   is_superseded,
 			   superseded_at,
 			   superseded_by,
@@ -416,10 +419,8 @@ public class KontextMaintenanceSchedulerTests {
 			        epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
 			        false,
 			        NULL,
-			        false,
-			        NULL,
 			        '',
-			        CAST(list_transform(range({KontextSchemaTask.Dimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextSchemaTask.Dimension}])
+			        CAST(list_transform(range({KontextIndexConstants.VectorsDimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])
 			 FROM range({count}) AS t(i)
 			 """;
 
@@ -453,8 +454,6 @@ public class KontextMaintenanceSchedulerTests {
 			   validity_end,
 			   retained_at,
 			   last_accessed_at,
-			   is_retracted,
-			   retracted_at,
 			   is_superseded,
 			   superseded_at,
 			   superseded_by,
@@ -473,10 +472,8 @@ public class KontextMaintenanceSchedulerTests {
 			        epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
 			        false,
 			        NULL,
-			        false,
-			        NULL,
 			        '',
-			        CAST(list_transform(range({KontextSchemaTask.Dimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextSchemaTask.Dimension}])
+			        CAST(list_transform(range({KontextIndexConstants.VectorsDimension}), lambda x: CAST(cos(x + i) AS FLOAT)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])
 			 FROM range({count}) AS t(i)
 			 """;
 

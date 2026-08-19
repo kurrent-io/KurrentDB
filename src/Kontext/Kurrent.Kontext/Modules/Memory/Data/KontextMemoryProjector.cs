@@ -80,7 +80,7 @@ public sealed class KontextMemoryProjector(
 
         // The dimension is the schema's — the FLOAT[N] column type and the writer's cast must
         // agree, and both come from KontextSchemaTask.Dimension.
-        var writer = new KontextMemoryWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
+        var writer = new KontextMemoryWriter(connection, embeddings, new() { Dimensions = KontextIndexConstants.VectorsDimension });
 
         // Only used when no checkpoint exists yet — resumption always wins. Earliest, unlike the
         // schema registry's Latest: the read model is rebuildable, so a fresh node projects the

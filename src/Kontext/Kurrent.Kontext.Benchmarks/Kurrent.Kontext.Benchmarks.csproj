@@ -21,6 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- bge-m3 is too large to embed, so BgeM3 opens it from disk. The glob is empty until the
+         model is downloaded with -p:KontextIncludeBgeM3=true, which keeps the benchmark buildable
+         without it. -->
+    <None Include="..\..\KurrentDB.Kontext.Models\bgem3\*" LinkBase="Models\bgem3" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Kurrent.Kontext\Kurrent.Kontext.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Testing\Kurrent.Kontext.Testing.csproj" />

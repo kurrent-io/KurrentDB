@@ -15,7 +15,6 @@
   <data name="server.instructions" xml:space="preserve">
     <value>Kontext is your long-term memory, spoken in six verbs:
 - Retain (store something worth remembering)
-- Retract (take back what should never have existed)
 - Recall (search by meaning)
 - Reclaim (fetch by id)
 - Recollect (browse by type/tag)
@@ -23,7 +22,7 @@
 
 Recall before you guess — re-deriving something you already learned is the expensive path.
 Retain the moment you learn something durable, written to stand on its own.
-To correct a memory, retain the correction with supersedes; retract only what should never have existed.
+To correct a memory, retain the correction with supersedes.
 Reflect periodically, when observations pile up — not on every turn.</value>
   </data>
   <data name="tool.recall" xml:space="preserve">
@@ -32,7 +31,7 @@ this before you act on something you might already know: at the start of a task,
 or preference comes up that you may have seen before, or any time you'd otherwise guess. Recalling is cheap;
 re-deriving something you already learned — or silently contradicting a past decision — is not. Results come back
 ranked best-first: treat the order as the system's confidence and each memory's type as how far to trust it (a
-firsthand OBSERVATION outranks HEARSAY picked up in conversation). Only what is currently true surfaces — retracted
+firsthand OBSERVATION outranks HEARSAY picked up in conversation). Only what is currently true surfaces — superseded
 and superseded memories never do. Side effect worth knowing: recalling a memory keeps it salient (refreshes its
 recency clock), so the things you actually use stay near the top over time. Recall freely.</value>
   </data>
@@ -47,26 +46,26 @@ recency clock), so the things you actually use stay near the top over time. Reca
     <value>Fetch exact memories by id — not recall (that's by meaning), not recollect (that's by type/tag). Use it for
 progressive disclosure: when an earlier result (a recall hit, a reflection) handed you only ids and you now want the
 complete folded records, provenance (evidence, reasoning) included. Not a search and no ranking — you get exactly the
-ids you asked for, including retracted or superseded records (you asked by id, so they are not hidden here). Ids that
+ids you asked for, including superseded records (you asked by id, so they are not hidden here). Ids that
 don't exist are simply absent from the result, never an error — diff the returned ids against what you asked for to
 see which missed. Like recall, reclaiming refreshes the recency clock of the memories it returns.</value>
   </data>
   <data name="tool.recollect" xml:space="preserve">
     <value>Browse your memories by structure, not relevance — not recall (that ranks by meaning), not reclaim (that's by id).
-Use it to enumerate or gather a filtered set — "all my PLANs tagged project::engram", "everything I retracted this
+Use it to enumerate or gather a filtered set — "all my PLANs tagged project::engram", "everything I retained this
 week" — where you want a list, not a ranked answer to a question. The types filter is any-of (empty = any type); all
-supplied tags must be present. Retracted memories are never returned (they were mistakes; only reclaim by exact id
+supplied tags must be present.
 still surfaces them). Ordered by sort
 (default: newest-retained first); reverse with direction. Read-only.</value>
   </data>
   <data name="tool.reflect" xml:space="preserve">
     <value>Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED memories from what it
 finds — a FACT, PROCEDURE, PROFILE, SUMMARY, or PLAN that cites the memories it rests on — and may supersede or
-retract the ones the new insight subsumes. Reflection is the operation that produces derived memories; there is no
+supersede the ones the new insight subsumes. Reflection is the operation that produces derived memories; there is no
 "reflection" memory type. Reach for it periodically, when a pile of observations wants to become a durable
-conclusion — not on every turn. Writes new memories and is destructive (may retract/supersede); long-running —
+conclusion — not on every turn. Writes new memories and is destructive (may supersede); long-running —
 expect it to complete asynchronously rather than return instantly. Not idempotent. Returns the ids it synthesized,
-superseded, and retracted.</value>
+and superseded.</value>
   </data>
   <data name="tool.reflect.param.options" xml:space="preserve">
     <value>Optional correlation id and tag scoping. Null ⇒ the server assigns an id and reflects over everything.</value>
@@ -89,30 +88,12 @@ one you store and returns them in related, nearest first. It does not merge, blo
 reports, YOU decide. Reading related is part of making this call, not a courtesy. When a neighbour matches what you just
 stored: if you brought NEW SUPPORT (a second encounter, a different source), retain a successor with supersedes on it,
 carrying the union of its citations and yours — re-encountering a belief is corroboration and worth recording; if you
-brought NOTHING NEW, retract the copy you just created with reason "duplicate of {id}".
 
 Additive and always creates: retaining the same content twice creates two memories, which is exactly why you must act on
 related. Returns one result per memory, in order, with its server-assigned id and its neighbours.</value>
   </data>
-  <data name="tool.retract" xml:space="preserve">
-    <value>Take back a memory that should not exist at all — it was never true, or it must be forgotten. FIRST ASK: is there a
-corrected memory to replace it? If yes, do NOT retract — retain the correction with supersedes instead; that is the
-common case ("I know better now"), keeps the old one as readable history, and the successor wins on recency. Retract
-is the narrow escape hatch for what supersede cannot express: wrong with no replacement (avoids inventing an
-anti-fact), a forget-me removal (privacy/PII), or when memories derived from this one must go with it. It CASCADES —
-a summary that cited this memory is retracted too, its evidence having vanished — and it is the only hide primitive:
-retracted memories stop surfacing in recall and recollect; only reclaim by exact id still returns them. Idempotent;
-nothing is physically deleted. Returns this memory's id plus everything the cascade removed.</value>
-  </data>
-  <data name="tool.retract.param.reason" xml:space="preserve">
-    <value>Why you're taking this back (e.g. "user corrected me", "verified false in commit abc"). Encouraged: it is the
-only record of why the memory is gone, it stops you relitigating it later, and it explains the cascade.</value>
-  </data>
   <data name="tool.retain.param.memories" xml:space="preserve">
     <value>One or more memories to store — each written to stand on its own.</value>
-  </data>
-  <data name="tool.retract.param.memoryId" xml:space="preserve">
-    <value>The memory to take back.</value>
   </data>
   <data name="tool.reclaim.param.ids" xml:space="preserve">
     <value>The exact memory ids to fetch back.</value>
@@ -429,13 +410,10 @@ rather than arbitrary ones.</value>
     <value>Scope the reflection to memories carrying these tags; empty ⇒ range over all.</value>
   </data>
   <data name="type.ReflectResult" xml:space="preserve">
-    <value>Result of a reflect pass: the ids it synthesized, superseded, and retracted.</value>
+    <value>Result of a reflect pass: the ids it synthesized, and superseded.</value>
   </data>
   <data name="type.ReflectResult.queryId" xml:space="preserve">
     <value>Correlates to the reflect call — supplied on the request, or server-assigned.</value>
-  </data>
-  <data name="type.ReflectResult.retractedMemoryIds" xml:space="preserve">
-    <value>Ids of memories retracted.</value>
   </data>
   <data name="type.ReflectResult.supersededMemoryIds" xml:space="preserve">
     <value>Ids of memories superseded.</value>
@@ -467,12 +445,6 @@ rather than arbitrary ones.</value>
   <data name="type.RetainedMemory.related" xml:space="preserve">
     <value>Advisory, populated only when retain was asked to reconcile: existing memories this one looks to duplicate or
 contradict, nearest first.</value>
-  </data>
-  <data name="type.RetractResult" xml:space="preserve">
-    <value>Result of a retract — the memory plus every derived memory removed by the cascade.</value>
-  </data>
-  <data name="type.RetractResult.retractedMemoryIds" xml:space="preserve">
-    <value>The retracted memory plus every derived memory removed by the cascade.</value>
   </data>
   <data name="type.SortDirection" xml:space="preserve">
     <value>Sort direction for a recollect listing.
@@ -510,9 +482,6 @@ and write models evolve independently.</value>
   </data>
   <data name="type.StoredMemory.retainedAt" xml:space="preserve">
     <value>When the memory was retained.</value>
-  </data>
-  <data name="type.StoredMemory.retractedAt" xml:space="preserve">
-    <value>When the memory was retracted, if it was.</value>
   </data>
   <data name="type.StoredMemory.supersededAt" xml:space="preserve">
     <value>When a newer memory superseded this one, if any.</value>

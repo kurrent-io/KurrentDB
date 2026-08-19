@@ -18,11 +18,6 @@ public sealed class KontextMemoryValidationDecorator(IKontextMemory inner, Reque
         return inner.RetainAsync(request, ct);
     }
 
-    public ValueTask<Contracts.RetractResponse> RetractAsync(Contracts.RetractRequest request, CancellationToken ct = default) {
-        validation.Validate(request);
-        return inner.RetractAsync(request, ct);
-    }
-
     public ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
         validation.Validate(request);
         return inner.RecallAsync(request, ct);

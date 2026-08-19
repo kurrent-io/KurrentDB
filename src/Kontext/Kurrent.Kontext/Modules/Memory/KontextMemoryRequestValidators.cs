@@ -41,16 +41,6 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
     }
 }
 
-public sealed class RetractRequestValidator : RequestValidator<Contracts.RetractRequest> {
-    public RetractRequestValidator() {
-        RuleFor(x => x.MemoryId)
-            .NotEmpty()
-            .WithMessage("memory_id is required.")
-            .Must(MemoryRequestRules.Guid)
-            .WithMessage("memory_id must be a valid UUID.");
-    }
-}
-
 public sealed class RecallRequestValidator : RequestValidator<Contracts.RecallRequest> {
     public RecallRequestValidator() {
         RuleFor(x => x.Query)

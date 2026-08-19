@@ -36,6 +36,15 @@ public class JsonNormalizerTests {
 	}
 
 	[Test]
+	[Arguments("")]
+	[Arguments("   ")]
+	[Arguments("\r\n\t ")]
+	public async ValueTask returns_null_when_there_is_nothing_to_normalize(string payload) {
+		// Act + Assert
+		await Assert.That(JsonNormalizer.Instance.Normalize(Encoding.UTF8.GetBytes(payload))).IsNull();
+	}
+
+	[Test]
 	public async ValueTask passes_malformed_json_through_unchanged() {
 		// Arrange
 		const string broken = """{"toolName": "bash", "unterminated""";

@@ -9,10 +9,21 @@ namespace Kurrent.Kontext.Testing;
 
 /// <summary>
 /// Seeds the memories read model exactly how the projector will write it. The write path is not
-/// built yet, so the integration suites create the schema through <see cref="KontextSchemaTask"/>
+/// built yet, so the integration suites create the schema through <see cref="KontextMigrations"/>
 /// and insert rows directly with SQL.
 /// </summary>
 public static class MemorySeeding {
+	/// <summary>
+	/// A seed vector at the schema's width: the given leading components, zero-padded to
+	/// <see cref="KontextIndexConstants.VectorsDimension"/>. Fixtures place rows on distinct
+	/// leading axes so distances stay deterministic; the padding only makes the width legal.
+	/// </summary>
+	public static float[] Vector(params float[] leading) {
+		var vector = new float[KontextIndexConstants.VectorsDimension];
+		leading.CopyTo(vector, 0);
+		return vector;
+	}
+
 	public static KontextDataSource NewDataSources(string dir) =>
 		new(dir, $"{dir}.tmp", Path.Combine(dir, "kurrent.ddb"));
 
@@ -25,11 +36,12 @@ public static class MemorySeeding {
 	}
 
 	/// <summary>
-	/// Creates the tables and every eager index — the migration step owns all DDL, including the FTS
-	/// INVERTED index the keyword leg needs.
+	/// Creates the tables and every eager index — the migrations own all DDL, including the FTS
+	/// INVERTED index the keyword leg needs. Runs the same engine the host runs, so the suites
+	/// exercise the real stream rather than a parallel copy of the DDL.
 	/// </summary>
 	public static ValueTask CreateSchema(KontextDataSource dataSource) =>
-		new(new KontextSchemaTask().ExecuteAsync(dataSource));
+		KontextMigrations.CreateEngine(dataSource).EnsureAsync();
 
 	/// <summary>Inserts rows into an already-created schema; a corpus seeds across several calls.</summary>
 	public static void Insert(KontextDataSource dataSource, params MemoryRow[] rows) {
@@ -73,8 +85,6 @@ public static class MemorySeeding {
 		("validity_end",     row => row.ValidityEnd?.ToUnixTimeMilliseconds()),
 		("retained_at",      row => row.RetainedAt.ToUnixTimeMilliseconds()),
 		("last_accessed_at", row => (row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds()),
-		("is_retracted",     row => row.IsRetracted),
-		("retracted_at",     row => row.RetractedAt?.ToUnixTimeMilliseconds()),
 		("is_superseded",    row => row.IsSuperseded),
 		("superseded_at",    row => row.SupersededAt?.ToUnixTimeMilliseconds()),
 		("superseded_by",    row => row.SupersededBy),
@@ -91,18 +101,16 @@ public sealed record MemoryRow(
 	DateTimeOffset             RetainedAt
 ) {
 	/// <summary>
-	/// Inert unless the pipeline has a vector leg; the default just keeps the row well-formed.
-	/// Suites that rank on vectors set it.
+	/// Inert unless the pipeline has a vector leg; the default just keeps the row well-formed at
+	/// the schema's width. Suites that rank on vectors set it.
 	/// </summary>
-	public float[]         Embedding      { get; init; } = [1f, 0f, 0f, 0f];
+	public float[]         Embedding      { get; init; } = MemorySeeding.Vector(1f);
 
 	public List<string>    Tags           { get; init; } = [];
 	public List<string>    Evidence       { get; init; } = [];
 	public DateTimeOffset? ValidityStart  { get; init; }
 	public DateTimeOffset? ValidityEnd    { get; init; }
 	public DateTimeOffset? LastAccessedAt { get; init; }
-	public bool            IsRetracted    { get; init; }
-	public DateTimeOffset? RetractedAt    { get; init; }
 	public bool            IsSuperseded   { get; init; }
 	public DateTimeOffset? SupersededAt   { get; init; }
 	public string          SupersededBy   { get; init; } = "";

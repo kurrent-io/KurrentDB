@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins;
+using Kurrent.Kontext;
 using Kurrent.Kontext.Modules.Memory;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Hosting;
