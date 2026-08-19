@@ -47,7 +47,12 @@ partial class RaftKontroller {
 			init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}
 
-		public required TimeSpan AppointmentDuration {
+		public required TimeSpan HeartbeatTimeout {
+			get;
+			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
+		}
+
+		public required TimeSpan CandidateTimeout {
 			get;
 			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}

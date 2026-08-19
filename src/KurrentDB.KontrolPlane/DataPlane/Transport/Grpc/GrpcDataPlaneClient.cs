@@ -20,12 +20,13 @@ public abstract partial class GrpcDataPlaneClient : Disposable, IDataPlane {
 	/// <returns>The network channel that encapsulates the socket.</returns>
 	protected abstract IDisposable CreateChannel(EndPoint address, out CallInvoker invoker);
 
-	public ValueTask<ReplicaState> GetReplicaStateAsync(EndPoint address, CancellationToken token)
-		=> GetReplicaStateAsync(GetClient(address), token);
+	public ValueTask<ReplicaState> FenceAsync(EndPoint address, ulong currentEpoch, CancellationToken token)
+		=> FenceAsync(GetClient(address), currentEpoch, token);
 
-	private static async ValueTask<ReplicaState> GetReplicaStateAsync(DataPlaneNode.DataPlaneNodeClient client,
+	private static async ValueTask<ReplicaState> FenceAsync(DataPlaneNode.DataPlaneNodeClient client,
+		ulong currentEpoch,
 		CancellationToken token) {
-		var response = await client.GetReplicaStateAsync(new Empty(), cancellationToken: token);
+		var response = await client.FenceAsync(new() { CurrentEpoch = currentEpoch }, cancellationToken: token);
 		return response.ToEntity();
 	}
 }

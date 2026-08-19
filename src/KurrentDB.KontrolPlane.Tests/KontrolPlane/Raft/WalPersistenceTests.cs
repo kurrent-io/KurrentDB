@@ -16,7 +16,8 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 	public async Task SnapshotPersistence() {
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
-			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
+			             HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
+			             CandidateTimeout = TimeSpan.FromDays(1),
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,
@@ -37,7 +38,8 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 		// Recover persistent state
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
-			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
+			             HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
+			             CandidateTimeout = TimeSpan.FromDays(2),
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,
@@ -56,7 +58,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
 	private sealed class TestDataPlane : IDataPlane {
-		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+		ValueTask<ReplicaState> IDataPlane.FenceAsync(EndPoint address, ulong currentEpoch, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
 
 		ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;

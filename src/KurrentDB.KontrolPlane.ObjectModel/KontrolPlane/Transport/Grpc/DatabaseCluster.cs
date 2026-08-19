@@ -11,7 +11,8 @@ partial class DatabaseCluster {
 		Epoch = cluster.Epoch;
 		Id = cluster.Id;
 		Description = cluster.Description;
-		LeaderAppointmentDuration = cluster.LeaderAppointmentDuration.Ticks;
+		HeartbeatTimeout = cluster.HeartbeatTimeout.Ticks;
+		CandidateTimeout = cluster.CandidateTimeout.Ticks;
 		foreach (var databaseNode in cluster.Nodes) {
 			Nodes.Add(new DatabaseNode(databaseNode));
 		}
@@ -20,7 +21,8 @@ partial class DatabaseCluster {
 	public KontrolPlane.DatabaseCluster ToEntity() => new() {
 		Id = Id,
 		Description = Description,
-		LeaderAppointmentDuration = new(LeaderAppointmentDuration),
+		HeartbeatTimeout = new(HeartbeatTimeout),
+		CandidateTimeout = new(CandidateTimeout),
 		LeaderAddress = DatabaseLeader.IsEmpty ? null : DatabaseLeader.ToEndPoint(),
 		Epoch = Epoch,
 		Nodes = [.. Nodes.Select(static n => n.ToEntity())]

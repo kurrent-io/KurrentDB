@@ -13,7 +13,8 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	public RaftKontrollerTests() {
 		_kontroller = new(new RaftKontroller.Options {
 			ListenAddress = Address,
-			AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
+			HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
+			CandidateTimeout = TimeSpan.FromDays(2),
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {
@@ -222,7 +223,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
 	private sealed class TestDataPlane : IDataPlane {
-		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+		ValueTask<ReplicaState> IDataPlane.FenceAsync(EndPoint address, ulong currentEpoch, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
 
 		ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;

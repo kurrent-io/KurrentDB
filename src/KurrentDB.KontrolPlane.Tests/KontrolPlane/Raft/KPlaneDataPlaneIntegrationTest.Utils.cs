@@ -69,9 +69,11 @@ partial class KPlaneDataPlaneIntegrationTest {
 		}
 	}
 
-	private static async Task WaitForRegisteredNodesAsync(IDatabaseNode node, IReadOnlySet<EndPoint> expectedAddresses, CancellationToken token) {
-		await foreach (var members in node.GetDatabaseMembershipChangesAsync(token)) {
-			if (expectedAddresses.SetEquals(members.Select(static m => m.Address)))
+	private static async Task WaitForRegisteredNodesAsync(IAsyncEnumerable<DatabaseCluster> snapshots,
+		IReadOnlySet<EndPoint> expectedAddresses,
+		CancellationToken token) {
+		await foreach (var members in snapshots.WithCancellation(token)) {
+			if (expectedAddresses.SetEquals(members.Nodes.Select(static m => m.Address)))
 				return;
 		}
 	}
@@ -116,11 +118,6 @@ partial class KPlaneDataPlaneIntegrationTest {
 		protected override EndPoint GetApiEndPoint(EndPoint nodeEndPoint) => ToGrpcEndPoint(nodeEndPoint);
 	}
 
-	private sealed class TestDatabaseNodeHost(DatabaseNodeHost.Options options, ReplicaState replicaState) : DatabaseNodeHost(options) {
-		protected override ValueTask<ReplicaState> GetReplicaStateAsync(CancellationToken token)
-			=> ValueTask.FromResult(replicaState);
-	}
-
 	// A single Kontrol Plane node: a real RaftKontroller (Raft consensus over real TCP) plus a real
 	// Kestrel-hosted gRPC KontrollerServer, so the Data Plane side talks to it exactly as it would in production.
 	private sealed class KPlaneNode : IAsyncDisposable {
@@ -140,7 +137,8 @@ partial class KPlaneDataPlaneIntegrationTest {
 
 			var kontroller = new RaftKontroller(new RaftKontroller.Options {
 				ListenAddress = raftAddress,
-				AppointmentDuration = appointmentDuration,
+				HeartbeatTimeout = appointmentDuration,
+				CandidateTimeout = appointmentDuration * 2,
 				ConnectionPoolCapacity = 10,
 				PersistentStateRoot = stateRoot,
 				Nodes = raftSeed,
@@ -189,21 +187,24 @@ partial class KPlaneDataPlaneIntegrationTest {
 
 	// A single Data Plane node: a real DatabaseNodeHost plus a real Kestrel-hosted gRPC DataPlaneServer,
 	// exposed on the address the Kontrol Plane will use to query its replica state.
-	private sealed class DPNode(TestDatabaseNodeHost host, WebApplication webApp) : IAsyncDisposable {
-		public IDatabaseNode Host => host;
+	private sealed class DPNode(TestDatabaseStateHandler handler, DatabaseManager manager, WebApplication webApp) : IAsyncDisposable {
+		public DatabaseManager Manager => manager;
+		public TestDatabaseStateHandler Handler => handler;
 
 		public static async Task<DPNode> StartAsync(
 			DatabaseNode currentNode,
 			IReadOnlySet<EndPoint> kontrolPlaneNodes,
 			ReplicaState replicaState,
 			CancellationToken token) {
-			var host = new TestDatabaseNodeHost(new DatabaseNodeHost.Options { CurrentNode = currentNode }, replicaState) {
+			var handler = new TestDatabaseStateHandler(currentNode, replicaState);
+			var host = new DatabaseManager(new()) {
 				KontrolPlane = new RealGrpcKontrolPlaneClient { KontrolPlaneNodes = kontrolPlaneNodes },
+				DatabaseHandler = handler,
 			};
 
 			var builder = WebApplication.CreateBuilder();
 			builder.WebHost.ConfigureKestrel(o => o.Listen((IPEndPoint)currentNode.Address, lo => lo.Protocols = HttpProtocols.Http2));
-			builder.Services.AddSingleton<DatabaseNodeHost>(host);
+			builder.Services.AddSingleton<DatabaseManager>(host);
 			builder.Services.AddGrpc();
 
 			var app = builder.Build();
@@ -212,11 +213,11 @@ partial class KPlaneDataPlaneIntegrationTest {
 
 			await host.StartAsync(token);
 
-			return new(host, app);
+			return new(handler, host, app);
 		}
 
 		public async ValueTask DisposeAsync() {
-			await host.StopAsync(CancellationToken.None);
+			await manager.StopAsync(CancellationToken.None);
 			await webApp.StopAsync();
 			await webApp.DisposeAsync();
 		}

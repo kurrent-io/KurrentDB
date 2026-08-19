@@ -1,0 +1,18 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+namespace KurrentDB.DataPlane;
+
+using KontrolPlane;
+
+internal interface IDatabaseStateMachine {
+	void MoveToLeaderState(WeakReference<CandidateState> callerState);
+
+	void MoveToFrozenState(WeakReference<DatabaseState> callerState);
+
+	IAsyncEnumerable<DatabaseCluster> DatabaseChanges { get; }
+
+	IKontrolPlane KontrolPlane { get; }
+
+	IDatabaseStateHandler DatabaseHandler { get; }
+}

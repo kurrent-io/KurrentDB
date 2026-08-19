@@ -3,22 +3,8 @@
 
 namespace KurrentDB.DataPlane;
 
-using KontrolPlane;
-
-partial class DatabaseNodeHost {
+partial class DatabaseManager {
 	public class Options {
-		private static readonly TimeSpan DefaultPollingPeriod = TimeSpan.FromSeconds(1);
-
-		public TimeSpan PollingPeriod {
-			get;
-			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
-		} = DefaultPollingPeriod;
-
-		public required DatabaseNode CurrentNode {
-			get;
-			init;
-		}
-
 		public double RenewalRate {
 			get;
 			init => field = !double.IsNaN(value) && value is > 0D and < 1D ? value : throw new ArgumentOutOfRangeException(nameof(value));

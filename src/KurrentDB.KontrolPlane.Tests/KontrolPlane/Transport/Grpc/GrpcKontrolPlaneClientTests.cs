@@ -42,7 +42,7 @@ public class GrpcKontrolPlaneClientTests {
 		var cluster = new KontrolPlane.DatabaseCluster {
 			Id = Database.MainDatabaseId,
 			LeaderAddress = new IPEndPoint(IPAddress.Loopback, 3113),
-			LeaderAppointmentDuration = TimeSpan.FromSeconds(30),
+			HeartbeatTimeout = TimeSpan.FromSeconds(30),
 		};
 
 		// nodeA is not the leader anymore, it redirects the caller to nodeB

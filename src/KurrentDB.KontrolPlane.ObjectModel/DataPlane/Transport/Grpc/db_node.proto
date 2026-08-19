@@ -2,16 +2,19 @@ syntax = "proto3";
 
 package kurrent.data_plane;
 
-import "google/protobuf/empty.proto";
-
 option csharp_namespace = "KurrentDB.DataPlane.Transport.Grpc";
 
 service DataPlaneNode
 {
-  rpc GetReplicaState(google.protobuf.Empty) returns (GetReplicaStateResponse);
+  rpc Fence(FenceRequest) returns (FenceResponse);
 }
 
-message GetReplicaStateResponse
+message FenceRequest
+{
+  uint64 currentEpoch = 1;
+}
+
+message FenceResponse
 {
   uint64 epoch = 1;
   int64 writerCheckpoint = 2;

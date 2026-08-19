@@ -10,8 +10,8 @@ namespace KurrentDB.DataPlane.Transport.Grpc;
 /// Represents Data Plane node gRPC server.
 /// </summary>
 /// <param name="host"></param>
-public sealed class GrpcDataPlaneServer(DatabaseNodeHost host) : DataPlaneNode.DataPlaneNodeBase {
-	public override async Task<GetReplicaStateResponse> GetReplicaState(Empty request, ServerCallContext context) {
-		return new(await host.GetReplicaStateAsync(context.CancellationToken));
+public sealed class GrpcDataPlaneServer(DatabaseManager host) : DataPlaneNode.DataPlaneNodeBase {
+	public override async Task<FenceResponse> Fence(FenceRequest request, ServerCallContext context) {
+		return new(await host.FenceAsync(request.CurrentEpoch, context.CancellationToken));
 	}
 }

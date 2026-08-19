@@ -17,7 +17,8 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
-			AppointmentDuration = TimeSpan.FromSeconds(1),
+			HeartbeatTimeout = TimeSpan.FromSeconds(1),
+			CandidateTimeout = TimeSpan.FromSeconds(2),
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {
@@ -55,7 +56,8 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
-			AppointmentDuration = appointmentTimeout,
+			HeartbeatTimeout = appointmentTimeout,
+			CandidateTimeout = appointmentTimeout * 2,
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {
@@ -97,10 +99,9 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		public async Task RunAsync() {
 			while (!_stopped) {
-				// Renew every 300 ms
 				await Task.Delay(appointmentTimeout / 3);
 
-				await kontroller.RenewLeaderAppointmentAsync(Database.MainDatabaseId, address, epoch, TestToken);
+				Assert.True(await kontroller.RenewLeaderAppointmentAsync(Database.MainDatabaseId, address, epoch, TestToken));
 			}
 		}
 	}
@@ -175,7 +176,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			}
 		}
 
-		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+		ValueTask<ReplicaState> IDataPlane.FenceAsync(EndPoint address, ulong currentEpoch, CancellationToken token)
 			=> Volatile.Read(in _members).TryGetValue(address, out var state)
 				? new(state)
 				: ValueTask.FromException<ReplicaState>(new IOException());

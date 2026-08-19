@@ -21,7 +21,7 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(node);
 
-		var state = await client.GetReplicaStateAsync(node.Address, TestToken);
+		var state = await client.FenceAsync(node.Address, 6UL, TestToken);
 
 		Assert.Equal(5UL, state.Epoch);
 		Assert.Equal(100L, state.WriterCheckpoint);
@@ -35,8 +35,8 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(node);
 
-		await client.GetReplicaStateAsync(node.Address, TestToken);
-		await client.GetReplicaStateAsync(node.Address, TestToken);
+		await client.FenceAsync(node.Address, 1UL, TestToken);
+		await client.FenceAsync(node.Address, 2UL, TestToken);
 
 		Assert.Equal(1, client.ChannelsCreatedCount);
 		Assert.Equal(2, node.Service.CallCount);
@@ -49,8 +49,8 @@ public class GrpcDataPlaneClientTests {
 
 		await using var client = CreateClient(nodeA, nodeB);
 
-		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
-		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
+		await client.FenceAsync(nodeA.Address, 1UL, TestToken);
+		await client.FenceAsync(nodeB.Address, 2UL, TestToken);
 		Assert.Equal(2, client.ChannelsCreatedCount);
 
 		// keep nodeA alive, drop nodeB
@@ -59,11 +59,11 @@ public class GrpcDataPlaneClientTests {
 		Assert.Equal(1, client.ChannelsDisposedCount);
 
 		// nodeA's cached channel is still there, so no new channel is created
-		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
+		await client.FenceAsync(nodeA.Address, 3UL, TestToken);
 		Assert.Equal(2, client.ChannelsCreatedCount);
 
 		// nodeB's channel was reclaimed, so a fresh one is created on the next call
-		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
+		await client.FenceAsync(nodeB.Address, 0UL, TestToken);
 		Assert.Equal(3, client.ChannelsCreatedCount);
 	}
 
@@ -74,8 +74,8 @@ public class GrpcDataPlaneClientTests {
 
 		var client = CreateClient(nodeA, nodeB);
 
-		await client.GetReplicaStateAsync(nodeA.Address, TestToken);
-		await client.GetReplicaStateAsync(nodeB.Address, TestToken);
+		await client.FenceAsync(nodeA.Address, 1UL, TestToken);
+		await client.FenceAsync(nodeB.Address, 2UL, TestToken);
 
 		await client.DisposeAsync();
 
@@ -89,11 +89,11 @@ public class GrpcDataPlaneClientTests {
 
 	// Every RPC just returns whatever response the test configured beforehand.
 	private sealed class FakeDataPlaneNodeService : DataPlaneNode.DataPlaneNodeBase {
-		public GetReplicaStateResponse Response = new();
+		public FenceResponse Response = new();
 
 		public int CallCount;
 
-		public override Task<GetReplicaStateResponse> GetReplicaState(Google.Protobuf.WellKnownTypes.Empty request, ServerCallContext context) {
+		public override Task<FenceResponse> Fence(FenceRequest request, ServerCallContext context) {
 			Interlocked.Increment(ref CallCount);
 			return Task.FromResult(Response);
 		}

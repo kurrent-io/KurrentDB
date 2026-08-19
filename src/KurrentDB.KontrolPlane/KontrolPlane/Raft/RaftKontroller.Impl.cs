@@ -159,7 +159,7 @@ partial class RaftKontroller : IKontroller {
 					Id = databaseId,
 					Epoch = database.Epoch,
 					Description = database.Description,
-					LeaderAppointmentDuration = _appointmentDuration,
+					HeartbeatTimeout = _heartbeatTimeout,
 				}
 				: null;
 		}

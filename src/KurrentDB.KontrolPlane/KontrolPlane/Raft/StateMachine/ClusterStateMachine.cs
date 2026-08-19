@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotNext;
+using DotNext.Collections.Generic;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 using DotNext.Threading;
 
@@ -36,6 +37,9 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, I
 			tracker.TryAdvance();
 		}
 	}
+
+	public void NotifyDatabaseChanged(string databaseId)
+		=> _databases.TryGetValue(databaseId).ValueOrDefault?.TryAdvance();
 
 	/// <summary>
 	/// Recovers the internal state from the last known persisted snapshot.

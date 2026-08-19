@@ -16,7 +16,9 @@ public sealed record DatabaseCluster : Database {
 
 	public EndPoint? LeaderAddress { get; init; }
 
-	public TimeSpan LeaderAppointmentDuration { get; init; }
+	public TimeSpan HeartbeatTimeout { get; init; }
+
+	public TimeSpan CandidateTimeout { get; init; }
 
 	public DatabaseNode? LeaderNode => Nodes.FirstOrDefault(LeaderAddress.IsAddressEqual);
 

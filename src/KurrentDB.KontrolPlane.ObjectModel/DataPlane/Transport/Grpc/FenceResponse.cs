@@ -3,8 +3,8 @@
 
 namespace KurrentDB.DataPlane.Transport.Grpc;
 
-partial class GetReplicaStateResponse {
-	public GetReplicaStateResponse(in ReplicaState state) {
+partial class FenceResponse {
+	public FenceResponse(in ReplicaState state) {
 		Epoch = state.Epoch;
 		ChaserCheckpoint = state.ChaserCheckpoint;
 		WriterCheckpoint = state.WriterCheckpoint;

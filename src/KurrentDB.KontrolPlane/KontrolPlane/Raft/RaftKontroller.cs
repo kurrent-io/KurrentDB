@@ -54,7 +54,8 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_raft.MemberRemoved += notifier;
 
 		_leadershipTask = Task.CompletedTask;
-		_appointmentDuration = options.AppointmentDuration;
+		_heartbeatTimeout = options.HeartbeatTimeout;
+		_candidateTimeout = options.CandidateTimeout;
 		_appointmentState = new();
 		_lifecycleTokenSource = new();
 		_lifecycleToken = _lifecycleTokenSource.Token;

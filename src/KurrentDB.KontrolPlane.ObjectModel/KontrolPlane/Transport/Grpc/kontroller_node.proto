@@ -52,8 +52,9 @@ message DatabaseCluster
   bytes databaseLeader = 2;
   uint64 epoch = 3;
   string description = 4;
-  int64 leaderAppointmentDuration = 5;
-  repeated DatabaseNode nodes = 6;
+  int64 heartbeatTimeout = 5;
+  int64 candidateTimeout = 6;
+  repeated DatabaseNode nodes = 7;
 }
 
 message AnnouncementResponse

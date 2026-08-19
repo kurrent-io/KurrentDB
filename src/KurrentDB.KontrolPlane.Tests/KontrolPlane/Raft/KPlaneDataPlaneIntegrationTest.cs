@@ -31,18 +31,18 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
 				// check whether the database cluster is available
-				var clusterInfo = await dataPlane[0].Host.GetDatabaseInfoAsync(TestToken);
+				var clusterInfo = await dataPlane[0].Manager.GetDatabaseInfoAsync(TestToken);
 				Assert.True(dbNodeAddresses
 					.ToHashSet<EndPoint>()
 					.SetEquals(clusterInfo.Nodes.Select(static m => m.Address)));
 
 				// check whether the leader is appointed
-				var leaderInfo = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
+				var leaderInfo = await dataPlane[0]
+					.Handler
+					.GetDatabaseLeadersAsync(TestToken)
+					.FirstOrDefaultAsync(TestToken);
 				Assert.NotNull(leaderInfo);
-				Assert.Contains(leaderInfo.Leader.Address, dbNodeAddresses);
-
-				var leaderNode = dataPlane.First(node => node.Host.CurrentNode.Address.Equals(leaderInfo.Leader.Address));
-				Assert.False(leaderNode.Host.LeadershipToken.IsCancellationRequested);
+				Assert.Contains(leaderInfo.Address, dbNodeAddresses);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}
@@ -67,9 +67,12 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			try {
-				await WaitForRegisteredNodesAsync(dataPlane[0].Host, dbNodeAddresses.ToHashSet<EndPoint>(), TestToken);
+				await WaitForRegisteredNodesAsync(dataPlane[0].Manager, dbNodeAddresses.ToHashSet<EndPoint>(), TestToken);
 
-				var leader = await dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).FirstOrDefaultAsync(TestToken);
+				var leader = await dataPlane[0]
+					.Handler
+					.GetDatabaseLeadersAsync(TestToken)
+					.FirstOrDefaultAsync(TestToken);
 				Assert.NotNull(leader);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
@@ -97,10 +100,9 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				// GetDatabaseLeadersAsync reflects the cluster-wide appointment, not "am I the leader" - any
 				// connected Data Plane node observes the same stream, so there's no need to know in advance
 				// which one KPlane elects.
-				await using var leaders = dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
+				await using var leaders = dataPlane[0].Handler.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
 				Assert.True(await leaders.MoveNextAsync());
-				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
-				var initialEpoch = leaders.Current.Epoch;
+				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 
 				// stop the current KPlane (Raft) leader
 				var raftLeaderAddress = await kplane[0].Kontroller.WaitForLeaderAsync(TestToken);
@@ -112,8 +114,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				// epoch as soon as it takes over - even if the winning candidate ends up being the same DP
 				// node as before (tie-breaking isn't guaranteed stable across a quorum change).
 				Assert.True(await leaders.MoveNextAsync());
-				Assert.True(leaders.Current.Epoch > initialEpoch);
-				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
+				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}
@@ -136,23 +137,23 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 
 			var dataPlane = await StartDataPlaneClusterAsync(kplane, databaseNodes);
 			var enumerator = dataPlane[0]
-				.Host
-				.GetDatabaseMembershipChangesAsync(TestToken)
-				.GetAsyncEnumerator();
+				.Manager
+				.As<IAsyncEnumerable<DatabaseCluster>>()
+				.GetAsyncEnumerator(TestToken);
 			try {
 				// check whether the database cluster is available
 				Assert.True(await enumerator.MoveNextAsync());
 				var members = enumerator.Current;
 				Assert.True(dbNodeAddresses
 					.ToHashSet<EndPoint>()
-					.SetEquals(members.Select(static m => m.Address)));
+					.SetEquals(members.Nodes.Select(static m => m.Address)));
 
 				// Add one more node
 				var addedNode = CreateDatabaseNode(CreateEndPoint(23324));
 				await AddDatabaseNodeAsync(kplane, addedNode, TestToken);
 
 				Assert.True(await enumerator.MoveNextAsync());
-				Assert.Contains(addedNode, enumerator.Current);
+				Assert.Contains(addedNode, enumerator.Current.Nodes);
 			} finally {
 				await enumerator.DisposeAsync();
 				await Disposable.DisposeAsync(dataPlane);
@@ -177,18 +178,16 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 					await AddDatabaseNodeAsync(kplane, node, TestToken);
 				}
 
-				await using var leaders = dataPlane[0].Host.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
+				await using var leaders = dataPlane[0].Handler.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
 				Assert.True(await leaders.MoveNextAsync());
-				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
-				var initialEpoch = leaders.Current.Epoch;
+				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 
 				// resign leader
-				await dataPlane[0].Host.ResignLeader(TestToken);
+				await dataPlane[0].Manager.ResignLeader(TestToken);
 
 				// Wait for a new appointment
 				Assert.True(await leaders.MoveNextAsync());
-				Assert.True(leaders.Current.Epoch > initialEpoch);
-				Assert.Contains(leaders.Current.Leader.Address, dbNodeAddresses);
+				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}

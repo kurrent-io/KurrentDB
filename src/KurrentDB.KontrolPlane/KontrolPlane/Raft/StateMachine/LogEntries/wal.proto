@@ -52,6 +52,12 @@ message AppointLeader
   uint64 epoch = 3;
 }
 
+message BumpEpoch
+{
+  string databaseId = 1;
+  uint64 epoch = 2;
+}
+
 message ResignLeader
 {
   string databaseId = 1;

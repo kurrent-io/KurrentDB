@@ -17,16 +17,8 @@ partial class ClusterState {
 	public bool Update(RemoveDatabaseNode command, in CommandInfo info)
 		=> Update<RemoveDatabaseNodeStmt, bool>(new(command), info);
 
-	public bool Update(AppointLeader command, in CommandInfo info) {
-		var result = true;
-		try {
-			Update<AppointLeaderNodeStmt>(new(command), info);
-		} catch (StaleEpochException) {
-			result = false;
-		}
-
-		return result;
-	}
+	public bool Update(AppointLeader command, in CommandInfo info)
+		=> Update<AppointLeaderNodeStmt, bool>(new(command), info);
 
 	public bool Update(AddOrIgnoreDatabaseNode command, in CommandInfo info)
 		=> Update<AddOrIgnoreDatabaseNodeStmt, bool>(new(command), info);
@@ -139,8 +131,13 @@ file readonly struct UnsetLeaderNodeStmt(ResignLeader command) : IPreparedStatem
 }
 
 [StructLayout(LayoutKind.Auto)]
-file readonly struct IncrementEpochStmt : IPreparedStatement<(string Id, ulong Epoch)> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = epoch + 1 WHERE id = $1 AND epoch = $2;"u8;
+file readonly struct UnsetLeaderNodeConditionallyStmt : IPreparedStatement<(string Id, ulong Epoch)> {
+	public static ReadOnlySpan<byte> CommandText => """
+	                                                UPDATE node
+	                                                SET is_leader=false
+	                                                FROM database d
+	                                                WHERE database_id=$1 AND d.id=$1 AND d.epoch=$2;
+	                                                """u8;
 
 	public static StatementBindingResult Bind(in (string Id, ulong Epoch) args, PreparedStatement source) => new(source) {
 		args.Id,
@@ -151,7 +148,7 @@ file readonly struct IncrementEpochStmt : IPreparedStatement<(string Id, ulong E
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AppointLeaderNodeStmt(AppointLeader command)
 	: IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address)>,
-		IConsumer<DuckDBAdvancedConnection> {
+		ISupplier<DuckDBAdvancedConnection, bool> {
 	public static ReadOnlySpan<byte> CommandText => "UPDATE node SET is_leader=true WHERE database_id=$1 AND address=$2;"u8;
 
 	public static StatementBindingResult Bind(in (string DatabaseId, ReadOnlyMemory<byte> Address) args,
@@ -161,15 +158,8 @@ file readonly struct AppointLeaderNodeStmt(AppointLeader command)
 			args.Address.Span,
 		};
 
-	public void Invoke(DuckDBAdvancedConnection connection) {
-		connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId));
-		if (connection.ExecuteNonQuery<(string, ulong), IncrementEpochStmt>(
-			    new(command.DatabaseId, command.Epoch)) is 0L)
-			throw new StaleEpochException();
-
-		connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), AppointLeaderNodeStmt>(
-			new(command.DatabaseId, command.Address.Memory));
-	}
+	public bool Invoke(DuckDBAdvancedConnection connection)
+		=> connection.ExecuteNonQuery<(string, ulong), UnsetLeaderNodeConditionallyStmt>(new(command.DatabaseId, command.Epoch)) is not 0L
+		   && connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), AppointLeaderNodeStmt>(new(command.DatabaseId,
+			   command.Address.Memory)) is not 0L;
 }
-
-file sealed class StaleEpochException() : InvalidOperationException("Epoch is old.");

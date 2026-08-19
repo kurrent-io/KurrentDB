@@ -1,0 +1,122 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using System.Diagnostics;
+using System.Net;
+
+namespace KurrentDB.DataPlane;
+
+using KontrolPlane;
+
+partial class DatabaseManager : IDatabaseStateMachine {
+	private async ValueTask ChangeStateAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+		await _stateLock.AcquireAsync(_lifecycleToken);
+		try {
+			var currentNode = DatabaseHandler.CurrentNode;
+			if (newVersion[currentNode.Address] is { } newCurrentNode) {
+				// update information about the current node if needed
+				if (currentNode != newCurrentNode)
+					DatabaseHandler.CurrentNode = newCurrentNode;
+			} else if (_state is not FrozenState) {
+				// current node is removed from the cluster configuration, move to frozen state
+				await ChangeStateAsync(new FrozenState());
+				return;
+			}
+
+			await ChangeDatabaseLeaderAsync(baseline, newVersion, currentNode.Address);
+		} finally {
+			_stateLock.Release();
+		}
+
+		_clusterInfoChanged.TryAdvance();
+	}
+
+	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion, EndPoint currentNode) {
+		var oldLeader = baseline?.LeaderAddress;
+		var newLeader = newVersion.LeaderAddress;
+
+		// update database leader: either the leader address changed, or the same leader was
+		// re-appointed under a new epoch (KPlane can do this, e.g. right after its own failover,
+		// without ever reporting an intermediate LeaderAddress change).
+		DatabaseState newState;
+		switch (currentNode.Equals(oldLeader), currentNode.Equals(newLeader)) {
+			case (false, true):
+				// local node becomes a database leader
+				await ChangeStateAsync(newState = new CandidateState(this, newVersion));
+				break;
+			case (true, false):
+				// local node is no longer a leader
+				await ChangeStateAsync(newState = newLeader is null
+					? new FrozenState()
+					: new FollowerState(DatabaseHandler, newVersion));
+				break;
+			case (true, true) when baseline!.Epoch != newVersion.Epoch:
+				// still the leader, but re-appointed under a new epoch: restart the leadership session
+				// so the renewal loop is guaranteed to use the epoch this appointment actually belongs to.
+				await ChangeStateAsync(newState = new CandidateState(this, newVersion));
+				break;
+			case (false, false) when newLeader is null && _state is not FrozenState:
+				// Leader is not known to the current node
+				await ChangeStateAsync(newState = new FrozenState());
+				break;
+			case (false, false) when newLeader is not null && !newLeader.Equals(oldLeader):
+				// Leader is changed, re-enter Follower state
+				await ChangeStateAsync(newState = new FollowerState(DatabaseHandler, newVersion));
+				break;
+			default:
+				return;
+		}
+
+		newState.TryStart();
+	}
+
+	private ValueTask ChangeStateAsync(DatabaseState newState) {
+		Debug.Assert(_stateLock.IsLockHeld);
+
+		return Interlocked.Exchange(ref _state, newState).DisposeAsync();
+	}
+
+	private async void MoveToLeaderState(WeakReference<CandidateState> callerState) {
+		var lockTaken = false;
+		try {
+			await _stateLock.AcquireAsync(_lifecycleToken);
+			lockTaken = true;
+
+			if (callerState.TryGetTarget(out var candidateState) && ReferenceEquals(_state, candidateState)) {
+				var newState = candidateState.CreateLeaderState(_renewalRate);
+				await ChangeStateAsync(newState);
+				newState.TryStart();
+			}
+		} catch {
+			// we can't throw here, it's async void method
+		} finally {
+			if (lockTaken)
+				_stateLock.Release();
+		}
+	}
+
+	void IDatabaseStateMachine.MoveToLeaderState(WeakReference<CandidateState> callerState)
+		=> ThreadPool.UnsafeQueueUserWorkItem(MoveToLeaderState, callerState, preferLocal: false);
+
+	private async void MoveToFrozenState(WeakReference<DatabaseState> callerState) {
+		var lockTaken = false;
+		try {
+			await _stateLock.AcquireAsync(_lifecycleToken);
+			lockTaken = true;
+
+			if (callerState.TryGetTarget(out var currentState) && ReferenceEquals(currentState, _state)) {
+				await ChangeStateAsync(new FrozenState());
+			}
+		} catch {
+			// we can't throw here, it's async void method
+		} finally {
+			if (lockTaken)
+				_stateLock.Release();
+		}
+	}
+
+	void IDatabaseStateMachine.MoveToFrozenState(WeakReference<DatabaseState> callerState)
+		=> ThreadPool.UnsafeQueueUserWorkItem(MoveToFrozenState, callerState, preferLocal: false);
+
+	IAsyncEnumerable<DatabaseCluster> IDatabaseStateMachine.DatabaseChanges => this;
+}
