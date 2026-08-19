@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.15](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.15)
+
+19 August 2026
+
+### Connectors: Fixed sink resource cleanup when a connector stops unexpectedly
+
+Connectors now release their sink resources on every stop path, including a processing error or a leadership change. Previously, cleanup only ran when a connector was stopped through the API.
+
 ## [24.10.14](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.14)
 
 15 May 2026
