@@ -45,6 +45,11 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, I
 	/// Recovers the internal state from the last known persisted snapshot.
 	/// </summary>
 	public void Recover() {
+		// Remove temporary files left by the snapshotting procedure
+		foreach (var tempFile in _location.EnumerateFiles("*.tmp")) {
+			tempFile.Delete();
+		}
+
 		// Attempt to open the latest persisted snapshot
 		var snapshots = new SortedDictionary<long, FileInfo>();
 		foreach (var snapshotFile in _location.EnumerateFiles()) {

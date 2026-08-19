@@ -75,7 +75,9 @@ partial class ClusterStateMachine {
 
 	private void SaveSnapshot(ClusterState clusterState, in CommandInfo info) {
 		var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
-		var tempFileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+		// Temp file needs to be on the same file system
+		var tempFileName = Path.Combine(_location.FullName, string.Concat(Path.GetRandomFileName(), ".tmp"));
 		clusterState.SaveToFile(tempFileName);
 
 		// This operation is atomic on modern file systems
