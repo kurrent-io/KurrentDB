@@ -73,10 +73,11 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	internal async Task<ReplicaState> FenceAsync(ulong currentEpoch, CancellationToken token) {
 		await _stateLock.AcquireAsync(token);
 		try {
-			// Fence is outdated
 			if (_clusterInfo is { } clusterInfo && clusterInfo.Epoch < currentEpoch) {
 				await ChangeStateAsync(new FrozenState());
 				_clusterInfo = clusterInfo with { Epoch = currentEpoch };
+			} else {
+				// Fence is outdated, do nothing
 			}
 		} finally {
 			_stateLock.Release();
