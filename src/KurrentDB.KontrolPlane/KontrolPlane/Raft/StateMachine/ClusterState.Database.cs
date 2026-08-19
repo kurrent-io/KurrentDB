@@ -64,15 +64,16 @@ file readonly struct RemoveDatabaseStmt(RemoveDatabase command) : IPreparedState
 }
 
 [StructLayout(LayoutKind.Auto)]
-file readonly struct BumpEpochStmt(BumpEpoch command) : IPreparedStatement<(string Id, ulong Epoch)>, ISupplier<DuckDBAdvancedConnection, bool> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = epoch + 1 WHERE id = $1 AND epoch = $2;"u8;
+file readonly struct BumpEpochStmt(BumpEpoch command) : IPreparedStatement<(string Id, ulong ExpectedEpoch, ulong NewEpoch)>, ISupplier<DuckDBAdvancedConnection, bool> {
+	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = $3 WHERE id = $1 AND epoch = $2;"u8;
 
-	public static StatementBindingResult Bind(in (string Id, ulong Epoch) args, PreparedStatement source) => new(source) {
+	public static StatementBindingResult Bind(in (string Id, ulong ExpectedEpoch, ulong NewEpoch) args, PreparedStatement source) => new(source) {
 		args.Id,
-		args.Epoch
+		args.ExpectedEpoch,
+		args.NewEpoch
 	};
 
 	public bool Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<(string, ulong), BumpEpochStmt>(
-			new(command.DatabaseId, command.Epoch)) is not 0L;
+		=> connection.ExecuteNonQuery<(string, ulong, ulong), BumpEpochStmt>(
+			new(command.DatabaseId, command.ExpectedEpoch, command.NewEpoch)) is not 0L;
 }

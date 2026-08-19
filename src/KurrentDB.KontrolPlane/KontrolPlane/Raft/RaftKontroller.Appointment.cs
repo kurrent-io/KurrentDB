@@ -146,69 +146,94 @@ partial class RaftKontroller {
 
 	private async Task AppointLeaderAsync(
 		string databaseId,
-		ulong epoch,
+		ulong currentEpoch,
 		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
-		// bump epoch
-		if (nodes is [] || !await _raft.BumpEpochAsync(databaseId, epoch, token))
-			return;
-
-		epoch += 1UL;
-		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
-
-		int quorum;
-		await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, epoch, out quorum, token)) {
-			try {
-				var pair = await task;
-				responses.Add(pair.Key, pair.Value);
-			} catch (OperationCanceledException e) when (e.CancellationToken == token) {
-				return; // cancellation requested, abort appointment
-			} catch (Exception) {
-				// member is unavailable, don't add it to a collection of successful responses
-			}
-		}
-
-		// Appoint leader only if we have a quorum
-		if (responses.Count < quorum)
-			return;
-
-		// Find the node with the max Epoch
-		var maxEpoch = responses.Values.Max(static state => state.Epoch);
+		var (responses, maxEpoch)
+			= await FenceDatabaseAsync(databaseId, dataPlane, nodes, currentEpoch, token);
 
 		// Find the node with the max offset
-		var candidate = responses
+		EndPoint? candidate = responses
 			.Where(pair => pair.Value.Epoch == maxEpoch)
 			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
 			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
 			.ThenByDescending(resignedLeader is null ? ZeroFunc : resignedLeader.GetOrder)
 			.ThenByDescending(static pair => pair.Value.Priority)
-			.First()
+			.FirstOrDefault()
 			.Key;
 
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
-		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, CancellationToken.None)) {
-			_appointmentState[databaseId] = new(candidate, epoch) { IsCandidate = true };
+		if (candidate is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate, CancellationToken.None)) {
+			_appointmentState[databaseId] = new(candidate, currentEpoch) { IsCandidate = true };
 			_state.NotifyDatabaseChanged(databaseId);
 		}
+	}
 
-		static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
-			IDataPlane dataPlane,
-			IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
-			ulong currentEpoch,
-			out int quorum,
-			CancellationToken token) {
-			var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
-			regularNodes.AddRange(nodes
-				.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
-				.Select(static node => node.Address)
-				.Select(address => FenceDatabaseNodeAsync(dataPlane, address, currentEpoch, token)));
+	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch)> FenceDatabaseAsync(
+		string databaseId,
+		IDataPlane dataPlane,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		ulong currentEpoch,
+		CancellationToken token) {
+		// bump epoch
+		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
+		var maxEpoch = 0UL;
+		for (var newEpoch = currentEpoch + 1UL;; responses.Clear()) {
+			if (nodes is [] || !await _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token))
+				break;
 
-			quorum = regularNodes.Count / 2 + 1;
-			return Task.WhenEach(regularNodes);
+			int quorum;
+			await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, token)) {
+				try {
+					var pair = await task;
+					responses.Add(pair.Key, pair.Value);
+				} catch (OperationCanceledException e) when (e.CancellationToken == token) {
+					responses.Clear();
+					goto exit; // cancellation requested, abort appointment
+				} catch (Exception) {
+					// member is unavailable, don't add it to a collection of successful responses
+				}
+			}
+
+			// Appoint leader only if we have a quorum
+			if (responses.Count < quorum) {
+				responses.Clear();
+				break;
+			}
+
+			// Find the node with the max Epoch
+			maxEpoch = responses.Values.Max(static state => state.Epoch);
+
+			// when running KPlane on top of existing database, the epoch within the database
+			// can be larger than epoch in KPlane.
+			if (maxEpoch < newEpoch)
+				break;
+
+			currentEpoch = newEpoch;
+			newEpoch = maxEpoch + 1UL;
 		}
+
+		exit:
+		return (responses, maxEpoch);
+	}
+
+	private static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
+		IDataPlane dataPlane,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		ulong currentEpoch,
+		out int quorum,
+		CancellationToken token) {
+		var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
+		regularNodes.AddRange(nodes
+			.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
+			.Select(static node => node.Address)
+			.Select(address => FenceDatabaseNodeAsync(dataPlane, address, currentEpoch, token)));
+
+		quorum = regularNodes.Count / 2 + 1;
+		return Task.WhenEach(regularNodes);
 
 		static async Task<KeyValuePair<EndPoint, ReplicaState>> FenceDatabaseNodeAsync(IDataPlane dataPlane,
 			EndPoint address,

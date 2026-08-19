@@ -94,12 +94,13 @@ internal static class ReplicationHelpers {
 		}
 
 		public async ValueTask<bool> BumpEpochAsync(string databaseId,
-			ulong epoch,
+			ulong expectedEpoch,
+			ulong newEpoch,
 			CancellationToken token) {
 			var box = new StrongBox<bool>();
 			await raft.ReplicateAsync(
 				new ProtobufLogEntry<BumpEpoch>(new()
-						{ DatabaseId = databaseId, Epoch = epoch })
+						{ DatabaseId = databaseId, ExpectedEpoch = expectedEpoch, NewEpoch = newEpoch })
 					{ Term = raft.Term, Context = box }, token);
 			return box.Value;
 		}
