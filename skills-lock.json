@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "lancedb": {
+      "source": "lancedb/lancedb",
+      "sourceType": "github",
+      "skillPath": "plugins/lancedb/skills/lancedb/SKILL.md",
+      "computedHash": "75c4f47adc7208c9357fcf1f39adce7c1563cb53c782a3680311ba09eca36a89"
+    },
+    "lancedb-update-lance-dependency": {
+      "source": "lancedb/lancedb",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/lancedb-update-lance-dependency/SKILL.md",
+      "computedHash": "f393b429fb5ee802d263976701e9199d10e63cc57c4bc163842bec1b48746732"
+    }
+  }
+}

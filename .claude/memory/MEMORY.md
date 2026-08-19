@@ -1,5 +1,6 @@
 # Memory Index
 
+- [Kontext is greenfield — edit schema in place](kontext-is-greenfield-edit-schema-in-place.md) — no new migrations, no backfills, no compat paths for Kontext data; edit the migration body and reset the store
 - [Sérgio's C# style law](sergio-csharp-style-law.md) — summary-only docs on non-public, junior-readable comments, local functions, modern C#14/net10 idioms, no NRT-dead guards
 - [Data store picks engine per operation](data-store-picks-engine-per-operation.md) — MEVD only for vector-shaped ops; relational reads are plain DuckDB SQL ("vector store obsession" correction)
 - [Batch statements into one command](batch-statements-into-one-command.md) — multiple SQL statements/queries = ONE command + NextResult(); separate commands only when batching genuinely fails
@@ -28,6 +29,7 @@
 - [DuckLance is ignored](ducklance-is-ignored.md) — never mention, run, fix, or propose work on DuckLance; only if Sérgio names it first
 - [Verify before asserting external facts](verify-before-asserting-external-facts.md) — third-party pricing/quotas/limits/policies get verified against current docs in-session, or labeled "unverified"; the 2026-08-07 LFS incident
 - [Kontext projection progress tracker](kontext-projection-progress-tracker.md) — lives in Kontext only; SecondaryIndexProgressTracker deliberately untouched, never propose unifying; Atomic<ProgressMark> pair shape settled 2026-08-10
+- [Records and memories are different workloads](kontext-records-and-memories-are-different-workloads.md) — never share index tuning between them; they currently DO share one VectorIndexOptions and nothing passes it
 - [Kontext lance FTS tokenizer contract](kontext-lance-fts-tokenizer-contract.md) — fork default = upstream minus stem; our WITH = full upstream defaults, parity digging exhausted; hybrid deterministic, two-leg RRF noisy ±0.05; three-way numbers 2026-08-15
 - [Diagrams always termaid](diagrams-always-termaid.md) — every diagram renders through the termaid skill; never hand-draw box art
 - [Linear commit refs close issues](linear-commit-refs-close-issues.md) — workspace automation completes ANY issue referenced from a pushed commit; reference only the issue the commit finishes
