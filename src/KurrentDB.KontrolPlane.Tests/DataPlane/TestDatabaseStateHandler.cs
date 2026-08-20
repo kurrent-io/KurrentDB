@@ -32,9 +32,6 @@ internal sealed class TestDatabaseStateHandler(DatabaseNode currentNode, Replica
 		return Task.CompletedTask;
 	}
 
-	Task IDatabaseStateHandler.EnsureEpochCommittedAsync(DatabaseCluster database, CancellationToken token)
-		=> Task.CompletedTask;
-
 	async Task IDatabaseStateHandler.RunLeadershipAsync(IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token) {
 		Interlocked.Exchange(ref _leadership, null)?.TrySetResult();
 		await foreach (var snapshot in changes.WithCancellation(token)) {

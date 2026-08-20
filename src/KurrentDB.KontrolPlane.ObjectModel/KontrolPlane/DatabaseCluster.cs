@@ -18,8 +18,6 @@ public sealed record DatabaseCluster : Database {
 
 	public TimeSpan HeartbeatTimeout { get; init; }
 
-	public TimeSpan CandidateTimeout { get; init; }
-
 	public DatabaseNode? LeaderNode => Nodes.FirstOrDefault(LeaderAddress.IsAddressEqual);
 
 	public DatabaseNode? this[EndPoint address] => Nodes.FirstOrDefault(address.IsAddressEqual);

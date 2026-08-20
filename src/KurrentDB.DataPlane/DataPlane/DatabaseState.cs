@@ -4,7 +4,7 @@
 namespace KurrentDB.DataPlane;
 
 internal abstract class DatabaseState : IAsyncDisposable {
-	protected readonly CancellationToken Token;
+	public readonly CancellationToken Token;
 	private readonly Lock _syncRoot;
 	private CancellationTokenSource? _cts;
 	private Task _runningTask;
@@ -15,9 +15,6 @@ internal abstract class DatabaseState : IAsyncDisposable {
 		_cts = new();
 		Token = _cts.Token;
 	}
-
-	public virtual ValueTask<CancellationToken> WaitForWriteBarrierAsync(CancellationToken token)
-		=> ValueTask.FromResult(new CancellationToken(canceled: true));
 
 	protected abstract Task RunAsync();
 

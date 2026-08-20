@@ -17,7 +17,6 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
 			             HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
-			             CandidateTimeout = TimeSpan.FromDays(1),
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,
@@ -39,7 +38,6 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
 			             HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
-			             CandidateTimeout = TimeSpan.FromDays(2),
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,

@@ -20,7 +20,7 @@ using StateMachine.Queries;
 partial class RaftKontroller {
 	// key is database ID, value is the time when the leadership was updated for the particular database
 	private readonly ConcurrentDictionary<string, LeaderAppointment> _appointmentState = new();
-	private readonly TimeSpan _heartbeatTimeout, _candidateTimeout;
+	private readonly TimeSpan _heartbeatTimeout;
 	private readonly AsyncAutoResetEvent _appointmentRoundSignal = new(initialState: false);
 
 	// Spin in the loop and process appointments for every database
@@ -31,7 +31,7 @@ partial class RaftKontroller {
 		var activeMembers = new HashSet<EndPoint>();
 		var dataPlane = DataPlaneClientFactory.Invoke();
 		try {
-			for (var pauseDuration = TimeSpan.Min(_heartbeatTimeout, _candidateTimeout) ;; await _appointmentRoundSignal.WaitAsync(pauseDuration, token)) {
+			for (var pauseDuration = _heartbeatTimeout;; await _appointmentRoundSignal.WaitAsync(pauseDuration, token)) {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
 				try {
 					StartAppointments(snapshot, dataPlane, tasks, databases, activeMembers, token);
@@ -136,9 +136,7 @@ partial class RaftKontroller {
 		}
 
 		resignedLeader = null;
-		return appointment.IsExpired(appointment.IsCandidate
-			? _candidateTimeout
-			: _heartbeatTimeout);
+		return appointment.IsExpired(_heartbeatTimeout);
 	}
 
 	private async Task AppointLeaderAsync(
@@ -164,7 +162,7 @@ partial class RaftKontroller {
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
 		if (candidate is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate, CancellationToken.None)) {
-			_appointmentState[databaseId] = new(candidate, currentEpoch) { IsCandidate = true };
+			_appointmentState[databaseId] = new(candidate, currentEpoch);
 			_state.NotifyDatabaseChanged(databaseId);
 		}
 	}
@@ -248,7 +246,6 @@ partial class RaftKontroller {
 		var newAppointment = expectedAppointment with {
 			Address = leaderAddress,
 			Epoch = epoch,
-			IsCandidate = false,
 			RenewedAt = new(),
 		};
 		return _appointmentState.TryUpdate(databaseId, newAppointment, expectedAppointment);
@@ -261,8 +258,6 @@ partial class RaftKontroller {
 		}
 
 		public bool IsResigned { get; init; }
-
-		public bool IsCandidate { get; init; }
 
 		public bool IsExpired(TimeSpan expiration) => RenewedAt.Elapsed >= expiration;
 	}

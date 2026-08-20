@@ -12,7 +12,6 @@ partial class DatabaseCluster {
 		Id = cluster.Id;
 		Description = cluster.Description;
 		HeartbeatTimeout = cluster.HeartbeatTimeout.Ticks;
-		CandidateTimeout = cluster.CandidateTimeout.Ticks;
 		foreach (var databaseNode in cluster.Nodes) {
 			Nodes.Add(new DatabaseNode(databaseNode));
 		}
@@ -22,7 +21,6 @@ partial class DatabaseCluster {
 		Id = Id,
 		Description = Description,
 		HeartbeatTimeout = new(HeartbeatTimeout),
-		CandidateTimeout = new(CandidateTimeout),
 		LeaderAddress = DatabaseLeader.IsEmpty ? null : DatabaseLeader.ToEndPoint(),
 		Epoch = Epoch,
 		Nodes = [.. Nodes.Select(static n => n.ToEntity())]

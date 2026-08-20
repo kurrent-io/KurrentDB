@@ -77,7 +77,7 @@ public class DatabaseManagerTests {
 		await host.StartAsync(CancellationToken.None);
 		try {
 			await databaseHandler.EnsureLeadershipAsync(TestToken);
-			var leadershipToken = await host.EnsureLeadershipAsync(TestToken);
+			var leadershipToken = host.LeadershipToken;
 			Assert.False(leadershipToken.IsCancellationRequested);
 
 			// Kontrol Plane appoints another node as the leader

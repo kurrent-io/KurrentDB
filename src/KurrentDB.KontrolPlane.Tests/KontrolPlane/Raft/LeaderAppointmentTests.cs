@@ -18,7 +18,6 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
 			HeartbeatTimeout = TimeSpan.FromSeconds(1),
-			CandidateTimeout = TimeSpan.FromSeconds(2),
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {
@@ -57,7 +56,6 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
 			HeartbeatTimeout = appointmentTimeout,
-			CandidateTimeout = appointmentTimeout * 2,
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {

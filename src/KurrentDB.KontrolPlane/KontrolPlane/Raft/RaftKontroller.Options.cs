@@ -52,11 +52,6 @@ partial class RaftKontroller {
 			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}
 
-		public required TimeSpan CandidateTimeout {
-			get;
-			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
-		}
-
 		public IReadOnlySet<EndPoint> Nodes {
 			get => field ?? IReadOnlySet<EndPoint>.Empty;
 			init;

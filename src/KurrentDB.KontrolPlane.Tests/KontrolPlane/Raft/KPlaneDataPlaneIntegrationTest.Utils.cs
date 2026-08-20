@@ -138,7 +138,6 @@ partial class KPlaneDataPlaneIntegrationTest {
 			var kontroller = new RaftKontroller(new RaftKontroller.Options {
 				ListenAddress = raftAddress,
 				HeartbeatTimeout = appointmentDuration,
-				CandidateTimeout = appointmentDuration * 2,
 				ConnectionPoolCapacity = 10,
 				PersistentStateRoot = stateRoot,
 				Nodes = raftSeed,

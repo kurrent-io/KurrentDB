@@ -22,17 +22,6 @@ public interface IDatabaseStateHandler {
 	Task RunReplicationAsync(Database database, DatabaseNode leaderNode, CancellationToken token);
 
 	/// <summary>
-	/// Ensures that the log record with a new epoch is committed to the cluster.
-	/// </summary>
-	/// <remarks>
-	/// This method is required for successful transition from Candidate to Leader state.
-	/// </remarks>
-	/// <param name="database">The database description.</param>
-	/// <param name="token">The token that can be used to cancel the operation.</param>
-	/// <returns>The task representing asynchronous state of the operation.</returns>
-	Task EnsureEpochCommittedAsync(DatabaseCluster database, CancellationToken token);
-
-	/// <summary>
 	/// Runs leadership.
 	/// </summary>
 	/// <remarks>

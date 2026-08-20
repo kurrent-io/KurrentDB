@@ -14,7 +14,6 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		_kontroller = new(new RaftKontroller.Options {
 			ListenAddress = Address,
 			HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
-			CandidateTimeout = TimeSpan.FromDays(2),
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 		}) {
