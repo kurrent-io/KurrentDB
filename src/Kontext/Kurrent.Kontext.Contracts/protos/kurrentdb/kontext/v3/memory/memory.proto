@@ -52,6 +52,9 @@ service MemoryService {
   //     with `supersedes: [neighbour_id]`, carrying the UNION of its citations and yours. This is
   //     consolidation: re-encountering a belief is corroboration and should be recorded, not
   //     discarded.
+  //   - You brought NOTHING NEW (the neighbour already says it, on the same support) → leave both
+  //     standing and move on. A successor that adds no support is not consolidation, it is a third
+  //     copy; the scheduled "dream" pass folds duplicates.
   // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
   // to act on when you need its evidence to build the successor.
   //
@@ -114,7 +117,8 @@ service MemoryService {
   // Unlike `recall`, this is not a search and does not rank: you ask for exact ids and get exactly
   // those, whatever their status.
   //
-  // Example: reclaim { ids: ["01J...", "01K..."] }
+  // Example: reclaim { ids: ["0199c4e2-6f31-7a0c-9d84-1b6e5f2a7c30",
+  //          "0199c4e2-7b55-7e11-a2f0-4c8d9e1b3a67"] }
   //
   // Returns: a stream of StoredMemory (the full folded records), including superseded
   // ones — you asked for them by id, so they are not hidden here. Ids that don't exist are simply
@@ -138,9 +142,8 @@ service MemoryService {
   //          value: "kurrent--kurrentdb" }], limit: 50 }
   //
   // Returns: a stream of StoredMemory matching the filters — `types` is any-of (empty = any type),
-  // all supplied `tags` must be present.
-  // only `reclaim` by exact id still surfaces them). Ordered by `sort` (default: newest-retained
-  // first); reverse with `direction`.
+  // all supplied `tags` must be present. Ordered by `sort` (default: newest-retained first);
+  // reverse with `direction`.
   //
   // Safety: READ-ONLY, and deliberately so — an enumeration is not a use. It does NOT refresh the
   // recency clock of what it lists (see THE ACCESS RULE); reclaim what you actually act on.
@@ -186,8 +189,8 @@ message RetainResponse {
 
     // Existing LIVE memories closest to the one just stored, nearest first, capped by server
     // configuration. Live means the tip of a supersession chain. Advisory: the server does not act
-    // on these, you do — supersede when you brought new support when you did
-    // not. Populated on every retain; reading it is part of the call.
+    // on these, you do — supersede the neighbour when you brought new support, and leave it
+    // standing when you did not. Populated on every retain; reading it is part of the call.
     repeated RelatedMemory related = 2;
   }
 
@@ -273,6 +276,7 @@ message ReclaimRequest {
 // Recollect
 //===================================================================
 
+
 // The dimension `recollect` orders its results by (there is no relevance here — that's `recall`).
 enum RecollectSort {
   // Defaults to RECOLLECT_SORT_RETAINED_AT.
@@ -289,7 +293,8 @@ enum RecollectSort {
   RECOLLECT_SORT_IMPORTANCE = 3;
 }
 
-// Sort direction for a `recollect` listing.
+// Sort direction for a listing. Top-level rather than nested: the data store's own listing surface
+// takes it too, so it is not a property of the recollect request.
 enum SortDirection {
   SORT_DIRECTION_UNSPECIFIED = 0;  // defaults to DESCENDING
   SORT_DIRECTION_DESCENDING  = 1;  // high → low: newest / most-important / most-recently-accessed first
@@ -306,14 +311,14 @@ message RecollectRequest {
   repeated Tag tags = 2;
 
   // Max memories to return. With a limit, `sort` decides which slice you get — see below.
-  int32 limit = 4;
+  int32 limit = 3;
 
   // How to order results. Default (unspecified): newest-retained first. Reach for IMPORTANCE when
   // you want the top-N significant memories rather than the most recent.
-  RecollectSort sort = 5;
+  RecollectSort sort = 4;
 
   // Sort direction. Default (unspecified): descending.
-  SortDirection direction = 6;
+  SortDirection direction = 5;
 }
 
 //===================================================================

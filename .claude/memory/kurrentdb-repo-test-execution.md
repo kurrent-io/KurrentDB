@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-17T15:11:44.474Z
+  modified: 2026-08-20T12:40:14.181Z
 ---
 
 Verified 2026-07-21: `scripts/testing/test-runner.cs` now EXISTS in the kurrentdb repo (Sérgio added
@@ -26,6 +26,11 @@ class (4 tests, 2026-08-01) ≈ 6 min wall — build-dominated; test time itself
 including the slnx build. Full `/*Kontext*/` scope (all 5 Kontext assemblies, 2026-08-13) ≈ 11s
 test time for Kurrent.Kontext.Tests (139 tests) + ≈ 60s for KurrentDB.Plugins.Kontext.Tests
 (41 tests, boots real nodes); ≈ 4-6 min wall including the warm slnx build.
+
+Observed 2026-08-20, scope `/(Kurrent.Kontext.Tests)|(Kurrent.Kontext.Retrieval.Tests)/*/*/*`:
+unit = 250 tests (52 Kontext + 198 Retrieval) ≈ 32s test time; `all` = 357 tests (159 + 198) ≈ 2.0m
+test time. Both ≈ 4-5 min wall including the warm slnx build. Two OR'd assemblies in one
+treenode-filter segment works: `/(A)|(B)/*/*/*`.
 
 Exit codes (fixed 2026-07-21, verified): runner computes its own exit from the parsed summary —
 0 all passed, 2 any failure, 8 filter matched nothing, else raw dotnet-test exit (crash/infra).

@@ -1,10 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-namespace Kurrent.Kontext.Mcp.Model;
+namespace Kurrent.Kontext.Memory.Mcp.Model;
 
-// Values mirror Contracts.MemoryType numerically — the mapper is a cast. 4 and 6 are the retired
-// Procedure and Plan; their numbers stay unassigned so old serialized values cannot alias.
+// Values mirror Contracts.MemoryType numerically — the mapper is a cast, so renumbering the proto
+// enum without renumbering this one remaps every type silently.
 public enum MemoryType {
 	Unspecified = 0,
 
@@ -14,11 +14,11 @@ public enum MemoryType {
 
 	Fact = 3,
 
-	UserProfile = 5,
+	UserProfile = 4,
 
-	Summary = 7,
+	Summary = 5,
 
-	Preference = 8,
+	Preference = 6,
 
-	OpenQuestion = 9,
+	OpenQuestion = 7,
 }

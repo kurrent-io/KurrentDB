@@ -6,7 +6,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Memory.Data;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Quack;
 using Kurrent.Surge;
 using Kurrent.Surge.Schema;
@@ -19,7 +19,7 @@ namespace Kurrent.Kontext.Tests.Modules.Memory.Data;
 /// each test fabricates <see cref="SurgeRecord"/>s from the proto events and applies them in
 /// BATCHES through <c>ProjectAsync</c> — the same unit of work the projector service hands over
 /// per <c>ReadBatches</c> window (no consumer, no checkpoint loop; those belong to Surge).
-/// Reads are asserted through <see cref="KontextDataStore"/>, plus direct SQL for the columns
+/// Reads are asserted through <see cref="KontextMemoryDataStore"/>, plus direct SQL for the columns
 /// the store deliberately never exposes (log_position, embedding, cited_memory_ids).
 /// </summary>
 [Category("Integration")]
@@ -38,7 +38,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var retained          = NewRetained("m1", "first belief", Base);
 		var expectedMemory    = retained.Memories[0].Memory;
@@ -127,7 +127,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 		var       record = CreateRecord(NewRetained("m1", "first belief", Base), position: 100);
 
 		// Act
@@ -180,7 +180,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 		var m1Record     = CreateRecord(NewRetained("m1", "old belief", Base), position: 100);
@@ -211,7 +211,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 
@@ -245,7 +245,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var firstRecallAt = Base.AddHours(5);
 		var lastRecallAt  = Base.AddHours(7);
@@ -279,7 +279,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var retained = NewRetainedBatch(Base,
 			("b1", "first observation", []),
@@ -313,9 +313,9 @@ public class KontextMemoryWriterTests {
 
 	[Test]
 	public async ValueTask a_memory_born_superseded_in_one_batch_carries_its_terminal_state(CancellationToken cancellationToken) {
-		// Arrange — the conjunction case: m1 does not exist, and ONE batch retains it,
-		// supersedes it (via m2), AND retracts it. The single MERGE must insert the row already
-		// carrying the full terminal state — no intermediate live window ever exists.
+		// Arrange — the conjunction case: m1 does not exist, and ONE batch retains it AND
+		// supersedes it (via m2). The single MERGE must insert the row already carrying the
+		// full terminal state — no intermediate live window ever exists.
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
@@ -324,7 +324,7 @@ public class KontextMemoryWriterTests {
 		using var connection = dataSources.OpenLanceWriter();
 
 		var writer = NewWriter(connection);
-		var       store  = new KontextDataStore(dataSources);
+		var       store  = new KontextMemoryDataStore(dataSources);
 
 		var supersededAt = Base.AddHours(2);
 

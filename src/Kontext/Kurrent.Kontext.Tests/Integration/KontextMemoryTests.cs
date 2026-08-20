@@ -6,6 +6,8 @@ using Google.Protobuf;
 using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Memory;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 
@@ -13,12 +15,12 @@ namespace Kurrent.Kontext.Tests;
 
 /// <summary>
 /// Behavioural tests for <see cref="KontextMemory"/> against a REAL DuckDB + Lance engine, over the
-/// projector-owned <see cref="KontextDataStore"/> read model. The write path is not built yet, so
+/// projector-owned <see cref="KontextMemoryDataStore"/> read model. The write path is not built yet, so
 /// each test seeds the memories table directly with SQL — exactly how the projector will write it —
 /// and exercises the read-only surface the service exposes:
-/// - the three write operations (retain, retract, reflect) throw NotImplementedException
+/// - the two write operations (retain, reflect) throw NotImplementedException
 /// - recall is keyword-only BM25 search, lean by default, and never surfaces hidden memories
-/// - reclaim is an exact-id passthrough that returns retracted memories too
+/// - reclaim is an exact-id passthrough that skips ids it does not hold
 /// - recollect lists by type/tag with a sort
 ///
 /// Embeddings are seeded as literal 4-dim vectors so the table is well-formed; recall here is
@@ -33,7 +35,7 @@ public class KontextMemoryTests {
 		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
-		var       store       = new KontextDataStore(dataSources);
+		var       store       = new KontextMemoryDataStore(dataSources);
 		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert — the write path lands in the read model via the log, not through this service.
@@ -45,7 +47,7 @@ public class KontextMemoryTests {
 		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
-		var       store       = new KontextDataStore(dataSources);
+		var       store       = new KontextMemoryDataStore(dataSources);
 		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert
@@ -173,14 +175,13 @@ public class KontextMemoryTests {
 	}
 
 	[Test]
-	public async ValueTask reclaim_returns_exact_ids_including_retracted() {
-		// Arrange — a living memory and a retracted one; reclaim asks for both plus a stranger.
+	public async ValueTask reclaim_returns_exact_ids_and_skips_unknown() {
+		// Arrange — two stored memories; reclaim asks for both plus an id that was never stored.
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
 			new Row("e1", Contracts.MemoryType.Observation, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("e2", Contracts.MemoryType.Observation, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)) {
-			});
+			new Row("e2", Contracts.MemoryType.Observation, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request = new Contracts.ReclaimRequest();
@@ -190,7 +191,7 @@ public class KontextMemoryTests {
 		// Act
 		var memories = await memory.ReclaimAsync(request).ToListAsync();
 
-		// Assert — exact ids, retracted included; the id that doesn't exist is simply absent.
+		// Assert — exactly the ids that exist; the id that doesn't is simply absent, never an error.
 		var ids = memories.Select(m => m.MemoryId).Order().ToList();
 
 		await Assert.That(ids).IsEquivalentTo(expectedReturned, CollectionOrdering.Matching);
@@ -231,7 +232,7 @@ public class KontextMemoryTests {
 	static readonly AppendEvent NoOp = static (_, _) => Task.CompletedTask;
 
 	/// <summary>A keyword-only pipeline over the store — recall here is raw BM25, so the seeded vectors never decide a result.</summary>
-	static IKontextRetriever KeywordRetriever(KontextDataStore store) =>
+	static IKontextRetriever KeywordRetriever(KontextMemoryDataStore store) =>
 		KontextRetriever.New().AddSearch(new KeywordSearch(store)).Build();
 
 	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
@@ -240,7 +241,7 @@ public class KontextMemoryTests {
 	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
 
 	/// <summary>Creates the schema through <see cref="KontextMigrations"/> and seeds the given rows, then hands back a store over the same data sources.</summary>
-	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource, params Row[] rows) {
+	static async ValueTask<KontextMemoryDataStore> Seed(KontextDataSource dataSource, params Row[] rows) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS INVERTED
 		// index the keyword recall needs) — seeding only inserts rows.
 		await MemorySeeding.CreateSchema(dataSource);

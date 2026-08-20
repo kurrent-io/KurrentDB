@@ -121,5 +121,5 @@ message ReflectionCompleted {
   repeated string superseded_memory_ids = 3;
 
   // when the reflection pass finished
-  google.protobuf.Timestamp completed_at = 5;
+  google.protobuf.Timestamp completed_at = 4;
 }

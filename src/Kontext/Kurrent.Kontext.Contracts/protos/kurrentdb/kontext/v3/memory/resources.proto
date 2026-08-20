@@ -104,10 +104,10 @@ message StoredMemory {
   google.protobuf.Timestamp last_accessed_at = 11;
 
   // When the memory was superseded by a newer memory (a Retain that supersedes it)
-  google.protobuf.Timestamp superseded_at = 13;
+  google.protobuf.Timestamp superseded_at = 12;
 
   // The memory that superseded this one; set only when `superseded_at` is set
-  string superseded_by = 14;
+  string superseded_by = 13;
 }
 
 // The lean projection of a stored memory: enough to USE the memory and JUDGE it, without the
@@ -323,18 +323,18 @@ enum MemoryType {
   // Identity and role of a principal — who they are, deliberately small. Persists; loaded for
   // that principal rather than earned by relevance, so only identity-grade facts belong here:
   // if it should not ride along in EVERY interaction, it is a PREFERENCE or a FACT instead.
-  MEMORY_TYPE_USER_PROFILE = 5;
+  MEMORY_TYPE_USER_PROFILE = 4;
 
   // A consolidation of other memories — a recap, digest, or index.
   // Derived (cites the memories it rests on), so its certainty is inherited from them. Persists,
   // refreshed as those sources change.
-  MEMORY_TYPE_SUMMARY = 7;
+  MEMORY_TYPE_SUMMARY = 5;
 
   // A personal taste binding only its principal ("I prefer tabs"). Durable — persists and is
   // superseded freely as taste drifts — but earned by relevance like any other memory, never
   // always-loaded: the preference long tail must not ride along in every interaction. A
   // preference that binds a team/project is a standard — a FACT at that scope.
-  MEMORY_TYPE_PREFERENCE = 8;
+  MEMORY_TYPE_PREFERENCE = 6;
 
   // A KNOWN GAP — something unresolved that still needs an answer. The ONLY NON-ASSERTIVE type:
   // it carries no proposition, so it has no truth value, cannot be corroborated, cannot be
@@ -352,11 +352,10 @@ enum MemoryType {
   // Terminates by being ANSWERED, not by being replaced with a better version of itself: retain
   // the answering FACT with `supersedes: [question_id]`. That stretches "supersede" slightly and
   // is deliberate — the behaviour is right and the chain is the audit trail of the answer. When it
-  // is moot rather than answered, let it decay
-  // now.
+  // is moot rather than answered, let it decay.
   //
   // NEVER CITABLE AS EVIDENCE. A claim cannot rest on a question.
-  MEMORY_TYPE_OPEN_QUESTION = 9;
+  MEMORY_TYPE_OPEN_QUESTION = 7;
 }
 
 // The agent's salience rating for a memory, set at retain. It is an ADDITIVE term in the ranking,
