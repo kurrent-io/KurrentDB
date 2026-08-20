@@ -21,15 +21,9 @@ public sealed class KontextEntityWriter(
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
     EmbeddingGenerationOptions options
 ) {
-    sealed record PendingEntity(
-        string EntityId,
-        string EntityType,
-        long   CreatedAt,
-        long   LogPosition
-    );
-
-    sealed class PendingAlias(string entityId, string alias, bool isCanonical, long createdAt, long logPosition) {
+    sealed class PendingAlias(string entityId, string entityType, string alias, bool isCanonical, long createdAt, long logPosition) {
         public string EntityId    { get; } = entityId;
+        public string EntityType  { get; } = entityType;
         public string Alias       { get; } = alias;
         public bool   IsCanonical { get; } = isCanonical;
         public long   CreatedAt   { get; } = createdAt;
@@ -58,7 +52,6 @@ public sealed class KontextEntityWriter(
     /// were written so the projector knows when to rebuild the alias search indexes.
     /// </summary>
     public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct = default) {
-        var entities = new Dictionary<string, PendingEntity>();
         var aliases  = new Dictionary<(string EntityId, string Alias), PendingAlias>();
         var mentions = new Dictionary<(string MemoryId, int SpanIndex), PendingMention>();
 
@@ -77,11 +70,9 @@ public sealed class KontextEntityWriter(
                     var entity = mention.Created;
                     entityId = entity.EntityId;
 
-                    entities[entityId] = new PendingEntity(entityId, entity.Type, resolvedAt, position);
-
                     foreach (var alias in entity.Aliases)
                         aliases[(entityId, alias)] = new PendingAlias(
-                            entityId, alias, alias == entity.CanonicalName, resolvedAt, position);
+                            entityId, entity.Type, alias, alias == entity.CanonicalName, resolvedAt, position);
                 }
 
                 mentions[(resolved.MemoryId, spanIndex)] = new PendingMention(
@@ -90,12 +81,11 @@ public sealed class KontextEntityWriter(
             }
         }
 
-        if (entities.Count == 0 && mentions.Count == 0)
+        if (aliases.Count == 0 && mentions.Count == 0)
             return 0;
 
         await EmbedAliases(aliases.Values, ct).ConfigureAwait(false);
 
-        ApplyEntities(entities.Values);
         ApplyAliases(aliases.Values);
         ApplyMentions(mentions.Values);
 
@@ -118,49 +108,6 @@ public sealed class KontextEntityWriter(
             alias.Embed(embedding.Vector.ToArray());
     }
 
-    void ApplyEntities(IReadOnlyCollection<PendingEntity> entities) {
-        if (entities.Count == 0)
-            return;
-
-        const string sql =
-            """
-            MERGE INTO ldb.main.entities AS t
-            USING (SELECT
-                unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
-                unnest(CAST($entity_types AS VARCHAR[])) AS entity_type,
-                unnest(CAST($created_ats AS BIGINT[])) AS created_at,
-                unnest(CAST($log_positions AS BIGINT[])) AS log_position) AS s
-            ON t.entity_id = s.entity_id
-            WHEN NOT MATCHED THEN INSERT (
-                entity_id, entity_type, created_at, log_position)
-            VALUES (
-                s.entity_id, s.entity_type, s.created_at, s.log_position)
-            WHEN MATCHED THEN UPDATE SET
-                log_position = s.log_position
-            """;
-
-        var count        = entities.Count;
-        var entityIds    = new List<string>(count);
-        var entityTypes  = new List<string>(count);
-        var createdAts   = new List<long>(count);
-        var logPositions = new List<long>(count);
-
-        foreach (var entity in entities) {
-            entityIds.Add(entity.EntityId);
-            entityTypes.Add(entity.EntityType);
-            createdAts.Add(entity.CreatedAt);
-            logPositions.Add(entity.LogPosition);
-        }
-
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        command.Parameters.Add(new("entity_ids", entityIds));
-        command.Parameters.Add(new("entity_types", entityTypes));
-        command.Parameters.Add(new("created_ats", createdAts));
-        command.Parameters.Add(new("log_positions", logPositions));
-        command.ExecuteNonQuery();
-    }
-
     void ApplyAliases(IReadOnlyCollection<PendingAlias> aliases) {
         if (aliases.Count == 0)
             return;
@@ -170,24 +117,27 @@ public sealed class KontextEntityWriter(
              MERGE INTO ldb.main.entity_aliases AS t
              USING (SELECT
                  unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
+                 unnest(CAST($entity_types AS VARCHAR[])) AS entity_type,
                  unnest(CAST($aliases AS VARCHAR[])) AS alias,
                  unnest(CAST($is_canonicals AS BOOLEAN[])) AS is_canonical,
                  unnest(CAST($created_ats AS BIGINT[])) AS created_at,
                  unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
              ON t.entity_id = s.entity_id AND t.alias = s.alias
-             WHEN NOT MATCHED THEN INSERT (entity_id, alias, is_canonical, created_at, log_position, embedding)
+             WHEN NOT MATCHED THEN INSERT (entity_id, entity_type, alias, is_canonical, created_at, log_position, embedding)
              VALUES (
-                 s.entity_id, s.alias, s.is_canonical, s.created_at, s.log_position,
+                 s.entity_id, s.entity_type, s.alias, s.is_canonical, s.created_at, s.log_position,
                  CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]))
              WHEN MATCHED THEN UPDATE SET
-                 is_canonical = s.is_canonical
+                 entity_type  = s.entity_type
+               , is_canonical = s.is_canonical
                , embedding    = CAST(s.embedding_raw AS FLOAT[{options.Dimensions}])
                , log_position = s.log_position
              """;
 
         var count           = aliases.Count;
         var entityIds       = new List<string>(count);
+        var entityTypes     = new List<string>(count);
         var aliasTexts      = new List<string>(count);
         var isCanonicals    = new List<bool>(count);
         var createdAts      = new List<long>(count);
@@ -196,6 +146,7 @@ public sealed class KontextEntityWriter(
 
         foreach (var alias in aliases) {
             entityIds.Add(alias.EntityId);
+            entityTypes.Add(alias.EntityType);
             aliasTexts.Add(alias.Alias);
             isCanonicals.Add(alias.IsCanonical);
             createdAts.Add(alias.CreatedAt);
@@ -206,6 +157,7 @@ public sealed class KontextEntityWriter(
         using var command = connection.CreateCommand();
         command.CommandText = sql;
         command.Parameters.Add(new("entity_ids", entityIds));
+        command.Parameters.Add(new("entity_types", entityTypes));
         command.Parameters.Add(new("aliases", aliasTexts));
         command.Parameters.Add(new("is_canonicals", isCanonicals));
         command.Parameters.Add(new("created_ats", createdAts));

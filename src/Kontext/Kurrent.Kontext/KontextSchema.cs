@@ -89,24 +89,9 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
                 retain_versions = {CleanupRetainVersions}
             );
 
-            CREATE TABLE IF NOT EXISTS ldb.main.entities (
-              entity_id    VARCHAR,
-              entity_type  VARCHAR,
-              created_at   BIGINT,
-              log_position BIGINT);
-
-            CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE WITH (replace = true);
-            CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE WITH (replace = true);
-            CREATE INDEX log_position_idx ON ldb.main.entities (log_position) USING BTREE WITH (replace = true);
-
-            ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (
-                interval        = {CleanupIntervalCommits},
-                older_than      = '{CleanupOlderThan}',
-                retain_versions = {CleanupRetainVersions}
-            );
-
             CREATE TABLE IF NOT EXISTS ldb.main.entity_aliases (
               entity_id    VARCHAR,
+              entity_type  VARCHAR,
               alias        VARCHAR,
               is_canonical BOOLEAN,
               created_at   BIGINT,
@@ -114,6 +99,7 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
               embedding    FLOAT[{Dimension}]);
 
             CREATE INDEX entity_id_idx    ON ldb.main.entity_aliases (entity_id)    USING BTREE    WITH (replace = true);
+            CREATE INDEX entity_type_idx  ON ldb.main.entity_aliases (entity_type)  USING BTREE    WITH (replace = true);
             CREATE INDEX alias_idx        ON ldb.main.entity_aliases (alias)        USING BTREE    WITH (replace = true);
             CREATE INDEX alias_fts        ON ldb.main.entity_aliases (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
             CREATE INDEX log_position_idx ON ldb.main.entity_aliases (log_position) USING BTREE    WITH (replace = true);
