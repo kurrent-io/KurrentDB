@@ -214,7 +214,7 @@ static async ValueTask RunDeterminism() {
 			for (var attempt = 0; attempt < 3; attempt++) {
 				var hits = new List<string>();
 
-				await foreach (var hit in corpus.Store.SearchAsync(question.Question, [], new FullTextSearchOptions { Limit = 30, K = 30 }))
+				await foreach (var hit in corpus.Store.SearchAsync(question.Question, [], new FullTextSearchOptions { K = 30 }))
 					hits.Add($"{hit.Memory.MemoryId}:{hit.KeywordScore:F4}");
 
 				sequences.Add(string.Join(" ", hits));

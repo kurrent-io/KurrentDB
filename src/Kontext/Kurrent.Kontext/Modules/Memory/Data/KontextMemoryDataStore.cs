@@ -59,8 +59,10 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     ) {
         options ??= new();
 
-        // The candidate pool must at least cover the requested page.
-        var k = Math.Max(options.K, options.Limit);
+        // k IS the page: the engine returns exactly k rows, and both the tag containment and
+        // is_superseded push down into its candidate selection, so nothing above it can truncate.
+        // (Verified by LanceHybridSearchSemanticsProbeTests.)
+        var k = options.K;
 
         // Every value is bound as a named $parameter — the Lance named arguments included
         // (validated live 2026-07-20: k := $k, prefilter := $prefilter, … all bind). Only two
@@ -97,7 +99,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                                       refine_factor := $refine_factor{nprobs}{useIndex})
              WHERE is_superseded = false{tagFilter}
              ORDER BY _distance ASC
-             LIMIT $limit
              """;
 
         var tagValues = tags.Select(EncodeTag).ToList();
@@ -110,7 +111,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     command.Parameters.Add(new("k", k));
                     command.Parameters.Add(new("prefilter", options.Prefilter));
                     command.Parameters.Add(new("refine_factor", options.RefineFactor));
-                    command.Parameters.Add(new("limit", options.Limit));
 
                     if (tags.Count > 0)
                         command.Parameters.Add(new("tags", tagValues));
@@ -167,8 +167,10 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     ) {
         options ??= new();
 
-        // The candidate pool must at least cover the requested page.
-        var k = Math.Max(options.K, options.Limit);
+        // k IS the page: the engine returns exactly k rows, and both the tag containment and
+        // is_superseded push down into its candidate selection, so nothing above it can truncate.
+        // (Verified by LanceHybridSearchSemanticsProbeTests.)
+        var k = options.K;
 
         // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
         // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
@@ -198,7 +200,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                            prefilter := $prefilter)
             WHERE is_superseded = false{tagFilter}
             ORDER BY _score DESC
-            LIMIT $limit
             """;
 
         var tagValues = tags.Select(EncodeTag).ToList();
@@ -210,7 +211,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     command.Parameters.Add(new("query", query));
                     command.Parameters.Add(new("k", k));
                     command.Parameters.Add(new("prefilter", options.Prefilter));
-                    command.Parameters.Add(new("limit", options.Limit));
 
                     if (tags.Count > 0)
                         command.Parameters.Add(new("tags", tagValues));
@@ -270,8 +270,10 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     ) {
         options ??= new();
 
-        // The candidate pool must at least cover the requested page.
-        var k = Math.Max(options.K, options.Limit);
+        // k IS the page: the engine returns exactly k rows, and both the tag containment and
+        // is_superseded push down into its candidate selection, so nothing above it can truncate.
+        // (Verified by LanceHybridSearchSemanticsProbeTests.)
+        var k = options.K;
 
         // Every value is bound as a named $parameter — the Lance named arguments included
         // (validated live 2026-07-20: k := $k, alpha := $alpha, … all bind). Only two things can
@@ -313,7 +315,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                                       oversample_factor := $oversample_factor{nprobs}{useIndex})
              WHERE is_superseded = false{tagFilter}
              ORDER BY _hybrid_score DESC
-             LIMIT $limit
              """;
 
         var tagValues = tags.Select(EncodeTag).ToList();
@@ -329,7 +330,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     command.Parameters.Add(new("alpha", options.Alpha));
                     command.Parameters.Add(new("refine_factor", options.RefineFactor));
                     command.Parameters.Add(new("oversample_factor", options.OversampleFactor));
-                    command.Parameters.Add(new("limit", options.Limit));
 
                     if (tags.Count > 0)
                         command.Parameters.Add(new("tags", tagValues));

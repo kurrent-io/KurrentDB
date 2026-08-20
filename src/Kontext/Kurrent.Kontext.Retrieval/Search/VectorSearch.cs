@@ -14,7 +14,7 @@ public sealed class VectorSearch(IMemoryIndex index, EmbeddingGenerator embeddin
     public string Name => RetrievalSources.Vector;
 
     public async ValueTask<CandidateSet> SearchAsync(PlannedQuery query, CancellationToken ct = default) {
-        var options = new VectorSearchOptions { Limit = query.PoolSize, K = query.PoolSize };
+        var options = new VectorSearchOptions { K = query.PoolSize };
 
         var embedding = await embeddingGenerator.EmbedQueryAsync(query.Text, ct).ConfigureAwait(false);
 

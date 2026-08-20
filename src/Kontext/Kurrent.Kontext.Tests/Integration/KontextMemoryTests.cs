@@ -9,7 +9,12 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Memory;
 using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
+using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Testing;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Time.Testing;
+
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -18,7 +23,7 @@ namespace Kurrent.Kontext.Tests;
 /// projector-owned <see cref="KontextMemoryDataStore"/> read model. The write path is not built yet, so
 /// each test seeds the memories table directly with SQL — exactly how the projector will write it —
 /// and exercises the read-only surface the service exposes:
-/// - the two write operations (retain, reflect) throw NotImplementedException
+/// - retain appends one MemoriesRetained event per call and mints the ids; reflect still throws
 /// - recall is keyword-only BM25 search, lean by default, and never surfaces hidden memories
 /// - reclaim is an exact-id passthrough that skips ids it does not hold
 /// - recollect lists by type/tag with a sort
@@ -31,15 +36,78 @@ public class KontextMemoryTests {
 	static readonly DateTimeOffset Base = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
 	[Test]
-	public async ValueTask retain_throws_not_implemented() {
-		// Arrange
+	public async ValueTask retain_mints_ids_and_appends_one_event_for_the_whole_batch() {
+		// Arrange — capture what reaches the log; the projector, not this service, applies it.
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
-		var       store       = new KontextMemoryDataStore(dataSources);
-		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
-		// Act + Assert — the write path lands in the read model via the log, not through this service.
-		await Assert.That(async () => await memory.RetainAsync(new())).Throws<NotImplementedException>();
+		// The dataset must exist even with nothing in it: retain searches for neighbours before it
+		// appends, so an unseeded store would fail the search rather than return none.
+		await MemorySeeding.CreateSchema(dataSources);
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var clock    = new FakeTimeProvider(Base);
+		var store    = new KontextMemoryDataStore(dataSources);
+		var memory   = NewMemory(store, (evt, _) => {
+			appended.Add((Contracts.MemoriesRetained)evt);
+			return Task.CompletedTask;
+		}, clock);
+
+		var request = new Contracts.RetainRequest();
+		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "the suite runs via test-runner.cs" });
+		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Preference, Content = "prefers K&R braces" });
+
+		var expectedCount = 2;
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — one event carries the batch, so no reader can observe half of it.
+		await Assert.That(appended.Count).IsEqualTo(1);
+		await Assert.That(appended[0].Memories.Count).IsEqualTo(expectedCount);
+		await Assert.That(appended[0].RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
+
+		// The server mints every id, and results[i] is the memory sent at memories[i].
+		await Assert.That(response.Results.Count).IsEqualTo(expectedCount);
+		await Assert.That(response.Results[0].MemoryId).IsEqualTo(appended[0].Memories[0].MemoryId);
+		await Assert.That(response.Results[1].MemoryId).IsEqualTo(appended[0].Memories[1].MemoryId);
+		await Assert.That(appended[0].Memories[0].Memory.Content).IsEqualTo("the suite runs via test-runner.cs");
+		await Assert.That(appended[0].Memories[1].Memory.Content).IsEqualTo("prefers K&R braces");
+
+		// Ids are fresh GUIDs, never the caller's and never repeated.
+		await Assert.That(Guid.TryParse(response.Results[0].MemoryId, out _)).IsTrue();
+		await Assert.That(response.Results[0].MemoryId).IsNotEqualTo(response.Results[1].MemoryId);
+	}
+
+	[Test]
+	public async ValueTask retain_reports_the_near_duplicate_it_is_about_to_create() {
+		// Arrange — a store already holding the memory the caller is about to restate.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, "the test runner lives at scripts/testing/test-runner.cs", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("unrelated", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+
+		var memory  = NewMemory(store, NoOp, TimeProvider.System);
+		var request = new Contracts.RetainRequest();
+
+		request.Memories.Add(new Contracts.Memory {
+			MemoryType = Contracts.MemoryType.Fact,
+			Content    = "tests run only through scripts/testing/test-runner.cs",
+		});
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — the neighbour is reported so the caller can supersede instead of duplicating.
+		// The server never merges or blocks: retain always stores, and the judgement stays with the
+		// caller, because similarity cannot prove two memories are the same.
+		var related = response.Results[0].Related;
+
+		await Assert.That(related).IsNotEmpty();
+		await Assert.That(related[0].Memory.MemoryId).IsEqualTo("existing");
+		await Assert.That(related[0].Similarity).IsGreaterThan(0);
+		await Assert.That(related[0].Memory.Content).IsEqualTo("the test runner lives at scripts/testing/test-runner.cs");
 	}
 
 	[Test]
@@ -48,7 +116,7 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = new KontextMemoryDataStore(dataSources);
-		var       memory      = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory      = NewMemory(store, NoOp, TimeProvider.System);
 
 		// Act + Assert
 		await Assert.That(async () => await memory.ReflectAsync(new())).Throws<NotImplementedException>();
@@ -63,7 +131,7 @@ public class KontextMemoryTests {
 			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
 			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
 			new Row("a3", Contracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", Contracts.MemoryImportance.Low, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)));
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request            = new Contracts.RecallRequest { Query = "aardvark" };
 		var expectedContent    = "aardvark burrows deep underground";
@@ -100,7 +168,7 @@ public class KontextMemoryTests {
 				ContentTimeStart = Base.AddHours(-24),
 				ContentTimeEnd   = Base.AddHours(24),
 			});
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request         = new Contracts.RecallRequest { Query = "flamingo", IncludeFull = true };
 		var expectedContent = "flamingo stands gracefully on one leg";
@@ -135,7 +203,7 @@ public class KontextMemoryTests {
 				SupersededAt = Base.AddHours(4),
 				SupersededBy = "c1",
 			});
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request        = new Contracts.RecallRequest { Query = "wombat" };
 		var expectedVisible = new List<string> { "c1", "c2" };
@@ -159,7 +227,7 @@ public class KontextMemoryTests {
 				Tags = ["project:rivers"],
 			},
 			new Row("d2", Contracts.MemoryType.Fact, "salmon spawn in shallow gravel", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request        = new Contracts.RecallRequest { Query = "salmon" };
 		request.Tags.Add(new Contracts.Tag { Scope = "project", Value = "rivers" });
@@ -182,7 +250,7 @@ public class KontextMemoryTests {
 		var       store       = await Seed(dataSources,
 			new Row("e1", Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
 			new Row("e2", Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request = new Contracts.ReclaimRequest();
 		request.Ids.AddRange(["e1", "e2", "no-such-memory"]);
@@ -208,7 +276,7 @@ public class KontextMemoryTests {
 			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)) { LastAccessedAt = Base.AddHours(20) },
 			new Row("f3", Contracts.MemoryType.Preference, "prefers the projector rewritten in one pass", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(30) },
 			new Row("f4", Contracts.MemoryType.Fact, "fact about tags", Contracts.MemoryImportance.Low, Base.AddHours(4), MemorySeeding.Vector(0f, 0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(5) });
-		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
+		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request = new Contracts.RecollectRequest {
 			Sort      = Contracts.RecollectSort.Importance,
@@ -227,6 +295,33 @@ public class KontextMemoryTests {
 	}
 
 	#region ->> Test Infrastructure <<-
+
+	static KontextMemory NewMemory(KontextMemoryDataStore store, AppendEvent append, TimeProvider clock) =>
+		new(store, KeywordRetriever(store), append, clock, new StubEmbeddings(), new KontextMemoryOptions());
+
+	/// <summary>
+	/// Deterministic vectors keyed off the text's hash — enough to keep the vector leg well-formed
+	/// without paying an ONNX model load in a suite that ranks on keywords.
+	/// </summary>
+	sealed class StubEmbeddings : EmbeddingGenerator {
+		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
+			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
+		) {
+			var embeddings = values
+				.Select(value => {
+					var vector = new float[KontextIndexConstants.VectorsDimension];
+					vector[Math.Abs(value.GetHashCode()) % vector.Length] = 1f;
+					return new Embedding<float>(vector);
+				})
+				.ToList();
+
+			return Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(embeddings));
+		}
+
+		public object? GetService(Type serviceType, object? serviceKey = null) => null;
+
+		public void Dispose() { }
+	}
 
 	/// <summary>A no-op append: the write path is not built, so nothing this service does emits events yet.</summary>
 	static readonly AppendEvent NoOp = static (_, _) => Task.CompletedTask;

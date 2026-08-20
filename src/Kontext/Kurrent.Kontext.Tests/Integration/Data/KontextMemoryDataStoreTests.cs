@@ -266,7 +266,7 @@ public class KontextMemoryDataStoreTests {
 		// Act
 		var hits = await store.SearchAsync(
 				"anything", MemorySeeding.Vector(1f), [],
-				new() { Alpha = 1, Limit = 2 })
+				new() { Alpha = 1, K = 2 })
 			.ToListAsync();
 
 		// Assert
@@ -286,7 +286,7 @@ public class KontextMemoryDataStoreTests {
 		// Act
 		var hits = await store.SearchAsync(
 				"projector checkpoint format", MemorySeeding.Vector(1f), [],
-				new() { Alpha = 0, Limit = 1 })
+				new() { Alpha = 0, K = 1 })
 			.ToListAsync();
 
 		// Assert
@@ -320,7 +320,7 @@ public class KontextMemoryDataStoreTests {
 		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
 		var hits = await store.SearchAsync(
 				"anything", MemorySeeding.Vector(0f, 1f), [Tag("team", "blue")],
-				new() { K = 10, Limit = 10 })
+				new() { K = 10 })
 			.ToListAsync();
 
 		// Assert
@@ -335,7 +335,7 @@ public class KontextMemoryDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act
-		var hits = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { Limit = 2 }).ToListAsync();
+		var hits = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { K = 2 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
@@ -368,7 +368,7 @@ public class KontextMemoryDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act — containment pushes down as a true prefilter: only tagged rows compete for k.
-		var hits = await store.SearchAsync(MemorySeeding.Vector(0f, 1f), [Tag("team", "blue")], new() { K = 10, Limit = 10 }).ToListAsync();
+		var hits = await store.SearchAsync(MemorySeeding.Vector(0f, 1f), [Tag("team", "blue")], new() { K = 10 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Select(h => h.Memory.MemoryId).Order().ToList()).IsEquivalentTo(["m1", "m5"], CollectionOrdering.Matching);
@@ -382,7 +382,7 @@ public class KontextMemoryDataStoreTests {
 		var       store       = await Seed(dataSources);
 
 		// Act
-		var hits = await store.SearchAsync("projector checkpoint format", [], new FullTextSearchOptions { Limit = 1 }).ToListAsync();
+		var hits = await store.SearchAsync("projector checkpoint format", [], new FullTextSearchOptions { K = 1 }).ToListAsync();
 
 		// Assert
 		await Assert.That(hits.Count).IsEqualTo(1);
@@ -435,7 +435,7 @@ public class KontextMemoryDataStoreTests {
 		// Act
 		var hits = await store.SearchAsync(
 				"anything", MemorySeeding.Vector(1f), [],
-				new() { Alpha = 1, Limit = 1 })
+				new() { Alpha = 1, K = 1 })
 			.ToListAsync();
 
 		// Assert
@@ -445,20 +445,20 @@ public class KontextMemoryDataStoreTests {
 		// use_index = false forces the exact brute-force path — same winner either way.
 		var exact = await store.SearchAsync(
 				"anything", MemorySeeding.Vector(1f), [],
-				new() { Alpha = 1, Limit = 1, Nprobs = 1, UseIndex = false })
+				new() { Alpha = 1, K = 1, Nprobs = 1, UseIndex = false })
 			.ToListAsync();
 
 		await Assert.That(exact[0].Memory.MemoryId).IsEqualTo("m1");
 
 		// The pure vector overload answers through the same trained index: exact-match top-1.
-		var vector = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { Limit = 1 }).ToListAsync();
+		var vector = await store.SearchAsync(MemorySeeding.Vector(1f), [], new() { K = 1 }).ToListAsync();
 
 		await Assert.That(vector[0].Memory.MemoryId).IsEqualTo("m1");
 
 		// And its optional knobs must be accepted by the engine too — same winner on the exact path.
 		var vectorExact = await store.SearchAsync(
 				MemorySeeding.Vector(1f), [],
-				new() { Limit = 1, Nprobs = 1, UseIndex = false })
+				new() { K = 1, Nprobs = 1, UseIndex = false })
 			.ToListAsync();
 
 		await Assert.That(vectorExact[0].Memory.MemoryId).IsEqualTo("m1");
