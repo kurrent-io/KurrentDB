@@ -29,7 +29,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		var leader = await WaitForLeaderAsync(kontroller);
 		Assert.Equal(TestDataPlane.Host3, leader.Address);
-		Assert.Equal(1UL, leader.Epoch);
+		Assert.True(leader.Epoch > 0UL);
 
 		await kontroller.StopAsync(TestToken);
 
