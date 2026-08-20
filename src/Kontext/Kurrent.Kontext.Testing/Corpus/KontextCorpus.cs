@@ -53,7 +53,7 @@ public sealed class KontextCorpus(
 		await _store.SeedEmbedded([
 			.. Data.Memories.Select(memory => new MemoryRow(
 				Id: memory.Id,
-				Type: Contracts.MemoryType.Observation,
+				Type: Contracts.MemoryType.Fact,
 				Content: memory.Content,
 				Importance: Contracts.MemoryImportance.Normal,
 				RetainedAt: memory.RetainedAt)),

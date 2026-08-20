@@ -84,8 +84,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     reasoning,
                     evidence,
                     supersedes,
-                    validity_start,
-                    validity_end,
+                    content_time_start,
+                    content_time_end,
                     retained_at,
                     last_accessed_at,
                     superseded_at,
@@ -186,8 +186,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                    reasoning,
                    evidence,
                    supersedes,
-                   validity_start,
-                   validity_end,
+                   content_time_start,
+                   content_time_end,
                    retained_at,
                    last_accessed_at,
                    superseded_at,
@@ -295,8 +295,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     reasoning,
                     evidence,
                     supersedes,
-                    validity_start,
-                    validity_end,
+                    content_time_start,
+                    content_time_end,
                     retained_at,
                     last_accessed_at,
                     superseded_at,
@@ -378,8 +378,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                    reasoning,
                    evidence,
                    supersedes,
-                   validity_start,
-                   validity_end,
+                   content_time_start,
+                   content_time_end,
                    retained_at,
                    last_accessed_at,
                    superseded_at,
@@ -455,8 +455,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                    reasoning,
                    evidence,
                    supersedes,
-                   validity_start,
-                   validity_end,
+                   content_time_start,
+                   content_time_end,
                    retained_at,
                    last_accessed_at,
                    superseded_at,
@@ -534,8 +534,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                    reasoning,
                    evidence,
                    supersedes,
-                   validity_start,
-                   validity_end,
+                   content_time_start,
+                   content_time_end,
                    retained_at,
                    last_accessed_at,
                    superseded_at,
@@ -662,10 +662,10 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             stored.Evidence.Add(DecodeEvidence(citation));
 
         if (!reader.IsDBNull(8)) {
-            stored.Validity = new() { PerceivedStart = DecodeTimestamp(reader, 8) };
+            stored.ContentTime = new() { PerceivedStart = DecodeTimestamp(reader, 8) };
 
             if (!reader.IsDBNull(9))
-                stored.Validity.PerceivedEnd = DecodeTimestamp(reader, 9);
+                stored.ContentTime.PerceivedEnd = DecodeTimestamp(reader, 9);
         }
 
         if (!reader.IsDBNull(12))

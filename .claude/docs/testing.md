@@ -45,6 +45,34 @@ actual.ShouldBeEquivalentTo(expected, config => config
 );
 ```
 
+## Assertion Strength
+
+**A test must assert against intent, never against the code's own output.** If the expected value is read
+from the thing under test, the test proves only self-consistency — and it will follow the code wherever it
+goes, staying green while the behaviour becomes wrong.
+
+```csharp
+// WEAK — reads the value it is checking. Change the source and this test agrees with the change.
+foreach (var retained in events)
+    await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(SomeSource.DefaultType);
+
+// STRONG — names the expected value, so changing the source fails the test.
+await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(Contracts.MemoryType.Fact);
+```
+
+This is not hypothetical. `maps_turns_as_low_trust_hearsay_tagged_by_question` asserted whatever its data
+source emitted. When a rename silently changed that type, the test followed and passed twice — while both
+the test name and the comment above the mapping described the old behaviour.
+
+**The check before you commit an assertion:** *would this fail if the rule it defends were inverted?* If the
+answer is "maybe not", the assertion is too weak. Related habits that prevent the same class of bug:
+
+- Pre-compute expected values in **Arrange**. Computing them inside the assertion reproduces the bug into
+  the expectation.
+- Derive expectations from real types, not from a hand-copied duplicate that goes stale.
+- Name tests as behaviours (`rejects_expired_token`), so a test whose behaviour changed has a name that
+  visibly lies.
+
 ## Test Data Generation
 
 Use Bogus as a TUnit ClassDataSource:

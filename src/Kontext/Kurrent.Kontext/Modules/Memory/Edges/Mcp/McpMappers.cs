@@ -55,8 +55,8 @@ static class McpMappers {
 	public static Contracts.Tag ToContract(Tag t) => new() { Value = t.Value, Scope = t.Scope };
 	public static Tag ToModel(Contracts.Tag t) => new() { Value = t.Value, Scope = t.Scope };
 
-	public static Contracts.Evidence.Types.MemoryRef ToContract(MemoryRef r) => new() { Id = r.Id, Position = r.Position ?? -1 };
-	public static MemoryRef ToModel(Contracts.Evidence.Types.MemoryRef r) => new() { Id = r.Id, Position = r.Position };
+	public static Contracts.Evidence.Types.MemoryRef ToContract(MemoryRef r) => new() { Id = r.Id };
+	public static MemoryRef ToModel(Contracts.Evidence.Types.MemoryRef r) => new() { Id = r.Id };
 
 	public static Contracts.Evidence.Types.RecordRef ToContract(RecordRef r) => new() { Id = r.Id, Position = r.Position };
 	public static RecordRef ToModel(Contracts.Evidence.Types.RecordRef r) => new() { Id = r.Id, Position = r.Position };
@@ -145,7 +145,7 @@ static class McpMappers {
 			Importance = ToContract(m.Importance),
 			Reasoning = m.Reasoning,
 		};
-		if (m.Validity is not null) proto.Validity = ToContract(m.Validity);
+		if (m.ContentTime is not null) proto.ContentTime = ToContract(m.ContentTime);
 		proto.Evidence.AddRange(m.Evidence.Select(ToContract));
 		proto.Tags.AddRange(m.Tags.Select(ToContract));
 		proto.Supersedes.AddRange(m.Supersedes);
@@ -164,7 +164,7 @@ static class McpMappers {
 		Reasoning = m.Reasoning,
 		Evidence = ToModel(m.Evidence),
 		Tags = m.Tags.Select(ToModel).ToList(),
-		Validity = ToModel(m.Validity),
+		ContentTime = ToModel(m.ContentTime),
 		Supersedes = m.Supersedes.ToList(),
 		RetainedAt = m.RetainedAt?.ToDateTimeOffset() ?? default,
 		LastAccessedAt = m.LastAccessedAt?.ToDateTimeOffset(),

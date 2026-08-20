@@ -66,9 +66,10 @@ public sealed partial class LongMemEvalDataSource(string path, LongMemEvalOption
                 var memoryId = $"{Options.TagScope}:{instance.QuestionId}:{sessionIndex}:{turnIndex}";
 
                 var memory = new Contracts.Memory {
-                    // Hearsay by the contract's own definition: an unverified claim,
-                    // kept low-trust so it cannot launder itself into fact.
-                    MemoryType = Contracts.MemoryType.Hearsay,
+                    // A turn is a claim the speaker asserted, so it is a FACT. The dataset's own
+                    // ground truth treats these as true; what the benchmark actually exercises is
+                    // the supersession chain between evidence turns, not any trust distinction.
+                    MemoryType = Contracts.MemoryType.Fact,
                     Content    = turn.Content,
                     Tags       = { new Contracts.Tag { Scope = Options.TagScope, Value = instance.QuestionId } }
                 };

@@ -6,7 +6,7 @@ namespace Kurrent.Kontext.Memory.Mcp.Model;
 // No id: the server mints every memory_id and returns them positionally, so a caller can neither
 // collide with an existing memory nor cite one it is sending in the same batch.
 public sealed class Memory {
-	public MemoryType Type { get; set; } = MemoryType.Observation;
+	public MemoryType Type { get; set; } = MemoryType.Fact;
 
 	public string Content { get; set; } = "";
 
@@ -18,7 +18,7 @@ public sealed class Memory {
 
 	public IReadOnlyList<Tag> Tags { get; set; } = [];
 
-	public TemporalContext? Validity { get; set; }
+	public TemporalContext? ContentTime { get; set; }
 
 	public IReadOnlyList<string> Supersedes { get; set; } = [];
 }

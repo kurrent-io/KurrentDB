@@ -60,7 +60,7 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("a1", Contracts.MemoryType.Observation, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
 			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
 			new Row("a3", Contracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", Contracts.MemoryImportance.Low, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)));
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
@@ -84,21 +84,21 @@ public class KontextMemoryTests {
 		await Assert.That(hit.Score).IsGreaterThan(0);
 		await Assert.That(hit.Lean.MemoryId).IsEqualTo("a1");
 		await Assert.That(hit.Lean.Content).IsEqualTo(expectedContent);
-		await Assert.That(hit.Lean.MemoryType).IsEqualTo(Contracts.MemoryType.Observation);
+		await Assert.That(hit.Lean.MemoryType).IsEqualTo(Contracts.MemoryType.Fact);
 		await Assert.That(hit.Lean.Importance).IsEqualTo(Contracts.MemoryImportance.High);
 		await Assert.That(hit.Lean.RetainedAt.ToDateTimeOffset()).IsEqualTo(expectedRetainedAt);
 	}
 
 	[Test]
 	public async ValueTask recall_returns_full_memories_when_include_full_is_set() {
-		// Arrange — one memory carrying the heavy fields lean drops (evidence, validity window).
+		// Arrange — one memory carrying the heavy fields lean drops (evidence, content-time window).
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
 			new Row("b1", Contracts.MemoryType.Fact, "flamingo stands gracefully on one leg", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Evidence      = SeedEvidenceBlobs(),
-				ValidityStart = Base.AddHours(-24),
-				ValidityEnd   = Base.AddHours(24),
+				ContentTimeStart = Base.AddHours(-24),
+				ContentTimeEnd   = Base.AddHours(24),
 			});
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
@@ -119,7 +119,7 @@ public class KontextMemoryTests {
 		await Assert.That(hit.Full.MemoryId).IsEqualTo("b1");
 		await Assert.That(hit.Full.Content).IsEqualTo(expectedContent);
 		await Assert.That(hit.Full.Evidence.ToList()).IsEquivalentTo([SeedEvidence()]);
-		await Assert.That(hit.Full.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
+		await Assert.That(hit.Full.ContentTime!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
 	}
 
 	[Test]
@@ -128,9 +128,9 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("c1", Contracts.MemoryType.Observation, "wombat digs a cozy burrow", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("c2", Contracts.MemoryType.Observation, "wombat mistaken hidden note", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
-			new Row("c3", Contracts.MemoryType.Observation, "wombat obsolete replaced entry", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) {
+			new Row("c1", Contracts.MemoryType.Fact, "wombat digs a cozy burrow", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("c2", Contracts.MemoryType.Fact, "wombat mistaken hidden note", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
+			new Row("c3", Contracts.MemoryType.Fact, "wombat obsolete replaced entry", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(4),
 				SupersededBy = "c1",
@@ -180,8 +180,8 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("e1", Contracts.MemoryType.Observation, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("e2", Contracts.MemoryType.Observation, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row("e1", Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("e2", Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request = new Contracts.ReclaimRequest();
@@ -206,7 +206,7 @@ public class KontextMemoryTests {
 		var       store       = await Seed(dataSources,
 			new Row("f1", Contracts.MemoryType.Fact, "fact about caching", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) { LastAccessedAt = Base.AddHours(10) },
 			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)) { LastAccessedAt = Base.AddHours(20) },
-			new Row("f3", Contracts.MemoryType.Hearsay, "plan to rewrite the projector", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(30) },
+			new Row("f3", Contracts.MemoryType.Preference, "prefers the projector rewritten in one pass", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(30) },
 			new Row("f4", Contracts.MemoryType.Fact, "fact about tags", Contracts.MemoryImportance.Low, Base.AddHours(4), MemorySeeding.Vector(0f, 0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(5) });
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
@@ -220,7 +220,7 @@ public class KontextMemoryTests {
 		// Act
 		var memories = await memory.RecollectAsync(request).ToListAsync();
 
-		// Assert — the plan is excluded, and the facts arrive critical → high → low.
+		// Assert — the preference is excluded, and the facts arrive critical → high → low.
 		var ids = memories.Select(m => m.MemoryId).ToList();
 
 		await Assert.That(ids).IsEquivalentTo(expectedOrder, CollectionOrdering.Matching);
@@ -260,8 +260,8 @@ public class KontextMemoryTests {
 			  reasoning,
 			  evidence,
 			  supersedes,
-			  validity_start,
-			  validity_end,
+			  content_time_start,
+			  content_time_end,
 			  retained_at,
 			  last_accessed_at,
 			  is_superseded,
@@ -300,8 +300,8 @@ public class KontextMemoryTests {
 			row.Reasoning,
 			row.Evidence,
 			new List<string>(),                  // supersedes
-			row.ValidityStart?.ToUnixTimeMilliseconds(),
-			row.ValidityEnd?.ToUnixTimeMilliseconds(),
+			row.ContentTimeStart?.ToUnixTimeMilliseconds(),
+			row.ContentTimeEnd?.ToUnixTimeMilliseconds(),
 			row.RetainedAt.ToUnixTimeMilliseconds(),
 			(row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds(),
 			row.IsSuperseded,
@@ -330,8 +330,8 @@ public class KontextMemoryTests {
 		public bool            IsSuperseded   { get; init; }
 		public DateTimeOffset? SupersededAt   { get; init; }
 		public string          SupersededBy   { get; init; } = "";
-		public DateTimeOffset? ValidityStart  { get; init; }
-		public DateTimeOffset? ValidityEnd    { get; init; }
+		public DateTimeOffset? ContentTimeStart  { get; init; }
+		public DateTimeOffset? ContentTimeEnd    { get; init; }
 	}
 
 	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);

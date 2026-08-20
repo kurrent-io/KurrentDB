@@ -18,7 +18,7 @@ public sealed class StoredMemory {
 
 	public IReadOnlyList<Tag> Tags { get; set; } = [];
 
-	public TemporalContext? Validity { get; set; }
+	public TemporalContext? ContentTime { get; set; }
 
 	public IReadOnlyList<string> Supersedes { get; set; } = [];
 

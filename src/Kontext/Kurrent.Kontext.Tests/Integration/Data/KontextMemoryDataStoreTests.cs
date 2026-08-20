@@ -50,8 +50,8 @@ public class KontextMemoryDataStoreTests {
 		await Assert.That(stored.Tags[0].Scope).IsEqualTo("work");
 		await Assert.That(stored.Tags[0].Value).IsEqualTo("alpha");
 		await Assert.That(stored.Evidence.ToList()).IsEquivalentTo([SeedEvidence()]);
-		await Assert.That(stored.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
-		await Assert.That(stored.Validity.PerceivedEnd.ToDateTimeOffset()).IsEqualTo(Base.AddHours(24));
+		await Assert.That(stored.ContentTime!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
+		await Assert.That(stored.ContentTime.PerceivedEnd.ToDateTimeOffset()).IsEqualTo(Base.AddHours(24));
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(1));
 		await Assert.That(stored.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(30));
 		await Assert.That(stored.SupersededAt).IsNull();
@@ -525,8 +525,8 @@ public class KontextMemoryDataStoreTests {
 			  reasoning,
 			  evidence,
 			  supersedes,
-			  validity_start,
-			  validity_end,
+			  content_time_start,
+			  content_time_end,
 			  retained_at,
 			  last_accessed_at,
 			  is_superseded,
@@ -552,7 +552,7 @@ public class KontextMemoryDataStoreTests {
 				AddRow(insert, "m5", 2, "quick brown dog runs", 5, ["team:blue"], "", [], [],
 					null, null, Base, Base.AddHours(40), false, null, "", MemorySeeding.Vector(0.9f, 0.1f));
 
-				// m1: the full-field row — evidence with a citation, validity window, two tags.
+				// m1: the full-field row — evidence with a citation, content-time window, two tags.
 				AddRow(insert, "m1", 1, "memory one", 3, ["work:alpha", "team:blue"], "", SeedEvidenceBlobs(), [],
 					Base.AddHours(-24), Base.AddHours(24), Base.AddHours(1), Base.AddHours(30), false, null, "", MemorySeeding.Vector(1f));
 
@@ -590,8 +590,8 @@ public class KontextMemoryDataStoreTests {
 			  reasoning,
 			  evidence,
 			  supersedes,
-			  validity_start,
-			  validity_end,
+			  content_time_start,
+			  content_time_end,
 			  retained_at,
 			  last_accessed_at,
 			  is_superseded,
@@ -649,8 +649,8 @@ public class KontextMemoryDataStoreTests {
 			  reasoning,
 			  evidence,
 			  supersedes,
-			  validity_start,
-			  validity_end,
+			  content_time_start,
+			  content_time_end,
 			  retained_at,
 			  last_accessed_at,
 			  is_superseded,
@@ -697,8 +697,8 @@ public class KontextMemoryDataStoreTests {
 			  reasoning,
 			  evidence,
 			  supersedes,
-			  validity_start,
-			  validity_end,
+			  content_time_start,
+			  content_time_end,
 			  retained_at,
 			  last_accessed_at,
 			  is_superseded,
@@ -728,7 +728,7 @@ public class KontextMemoryDataStoreTests {
 		DuckDBCommand command,
 		string memoryId, int memoryType, string content, int importance,
 		List<string> tags, string reasoning, List<string> evidence, List<string> supersedes,
-		DateTimeOffset? validityStart, DateTimeOffset? validityEnd,
+		DateTimeOffset? contentTimeStart, DateTimeOffset? contentTimeEnd,
 		DateTimeOffset retainedAt, DateTimeOffset lastAccessedAt,
 		bool isSuperseded, DateTimeOffset? supersededAt, string supersededBy,
 		float[] embedding
@@ -736,7 +736,7 @@ public class KontextMemoryDataStoreTests {
 		// Timestamps bind as Unix epoch milliseconds — the schema's BIGINT columns.
 		object?[] values = [
 			memoryId, memoryType, content, importance, tags, reasoning, evidence,
-			supersedes, validityStart?.ToUnixTimeMilliseconds(), validityEnd?.ToUnixTimeMilliseconds(),
+			supersedes, contentTimeStart?.ToUnixTimeMilliseconds(), contentTimeEnd?.ToUnixTimeMilliseconds(),
 			retainedAt.ToUnixTimeMilliseconds(), lastAccessedAt.ToUnixTimeMilliseconds(),
 			isSuperseded, supersededAt?.ToUnixTimeMilliseconds(),
 			supersededBy, embedding,

@@ -82,8 +82,8 @@ public static class MemorySeeding {
 		("reasoning",        _   => ""),
 		("evidence",         row => row.Evidence),
 		("supersedes",       _   => new List<string>()),
-		("validity_start",   row => row.ValidityStart?.ToUnixTimeMilliseconds()),
-		("validity_end",     row => row.ValidityEnd?.ToUnixTimeMilliseconds()),
+		("content_time_start",   row => row.ContentTimeStart?.ToUnixTimeMilliseconds()),
+		("content_time_end",     row => row.ContentTimeEnd?.ToUnixTimeMilliseconds()),
 		("retained_at",      row => row.RetainedAt.ToUnixTimeMilliseconds()),
 		("last_accessed_at", row => (row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds()),
 		("is_superseded",    row => row.IsSuperseded),
@@ -109,8 +109,8 @@ public sealed record MemoryRow(
 
 	public List<string>    Tags           { get; init; } = [];
 	public List<string>    Evidence       { get; init; } = [];
-	public DateTimeOffset? ValidityStart  { get; init; }
-	public DateTimeOffset? ValidityEnd    { get; init; }
+	public DateTimeOffset? ContentTimeStart  { get; init; }
+	public DateTimeOffset? ContentTimeEnd    { get; init; }
 	public DateTimeOffset? LastAccessedAt { get; init; }
 	public bool            IsSuperseded   { get; init; }
 	public DateTimeOffset? SupersededAt   { get; init; }

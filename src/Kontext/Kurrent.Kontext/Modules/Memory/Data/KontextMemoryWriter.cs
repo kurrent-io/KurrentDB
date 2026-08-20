@@ -158,8 +158,8 @@ public sealed class KontextMemoryWriter(
                  unnest(CAST($evidence AS VARCHAR[][])) AS evidence,
                  unnest(CAST($cited_memory_ids AS VARCHAR[][])) AS cited_memory_ids,
                  unnest(CAST($supersedes AS VARCHAR[][])) AS supersedes,
-                 unnest(CAST($validity_starts AS BIGINT[])) AS validity_start,
-                 unnest(CAST($validity_ends AS BIGINT[])) AS validity_end,
+                 unnest(CAST($content_time_starts AS BIGINT[])) AS content_time_start,
+                 unnest(CAST($content_time_ends AS BIGINT[])) AS content_time_end,
                  unnest(CAST($retained_ats AS BIGINT[])) AS retained_at,
                  unnest(CAST($superseded_bys AS VARCHAR[])) AS superseded_by,
                  unnest(CAST($superseded_ats AS BIGINT[])) AS superseded_at,
@@ -170,13 +170,13 @@ public sealed class KontextMemoryWriter(
              WHEN NOT MATCHED AND s.retained THEN INSERT (
                  memory_id, memory_type, content, importance,
                  tags, reasoning, evidence, cited_memory_ids, supersedes,
-                 validity_start, validity_end, retained_at, last_accessed_at,
+                 content_time_start, content_time_end, retained_at, last_accessed_at,
                  is_superseded, superseded_at, superseded_by,
                  log_position, embedding)
              VALUES (
                  s.memory_id, s.memory_type, s.content, s.importance,
                  s.tags, s.reasoning, s.evidence, s.cited_memory_ids, s.supersedes,
-                 s.validity_start, s.validity_end, s.retained_at,
+                 s.content_time_start, s.content_time_end, s.retained_at,
                  coalesce(s.recalled_at, s.retained_at),
                  s.superseded_by IS NOT NULL, s.superseded_at, coalesce(s.superseded_by, ''),
                  s.log_position,
@@ -190,8 +190,8 @@ public sealed class KontextMemoryWriter(
                , evidence         = CASE WHEN s.retained THEN s.evidence ELSE t.evidence END
                , cited_memory_ids = CASE WHEN s.retained THEN s.cited_memory_ids ELSE t.cited_memory_ids END
                , supersedes       = CASE WHEN s.retained THEN s.supersedes ELSE t.supersedes END
-               , validity_start   = CASE WHEN s.retained THEN s.validity_start ELSE t.validity_start END
-               , validity_end     = CASE WHEN s.retained THEN s.validity_end ELSE t.validity_end END
+               , content_time_start   = CASE WHEN s.retained THEN s.content_time_start ELSE t.content_time_start END
+               , content_time_end     = CASE WHEN s.retained THEN s.content_time_end ELSE t.content_time_end END
                , retained_at      = CASE WHEN s.retained THEN s.retained_at ELSE t.retained_at END
                , embedding        = CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) ELSE t.embedding END
                , last_accessed_at = coalesce(s.recalled_at, t.last_accessed_at)
@@ -212,8 +212,8 @@ public sealed class KontextMemoryWriter(
         var evidence        = new List<List<string>>(count);
         var citedMemoryIds  = new List<List<string>>(count);
         var supersedes      = new List<List<string>>(count);
-        var validityStarts  = new List<long?>(count);
-        var validityEnds    = new List<long?>(count);
+        var contentTimeStarts  = new List<long?>(count);
+        var contentTimeEnds    = new List<long?>(count);
         var retainedAts     = new List<long?>(count);
         var supersededBys   = new List<string?>(count);
         var supersededAts   = new List<long?>(count);
@@ -237,8 +237,8 @@ public sealed class KontextMemoryWriter(
             evidence.Add(memory?.Evidence.Select(KontextMemoryDataStore.EncodeEvidence).ToList() ?? []);
             citedMemoryIds.Add(memory is not null ? KontextMemoryDataStore.EncodeCitedMemoryIds(memory) : []);
             supersedes.Add(memory?.Supersedes.ToList() ?? []);
-            validityStarts.Add(memory?.Validity?.PerceivedStart is { } start ? KontextMemoryDataStore.EncodeTimestamp(start) : null);
-            validityEnds.Add(memory?.Validity?.PerceivedEnd is { } end ? KontextMemoryDataStore.EncodeTimestamp(end) : null);
+            contentTimeStarts.Add(memory?.ContentTime?.PerceivedStart is { } start ? KontextMemoryDataStore.EncodeTimestamp(start) : null);
+            contentTimeEnds.Add(memory?.ContentTime?.PerceivedEnd is { } end ? KontextMemoryDataStore.EncodeTimestamp(end) : null);
             retainedAts.Add(memory is not null ? pendingMemory.RetainedAt : null);
             supersededBys.Add(pendingMemory.SupersededBy);
             supersededAts.Add(pendingMemory.SupersededBy is not null ? pendingMemory.SupersededAt : null);
@@ -259,8 +259,8 @@ public sealed class KontextMemoryWriter(
         command.Parameters.Add(new("evidence", evidence));
         command.Parameters.Add(new("cited_memory_ids", citedMemoryIds));
         command.Parameters.Add(new("supersedes", supersedes));
-        command.Parameters.Add(new("validity_starts", validityStarts));
-        command.Parameters.Add(new("validity_ends", validityEnds));
+        command.Parameters.Add(new("content_time_starts", contentTimeStarts));
+        command.Parameters.Add(new("content_time_ends", contentTimeEnds));
         command.Parameters.Add(new("retained_ats", retainedAts));
         command.Parameters.Add(new("superseded_bys", supersededBys));
         command.Parameters.Add(new("superseded_ats", supersededAts));

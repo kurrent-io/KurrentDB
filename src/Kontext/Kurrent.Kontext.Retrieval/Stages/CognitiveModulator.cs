@@ -4,17 +4,16 @@
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
-/// Scores each memory the way an agent would trust it:
-/// <para>final = certainty × (α_recency·recency_norm + α_importance·importance_norm + α_relevance·relevance_norm)</para>
+/// Scores each memory on the three ranked dimensions:
+/// <para>score = α_recency·recency_norm + α_importance·importance_norm + α_relevance·relevance_norm</para>
 /// <para>- recency_raw = e^(−(as_of − last_accessed_at)/tau). Retrieval refreshes last_accessed_at (reconsolidation), so what gets used stays fresh.</para>
 /// <para>- importance_raw = the agent's salience level mapped to [0,1].</para>
 /// <para>- relevance_raw = the pool's running score (fused, or reranked when a relevance model ran first).</para>
 /// <para>- each *_norm is min-max normalized ACROSS THE POOL, so the alphas weigh dimensions, not units.</para>
-/// <para>- certainty is the trust gate: a flat per-type multiplier for a raw memory (OBSERVATION high, HEARSAY low).
-/// A DERIVED memory inherits the mean certainty of what it cites — a synthesis built on gossip stays penalized,
-/// one observation cannot launder twenty hearsays into truth.</para>
-/// <para>Certainty multiplies on purpose: a contradicted lie loses decisively while strong gossip may still
-/// outrank a stale observation on the base score.</para>
+/// <para>There is no trust multiplier. Trust is enforced when a memory is WRITTEN — store the claim you
+/// checked — rather than reconstructed at read time from type and citations. Citations in particular
+/// never lift a score: the most rigorous memories carry none, because a check you ran yourself is not
+/// a citable source, so rewarding citations would rank a copied blog post above a test you ran.</para>
 /// </summary>
 public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRetrievalStage {
     /// <summary>Creates the stage from pre-built options — the config-binding door.</summary>
@@ -47,8 +46,6 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
         var relevanceMin  = raws.Min(raw => raw.Relevance);
         var relevanceMax  = raws.Max(raw => raw.Relevance);
 
-        var byId = pool.ToDictionary(scored => scored.Memory.MemoryId, scored => scored.Memory);
-
         IReadOnlyList<ScoredMemory> modulated = raws.Select(raw => {
                 var recencyNorm    = ScoreNormalization.MinMax(raw.Recency, recencyMin, recencyMax);
                 var importanceNorm = ScoreNormalization.MinMax(raw.Importance, importanceMin, importanceMax);
@@ -58,10 +55,8 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
                               + options.AlphaImportance * importanceNorm
                               + options.AlphaRelevance * relevanceNorm;
 
-                var certainty = CertaintyOf(raw.Scored.Memory, byId);
-
                 return raw.Scored with {
-                    Score = baseScore * certainty,
+                    Score = baseScore,
                     Breakdown = raw.Scored.Breakdown with {
                         RecencyRaw     = raw.Recency,
                         RecencyNorm    = recencyNorm,
@@ -69,7 +64,6 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
                         ImportanceNorm = importanceNorm,
                         RelevanceRaw   = raw.Relevance,
                         RelevanceNorm  = relevanceNorm,
-                        Certainty      = certainty,
                         BaseScore      = baseScore,
                     },
                 };
@@ -83,30 +77,6 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
 
     double RecencyOf(Contracts.StoredMemory memory, DateTimeOffset asOf) =>
         ScoreNormalization.ExponentialDecay(asOf - memory.LastAccessedAt.ToDateTimeOffset(), options.RecencyTau);
-
-    // A raw memory trusts its type; a derived one inherits the mean trust of what it cites.
-    // Citations resolve against the candidate pool (one hop, no store round-trip): a cited memory
-    // in the pool contributes its type weight, a cited log record its own trust level, and an
-    // unresolvable citation the configured fallback.
-    double CertaintyOf(Contracts.StoredMemory memory, IReadOnlyDictionary<string, Contracts.StoredMemory> pool) {
-        var citations = memory.Evidence;
-
-        if (citations.Count == 0)
-            return options.CertaintyOf(memory.MemoryType);
-
-        var sum = 0.0;
-
-        foreach (var citation in citations)
-            sum += citation.SourceCase switch {
-                Contracts.Evidence.SourceOneofCase.Memory when pool.TryGetValue(citation.Memory.Id, out var cited)
-                    => options.CertaintyOf(cited.MemoryType),
-                Contracts.Evidence.SourceOneofCase.Memory => options.UnresolvedCitationCertainty,
-                Contracts.Evidence.SourceOneofCase.Record => options.RecordCitationCertainty,
-                _                                         => options.UnresolvedCitationCertainty,
-            };
-
-        return sum / citations.Count;
-    }
 }
 
 /// <summary>
@@ -143,22 +113,6 @@ public sealed class CognitiveModulationOptions {
         [Contracts.MemoryImportance.Critical]    = 1.00,
     };
 
-    /// <summary>The trust multiplier per memory type for RAW memories — the certainty a derived memory inherits from.</summary>
-    public Dictionary<Contracts.MemoryType, double> CertaintyWeights { get; set; } = new() {
-        [Contracts.MemoryType.Unspecified] = 0.50,
-        [Contracts.MemoryType.Observation] = 1.00,
-        [Contracts.MemoryType.Hearsay]     = 0.25,
-        [Contracts.MemoryType.Fact]        = 0.90,
-        [Contracts.MemoryType.UserProfile] = 0.90,
-        [Contracts.MemoryType.Summary]     = 0.80,
-    };
-
-    /// <summary>Trust of a citation pointing at a KurrentDB log record — a verifiable primary source, so near-observation.</summary>
-    public double RecordCitationCertainty { get; set; } = 0.9;
-
-    /// <summary>Trust of a cited memory that is not in the candidate pool to resolve — neutral, neither laundering nor punishing.</summary>
-    public double UnresolvedCitationCertainty { get; set; } = 0.5;
-
     // TryGetValue first so a present key never touches the fallback lookup (GetValueOrDefault's
     // second argument is evaluated eagerly, so indexing the fallback key unconditionally would
     // throw even for a present key); the fallback lookup itself degrades to a literal neutral
@@ -167,9 +121,4 @@ public sealed class CognitiveModulationOptions {
         ImportanceWeights.TryGetValue(importance, out var weight)
             ? weight
             : ImportanceWeights.GetValueOrDefault(Contracts.MemoryImportance.Normal, 0.5);
-
-    internal double CertaintyOf(Contracts.MemoryType type) =>
-        CertaintyWeights.TryGetValue(type, out var weight)
-            ? weight
-            : CertaintyWeights.GetValueOrDefault(Contracts.MemoryType.Unspecified, 0.5);
 }

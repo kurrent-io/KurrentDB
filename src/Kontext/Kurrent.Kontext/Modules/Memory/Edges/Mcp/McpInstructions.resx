@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="server.instructions" xml:space="preserve">
-    <value>Kontext is your long-term memory, spoken in six verbs:
+    <value>Kontext is your long-term memory, spoken in five verbs:
 - Retain (store something worth remembering)
 - Recall (search by meaning)
 - Reclaim (fetch by id)
@@ -22,18 +22,21 @@
 
 Recall before you guess — re-deriving something you already learned is the expensive path.
 Retain the moment you learn something durable, written to stand on its own.
+STORE THE CLAIM YOU CHECKED: name what would show you wrong before storing, and if you cannot name
+that check, sharpen the claim until you can. Put attribution in the content — "the docs state X" is
+a fact you verified, a bare "X" is not. An unchecked belief is an OpenQuestion, not a weak fact.
 To correct a memory, retain the correction with supersedes.
-Reflect periodically, when observations pile up — not on every turn.</value>
+Reflect periodically, when memories pile up — not on every turn.</value>
   </data>
   <data name="tool.recall" xml:space="preserve">
     <value>Search your memory by MEANING — not reclaim (that's by id), not recollect (that's by type/tag, no ranking). Reach for
 this before you act on something you might already know: at the start of a task, when a name, decision, error, file,
 or preference comes up that you may have seen before, or any time you'd otherwise guess. Recalling is cheap;
 re-deriving something you already learned — or silently contradicting a past decision — is not. Results come back
-ranked best-first: treat the order as the system's confidence and each memory's type as how far to trust it (a
-firsthand OBSERVATION outranks HEARSAY picked up in conversation). Only what is currently true surfaces — superseded
-and superseded memories never do. Side effect worth knowing: recalling a memory keeps it salient (refreshes its
-recency clock), so the things you actually use stay near the top over time. Recall freely.</value>
+ranked best-first on relevance, importance and recency. There is no trust score to read: everything stored was
+checked when it was written, so the type tells you what KIND of claim you have, not how far to believe it. Only what
+is currently true surfaces — superseded memories never do. Side effect worth knowing: recalling a memory keeps it
+salient (refreshes its recency clock), so the things you actually use stay near the top over time. Recall freely.</value>
   </data>
   <data name="tool.recall.param.options" xml:space="preserve">
     <value>Optional knobs — limit, minimum score, tag pre-filter, include-full. Null ⇒ server defaults.</value>
@@ -52,20 +55,20 @@ see which missed. Like recall, reclaiming refreshes the recency clock of the mem
   </data>
   <data name="tool.recollect" xml:space="preserve">
     <value>Browse your memories by structure, not relevance — not recall (that ranks by meaning), not reclaim (that's by id).
-Use it to enumerate or gather a filtered set — "all my PLANs tagged project::engram", "everything I retained this
-week" — where you want a list, not a ranked answer to a question. The types filter is any-of (empty = any type); all
-supplied tags must be present.
-still surfaces them). Ordered by sort
+Use it to enumerate or gather a filtered set — "every OpenQuestion in this repo", "everything I retained this
+week" — where you want a list, not a ranked answer to a question. Enumerating OpenQuestions at the start of a task
+is the canonical use: it is your work queue, and because recollect does not rank, nothing hides one from that path.
+The types filter is any-of (empty = any type); all supplied tags must be present. Ordered by sort
 (default: newest-retained first); reverse with direction. Read-only.</value>
   </data>
   <data name="tool.reflect" xml:space="preserve">
     <value>Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED memories from what it
-finds — a FACT, PROCEDURE, PROFILE, SUMMARY, or PLAN that cites the memories it rests on — and may supersede or
-supersede the ones the new insight subsumes. Reflection is the operation that produces derived memories; there is no
-"reflection" memory type. Reach for it periodically, when a pile of observations wants to become a durable
-conclusion — not on every turn. Writes new memories and is destructive (may supersede); long-running —
-expect it to complete asynchronously rather than return instantly. Not idempotent. Returns the ids it synthesized,
-and superseded.</value>
+finds — a Fact or a Preference that cites the memories it rests on — and may supersede the ones the new insight
+subsumes. A consolidation is a Fact citing many memories; there is no separate summary type, because how a memory
+arose is visible in its evidence. Reflection never produces an OpenQuestion: a question is asked, not concluded.
+Reach for it periodically, when a pile of memories wants to become a durable conclusion — not on every turn. Writes
+new memories and is destructive (may supersede); long-running — expect it to complete asynchronously rather than
+return instantly. Not idempotent. Returns the ids it synthesized, and superseded.</value>
   </data>
   <data name="tool.reflect.param.options" xml:space="preserve">
     <value>Optional correlation id and tag scoping. Null ⇒ the server assigns an id and reflects over everything.</value>
@@ -73,10 +76,18 @@ and superseded.</value>
   <data name="tool.retain" xml:space="preserve">
     <value>Store something worth remembering — a decision and its reasoning, an error and its fix, a user preference, a durable
 fact, a question you could not answer. Reach for it the moment you learn something you'd want back later, and write each
-memory so it stands on its own: a reader months from now, with no other context, should understand it. Set the memory
-type honestly — it is the trust axis, so don't dress an unchecked claim up as a Fact — set importance by how much it
-matters, cite what the memory rests on in evidence, put the argument in reasoning, and list any memories it replaces in
-supersedes (the old ones stay readable, marked superseded; there is no separate supersede call).
+memory so it stands on its own: a reader months from now, with no other context, should understand it.
+
+STORE THE CLAIM YOU CHECKED, not the claim you would like to be true. Before storing, name what would show you WRONG —
+and if you cannot name that check, the claim is too vague, so sharpen it until you can. "The DuckDB docs state MERGE is
+atomic" is a fact you verified by reading them; a bare "MERGE is atomic" is not. Attribution belongs INSIDE the content.
+An unchecked belief is not a weak fact, it is an OpenQuestion. Set importance by how much it matters, cite what the
+memory rests on in evidence, put the argument in reasoning, and list any memories it replaces in supersedes (the old
+ones stay readable, marked superseded; there is no separate supersede call).
+
+ONE MEMORY PER THING THAT CAN DIE ON ITS OWN. "Sergio said the build failed" and "the build failed" are two memories:
+the saying stays true forever, the claim is superseded the moment you check it yourself. A conclusion and the premises
+it rests on are ONE — claim in content, derivation in reasoning, because they die together.
 
 YOU DO NOT SUPPLY IDS. The server mints every id and returns them positionally: result[i] is the memory you sent at
 position i, always, same length, same order. So you cannot cite a memory you are sending in this same call — retain the
@@ -87,7 +98,9 @@ EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always searche
 one you store and returns them in related, nearest first. It does not merge, block, or deduplicate anything — it
 reports, YOU decide. Reading related is part of making this call, not a courtesy. When a neighbour matches what you just
 stored: if you brought NEW SUPPORT (a second encounter, a different source), retain a successor with supersedes on it,
-carrying the union of its citations and yours — re-encountering a belief is corroboration and worth recording; if you
+carrying the union of its citations and yours — re-encountering a belief is corroboration and worth recording. If you
+brought nothing new, leave both standing and move on; a successor that adds no support is a third copy, not
+consolidation.
 
 Additive and always creates: retaining the same content twice creates two memories, which is exactly why you must act on
 related. Returns one result per memory, in order, with its server-assigned id and its neighbours.</value>
@@ -106,12 +119,16 @@ related. Returns one result per memory, in order, with its server-assigned id an
   </data>
   <data name="type.Evidence" xml:space="preserve">
     <value>One cited source. Exactly one arm is set: a memory, a KurrentDB log record, a location in git, or text on the web.
-Provenance on a raw memory ("where I saw this") and support on a derived one — a memory counts as DERIVED only when it
-cites at least one MEMORY; citing files or pages means you looked something up firsthand and leaves it raw.
 
-Cite only what is OUTSIDE the memory. A check you ran yourself — a search, a build, a test run — is not a source: if it
-matters, say so in content or reasoning. A search result in particular is not evidence; cite the thing it found, and put
-"nothing else does this" in reasoning where a reader can discount it.</value>
+EVIDENCE ANSWERS ONE QUESTION: how can this claim be CHECKED? It does not say how far to trust the memory, and it is
+NOT an input to ranking — the most rigorous memories carry none, because a check you ran yourself is not a citable
+source. Its three jobs are AUDIT (a reader confirms the claim without re-deriving it), SUPERSESSION (a successor
+carries its own citations plus the ones it replaces) and CASCADE (when a cited memory proves wrong, everything
+resting on it can be found).
+
+Cite only what is OUTSIDE the memory. A check you ran yourself — a search, a build, a test run — is not a source: if
+it matters, say so in content or reasoning. A search result in particular is not evidence; cite the thing it found,
+and put "nothing else does this" in reasoning where a reader can discount it.</value>
   </data>
   <data name="type.Evidence+ToMemory" xml:space="preserve">
     <value>A citation of another memory. The only arm that makes this memory derived.</value>
@@ -200,7 +217,7 @@ those, request the full body or reclaim by id.</value>
     <value>Reclaim by this id for the full record.</value>
   </data>
   <data name="type.LeanMemory.memoryType" xml:space="preserve">
-    <value>The trust axis — the record's cognitive type.</value>
+    <value>What kind of claim this is: truth-apt, a taste, or a question.</value>
   </data>
   <data name="type.LeanMemory.retainedAt" xml:space="preserve">
     <value>When the memory was retained — age, for context.</value>
@@ -216,17 +233,20 @@ the two shapes are deliberately separate so the write and read models evolve ind
     <value>The memory's textual content.</value>
   </data>
   <data name="type.Memory.evidence" xml:space="preserve">
-    <value>The sources this memory cites, in citation order. Empty is normal and costs nothing beyond the flat per-type trust
-weight — most durable facts are asserted directly and carry no citation at all. A HEARSAY memory must carry none and is
-REJECTED if it does: verify the claim and retain a Fact that supersedes it.</value>
+    <value>The sources this memory cites, in citation order. Evidence answers HOW THIS CAN BE CHECKED — not how far to trust
+it, and it is NOT an input to ranking. Empty is normal and costs nothing: a check you ran yourself is not a citable
+source, so the most rigorous memories often cite none at all. If citations lifted a score, a claim copied from a web
+page would outrank a test you ran.</value>
   </data>
   <data name="type.Memory.reasoning" xml:space="preserve">
     <value>Why this record exists in this shape. Two obligations, in order: (1) why the claim is TRUE — the derivation from the
-cited sources to the conclusion, present when you synthesized it, absent when it is firsthand or directly asserted;
-(2) why it is FILED THIS WAY — only when the type or importance was a judgment call at a contested boundary (Hearsay vs
-Observation, Preference vs Fact, OpenQuestion vs Hearsay). Skip (2) when the classification was obvious. Most memories
-need only (1), or neither. Kept out of content and out of the recall embedding: the embedding indexes the memory's own
-claim, never the argument for it.</value>
+cited sources to the conclusion, present when you synthesized it, absent when it is directly asserted; (2) why it is
+FILED THIS WAY — only when the type was a judgment call at a contested boundary (Preference vs Fact, when a taste is
+close to a team standard). Skip (2) when the classification was obvious.
+
+This is also where an INFERENCE lives. A conclusion and the premises it rests on are ONE memory: the claim in
+content, the derivation here. They die together, so nothing is gained by splitting them. Kept out of content and out
+of the recall embedding: the embedding indexes the memory's own claim, never the argument for it.</value>
   </data>
   <data name="type.Memory.importance" xml:space="preserve">
     <value>The agent's salience rating — how much this memory matters. Higher importance keeps it retrievable longer as recency
@@ -240,11 +260,10 @@ there is no separate supersede operation.</value>
     <value>Scoped or bare labels.</value>
   </data>
   <data name="type.Memory.type" xml:space="preserve">
-    <value>The record's cognitive type — Kontext's trust axis (replaces an explicit confidence field).</value>
+    <value>What kind of claim this is: truth-apt, a taste, or a question. Not a trust axis — trust is enforced by what you are allowed to WRITE.</value>
   </data>
-  <data name="type.Memory.validity" xml:space="preserve">
-    <value>The world-time span the content refers to (perceived from the text); a point event sets start == end. Null when the text
-implies none.</value>
+  <data name="type.Memory.contentTime" xml:space="preserve">
+    <value>The world-time the content is ABOUT (perceived from the text); a point event sets start == end. NOT the period the claim stays valid — that is derived from this plus the supersession chain. Null when the text implies none.</value>
   </data>
   <data name="type.MemoryImportance" xml:space="preserve">
     <value>The agent's salience rating, set at retain. An additive term in ranking, not a decay control: higher importance keeps a
@@ -259,56 +278,43 @@ Values:
 - Critical: Top salience — architectural calls, hard-won lessons.</value>
   </data>
   <data name="type.MemoryRef" xml:space="preserve">
-    <value>A pointer to another memory that supports this one.</value>
+    <value>A pointer to another memory that supports this one — the id and nothing else. A log position is deliberately absent: the server can look one up from the id whenever it needs it, so a copy here would carry no new information. RecordRef does keep a position, because there you are holding the log record and genuinely know it.</value>
   </data>
   <data name="type.MemoryRef.id" xml:space="preserve">
     <value>The cited memory id.</value>
   </data>
-  <data name="type.MemoryRef.position" xml:space="preserve">
-    <value>Its position in the log (exact, replayable).</value>
-  </data>
   <data name="type.MemoryType" xml:space="preserve">
-    <value>What a memory is — Kontext's trust axis. Whether a memory is firsthand or derived is not a type: it is visible in its
-evidence (cites at least one MEMORY ⇒ derived, inheriting the certainty of those memories; anything else ⇒ firsthand or
-asserted). There is deliberately no "reflection" type — reflection is the process that produces the derived types.
+    <value>What a memory IS. ONE axis only: is this TRUTH-APT, and if not, what is it?
 
-THE LIFECYCLE TEST, which decides episodic vs durable: "does TIME ALONE make this irrelevant, or does something have to
-HAPPEN?" Time alone ⇒ episodic, it decays (Observation, Hearsay, OpenQuestion). Something must happen ⇒ durable, never
-decayed, superseded when the world changes (Fact, Preference, UserProfile, Summary). Persistence is not a claim of
-eternal truth — it means only that decay would be the WRONG reason to lose it.
+Every other distinction lives in a field that carries it better: a moment vs a standing state is contentTime, an
+inference is reasoning, what it rests on is evidence, who it applies to is tags, what replaced it is supersedes.
+THE ADMISSION TEST: if a field already carries the distinction, it is not a type.
+
+There is NO confidence and NO certainty anywhere in this contract. Trust is not a column — it is a rule about what
+you may WRITE. Store the claim you CHECKED. Name the falsifying check first; if you cannot name what would show you
+wrong, the claim is too vague. Observing something verifies EXACTLY what you observed: watching a build fail
+verifies "the build failed", not "the build is broken" and not "the build fails because of X".
 
 Values:
 - Unspecified: Default / not set.
-- Observation: A perceived EVENT — "what happened". Firsthand, so the highest trust. Episodic (decays). The word names the
-SHAPE OF THE CLAIM, not the act of observing: reading a file is an act of observation, but what you learn from it is usually a
-standing state, and that is a Fact. "The build failed at 15:04" is an Observation; "the bus dispatches parent handlers first"
-is a Fact.
-- Hearsay: An UNVERIFIED CLAIM — someone asserts this is true and you have not checked. Naturally low-trust, kept unverified so a
-fabricated "fact" injected into you cannot launder itself into truth (the "memory-hacking" guard). Episodic. Defined by
-verification status, not origin: a claim from a blog post, a stale code comment, or a colleague all land here. When a
-conversation gives you both readings, ask "is this useful because it WAS SAID, or because of WHAT WAS SAID?" — the saying is an
-Observation, the content is Hearsay, and usually you want the content. Carries NO evidence: citing a memory would make it a
-derived inference, and citing a source would mean you verified it. To promote it, verify and retain a Fact that supersedes it.
-- Fact: A durable truth about the world, a system, or a project — a coding standard, a how-to, a milestone, a property of the
-code. A STANDING STATE, not an event. Persists; superseded, never decayed. Scope is irrelevant to the type: "humans need air"
-and "this project runs tests only via test-runner.cs" are the same kind of record — scope is what tags are for. EVIDENCE IS NOT
-WHAT MAKES A FACT: most carry none, and missing evidence costs certainty, not validity.
-- UserProfile: Identity and role of a principal — who they are, deliberately small. Always loaded for that principal, so only
-identity-grade facts belong here.
-- Preference: A personal taste binding only its principal ("I prefer tabs"). Persists, superseded freely as taste drifts, earned
-by relevance — never always-loaded. A preference binding a team/project is a standard: a Fact at that scope, not a Preference.
-- Summary: A consolidation of other memories — a recap, digest, or index. Always derived (cites its sources as evidence), so its
-certainty is inherited from them. Persists, refreshed as those sources change.
-- OpenQuestion: A KNOWN GAP — something unresolved that still needs an answer. The only NON-ASSERTIVE type: it carries no
-proposition, so it has no truth value, cannot be corroborated or contradicted, and certainty is meaningless for it. That is what
-earns it a place; every other type is a claim. Episodic, and decay IS the moot mechanism — a question nobody recalls fades
-without ceremony, so no anti-fact is ever needed. Enumerate them with recollect (which does not rank, so decay never hides one
-from that path); that list is your work queue. It terminates by being ANSWERED: retain the answering Fact with supersedes on it.
-Never citable as evidence — a claim cannot rest on a question. Versus Hearsay: hearsay is a LOW-CONFIDENCE ANSWER, an open
-question is the ABSENCE of one, and both can be live at once.
+- Fact: An assertion about the world that can be TRUE or FALSE — by far the common case. Scope is irrelevant to the
+type and so is subject matter: "humans need air", "this project runs tests only via test-runner.cs" and "the build
+failed at 14:22" are the same KIND of record. Scope is what tags are for; moment-versus-span is what contentTime is
+for. EVIDENCE IS NOT WHAT MAKES A FACT: most carry none, because a check you ran yourself is not a citable source.
+Missing evidence costs auditability, never validity and never rank.
+- Preference: A personal taste that binds its principal ("I prefer tabs"). NOT truth-apt — a taste cannot be false,
+so asking how far to believe it is a category error. A preference that binds a TEAM is a standard, which is a Fact
+at that scope. The line is who must follow it.
+- OpenQuestion: A KNOWN GAP — something unresolved that still needs an answer. Carries no proposition, so it has no
+truth value and can be neither corroborated nor contradicted. This is also where UNCHECKED BELIEFS go: a working
+hypothesis is not a low-confidence fact, it is a question with your reading in reasoning. Enumerate them with
+recollect — that list is your work queue. Terminates by being ANSWERED: retain the answering Fact with supersedes on
+it. Never citable as evidence — a claim cannot rest on a question.
 
-There is no Procedure type (a how-to is a Fact) and no Plan type (a stated intention is an unverified claim about the future —
-Hearsay; it decays when stale).</value>
+There is no Observation type (the word named how you came to KNOW something, not the shape of the claim), no Hearsay
+(that is the write rule's job), no Summary (a consolidation is a Fact citing many memories), no UserProfile (identity
+is a Fact about a principal), no Procedure (a how-to is a Fact) and no Plan (an intention is a Fact with a future
+contentTime).</value>
   </data>
   <data name="type.RecallOptions" xml:space="preserve">
     <value>The optional knobs for a recall — the query itself is a direct parameter.</value>
@@ -359,7 +365,7 @@ Exactly one body arm is set.</value>
     <value>The lean projection of the hit.</value>
   </data>
   <data name="type.RecalledMemory.score" xml:space="preserve">
-    <value>Final ranking score (base × certainty); higher = stronger match. A low top score means nothing matched well.</value>
+    <value>Final ranking score — the alpha-weighted sum of the normalized dimensions; higher = stronger match. A low top score means nothing matched well.</value>
   </data>
   <data name="type.RecollectOptions" xml:space="preserve">
     <value>The filters and ordering for a recollect — browse by structure (type/tags), not relevance. Recollect has no payload, so
@@ -443,8 +449,7 @@ rather than arbitrary ones.</value>
     <value>The stored memory's id. Retain always stores; the related list never blocks it.</value>
   </data>
   <data name="type.RetainedMemory.related" xml:space="preserve">
-    <value>Advisory, populated only when retain was asked to reconcile: existing memories this one looks to duplicate or
-contradict, nearest first.</value>
+    <value>Advisory: existing live memories closest to the one just stored, nearest first. Populated on EVERY retain — the server reports, you decide. Supersede a neighbour when you brought new support; leave it standing when you did not.</value>
   </data>
   <data name="type.SortDirection" xml:space="preserve">
     <value>Sort direction for a recollect listing.
@@ -466,7 +471,7 @@ and write models evolve independently.</value>
     <value>Why the claim is true and, when it was a judgment call, why it is filed this way.</value>
   </data>
   <data name="type.StoredMemory.evidence" xml:space="preserve">
-    <value>What this memory rests on: cited sources and the reasoning tying them to it. Empty for a raw observation.</value>
+    <value>What this memory rests on — the cited sources. Answers how the claim can be CHECKED; empty is normal.</value>
   </data>
   <data name="type.StoredMemory.importance" xml:space="preserve">
     <value>The salience level set at retain (higher keeps it retrievable longer as recency fades).</value>
@@ -478,7 +483,7 @@ and write models evolve independently.</value>
     <value>Unique identifier of the memory.</value>
   </data>
   <data name="type.StoredMemory.memoryType" xml:space="preserve">
-    <value>The record's cognitive type — Kontext's trust axis.</value>
+    <value>What kind of claim this is: truth-apt, a taste, or a question.</value>
   </data>
   <data name="type.StoredMemory.retainedAt" xml:space="preserve">
     <value>When the memory was retained.</value>
@@ -495,8 +500,8 @@ and write models evolve independently.</value>
   <data name="type.StoredMemory.tags" xml:space="preserve">
     <value>Scoped or bare labels.</value>
   </data>
-  <data name="type.StoredMemory.validity" xml:space="preserve">
-    <value>The world-time span the content refers to (perceived from the text).</value>
+  <data name="type.StoredMemory.contentTime" xml:space="preserve">
+    <value>The world-time the content is ABOUT (perceived from the text). Validity is derived from this plus the supersession chain.</value>
   </data>
   <data name="type.Tag" xml:space="preserve">
     <value>An agent-agnostic filter label with an optional scope (namespace). Scoped tags let you filter on a typed dimension (e.g.
@@ -510,9 +515,16 @@ scope are sanitized to lower kebab-case, so tags are canonical.</value>
     <value>The label — lower kebab-case.</value>
   </data>
   <data name="type.TemporalContext" xml:space="preserve">
-    <value>The world-time span a memory's content refers to, as perceived from its text (may be fuzzy). This is content time —
-distinct from the storage clocks (retained-at, last-accessed-at). A point-in-time event sets the end equal to the start;
-a null end means ongoing / open-ended.</value>
+    <value>The world-time the memory's content is ABOUT, as perceived from its text (may be fuzzy). This is CONTENT time,
+distinct from the storage clocks (retained-at, last-accessed-at). A point-in-time event sets the end equal to the
+start; a null end means ongoing.
+
+It is NOT the period the claim stays valid, and the two come apart: "the build failed at 14:22" is ABOUT a moment in
+the past and is valid FOREVER. VALIDITY IS DERIVED, never stored — it runs from this memory's start to its
+successor's start, or stays open when nothing superseded it. Storing an end would fabricate a guess about the future.
+
+Whether a claim can lapse falls out of the shape: closed and entirely past means SETTLED and can never lapse;
+open-ended asserts the present and can; closed in the future can (a scheduled deploy can be cancelled).</value>
   </data>
   <data name="type.TemporalContext.from" xml:space="preserve">
     <value>Start of the state, or the moment of a point event.</value>

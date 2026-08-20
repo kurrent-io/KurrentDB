@@ -55,7 +55,7 @@ public class LongMemEvalDataSourceTests {
     }
 
     [Test]
-    public async ValueTask maps_turns_as_low_trust_hearsay_tagged_by_question() {
+    public async ValueTask maps_turns_as_facts_tagged_by_question() {
         // Arrange
         using var dataset = new TempDataset(KnowledgeUpdateInstance);
 
@@ -66,7 +66,7 @@ public class LongMemEvalDataSourceTests {
 
         // Assert
         foreach (var retained in events) {
-            await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(Contracts.MemoryType.Hearsay);
+            await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(Contracts.MemoryType.Fact);
             await Assert.That(retained.Memories[0].Memory.Tags).Contains(expectedTag);
         }
     }

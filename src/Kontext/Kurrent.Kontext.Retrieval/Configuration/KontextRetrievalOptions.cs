@@ -18,7 +18,7 @@ public sealed class KontextRetrievalOptions {
     /// <summary>The pool-local BM25 reread that refines the fused order before modulation.</summary>
     public Bm25RerankerOptions Reranking { get; set; } = new();
 
-    /// <summary>The cognitive scoring weights: recency, importance, relevance, and certainty.</summary>
+    /// <summary>The cognitive scoring weights: recency, importance, and relevance.</summary>
     public CognitiveModulationOptions Modulation { get; set; } = new();
 
     /// <summary>The MMR diversity trade-off applied at the end of the chain.</summary>

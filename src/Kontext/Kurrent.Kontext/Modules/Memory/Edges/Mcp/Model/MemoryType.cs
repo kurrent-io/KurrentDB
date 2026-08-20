@@ -8,17 +8,9 @@ namespace Kurrent.Kontext.Memory.Mcp.Model;
 public enum MemoryType {
 	Unspecified = 0,
 
-	Observation = 1,
+	Fact = 1,
 
-	Hearsay = 2,
+	Preference = 2,
 
-	Fact = 3,
-
-	UserProfile = 4,
-
-	Summary = 5,
-
-	Preference = 6,
-
-	OpenQuestion = 7,
+	OpenQuestion = 3,
 }

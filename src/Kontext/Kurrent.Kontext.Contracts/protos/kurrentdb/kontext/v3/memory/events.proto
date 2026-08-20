@@ -49,15 +49,14 @@ message MemoriesRetained {
 //
 // 2) IT MAKES THE RETRIEVAL SCORING ALGORITHM REPRODUCIBLE AND TUNABLE. Ranking follows three
 //    normalized dimensions — recency + importance + relevance, min-max normalized across the
-//    candidate pool, then weighted and summed — gated by our certainty extension (a trust
-//    multiplier derived from MemoryType; see resources.proto):
+//    candidate pool, then weighted and summed:
 //
-//      final_score = certainty × (alpha_recency·recency + alpha_importance·importance +
-//      alpha_relevance·relevance)
+//      score = alpha_recency·recency + alpha_importance·importance + alpha_relevance·relevance
 //
 //    where recency = e^(-(recalled_at - last_accessed_at)/tau), importance = the memory's stored
-//    salience, and relevance = query-embedding similarity. Because every per-memory input
-//    (ScoredMemory) and the full ScoringConfig (weights, tau, certainty map, normalization bounds)
+//    salience, and relevance = the running pool score. There is no trust multiplier — trust is
+//    enforced when a memory is WRITTEN, not reconstructed here. Because every per-memory input
+//    (ScoredMemory) and the full ScoringConfig (weights, tau, normalization bounds)
 //    are logged here, any past ranking can be recomputed offline and the weights tuned against real
 //    recall history. The paper hand-tuned its weights; this log is what lets us replace that
 //    guesswork with evidence.
@@ -84,7 +83,7 @@ message MemoriesRecalled {
   // one per returned memory, best-first
   repeated ScoredMemory memories = 6;
 
-  // config in effect: weights, tau, certainty map, normalization bounds
+  // config in effect: weights, tau, importance map, normalization bounds
   ScoringConfig config = 7;
 
   // the "now" used for recency decay that will affect the last accessed timestamp of

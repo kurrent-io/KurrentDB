@@ -27,9 +27,14 @@ service MemoryService {
   // Store something worth remembering. Reach for this the moment you learn something you'd want
   // back later: a decision and its reasoning, an error and its fix, a user preference, a durable
   // fact about the system, a question you could not answer. Write each memory so it stands on its
-  // own — a reader months from now, with no other context, should understand it. Set `memory_type`
-  // honestly: it is the trust axis (a firsthand OBSERVATION is trusted more than HEARSAY you have
-  // not verified), so don't dress an unchecked claim up as fact. Set `importance` by how much it
+  // own — a reader months from now, with no other context, should understand it.
+  //
+  // STORE THE CLAIM YOU CHECKED, not the claim you would like to be true. Before storing, name what
+  // would show you WRONG — and if you cannot name that check, the claim is too vague, so sharpen it
+  // until you can. Put attribution inside the content: "the docs state X" is a fact you verified by
+  // reading them; a bare "X" is not. An unchecked belief is not a weak fact, it is an OPEN_QUESTION.
+  //
+  // Set `importance` by how much it
   // matters (higher keeps it retrievable longer). Cite what the memory rests on in `evidence`, put
   // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
   // ones stay readable, marked superseded (there is no separate supersede call).
@@ -58,7 +63,7 @@ service MemoryService {
   // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
   // to act on when you need its evidence to build the successor.
   //
-  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_OBSERVATION,
+  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_FACT,
   //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
   //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
   //
@@ -83,9 +88,10 @@ service MemoryService {
   // the checkpoint format?") — not keywords. Add `tags` only when you already know the dimension to
   // scope to (a session, a repo, an environment); leave them empty to search everything.
   //
-  // Results come back ranked best-first: treat the order as the system's confidence, and each
-  // memory's `memory_type` as how far to trust it (a firsthand OBSERVATION outranks HEARSAY you
-  // have not verified). You only ever get what is currently true here — superseded
+  // Results come back ranked best-first on relevance, importance and recency. There is no trust
+  // score to read: everything stored was checked when it was written, so the type tells you what
+  // KIND of claim you are looking at, not how far to believe it. You only ever get what is
+  // currently true here — superseded
   // memories never surface. Want the full record (evidence, reasoning)? Set `include_full`, or
   // follow up with `reclaim` by id.
   //
@@ -152,10 +158,11 @@ service MemoryService {
   // TOOL — reflect
   //
   // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
-  // memories from what it finds — a FACT, USER_PROFILE, PREFERENCE, or SUMMARY that cites the
-  // memories it rests on — and may supersede the ones the new insight subsumes.
-  // Reflection is the operation that produces derived memories; there is no "reflection" memory
-  // type. Reach for it periodically, when a pile of observations wants to become a durable
+  // memories from what it finds — a FACT or a PREFERENCE that cites the
+  // memories it rests on — and may supersede the ones the new insight subsumes. A consolidation is
+  // a FACT citing many memories; there is no separate summary type, because how a memory arose is
+  // visible in its `evidence`. Reflection never produces an OPEN_QUESTION: a question is asked, not
+  // concluded. Reach for it periodically, when a pile of memories wants to become a durable
   // conclusion — not on every turn.
   //
   // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
@@ -250,8 +257,8 @@ message RecallResponse {
   // complete folded record when the request set `include_full`. The ranking breakdown stays on the
   // MemoriesRecalled log, never here.
   message RecalledMemory {
-    // Final ranking score (base × certainty); higher = stronger match. Your weak-match signal — a
-    // low top score means nothing matched well.
+    // Final ranking score — the alpha-weighted sum of the normalized dimensions; higher = stronger
+    // match. Your weak-match signal: a low top score means nothing matched well.
     double score = 1;
 
     oneof body {

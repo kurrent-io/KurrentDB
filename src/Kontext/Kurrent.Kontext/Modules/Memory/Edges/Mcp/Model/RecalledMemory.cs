@@ -29,7 +29,7 @@ public abstract class RecalledMemory {
 public sealed class LeanMemory {
 	public string MemoryId { get; set; } = "";
 
-	public MemoryType MemoryType { get; set; } = MemoryType.Observation;
+	public MemoryType MemoryType { get; set; } = MemoryType.Fact;
 
 	public string Content { get; set; } = "";
 

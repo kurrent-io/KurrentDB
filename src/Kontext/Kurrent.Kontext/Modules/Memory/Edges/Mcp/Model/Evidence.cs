@@ -41,8 +41,6 @@ public abstract class Evidence {
 
 public sealed class MemoryRef {
 	public string Id { get; set; } = "";
-
-	public long? Position { get; set; }
 }
 
 public sealed class RecordRef {

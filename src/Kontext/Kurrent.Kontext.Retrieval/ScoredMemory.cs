@@ -42,10 +42,7 @@ public sealed record ScoreBreakdown {
 
     public double? ImportanceNorm { get; init; }
 
-    /// <summary>The trust multiplier: per-type for raw memories, inherited from citations for derived ones.</summary>
-    public double? Certainty { get; init; }
-
-    /// <summary>The alpha-weighted sum of the normalized dimensions, before certainty.</summary>
+    /// <summary>The alpha-weighted sum of the normalized dimensions — the modulated score.</summary>
     public double? BaseScore { get; init; }
 
     /// <summary>The reordering stage's own score (e.g. the MMR value) when it reordered the list.</summary>

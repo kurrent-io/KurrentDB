@@ -59,7 +59,7 @@ public class KontextMemoryWriterTests {
 		await Assert.That(stored.Tags.Count).IsEqualTo(2);
 		await Assert.That(stored.Evidence.Count).IsEqualTo(1);
 		await Assert.That(stored.Evidence[0].Memory.Id).IsEqualTo("cited-1");
-		await Assert.That(stored.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
+		await Assert.That(stored.ContentTime!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
 		await Assert.That(stored.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base);
 		await Assert.That(stored.SupersededAt).IsNull();
@@ -356,7 +356,7 @@ public class KontextMemoryWriterTests {
 			retained.Memories.Add(new Contracts.MemoriesRetained.Types.RetainedMemory {
 				MemoryId = memoryId,
 				Memory = new Contracts.Memory {
-					MemoryType = Contracts.MemoryType.Observation,
+					MemoryType = Contracts.MemoryType.Fact,
 					Content    = content,
 					Importance = Contracts.MemoryImportance.Normal,
 					Supersedes = { supersedes },
@@ -366,7 +366,7 @@ public class KontextMemoryWriterTests {
 		return retained;
 	}
 
-	/// <summary>A single-memory MemoriesRetained event: two tags, evidence citing "cited-1", a validity window.</summary>
+	/// <summary>A single-memory MemoriesRetained event: two tags, evidence citing "cited-1", a content-time window.</summary>
 	static Contracts.MemoriesRetained NewRetained(string memoryId, string content, DateTimeOffset retainedAt, params string[] supersedes) {
 		var memory = new Contracts.Memory {
 			MemoryType = Contracts.MemoryType.Fact,
@@ -375,7 +375,7 @@ public class KontextMemoryWriterTests {
 			Reasoning  = "because the tests say so",
 			Evidence   = { new Contracts.Evidence { Memory = new() { Id = "cited-1" } } },
 			Tags       = { new Contracts.Tag { Scope = "work", Value = "alpha" }, new Contracts.Tag { Value = "research" } },
-			Validity   = new Contracts.TemporalContext {
+			ContentTime   = new Contracts.TemporalContext {
 				PerceivedStart = Timestamp.FromDateTimeOffset(retainedAt.AddHours(-24)),
 				PerceivedEnd   = Timestamp.FromDateTimeOffset(retainedAt.AddHours(24))
 			},

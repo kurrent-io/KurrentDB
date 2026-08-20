@@ -128,6 +128,28 @@ public Foo(IPublisher publisher, IPublisher mainBus) {
 - Interface adding lifecycle (`IAsyncDisposable`) that's the implementation's concern? Simplify the interface.
 - Method takes both a value and a factory-for-that-value? Just use the factory.
 
+## Renaming Across Files
+
+TRIPWIRE: About to run `sed -i`, `perl -i`, or any regex replace across more than one file to rename a
+**code identifier** — a type, member, enum value, or property? Stop. Use `ast-grep`, which matches syntax
+and shows every hit inside its enclosing construct.
+
+A regex cannot tell a fixture literal from a load-bearing one. Renaming an enum member with `sed` has twice
+rewritten *meaning* rather than a name: a validator guard was silently re-pointed at a different member, and
+a dataset mapping was changed while the comment above it still described the old one. Both compiled. Both
+passed their tests.
+
+```bash
+ast-grep run --pattern 'MemoryType.$X' --lang csharp .   # complete, parse-accurate inventory
+ast-grep run --pattern '$X.OldMember'   --lang csharp .   # every member access, with context
+```
+
+Verify structurally after any rename — one `ast-grep run` per renamed symbol proves nothing survived, which
+`grep` can only approximate.
+
+Tooling notes for this machine: BSD `sed` supports neither `\b` nor `\s`, and zsh does not word-split
+unquoted variables (`for f in $FILES` iterates once). Fighting those is a signal you picked the wrong tool.
+
 ## Log Level Policy
 
 | Level           | When                                                    |

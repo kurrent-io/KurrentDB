@@ -30,14 +30,6 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
             .Must(m => m.Evidence.Where(e => e.Git is not null).All(e => MemoryRequestRules.ValidGitExcerpt(e.Git)))
             .WithMessage($"A git citation's excerpt is optional but, when set, must be {MemoryRequestRules.MinExcerptLength}..{MemoryRequestRules.MaxExcerptLength} characters.");
 
-        // HEARSAY is the unverified claim — the residue with neither derivation nor verification. A
-        // memory citation would make it a derived inference; a source citation would mean you checked
-        // it, at which point it has become an OBSERVATION or a FACT. Enforced rather than merely
-        // documented, because this is the memory-hacking guard: a citation is exactly how a
-        // fabricated claim would dress itself up as trustworthy.
-        RuleForEach(x => x.Memories)
-            .Must(m => m.MemoryType != Contracts.MemoryType.Hearsay || m.Evidence.Count == 0)
-            .WithMessage("A HEARSAY memory carries no evidence — verify the claim and retain a FACT that supersedes it.");
     }
 }
 
