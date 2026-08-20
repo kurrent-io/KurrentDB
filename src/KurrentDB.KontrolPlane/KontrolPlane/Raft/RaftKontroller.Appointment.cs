@@ -151,7 +151,7 @@ partial class RaftKontroller {
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
-		var (responses, maxEpoch)
+		(var responses, var maxEpoch, currentEpoch)
 			= await FenceDatabaseAsync(databaseId, dataPlane, nodes, currentEpoch, token);
 
 		// Find the node with the max offset
@@ -172,7 +172,7 @@ partial class RaftKontroller {
 		}
 	}
 
-	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch)> FenceDatabaseAsync(
+	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch, ulong Epoch)> FenceDatabaseAsync(
 		string databaseId,
 		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
@@ -180,8 +180,8 @@ partial class RaftKontroller {
 		CancellationToken token) {
 		// bump epoch
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
-		var maxEpoch = 0UL;
-		for (var newEpoch = currentEpoch + 1UL;; responses.Clear()) {
+		ulong maxEpoch = 0UL, newEpoch;
+		for (newEpoch = currentEpoch + 1UL;; responses.Clear()) {
 			if (nodes is [] || !await _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token))
 				break;
 
@@ -217,7 +217,7 @@ partial class RaftKontroller {
 		}
 
 		exit:
-		return (responses, maxEpoch);
+		return (responses, maxEpoch, newEpoch);
 	}
 
 	private static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
