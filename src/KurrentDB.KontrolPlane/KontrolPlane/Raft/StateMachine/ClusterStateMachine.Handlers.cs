@@ -11,6 +11,10 @@ using DotNext.Threading;
 namespace KurrentDB.KontrolPlane.Raft.StateMachine;
 
 partial class ClusterStateMachine {
+	// When we need to introduce a new log entry type, bump the version to enable Raft rolling updates
+	// See https://dotnet.github.io/dotNext/features/cluster/raft.html#rolling-updates
+	int IStateMachine.Version => 0;
+
 	// Apply log entry from the WAL to the current state
 	private async ValueTask<long> ApplyAsync(LogEntry entry, CancellationToken token) {
 		var currentState = _state;
