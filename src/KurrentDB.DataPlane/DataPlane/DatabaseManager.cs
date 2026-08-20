@@ -74,17 +74,27 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The state of this database node.</returns>
 	internal async Task<ReplicaState> FenceAsync(ulong currentEpoch, CancellationToken token) {
+		var advanced = false;
 		await _stateLock.AcquireAsync(token);
 		try {
 			if (_clusterInfo is { } clusterInfo && clusterInfo.Epoch < currentEpoch) {
+				// Route the epoch bump through the same transition logic the KPlane stream uses, instead of
+				// mutating _clusterInfo directly: otherwise, once the stream later delivers a snapshot with
+				// this same (already-applied) epoch, ChangeDatabaseLeaderAsync sees baseline.Epoch == newVersion.Epoch
+				// and treats it as a no-op, leaving a re-appointed leader stuck in the FrozenState this fence forced it into.
+				var fencedVersion = clusterInfo with { Epoch = currentEpoch, LeaderAddress = null };
+				_clusterInfo = fencedVersion;
 				await ChangeStateAsync(new FrozenState());
-				_clusterInfo = clusterInfo with { Epoch = currentEpoch };
+				advanced = true;
 			} else {
 				// Fence is outdated, do nothing
 			}
 		} finally {
 			_stateLock.Release();
 		}
+
+		if (advanced)
+			_clusterInfoChanged.TryAdvance();
 
 		return await DatabaseHandler.GetReplicaStateAsync(token);
 	}

@@ -5,6 +5,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext;
 using Grpc.Core;
+using static System.Threading.Timeout;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
@@ -40,8 +41,8 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 
 	/// <inheritdoc cref="IKontrolPlane.AnnounceNodeAsync"/>
 	public async IAsyncEnumerable<KontrolPlane.DatabaseCluster> AnnounceNodeAsync(KontrolPlane.DatabaseNode node, [EnumeratorCancellation] CancellationToken token = default) {
-		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
-			var entry = GetOrCreateClient(currentAddress);
+		for (var currentAddress = _kontrollerNodes[0];; token.ThrowIfCancellationRequested()) {
+			var entry = CreateClient(currentAddress, InfiniteTimeSpan);
 
 			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) }, cancellationToken: token);
 			try {
@@ -52,10 +53,9 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 						if (!await call.ResponseStream.MoveNext())
 							break;
 					} catch (RpcException e) when (e.StatusCode
-						                               is StatusCode.DeadlineExceeded
-						                               or StatusCode.Unavailable
+						                               is StatusCode.Unavailable
 						                               or StatusCode.Cancelled) {
-						currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
+						currentAddress = NextAddress(currentAddress);
 						break;
 					}
 
@@ -65,7 +65,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 
 					// KPlane informed us about a new KPlane leader, switch to it
 					if (!response.KontrollerLeader.IsEmpty) {
-						currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
+						currentAddress = response.KontrollerLeader.ToEndPoint();
 						break;
 					}
 

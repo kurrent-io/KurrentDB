@@ -3,28 +3,56 @@
 
 namespace KurrentDB.DataPlane;
 
+using KontrolPlane;
+
 internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
-	TaskCompletionSource<CancellationToken> clientBarrier,
-	string databaseId,
-	ulong epoch,
-	TimeSpan heartbeatTimeout) : DatabaseState {
+	DatabaseCluster cluster,
+	double renewalRate) : DatabaseState {
+	private readonly TaskCompletionSource<CancellationToken> _clientBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+	private async Task<bool> EnsureWriteBarrierAsync() {
+		var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(Token);
+		timeoutSource.CancelAfter(cluster.CandidateTimeout);
+		try {
+			// write barrier
+			await stateMachine.DatabaseHandler.EnsureEpochCommittedAsync(cluster, timeoutSource.Token);
+
+			// renew appointment
+			return await stateMachine
+				.KontrolPlane
+				.RenewLeaderAppointmentAsync(cluster.Id, stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch,
+					timeoutSource.Token);
+		} catch {
+			_clientBarrier.TrySetResult(new CancellationToken(canceled: true));
+		} finally {
+			timeoutSource.Dispose();
+		}
+
+		return false;
+	}
 
 	protected override async Task RunAsync() {
-		clientBarrier.TrySetResult(Token);
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token);
-		var mainTask = stateMachine.DatabaseHandler.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token);
-		var timer = new PeriodicTimer(heartbeatTimeout);
-		try {
-			while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(databaseId, stateMachine.DatabaseHandler.CurrentNode.Address, epoch, linkedCts.Token)) {
-				await timer.WaitForNextTickAsync(linkedCts.Token);
-			}
+		Task mainTask;
+		if (await EnsureWriteBarrierAsync()) {
+			var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token);
+			_clientBarrier.TrySetResult(linkedCts.Token);
+			mainTask = stateMachine.DatabaseHandler.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token);
+			var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate);
+			try {
+				while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(cluster.Id,
+					       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, linkedCts.Token)) {
+					await timer.WaitForNextTickAsync(linkedCts.Token);
+				}
 
-			await linkedCts.CancelAsync();
-		} catch (OperationCanceledException) {
-			// suppress exception
-		} finally {
-			timer.Dispose();
-			linkedCts.Dispose();
+				await linkedCts.CancelAsync();
+			} catch (OperationCanceledException) {
+				// suppress exception
+			} finally {
+				timer.Dispose();
+				linkedCts.Dispose();
+			}
+		} else {
+			mainTask = Task.CompletedTask;
 		}
 
 		// ensure that the leadership background task is finished
@@ -36,5 +64,5 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	}
 
 	public override ValueTask<CancellationToken> WaitForWriteBarrierAsync(CancellationToken token)
-		=> ValueTask.FromResult(Token);
+		=> new(_clientBarrier.Task.WaitAsync(token));
 }

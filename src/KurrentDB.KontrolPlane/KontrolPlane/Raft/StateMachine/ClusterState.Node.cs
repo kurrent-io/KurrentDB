@@ -25,6 +25,20 @@ partial class ClusterState {
 
 	public bool Update(ResignLeader command, in CommandInfo info)
 		=> Update<UnsetLeaderNodeStmt, bool>(new(command), info);
+
+	[StructLayout(LayoutKind.Auto)]
+	private readonly struct UnsetLeaderNodeStmt(ResignLeader command) : IPreparedStatement<ValueTuple<string>>, ISupplier<DuckDBAdvancedConnection, bool> {
+		public static ReadOnlySpan<byte> CommandText => "UPDATE node SET is_leader=false WHERE database_id=?;"u8;
+
+		public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
+			args.Item1
+		};
+
+		public bool Invoke(DuckDBAdvancedConnection connection)
+			=> (command.HasEpoch
+				? connection.ExecuteNonQuery<(string, ulong), UnsetLeaderNodeConditionallyStmt>(new(command.DatabaseId, command.Epoch))
+				: connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId))) is not 0L;
+	}
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -116,20 +130,6 @@ file readonly struct RemoveDatabaseNodeStmt(RemoveDatabaseNode command) :
 	public bool Invoke(DuckDBAdvancedConnection connection)
 		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), RemoveDatabaseNodeStmt>(
 			new(command.DatabaseId, command.Address.Memory)) > 0L;
-}
-
-[StructLayout(LayoutKind.Auto)]
-file readonly struct UnsetLeaderNodeStmt(ResignLeader command) : IPreparedStatement<ValueTuple<string>>, ISupplier<DuckDBAdvancedConnection, bool> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE node SET is_leader=false WHERE database_id=?;"u8;
-
-	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
-		args.Item1
-	};
-
-	public bool Invoke(DuckDBAdvancedConnection connection)
-		=> (command.HasEpoch
-			? connection.ExecuteNonQuery<(string, ulong), UnsetLeaderNodeConditionallyStmt>(new(command.DatabaseId, command.Epoch))
-			: connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId))) is not 0L;
 }
 
 [StructLayout(LayoutKind.Auto)]

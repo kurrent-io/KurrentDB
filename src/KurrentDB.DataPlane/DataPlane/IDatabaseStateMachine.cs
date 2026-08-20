@@ -6,8 +6,6 @@ namespace KurrentDB.DataPlane;
 using KontrolPlane;
 
 internal interface IDatabaseStateMachine {
-	void MoveToLeaderState(WeakReference<CandidateState> callerState);
-
 	void MoveToFrozenState(WeakReference<DatabaseState> callerState);
 
 	IAsyncEnumerable<DatabaseCluster> DatabaseChanges { get; }

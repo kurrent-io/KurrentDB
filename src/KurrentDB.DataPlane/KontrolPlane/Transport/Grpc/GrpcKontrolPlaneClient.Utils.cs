@@ -32,19 +32,21 @@ partial class GrpcKontrolPlaneClient {
 		return result;
 	}
 
-	private EndPoint ReplaceAddress(EndPoint oldAddress, EndPoint newAddress)
-		=> Interlocked.CompareExchange(ref _current, newAddress, oldAddress) ?? newAddress;
+	private EndPoint ReplaceAddress(EndPoint oldAddress, EndPoint newAddress) {
+		var result = Interlocked.CompareExchange(ref _current, newAddress, oldAddress);
+		return result is null || oldAddress.Equals(result) ? newAddress : result;
+	}
 
-	private EndPoint EraseAddress(EndPoint currentAddress) {
+	private EndPoint NextAddress(EndPoint address) {
 		var kontrollerNodes = _kontrollerNodes;
-		var index = IndexOf(kontrollerNodes, currentAddress);
+		var index = IndexOf(kontrollerNodes, address);
 
 		// take the next address of the list
 		index = index >= 0
 			? (index + 1) % kontrollerNodes.Count
 			: 0;
 
-		return Interlocked.CompareExchange(ref _current, kontrollerNodes[index], currentAddress) ?? kontrollerNodes[index];
+		return kontrollerNodes[index];
 
 		static int IndexOf(IReadOnlyList<EndPoint> seed, EndPoint address) {
 			for (var i = 0; i < seed.Count; i++) {
@@ -56,13 +58,14 @@ partial class GrpcKontrolPlaneClient {
 		}
 	}
 
+	private EndPoint EraseAddress(EndPoint currentAddress)
+		=> ReplaceAddress(currentAddress, NextAddress(currentAddress));
+
 	private ClientCacheEntry GetOrCreateClient(EndPoint address) {
 		ClientCacheEntry? entry;
 		do {
 			if (!_clients.TryGetValue(address, out entry)) {
-				var channel = CreateChannel(address, out var invoker);
-				invoker = new CallInvokerWithUnaryCallTimeout(invoker, UnaryCallTimeout);
-				var newEntry = new ClientCacheEntry(new(invoker), channel);
+				var newEntry = CreateClient(address, UnaryCallTimeout);
 				entry = _clients.GetOrAdd(address, newEntry);
 				if (!ReferenceEquals(entry, newEntry)) {
 					newEntry.Dispose();
@@ -71,6 +74,12 @@ partial class GrpcKontrolPlaneClient {
 		} while (!entry.TryAcquire());
 
 		return entry;
+	}
+
+	private ClientCacheEntry CreateClient(EndPoint address, TimeSpan timeout) {
+		var channel = CreateChannel(address, out var invoker);
+		invoker = new CallInvokerWithUnaryCallTimeout(invoker, timeout);
+		return new(new(invoker), channel);
 	}
 
 	private void DestroyChannels() {

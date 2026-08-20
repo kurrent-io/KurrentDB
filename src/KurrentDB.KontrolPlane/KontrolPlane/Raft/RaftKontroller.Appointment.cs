@@ -18,9 +18,6 @@ using StateMachine.LogEntries;
 using StateMachine.Queries;
 
 partial class RaftKontroller {
-	private static readonly Func<KeyValuePair<EndPoint, ReplicaState>, int> ZeroFunc
-		= Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0);
-
 	// key is database ID, value is the time when the leadership was updated for the particular database
 	private readonly ConcurrentDictionary<string, LeaderAppointment> _appointmentState = new();
 	private readonly TimeSpan _heartbeatTimeout, _candidateTimeout;
@@ -159,7 +156,7 @@ partial class RaftKontroller {
 			.Where(pair => pair.Value.Epoch == maxEpoch)
 			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
 			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
-			.ThenByDescending(resignedLeader is null ? ZeroFunc : resignedLeader.GetOrder)
+			.ThenByDescending(resignedLeader is null ? Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0) : resignedLeader.GetOrder)
 			.ThenByDescending(static pair => pair.Value.Priority)
 			.FirstOrDefault()
 			.Key;

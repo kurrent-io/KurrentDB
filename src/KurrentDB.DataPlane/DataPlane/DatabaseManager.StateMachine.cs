@@ -9,26 +9,39 @@ namespace KurrentDB.DataPlane;
 using KontrolPlane;
 
 partial class DatabaseManager : IDatabaseStateMachine {
-	private async ValueTask ChangeStateAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+	private async ValueTask ChangeStateAsync(DatabaseCluster newVersion) {
+		bool advanced;
 		await _stateLock.AcquireAsync(_lifecycleToken);
 		try {
-			var currentNode = DatabaseHandler.CurrentNode;
-			if (newVersion[currentNode.Address] is { } newCurrentNode) {
-				// update information about the current node if needed
-				if (currentNode != newCurrentNode)
-					DatabaseHandler.CurrentNode = newCurrentNode;
-			} else if (_state is not FrozenState) {
-				// current node is removed from the cluster configuration, move to frozen state
-				await ChangeStateAsync(new FrozenState());
-				return;
+			// Ignore any information with stale epoch
+			advanced = _clusterInfo is null || _clusterInfo.Epoch <= newVersion.Epoch;
+			if (advanced) {
+				await ChangeStateAsync(_clusterInfo, newVersion);
 			}
 
-			await ChangeDatabaseLeaderAsync(baseline, newVersion, currentNode.Address);
+			_clusterInfo = newVersion;
 		} finally {
 			_stateLock.Release();
 		}
 
-		_clusterInfoChanged.TryAdvance();
+		if (advanced) {
+			_clusterInfoChanged.TryAdvance();
+		}
+	}
+
+	private async ValueTask ChangeStateAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+		var currentNode = DatabaseHandler.CurrentNode;
+		if (newVersion[currentNode.Address] is { } newCurrentNode) {
+			// update information about the current node if needed
+			if (currentNode != newCurrentNode)
+				DatabaseHandler.CurrentNode = newCurrentNode;
+		} else if (_state is not FrozenState) {
+			// current node is removed from the cluster configuration, move to frozen state
+			await ChangeStateAsync(new FrozenState());
+			return;
+		}
+
+		await ChangeDatabaseLeaderAsync(baseline, newVersion, currentNode.Address);
 	}
 
 	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion, EndPoint currentNode) {
@@ -42,7 +55,7 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		switch (currentNode.Equals(oldLeader), currentNode.Equals(newLeader)) {
 			case (false, true):
 				// local node becomes a database leader
-				await ChangeStateAsync(newState = new CandidateState(this, newVersion));
+				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));
 				break;
 			case (true, false):
 				// local node is no longer a leader
@@ -53,7 +66,7 @@ partial class DatabaseManager : IDatabaseStateMachine {
 			case (true, true) when baseline!.Epoch != newVersion.Epoch:
 				// still the leader, but re-appointed under a new epoch: restart the leadership session
 				// so the renewal loop is guaranteed to use the epoch this appointment actually belongs to.
-				await ChangeStateAsync(newState = new CandidateState(this, newVersion));
+				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));
 				break;
 			case (false, false) when newLeader is null && _state is not FrozenState:
 				// Leader is not known to the current node
@@ -75,28 +88,6 @@ partial class DatabaseManager : IDatabaseStateMachine {
 
 		return Interlocked.Exchange(ref _state, newState).DisposeAsync();
 	}
-
-	private async void MoveToLeaderState(WeakReference<CandidateState> callerState) {
-		var lockTaken = false;
-		try {
-			await _stateLock.AcquireAsync(_lifecycleToken);
-			lockTaken = true;
-
-			if (callerState.TryGetTarget(out var candidateState) && ReferenceEquals(_state, candidateState)) {
-				var newState = candidateState.CreateLeaderState(_renewalRate);
-				await ChangeStateAsync(newState);
-				newState.TryStart();
-			}
-		} catch {
-			// we can't throw here, it's async void method
-		} finally {
-			if (lockTaken)
-				_stateLock.Release();
-		}
-	}
-
-	void IDatabaseStateMachine.MoveToLeaderState(WeakReference<CandidateState> callerState)
-		=> ThreadPool.UnsafeQueueUserWorkItem(MoveToLeaderState, callerState, preferLocal: false);
 
 	private async void MoveToFrozenState(WeakReference<DatabaseState> callerState) {
 		var lockTaken = false;

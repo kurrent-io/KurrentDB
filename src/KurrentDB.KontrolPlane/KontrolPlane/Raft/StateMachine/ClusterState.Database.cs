@@ -18,6 +18,28 @@ partial class ClusterState {
 
 	public bool Update(BumpEpoch command, in CommandInfo info)
 		=> Update<BumpEpochStmt, bool>(new(command), info);
+
+	[StructLayout(LayoutKind.Auto)]
+	private readonly struct BumpEpochStmt(BumpEpoch command) : IPreparedStatement<(string Id, ulong ExpectedEpoch, ulong NewEpoch)>, ISupplier<DuckDBAdvancedConnection, bool> {
+		public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = $3 WHERE id = $1 AND epoch = $2;"u8;
+
+		public static StatementBindingResult Bind(in (string Id, ulong ExpectedEpoch, ulong NewEpoch) args, PreparedStatement source) => new(source) {
+			args.Id,
+			args.ExpectedEpoch,
+			args.NewEpoch
+		};
+
+		public bool Invoke(DuckDBAdvancedConnection connection) {
+			var result = connection.ExecuteNonQuery<(string, ulong, ulong), BumpEpochStmt>(
+				new(command.DatabaseId, command.ExpectedEpoch, command.NewEpoch)) is not 0L;
+
+			if (result) {
+				connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId));
+			}
+
+			return result;
+		}
+	}
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -61,19 +83,4 @@ file readonly struct RemoveDatabaseStmt(RemoveDatabase command) : IPreparedState
 		connection.ExecuteNonQuery<ValueTuple<string>, RemoveDatabaseNodesStmt>(new(command.DatabaseId));
 		return connection.ExecuteNonQuery<ValueTuple<string>, RemoveDatabaseStmt>(new(command.DatabaseId)) > 0L;
 	}
-}
-
-[StructLayout(LayoutKind.Auto)]
-file readonly struct BumpEpochStmt(BumpEpoch command) : IPreparedStatement<(string Id, ulong ExpectedEpoch, ulong NewEpoch)>, ISupplier<DuckDBAdvancedConnection, bool> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = $3 WHERE id = $1 AND epoch = $2;"u8;
-
-	public static StatementBindingResult Bind(in (string Id, ulong ExpectedEpoch, ulong NewEpoch) args, PreparedStatement source) => new(source) {
-		args.Id,
-		args.ExpectedEpoch,
-		args.NewEpoch
-	};
-
-	public bool Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<(string, ulong, ulong), BumpEpochStmt>(
-			new(command.DatabaseId, command.ExpectedEpoch, command.NewEpoch)) is not 0L;
 }
