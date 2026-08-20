@@ -17,6 +17,7 @@ See [docs/features/INDEX.md](docs/features/INDEX.md) for feature status and arti
 | [Kontext Document Ingestion — Microsoft.Extensions.DataIngestion, single core, gRPC + MCP edges](docs/research/2026-08-11-1301-kontext-document-ingestion/) | research | 2026-08-11 | sergio |
 | [Lance Index Creation Contract (DuckDB Extension)](docs/research/2026-08-15-2318-lance-index-creation-contract/) | research | 2026-08-15 | sergio |
 | [Padding a Narrow Embedding Into a Wider Lance Vector Column](docs/research/2026-08-20-1936-lance-padded-vector-width/) | research | 2026-08-20 | sergio |
+| [lance_hybrid_search semantics: k, LIMIT, pushdown and the blended score](docs/research/2026-08-21-0017-lance-hybrid-search-semantics/) | research | 2026-08-21 | sergio |
 
 ## Reports
 
