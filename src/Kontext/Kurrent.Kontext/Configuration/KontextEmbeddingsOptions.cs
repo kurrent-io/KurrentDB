@@ -21,8 +21,6 @@ public sealed class KontextEmbeddingsOptions {
     /// The vector dimension — the N in the schema's FLOAT[N] column. Must match what the selected
     /// provider's model produces; the bootstrap verifies it with a probe embedding and fails fast
     /// on mismatch, because a wrong dimension poisons every stored vector.
-    /// </summary>
-    public int Dimension { get; set; } = 384; // 384 * 2 = 768 bytes per vector, which is the default for OpenAI's ada-002 and Ollama's llama2-7b-chat.
 
     public LocalEmbeddingsOptions          Local          { get; set; } = new();
     public OpenAIEmbeddingsOptions         OpenAI         { get; set; } = new();

@@ -493,7 +493,7 @@ public class KontextMemoryDataStoreTests {
 		await Seed(dataSources);
 
 		// Act
-		var ready = dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }));
+		var ready = dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = KontextIndexConstants.VectorsDimension / 8 }));
 
 		// Assert
 		await Assert.That(ready).IsFalse();
@@ -579,8 +579,8 @@ public class KontextMemoryDataStoreTests {
 	static async ValueTask SeedFillersAndCreateVectorIndex(KontextDataSource dataSource) {
 		// Fillers are generated ENGINE-SIDE: one statement, no parameters, deterministic. Their
 		// vectors spread over the (z, w) circle, far from every axis the search tests query.
-		const string fillersSql =
-			"""
+		var fillersSql =
+			$"""
 			INSERT INTO ldb.main.memories (
 			  memory_id,
 			  memory_type,
@@ -613,7 +613,7 @@ public class KontextMemoryDataStoreTests {
 			       false,
 			       NULL,
 			       '',
-			       CAST(list_concat([0.1, 0.1, cos(i), sin(i)], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])
+			       CAST(list_concat([0.1, 0.1, cos(i), sin(i)], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])
 			FROM range(300) AS t(i)
 			""";
 
@@ -626,8 +626,8 @@ public class KontextMemoryDataStoreTests {
 		// The schema component owns the vector index; the fillers above just crossed the
 		// training floor, so the first call must create it. The second call exercises the
 		// other half of the lifecycle against the real engine: index exists => append-optimize.
-		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
-		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
+		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = KontextIndexConstants.VectorsDimension / 8 }))).IsTrue();
+		await Assert.That(dataSource.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = KontextIndexConstants.VectorsDimension / 8 }))).IsTrue();
 	}
 
 	/// <summary>One complete supersession family: L4 (living head) replaced L3, which had consolidated L1 and L2.</summary>
@@ -638,8 +638,8 @@ public class KontextMemoryDataStoreTests {
 		//   the way the projector writes them
 		// - retained_at ascends L1 < L2 < L3 < L4, so chronological order is the tree bottom-up
 		// - embeddings sit away from every axis the search tests query
-		const string sql =
-			"""
+		var sql =
+			$"""
 			INSERT INTO ldb.main.memories (
 			  memory_id,
 			  memory_type,
@@ -660,16 +660,16 @@ public class KontextMemoryDataStoreTests {
 			VALUES
 			  ('L1', 1, 'lineage first belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'),
-			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.6, 0.8], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.6, 0.8], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])),
 			  ('L2', 1, 'lineage second belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'),
-			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.8, 0.6], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST(list_concat([0.0, 0.0, 0.8, 0.6], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])),
 			  ('L3', 1, 'lineage consolidated belief', 2, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L1', 'L2'] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'),
-			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), 'L4', CAST(list_concat([0.0, 0.0, 0.7, 0.7], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
+			   true, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), 'L4', CAST(list_concat([0.0, 0.0, 0.7, 0.7], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])),
 			  ('L4', 1, 'lineage current belief', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L3'] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'),
-			   false, NULL, '', CAST(list_concat([0.0, 0.0, 0.5, 0.9], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384]))
+			   false, NULL, '', CAST(list_concat([0.0, 0.0, 0.5, 0.9], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}]))
 			""";
 
 		dataSource.Execute(connection => {
@@ -686,8 +686,8 @@ public class KontextMemoryDataStoreTests {
 		// - last access ranks inside that group: m6 (Base+50h) > m1 (Base+30h) > m7 (Base+10h)
 		// - m6 and m7 share retained_at (Base+6h) EXACTLY, so only memory_id can order them
 		// - embeddings sit away from every axis the search tests query
-		const string sql =
-			"""
+		var sql =
+			$"""
 			INSERT INTO ldb.main.memories (
 			  memory_id,
 			  memory_type,
@@ -708,10 +708,10 @@ public class KontextMemoryDataStoreTests {
 			VALUES
 			  ('m6', 1, 'tie row six', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-03 12:00:00+00'),
-			   false, NULL, '', CAST(list_concat([0.5, 0.5, 0.0, 0.0], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384])),
+			   false, NULL, '', CAST(list_concat([0.5, 0.5, 0.0, 0.0], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}])),
 			  ('m7', 1, 'tie row seven', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
 			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 20:00:00+00'),
-			   false, NULL, '', CAST(list_concat([0.4, 0.6, 0.0, 0.0], list_transform(range(380), lambda x: 0.0)) AS FLOAT[384]))
+			   false, NULL, '', CAST(list_concat([0.4, 0.6, 0.0, 0.0], list_transform(range({KontextIndexConstants.VectorsDimension - 4}), lambda x: 0.0)) AS FLOAT[{KontextIndexConstants.VectorsDimension}]))
 			""";
 
 		dataSource.Execute(connection => {

@@ -18,10 +18,9 @@ public class KontextOptionsBindingTests {
 		// Arrange + Act
 		var options = Bind([]);
 
-		// Assert — zero config boots local 384-dim, disabled.
+		// Assert — zero config boots the local provider, disabled.
 		await Assert.That(options.Enabled).IsFalse();
 		await Assert.That(options.Embeddings.Provider).IsEqualTo(EmbeddingsProvider.Local);
-		await Assert.That(options.Embeddings.Dimension).IsEqualTo(384);
 		await Assert.That(options.Embeddings.BatchSize).IsEqualTo(1);
 		await Assert.That(options.Embeddings.Local.ModelsDirectory).IsEqualTo("");
 		await Assert.That(options.Embeddings.Local.Models.Count).IsEqualTo(0);
@@ -33,7 +32,6 @@ public class KontextOptionsBindingTests {
 		var options = Bind(new() {
 			["KurrentDB:Kontext:Enabled"]                    = "true",
 			["KurrentDB:Kontext:Embeddings:Provider"]        = "OpenAI",
-			["KurrentDB:Kontext:Embeddings:Dimension"]       = "1536",
 			["KurrentDB:Kontext:Embeddings:OpenAI:ApiKey"]   = "sk-test",
 			["KurrentDB:Kontext:Embeddings:OpenAI:Model"]    = "text-embedding-3-small",
 		});
@@ -41,7 +39,6 @@ public class KontextOptionsBindingTests {
 		// Assert — including the BatchSize passthrough following the active provider.
 		await Assert.That(options.Enabled).IsTrue();
 		await Assert.That(options.Embeddings.Provider).IsEqualTo(EmbeddingsProvider.OpenAI);
-		await Assert.That(options.Embeddings.Dimension).IsEqualTo(1536);
 		await Assert.That(options.Embeddings.OpenAI.ApiKey).IsEqualTo("sk-test");
 		await Assert.That(options.Embeddings.BatchSize).IsEqualTo(256);
 	}

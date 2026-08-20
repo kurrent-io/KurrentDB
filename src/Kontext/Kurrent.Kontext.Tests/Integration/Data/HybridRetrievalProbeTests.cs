@@ -22,9 +22,8 @@ namespace Kurrent.Kontext.Tests.Data;
 [Category("Integration")]
 [Timeout(600_000)]
 public class HybridRetrievalProbeTests {
-	const int  CorpusSize = 400;
-	const int  K          = 20;
-	const string Dimension = "384";
+	const int CorpusSize = 400;
+	const int K          = 20;
 
 	[Test]
 	public async ValueTask ranks_raw_json_against_normalized_with_and_without_the_vector_index(CancellationToken cancellationToken) {
@@ -49,7 +48,7 @@ public class HybridRetrievalProbeTests {
 			("corpus_raw", raw, rawVectors),
 			("corpus_norm", normalized, normalizedVectors),
 		}) {
-			Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{Dimension}])");
+			Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{KontextIndexConstants.VectorsDimension}])");
 			Exec(connection, $"CREATE INDEX text_fts ON ldb.main.{table} (text) USING INVERTED WITH (\n{CodeOptions}\n)");
 
 			for (var i = 0; i < texts.Length; i++)
@@ -111,7 +110,7 @@ public class HybridRetrievalProbeTests {
 
 		const string table = "ivf_sweep";
 
-		Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{Dimension}])");
+		Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{KontextIndexConstants.VectorsDimension}])");
 
 		for (var i = 0; i < texts.Length; i++)
 			Exec(connection, $"INSERT INTO ldb.main.{table} VALUES ({i}, '{texts[i].Replace("'", "''")}', {Vector(vectors[i].Vector.Span)})");
@@ -140,7 +139,7 @@ public class HybridRetrievalProbeTests {
 				connection,
 				$"""
 				 CREATE INDEX embedding_ivx ON ldb.main.{table} (embedding) USING IVF_HNSW_PQ
-				 WITH (metric_type = 'l2', num_partitions = {partitions}, num_sub_vectors = {Dimension},
+				 WITH (metric_type = 'l2', num_partitions = {partitions}, num_sub_vectors = {KontextIndexConstants.VectorsDimension},
 				       num_bits = 8, hnsw_m = 16, hnsw_ef_construction = 100)
 				 """);
 
@@ -162,7 +161,7 @@ public class HybridRetrievalProbeTests {
 			for (var i = 0; i < Targets.Length; i++) {
 				var sql =
 					$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', " +
-					$"CAST({Vector(queryVectors[i].Vector.Span)} AS FLOAT[{Dimension}]), k := {K}, prefilter := true{knob}) ORDER BY _distance";
+					$"CAST({Vector(queryVectors[i].Vector.Span)} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), k := {K}, prefilter := true{knob}) ORDER BY _distance";
 
 				var rank = Ranked(connection, sql).IndexOf(Targets[i].Id);
 
@@ -190,14 +189,16 @@ public class HybridRetrievalProbeTests {
 
 		const string table = "type_sweep";
 
-		Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{Dimension}])");
+		Exec(connection, $"CREATE TABLE ldb.main.{table} (id BIGINT, text VARCHAR, embedding FLOAT[{KontextIndexConstants.VectorsDimension}])");
 
 		for (var i = 0; i < texts.Length; i++)
 			Exec(connection, $"INSERT INTO ldb.main.{table} VALUES ({i}, '{texts[i].Replace("'", "''")}', {Vector(vectors[i].Vector.Span)})");
 
 		var queryVectors = await embeddings.GenerateAsync(Targets.Select(target => target.Question), options, cancellationToken);
 
-		// num_sub_vectors 48 is the documented dimension // 8; 384 is what VectorIndexOptions ships.
+		// The num_sub_vectors literals stay literal: the build names encode them, so interpolating
+		// would make the labels lie about what was measured. 48 is dimension / 8 — lance's guidance
+		// and what KontextIndexJanitor ships; 384 is one dimension per sub-vector, the far extreme.
 		(string Name, string Spec)[] builds = [
 			("IVF_PQ p1 sub48",           "USING IVF_PQ WITH (metric_type = 'l2', num_partitions = 1, num_sub_vectors = 48, num_bits = 8)"),
 			("IVF_PQ p20 sub48",          "USING IVF_PQ WITH (metric_type = 'l2', num_partitions = 20, num_sub_vectors = 48, num_bits = 8)"),
@@ -245,7 +246,7 @@ public class HybridRetrievalProbeTests {
 			for (var i = 0; i < Targets.Length; i++) {
 				var sql =
 					$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', " +
-					$"CAST({Vector(queryVectors[i].Vector.Span)} AS FLOAT[{Dimension}]), k := {K}, prefilter := true{knob}) ORDER BY _distance";
+					$"CAST({Vector(queryVectors[i].Vector.Span)} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), k := {K}, prefilter := true{knob}) ORDER BY _distance";
 
 				var rank = Ranked(connection, sql).IndexOf(Targets[i].Id);
 
@@ -265,26 +266,26 @@ public class HybridRetrievalProbeTests {
 			var suffix = useIndex ? "index" : "exact";
 
 			yield return ($"vector ({suffix})", (table, _, vector) =>
-				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), k := {K}, prefilter := true, use_index := {useIndex.ToString().ToLowerInvariant()}) ORDER BY _distance");
+				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), k := {K}, prefilter := true, use_index := {useIndex.ToString().ToLowerInvariant()}) ORDER BY _distance");
 
 			foreach (var alpha in new[] { 0.2, 0.45, 0.7 })
 				yield return ($"hybrid a{alpha:F2} ({suffix})", (table, query, vector) =>
-					$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := {alpha.ToString(CultureInfo.InvariantCulture)}, use_index := {useIndex.ToString().ToLowerInvariant()}) ORDER BY _hybrid_score DESC");
+					$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := {alpha.ToString(CultureInfo.InvariantCulture)}, use_index := {useIndex.ToString().ToLowerInvariant()}) ORDER BY _hybrid_score DESC");
 		}
 
 		foreach (var refine in new[] { 5, 10, 50 })
 			yield return ($"vector (index) refine {refine}", (table, _, vector) =>
-				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), k := {K}, prefilter := true, refine_factor := {refine}) ORDER BY _distance");
+				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), k := {K}, prefilter := true, refine_factor := {refine}) ORDER BY _distance");
 
 		foreach (var nprobs in new[] { 4, 32 })
 			yield return ($"vector (index) nprobs {nprobs}", (table, _, vector) =>
-				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), k := {K}, prefilter := true, nprobs := {nprobs}) ORDER BY _distance");
+				$"SELECT id, _distance FROM lance_vector_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), k := {K}, prefilter := true, nprobs := {nprobs}) ORDER BY _distance");
 
 		yield return ("hybrid a0.45 oversample 16 (index)", static (table, query, vector) =>
-			$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := 0.45, oversample_factor := 16) ORDER BY _hybrid_score DESC");
+			$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := 0.45, oversample_factor := 16) ORDER BY _hybrid_score DESC");
 
 		yield return ("hybrid a0.45 refine 10 (index)", static (table, query, vector) =>
-			$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{Dimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := 0.45, refine_factor := 10) ORDER BY _hybrid_score DESC");
+			$"SELECT id, _hybrid_score FROM lance_hybrid_search('ldb.main.{table}', 'embedding', CAST({vector} AS FLOAT[{KontextIndexConstants.VectorsDimension}]), 'text', '{query}', k := {K}, prefilter := true, alpha := 0.45, refine_factor := 10) ORDER BY _hybrid_score DESC");
 	}
 
 	// Eight records carrying a tool and operator that appear exactly once in the corpus, each

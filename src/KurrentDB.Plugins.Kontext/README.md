@@ -20,7 +20,7 @@ Or via environment variable:
 KurrentDB__Kontext__Enabled=true
 ```
 
-With this, storage lives under `{index}/kontext/` and embeddings use the in-process ONNX provider (all-MiniLM-L6-v2, 384-dim, CPU-only, no API key).
+With this, storage lives under `{index}/kontext/` and embeddings use the in-process ONNX provider (paraphrase-multilingual-MiniLM-L12-v2, 384-dim, CPU-only, no API key).
 
 ## Full configuration
 
@@ -31,7 +31,7 @@ KurrentDB:
     Path: /var/lib/kurrentdb/kontext        # directory where kontext stores all its data (defaults to {index}/kontext)
     Embeddings:
       Provider: Local                       # Local (default) | OpenAI | Ollama | GoogleVertexAI | AmazonBedrock
-      Local:                                # in-process ONNX (all-MiniLM-L6-v2, 384-dim, CPU-only, no API key)
+      Local:                                # in-process ONNX (paraphrase-multilingual-MiniLM-L12-v2, 384-dim, CPU-only, no API key)
         BatchSize: 1
       OpenAI:                               # ApiKey is required when Provider is OpenAI
         ApiKey: sk-...
@@ -53,6 +53,20 @@ KurrentDB:
         BatchSize: 96
 ```
 Only the sub-block matching the selected `Provider` is read.
+
+### Model requirements
+
+The embedding model must produce **384-dimensional** vectors. A model of any other width fails at the
+first write: the storage engine rejects the row instead of storing a bad vector, so a misconfigured
+model cannot corrupt the store.
+
+Retrieval quality depends on the model. Only the shipped default is benchmarked — any other model
+runs, but its quality is unmeasured.
+
+Changing the model means resetting the store. Vectors written by the old model are not comparable
+with vectors from the new one. A model of a **different** width fails loudly on the first write. A
+model of the **same** width does not: it stores successfully and degrades retrieval quality with no
+error at all. That case is the one you must catch yourself.
 
 ## Workspaces
 

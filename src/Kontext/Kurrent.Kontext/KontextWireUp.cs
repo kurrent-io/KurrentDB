@@ -12,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext;
 
@@ -87,13 +86,6 @@ public static class KontextWireUp {
                 options.GoogleVertexAI,
                 options.AmazonBedrock);
 
-            // TODO SS: this is stupid...
-            services.AddSystemStartupTask("Kontext Embeddings Validation", static async (_, sp, ct) => {
-                var generator = sp.GetRequiredService<EmbeddingGenerator>();
-                var options   = sp.GetRequiredService<KontextOptions>();
-                await generator.EnsureDimensionAsync(options.Embeddings.Dimension, ct); 
-            });
-            
             return services;
         }
     }

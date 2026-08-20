@@ -191,7 +191,7 @@ public class KontextIndexJanitorTests {
 
 		await MemorySeeding.CreateSchema(dataSources);
 		SeedFillers(dataSources, 300, "r");
-		await Assert.That(dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = 48 }))).IsTrue();
+		await Assert.That(dataSources.Execute(c => c.EnsureVectorIndex("ldb.main.memories", "embedding", new LanceIvfPqIndexOptions { NumPartitions = 1, NumSubVectors = KontextIndexConstants.VectorsDimension / 8 }))).IsTrue();
 
 		// Act
 		dataSources.Execute(c => c.OptimizeIndex("ldb.main.memories", LanceIndexNames.Vector("embedding"), options => options.Mode = LanceOptimizeMode.Retrain));

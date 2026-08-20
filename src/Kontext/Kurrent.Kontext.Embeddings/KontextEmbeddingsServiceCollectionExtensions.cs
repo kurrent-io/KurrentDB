@@ -50,22 +50,4 @@ public static class KontextEmbeddingsServiceCollectionExtensions {
 		}
 	}
 
-	extension(IEmbeddingGenerator<string, Embedding<float>> generator) {
-		/// <summary>
-		/// Fails fast when the generator's vectors do not match the expected dimension. Model names are
-		/// free strings, so no lookup table stays correct — asking by trying is the only exact check,
-		/// and a mismatch caught here is a startup error instead of a poisoned vector store.
-		/// </summary>
-		public async Task EnsureDimensionAsync(int expectedDimension, CancellationToken ct = default) {
-			var generated = await generator.GenerateAsync(["kontext dimension probe"], cancellationToken: ct).ConfigureAwait(false);
-			var actual    = generated[0].Vector.Length;
-
-			if (actual != expectedDimension) {
-				throw new InvalidOperationException(
-					$"The embeddings provider produces {actual}-dimensional vectors but the configured dimension is "
-				  + $"{expectedDimension}. The schema's FLOAT[{expectedDimension}] column would reject or poison every "
-				  + "stored vector - align Embeddings:Dimension with the provider's model.");
-			}
-		}
-	}
 }

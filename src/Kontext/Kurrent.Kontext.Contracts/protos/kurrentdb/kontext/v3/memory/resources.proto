@@ -234,9 +234,10 @@ message Evidence {
 // it stale.
 //
 // Which types reflection can produce:
-//   - NEVER: HEARSAY (unverified by definition; a synthesis is not a thing you were told) and
-//     OPEN_QUESTION (a question is asked, not concluded).
-//   - EITHER asserted or reflected: OBSERVATION, FACT, USER_PROFILE, PREFERENCE.
+//   - NEVER: OBSERVATION (reflection cites memories, and a record that cites a memory is derived,
+//     which a firsthand perception is not), HEARSAY (unverified by definition; a synthesis is not
+//     a thing you were told), and OPEN_QUESTION (a question is asked, not concluded).
+//   - EITHER asserted or reflected: FACT, USER_PROFILE, PREFERENCE.
 //   - ONLY by reflection (always cites memories): SUMMARY — a consolidation cannot exist without
 //     the memories it consolidates.
 //

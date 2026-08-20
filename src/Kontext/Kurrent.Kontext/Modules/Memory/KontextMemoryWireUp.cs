@@ -31,8 +31,6 @@ public static class KontextMemoryWireUp {
                 .AddGrpcEdge()
                 .AddMcpEdge();
 
-            // services.AddKontextIndexing();
-
             services.AddKontextRetrieval();
             
             services.AddKontextMemoryProjector();
@@ -67,28 +65,6 @@ public static class KontextMemoryWireUp {
 
             return services;
         }
-
-        // IServiceCollection AddKontextIndexing() {
-        //     services.AddSystemStartupTask(
-        //         "Kontext Indexing", static async (node, sp, ct) => {
-        //             await sp
-        //                 .GetRequiredService<EmbeddingGenerator>()
-        //                 .EnsureDimensionAsync(sp.GetRequiredService<KontextOptions>().Embeddings.Dimension, ct)
-        //                 .ConfigureAwait(false);
-        //
-        //             await KontextMigrations
-        //                 .CreateEngine(
-        //                     sp.GetRequiredService<KontextDataSource>(),
-        //                     sp.GetRequiredService<ILogger>())
-        //                 .EnsureAsync(ct)
-        //                 .ConfigureAwait(false);
-        //         });
-        //
-        //     services.AddKontextMemoryProjector();
-        //     services.AddKontextRecordsIndexer();
-        //
-        //     return services;
-        // }
 
         IServiceCollection AddMessageRegistration() {
             return services.AddSystemStartupTask(

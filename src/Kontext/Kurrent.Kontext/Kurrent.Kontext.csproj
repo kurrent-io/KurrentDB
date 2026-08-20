@@ -53,6 +53,7 @@
   </ItemGroup>
     
   <ItemGroup>
+    <Folder Include="Documentation\" />
     <Folder Include="Modules\Entities\" />
   </ItemGroup>
 
@@ -76,8 +77,4 @@
           CopyToOutputDirectory="PreserveNewest"
           Visible="false" />
   </ItemGroup>
-  <ItemGroup>
-    <AdditionalFiles Include="Modules\Memory\Edges\Mcp\McpInstructions.resx" />
-  </ItemGroup>
-
 </Project>
