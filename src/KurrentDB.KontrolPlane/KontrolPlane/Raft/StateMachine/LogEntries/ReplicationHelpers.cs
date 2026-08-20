@@ -105,12 +105,20 @@ internal static class ReplicationHelpers {
 			return box.Value;
 		}
 
-		public ValueTask ResignLeaderAsync(string databaseId,
-			CancellationToken token)
-			=> raft.ReplicateAsync(
-				new ProtobufLogEntry<ResignLeader>(new() {
-						DatabaseId = databaseId,
-					})
-					{ Term = raft.Term }, token);
+		public async ValueTask<bool> ResignLeaderAsync(string databaseId,
+			ulong? epoch,
+			CancellationToken token) {
+			var box = new StrongBox<bool>();
+			var command = new ResignLeader { DatabaseId = databaseId };
+			if (epoch.HasValue) {
+				command.Epoch = epoch.GetValueOrDefault();
+			} else {
+				command.ClearEpoch();
+			}
+
+			await raft.ReplicateAsync(
+				new ProtobufLogEntry<ResignLeader>(command) { Term = raft.Term, Context = box }, token);
+			return box.Value;
+		}
 	}
 }

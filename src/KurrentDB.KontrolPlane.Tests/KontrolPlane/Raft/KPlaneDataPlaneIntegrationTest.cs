@@ -183,7 +183,7 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 
 				// resign leader
-				await dataPlane[0].Manager.ResignLeader(TestToken);
+				Assert.True(await dataPlane[0].Manager.ResignLeader(TestToken));
 
 				// Wait for a new appointment
 				Assert.True(await leaders.MoveNextAsync());

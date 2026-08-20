@@ -42,8 +42,9 @@ public interface IKontrolPlane {
 	/// This method automatically retries in a new KPlane leader. Thus, it never throws any network-related exceptions.
 	/// </remarks>
 	/// <param name="databaseId">The identifier of the leader.</param>
+	/// <param name="epoch">The expected epoch. If <see langword="null"/>, resign the leader unconditionally.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The task that represents asynchronous state of the operation.</returns>
 	/// <exception cref="OperationCanceledException"><paramref name="token"/> is canceled.</exception>
-	Task ResignLeaderAsync(string databaseId, CancellationToken token = default);
+	Task<bool> ResignLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default);
 }

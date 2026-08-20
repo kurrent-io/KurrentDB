@@ -57,7 +57,8 @@ partial class ClusterStateMachine {
 			case LogEntries.ResignLeader.TypeId:
 				Apply(currentState,
 					await DeserializeAsync<LogEntries.ResignLeader>(entry, token),
-					in commandInfo);
+					in commandInfo,
+					entry.Context as StrongBox<bool>);
 				break;
 			case LogEntries.BumpEpoch.TypeId:
 				Apply(currentState,
@@ -142,9 +143,15 @@ partial class ClusterStateMachine {
 
 	private void Apply(ClusterState currentState,
 		LogEntries.ResignLeader command,
-		in CommandInfo commandInfo) {
-		currentState.Update(command, in commandInfo);
-		NotifyDatabaseChanged(command);
+		in CommandInfo commandInfo,
+		StrongBox<bool>? resultContainer) {
+		var result = currentState.Update(command, in commandInfo);
+
+		if (result) {
+			NotifyDatabaseChanged(command);
+		}
+
+		resultContainer?.Value = result;
 	}
 
 	private void Apply(ClusterState currentState,

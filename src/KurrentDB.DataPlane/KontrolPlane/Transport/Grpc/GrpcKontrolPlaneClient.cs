@@ -105,19 +105,24 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 		}
 	}
 
-	public async Task ResignLeaderAsync(string databaseId, CancellationToken token = default) {
+	public async Task<bool> ResignLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default) {
 		// Loop is needed to reach the KPlane leader
 		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
 			var entry = GetOrCreateClient(currentAddress);
 
 			try {
-				var response = await entry.Client.ResignLeaderAsync(new() {
-					DatabaseId = databaseId,
-				}, cancellationToken: token);
+				var request = new ResignRequest() { DatabaseId = databaseId };
+				if (epoch.HasValue) {
+					request.Epoch = epoch.GetValueOrDefault();
+				} else {
+					request.ClearEpoch();
+				}
+
+				var response = await entry.Client.ResignLeaderAsync(request, cancellationToken: token);
 
 				// We've got a response from the leader
 				if (response.KontrollerLeader.IsEmpty)
-					return;
+					return response.Successful;
 
 				// Otherwise, change the address and try again
 				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());

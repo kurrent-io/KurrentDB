@@ -67,9 +67,11 @@ message AnnouncementResponse
 message ResignRequest
 {
   string databaseId = 1;
+  optional uint64 epoch = 2;
 }
 
 message ResignResponse
 {
+  bool successful = 1;
   bytes kontrollerLeader = 2;
 }

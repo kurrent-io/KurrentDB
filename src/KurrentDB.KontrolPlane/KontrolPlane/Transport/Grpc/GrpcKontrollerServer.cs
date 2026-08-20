@@ -90,10 +90,13 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 	public sealed override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
 		var response = new ResignResponse();
 		try {
-			await kontroller.ResignDatabaseLeaderAsync(request.DatabaseId, context.CancellationToken);
+			response.Successful = await kontroller.ResignDatabaseLeaderAsync(request.DatabaseId,
+				request.HasEpoch ? request.Epoch : null,
+				context.CancellationToken);
 			response.KontrollerLeader = ByteString.Empty;
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
+			response.Successful = false;
 			response.KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
 		}
 

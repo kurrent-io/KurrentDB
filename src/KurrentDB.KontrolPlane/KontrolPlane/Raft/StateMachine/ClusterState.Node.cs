@@ -23,8 +23,8 @@ partial class ClusterState {
 	public bool Update(AddOrIgnoreDatabaseNode command, in CommandInfo info)
 		=> Update<AddOrIgnoreDatabaseNodeStmt, bool>(new(command), info);
 
-	public void Update(ResignLeader command, in CommandInfo info)
-		=> Update<UnsetLeaderNodeStmt>(new(command), info);
+	public bool Update(ResignLeader command, in CommandInfo info)
+		=> Update<UnsetLeaderNodeStmt, bool>(new(command), info);
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -119,15 +119,17 @@ file readonly struct RemoveDatabaseNodeStmt(RemoveDatabaseNode command) :
 }
 
 [StructLayout(LayoutKind.Auto)]
-file readonly struct UnsetLeaderNodeStmt(ResignLeader command) : IPreparedStatement<ValueTuple<string>>, IConsumer<DuckDBAdvancedConnection> {
+file readonly struct UnsetLeaderNodeStmt(ResignLeader command) : IPreparedStatement<ValueTuple<string>>, ISupplier<DuckDBAdvancedConnection, bool> {
 	public static ReadOnlySpan<byte> CommandText => "UPDATE node SET is_leader=false WHERE database_id=?;"u8;
 
 	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
 		args.Item1
 	};
 
-	public void Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId));
+	public bool Invoke(DuckDBAdvancedConnection connection)
+		=> (command.HasEpoch
+			? connection.ExecuteNonQuery<(string, ulong), UnsetLeaderNodeConditionallyStmt>(new(command.DatabaseId, command.Epoch))
+			: connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId))) is not 0L;
 }
 
 [StructLayout(LayoutKind.Auto)]

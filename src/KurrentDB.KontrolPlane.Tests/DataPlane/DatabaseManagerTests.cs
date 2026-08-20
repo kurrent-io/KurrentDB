@@ -206,11 +206,11 @@ public class DatabaseManagerTests {
 			CancellationToken token = default)
 			=> Task.FromResult(true);
 
-		public Task ResignLeaderAsync(string databaseId, CancellationToken token = default) {
+		public Task<bool> ResignLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default) {
 			token.ThrowIfCancellationRequested();
 			Interlocked.Increment(ref ResignLeaderCallCount);
 			LastResignedDatabaseId = databaseId;
-			return Task.CompletedTask;
+			return Task.FromResult(true);
 		}
 	}
 }

@@ -28,10 +28,13 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 		_clusterInfoNullVersion = _clusterInfoChanged.CurrentState;
 	}
 
-	public async Task ResignLeader(CancellationToken token = default) {
+	public async Task<bool> ResignLeader(CancellationToken token = default) {
 		var tokenSource = CancellationToken.Combine([_lifecycleToken, token]);
 		try {
-			await KontrolPlane.ResignLeaderAsync(DatabaseHandler.CurrentNode.DatabaseId, tokenSource.Token);
+			return await KontrolPlane.ResignLeaderAsync(
+				DatabaseHandler.CurrentNode.DatabaseId,
+				epoch: null,
+				tokenSource.Token);
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
 			throw new ObjectDisposedException(e.Message, e);
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, token)) {

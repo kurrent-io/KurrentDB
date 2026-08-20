@@ -25,7 +25,7 @@ public interface IKontroller {
 
 	ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default);
 
-	ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default);
+	ValueTask<bool> ResignDatabaseLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default);
 
 	/// <summary>
 	/// Gets known Kontroller nodes.

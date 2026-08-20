@@ -62,4 +62,5 @@ message BumpEpoch
 message ResignLeader
 {
   string databaseId = 1;
+  optional uint64 epoch = 2;
 }

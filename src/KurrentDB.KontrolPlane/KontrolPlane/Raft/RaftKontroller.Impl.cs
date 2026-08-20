@@ -122,17 +122,21 @@ partial class RaftKontroller : IKontroller {
 		return task;
 	}
 
-	public async ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default) {
+	public async ValueTask<bool> ResignDatabaseLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default) {
+		bool result;
 		try {
-			await _raft.ResignLeaderAsync(databaseId, token);
-			if (_appointmentState.TryGetValue(databaseId, out var appointment)) {
-				_appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
-			}
+			result = await _raft.ResignLeaderAsync(databaseId, epoch, token)
+			         && _appointmentState.TryGetValue(databaseId, out var appointment)
+			         && _appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
 
-			_appointmentRoundSignal.Set();
+			if (result) {
+				_appointmentRoundSignal.Set();
+			}
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		}
+
+		return result;
 	}
 
 	public async IAsyncEnumerable<DatabaseCluster> ListenDatabaseAsync(string databaseId, [EnumeratorCancellation] CancellationToken token = default) {
