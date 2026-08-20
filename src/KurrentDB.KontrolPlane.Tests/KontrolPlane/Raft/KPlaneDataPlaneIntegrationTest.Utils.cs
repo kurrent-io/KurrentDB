@@ -178,9 +178,9 @@ partial class KPlaneDataPlaneIntegrationTest {
 				return;
 			_disposed = true;
 
-			await GrpcHost.StopAsync();
+			await GrpcHost.StopAsync(TestToken);
 			await GrpcHost.DisposeAsync();
-			await Kontroller.StopAsync(CancellationToken.None);
+			await Kontroller.StopAsync(TestToken);
 			await Kontroller.DisposeAsync();
 		}
 	}
