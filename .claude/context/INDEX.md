@@ -16,6 +16,7 @@ See [docs/features/INDEX.md](docs/features/INDEX.md) for feature status and arti
 | [lance-duckdb — array_has_any containment pushdown (feasibility + change surface)](docs/research/2026-08-02-0042-lance-duckdb-containment-pushdown/) | research | 2026-08-02 | sergio |
 | [Kontext Document Ingestion — Microsoft.Extensions.DataIngestion, single core, gRPC + MCP edges](docs/research/2026-08-11-1301-kontext-document-ingestion/) | research | 2026-08-11 | sergio |
 | [Lance Index Creation Contract (DuckDB Extension)](docs/research/2026-08-15-2318-lance-index-creation-contract/) | research | 2026-08-15 | sergio |
+| [Padding a Narrow Embedding Into a Wider Lance Vector Column](docs/research/2026-08-20-1936-lance-padded-vector-width/) | research | 2026-08-20 | sergio |
 
 ## Reports
 
