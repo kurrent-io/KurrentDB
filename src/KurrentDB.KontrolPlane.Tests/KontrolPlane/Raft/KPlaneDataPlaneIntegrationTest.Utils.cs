@@ -178,9 +178,16 @@ partial class KPlaneDataPlaneIntegrationTest {
 				return;
 			_disposed = true;
 
+			// Stop (but don't yet dispose) the Raft layer first so it relinquishes leadership before the
+			// gRPC host shuts down. Otherwise, other nodes' still-open AnnounceDatabaseNode streams (bound
+			// to this node's LeadershipToken) keep the connection alive, and Kestrel's graceful shutdown
+			// has to wait out its full drain timeout before forcibly aborting them. Kontroller.DisposeAsync()
+			// must run last: it disposes the underlying RaftCluster, and any in-flight AnnounceDatabaseNode
+			// request still being served by GrpcHost would throw ObjectDisposedException if that happened
+			// before the host itself stopped accepting/serving requests.
+			await Kontroller.StopAsync(TestToken);
 			await GrpcHost.StopAsync(TestToken);
 			await GrpcHost.DisposeAsync();
-			await Kontroller.StopAsync(TestToken);
 			await Kontroller.DisposeAsync();
 		}
 	}

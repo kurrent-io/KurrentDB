@@ -52,9 +52,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 					try {
 						if (!await call.ResponseStream.MoveNext())
 							break;
-					} catch (RpcException e) when (e.StatusCode
-						                               is StatusCode.Unavailable
-						                               or StatusCode.Cancelled) {
+					} catch (RpcException) {
 						currentAddress = NextAddress(currentAddress);
 						break;
 					}
@@ -97,7 +95,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 
 				// Otherwise, change the address and try again
 				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
-			} catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
+			} catch (RpcException) {
 				currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
 			} finally {
 				entry.Release();
@@ -126,7 +124,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 
 				// Otherwise, change the address and try again
 				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
-			} catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
+			} catch (RpcException) {
 				currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
 			} finally {
 				entry.Release();
