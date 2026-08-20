@@ -11,7 +11,7 @@ using Kurrent.Surge;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Records.Data;
+namespace Kurrent.Kontext.Records.Indexer;
 
 /// <summary>
 /// Turns batches of consumed records into rows of <c>ldb.main.records</c> through the quack

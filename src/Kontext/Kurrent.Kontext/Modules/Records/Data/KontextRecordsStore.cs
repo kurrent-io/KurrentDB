@@ -4,10 +4,10 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Data;
 using Kurrent.Quack;
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Records.Data;
 
 public sealed class KontextRecordsStore(KontextDataSource connections) {
     public async IAsyncEnumerable<RecordHit> SearchAsync(

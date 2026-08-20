@@ -8,6 +8,7 @@ using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.Data.LanceDB;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -15,14 +16,14 @@ using Kurrent.Quack.ConnectionPool;
 namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
-/// Behavioural tests for <see cref="KontextDataStore"/> against a REAL DuckDB + Lance engine.
+/// Behavioural tests for <see cref="KontextMemoryDataStore"/> against a REAL DuckDB + Lance engine.
 /// The store is read-only, so each test seeds the memories table directly with SQL — exactly how
 /// the projector will write it — through the same data sources the store reads from. No vector
 /// store and no embedding model anywhere: embeddings are seeded as literal 4-dim vectors, and
 /// searches pass the query embedding in.
 /// </summary>
 [Category("Integration")]
-public class KontextDataStoreTests {
+public class KontextMemoryDataStoreTests {
 	static readonly DateTimeOffset Base = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
 	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
@@ -504,7 +505,7 @@ public class KontextDataStoreTests {
 	static Contracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
 
 	/// <summary>Creates the schema through <see cref="KontextMigrations"/> and seeds the five fixed rows, then hands back a store over the same data sources.</summary>
-	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource) {
+	static async ValueTask<KontextMemoryDataStore> Seed(KontextDataSource dataSource) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS
 		// INVERTED index the keyword tests need) — seeding only inserts rows.
 		await MemorySeeding.CreateSchema(dataSource);

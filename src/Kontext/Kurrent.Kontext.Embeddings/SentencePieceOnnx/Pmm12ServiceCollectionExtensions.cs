@@ -21,13 +21,13 @@ namespace Kurrent.Kontext.Embeddings;
 /// build-time embed target, and <see cref="KontextModelsAssembly"/>. Only the acquire side changes.
 /// </para>
 /// </summary>
-public static class InterimEmbeddingsServiceCollectionExtensions {
+public static class Pmm12ServiceCollectionExtensions {
 	extension(IServiceCollection services) {
 		/// <summary>
 		/// Registers the interim multilingual generator — <see cref="Pmm12EmbeddingGenerator"/> read from the
 		/// embedded models assembly and run through the SentencePiece / XLM-R generator (implementation C).
 		/// </summary>
-		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddInterimPmm12Embeddings() =>
+		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddPmm12Embeddings() =>
 			services.AddEmbeddingGenerator(_ => new Pmm12EmbeddingGenerator());
 	}
 }

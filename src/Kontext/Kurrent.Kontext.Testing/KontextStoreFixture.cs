@@ -5,6 +5,7 @@ using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Memory.Data;
 using Microsoft.Extensions.AI;
 using TUnit.Core.Interfaces;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
@@ -43,7 +44,7 @@ public sealed class KontextStoreFixture(
 	TempDir?            _dir;
 	KontextDataSource? _dataSources;
 
-	public KontextDataStore Store { get; private set; } = null!;
+	public KontextMemoryDataStore Store { get; private set; } = null!;
 
 	/// <summary>The engine door — benchmarks use it to reshape indexes between phases.</summary>
 	public KontextDataSource DataSources => _dataSources ?? throw new InvalidOperationException("The fixture is not initialized.");

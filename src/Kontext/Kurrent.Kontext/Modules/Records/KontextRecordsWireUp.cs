@@ -1,7 +1,7 @@
-using KurrentDB.Core.Hosting.Experimental;
+using Kurrent.Kontext.Records.Indexer;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Kurrent.Kontext.Modules.Records;
+namespace Kurrent.Kontext.Records;
 
 public static class KontextRecordsWireUp {
     extension(IServiceCollection services) {

@@ -3,9 +3,7 @@
 
 using EventStore.Plugins;
 using Kurrent.Kontext;
-using Kurrent.Kontext.Modules.Memory;
 using KurrentDB.Common.Configuration;
-using KurrentDB.Core.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

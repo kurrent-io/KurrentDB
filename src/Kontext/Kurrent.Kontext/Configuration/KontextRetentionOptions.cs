@@ -1,4 +1,4 @@
-namespace Kurrent.Kontext;
+namespace Kurrent.Kontext.Configuration;
 
 /// <summary>
 /// The dataset version-pruning policy the bootstrap asserts on every table at startup — the

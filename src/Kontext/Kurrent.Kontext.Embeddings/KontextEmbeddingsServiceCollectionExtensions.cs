@@ -42,7 +42,7 @@ public static class KontextEmbeddingsServiceCollectionExtensions {
 		/// </summary>
         EmbeddingGeneratorBuilder<string, Embedding<float>> AddLocalOnnxEmbeddings(LocalEmbeddingsOptions options) {
 			if (string.IsNullOrWhiteSpace(options.ModelsDirectory) && options.Models.Count == 0)
-				return services.AddInterimPmm12Embeddings();
+				return services.AddPmm12Embeddings();
 
 			services.TryAddSingleton(new OnnxModelRegistry(options.ModelsDirectory, options.Models));
 

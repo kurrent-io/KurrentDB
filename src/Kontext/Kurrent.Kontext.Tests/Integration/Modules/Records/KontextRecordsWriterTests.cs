@@ -4,8 +4,7 @@
 using System.Text;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Records;
-using Kurrent.Kontext.Modules.Records.Data;
+using Kurrent.Kontext.Records.Indexer;
 using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Surge;

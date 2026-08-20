@@ -6,7 +6,7 @@
 using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 
-namespace Kurrent.Kontext.Infrastructure.FluentValidation;
+namespace Kurrent.Kontext.Memory;
 
 public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRequest> {
     public RetainRequestValidator() {
@@ -102,18 +102,17 @@ static class MemoryRequestRules {
     public const int MaxExcerptLength = 1000;
     public const int MaxWebExcerpts   = 5;
 
-    public static bool Guid(string value) => global::System.Guid.TryParse(value, out _);
+    public static bool Guid(string value) => System.Guid.TryParse(value, out _);
 
-    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || global::System.Guid.TryParse(value, out _);
+    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _);
 
     public static bool ValidWebExcerpts(Contracts.Evidence.Types.WebRef web) =>
-        web.Excerpts.Count > 0
-     && web.Excerpts.Count <= MaxWebExcerpts
+        web.Excerpts.Count is > 0 and <= MaxWebExcerpts
      && web.Excerpts.All(WithinExcerptBounds);
 
     public static bool ValidGitExcerpt(Contracts.Evidence.Types.GitRef git) =>
         string.IsNullOrEmpty(git.Excerpt) || WithinExcerptBounds(git.Excerpt);
 
     static bool WithinExcerptBounds(string excerpt) =>
-        excerpt.Length >= MinExcerptLength && excerpt.Length <= MaxExcerptLength;
+        excerpt.Length is >= MinExcerptLength and <= MaxExcerptLength;
 }

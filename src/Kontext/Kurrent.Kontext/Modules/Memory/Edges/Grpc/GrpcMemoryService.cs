@@ -3,7 +3,7 @@
 
 using Grpc.Core;
 
-namespace Kurrent.Kontext.Edges.Grpc;
+namespace Kurrent.Kontext.Memory.Grpc;
 
 /// <summary>
 /// The gRPC edge for the memory service — a thin transport shim over <see cref="IKontextMemory"/>.

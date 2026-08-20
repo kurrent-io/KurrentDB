@@ -2,9 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.Data.LanceDB;
-using Kurrent.Kontext.Modules.Records.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Client;
 using Kurrent.Surge.Consumers.Configuration;
@@ -13,7 +11,7 @@ using KurrentDB.Core.Services.Transport.Enumerators;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Records;
+namespace Kurrent.Kontext.Records.Indexer;
 
 /// <summary>
 /// The whole-log records indexer: consumes <c>$all</c> through a Surge consumer (system events

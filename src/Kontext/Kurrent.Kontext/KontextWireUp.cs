@@ -1,8 +1,8 @@
+using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
-using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Memory;
-using Kurrent.Kontext.Modules.Records;
+using Kurrent.Kontext.Memory;
+using Kurrent.Kontext.Records;
 using KurrentDB.Core;
 using KurrentDB.Core.Hosting;
 using KurrentDB.Core.Hosting.Experimental;
@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
@@ -39,6 +38,9 @@ public static class KontextWireUp {
         }
 
         IServiceCollection AddSystemStartupManager() {
+            // TODO SS: need to increase the timeout from 30 seconds to something configurable, or at least 5 minutes.
+            // The default is too short for the migrations to complete on a cold start.
+            
             services.TryAddSingleton<SystemStartupManager>();
             
             // IHostedService is a multi-registration service type: TryAdd would find another hosted
@@ -97,8 +99,6 @@ public static class KontextWireUp {
     }
 
     extension(IApplicationBuilder app) {
-        /// <summary>The application-builder counterpart to AddKontext: fans out to each module's own
-        /// pipeline wireup. Records contributes nothing here — it is a hosted service only.</summary>
         public IApplicationBuilder UseKontext() =>
             app.UseKontextMemory();
     }

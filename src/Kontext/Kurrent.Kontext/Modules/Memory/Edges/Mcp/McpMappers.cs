@@ -2,28 +2,27 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf.WellKnownTypes;
-using Evidence = Kurrent.Kontext.Mcp.Model.Evidence;
-using GitRef = Kurrent.Kontext.Mcp.Model.GitRef;
-using LeanMemory = Kurrent.Kontext.Mcp.Model.LeanMemory;
-using Memory = Kurrent.Kontext.Mcp.Model.Memory;
-using MemoryImportance = Kurrent.Kontext.Mcp.Model.MemoryImportance;
-using MemoryRef = Kurrent.Kontext.Mcp.Model.MemoryRef;
-using MemoryType = Kurrent.Kontext.Mcp.Model.MemoryType;
-using RecalledMemory = Kurrent.Kontext.Mcp.Model.RecalledMemory;
-using RecallResult = Kurrent.Kontext.Mcp.Model.RecallResult;
-using RecollectSort = Kurrent.Kontext.Mcp.Model.RecollectSort;
-using RecordRef = Kurrent.Kontext.Mcp.Model.RecordRef;
-using ReflectResult = Kurrent.Kontext.Mcp.Model.ReflectResult;
-using RelatedMemory = Kurrent.Kontext.Mcp.Model.RelatedMemory;
-using RetainedMemory = Kurrent.Kontext.Mcp.Model.RetainedMemory;
-using RetainResult = Kurrent.Kontext.Mcp.Model.RetainResult;
-using SortDirection = Kurrent.Kontext.Mcp.Model.SortDirection;
-using StoredMemory = Kurrent.Kontext.Mcp.Model.StoredMemory;
-using Tag = Kurrent.Kontext.Mcp.Model.Tag;
-using TemporalContext = Kurrent.Kontext.Mcp.Model.TemporalContext;
-using WebRef = Kurrent.Kontext.Mcp.Model.WebRef;
+using Evidence = Kurrent.Kontext.Memory.Mcp.Model.Evidence;
+using GitRef = Kurrent.Kontext.Memory.Mcp.Model.GitRef;
+using LeanMemory = Kurrent.Kontext.Memory.Mcp.Model.LeanMemory;
+using MemoryImportance = Kurrent.Kontext.Memory.Mcp.Model.MemoryImportance;
+using MemoryRef = Kurrent.Kontext.Memory.Mcp.Model.MemoryRef;
+using MemoryType = Kurrent.Kontext.Memory.Mcp.Model.MemoryType;
+using RecalledMemory = Kurrent.Kontext.Memory.Mcp.Model.RecalledMemory;
+using RecallResult = Kurrent.Kontext.Memory.Mcp.Model.RecallResult;
+using RecollectSort = Kurrent.Kontext.Memory.Mcp.Model.RecollectSort;
+using RecordRef = Kurrent.Kontext.Memory.Mcp.Model.RecordRef;
+using ReflectResult = Kurrent.Kontext.Memory.Mcp.Model.ReflectResult;
+using RelatedMemory = Kurrent.Kontext.Memory.Mcp.Model.RelatedMemory;
+using RetainedMemory = Kurrent.Kontext.Memory.Mcp.Model.RetainedMemory;
+using RetainResult = Kurrent.Kontext.Memory.Mcp.Model.RetainResult;
+using SortDirection = Kurrent.Kontext.Memory.Mcp.Model.SortDirection;
+using StoredMemory = Kurrent.Kontext.Memory.Mcp.Model.StoredMemory;
+using Tag = Kurrent.Kontext.Memory.Mcp.Model.Tag;
+using TemporalContext = Kurrent.Kontext.Memory.Mcp.Model.TemporalContext;
+using WebRef = Kurrent.Kontext.Memory.Mcp.Model.WebRef;
 
-namespace Kurrent.Kontext.Mcp;
+namespace Kurrent.Kontext.Memory.Mcp;
 
 /// <summary>
 /// Maps between the MCP edge's HTTP-friendly model (<c>Edges.Mcp.Model</c>, ids as plain strings) and the
@@ -139,7 +138,7 @@ static class McpMappers {
 
 	#region ->> Memory (command in) <<-
 
-	public static Contracts.Memory ToContract(Memory m) {
+	public static Contracts.Memory ToContract(Model.Memory m) {
 		var proto = new Contracts.Memory {
 			MemoryType = ToContract(m.Type),
 			Content = m.Content,

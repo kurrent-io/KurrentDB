@@ -4,6 +4,7 @@
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using TUnit.Core.Interfaces;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
@@ -32,7 +33,7 @@ public sealed class KontextCorpus(
 	/// <summary>The committed corpus as loaded: memories, questions and ground truth.</summary>
 	public CorpusFixture Data { get; private set; } = null!;
 
-	public KontextDataStore Store => _store.Store;
+	public KontextMemoryDataStore Store => _store.Store;
 
 	/// <summary>The engine door for index experiments.</summary>
 	public KontextDataSource DataSources => _store.DataSources;

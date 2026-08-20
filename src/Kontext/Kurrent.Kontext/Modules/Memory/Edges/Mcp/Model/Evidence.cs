@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Kurrent.Kontext.Mcp.Model;
+namespace Kurrent.Kontext.Memory.Mcp.Model;
 
 // Evidence arrives as INPUT (retain's evidence), and deserializing into an abstract type without
 // polymorphism metadata throws outright — the discriminator is what lets an agent submit

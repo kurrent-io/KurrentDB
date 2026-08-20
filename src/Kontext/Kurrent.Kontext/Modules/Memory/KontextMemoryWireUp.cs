@@ -1,34 +1,26 @@
 using FluentValidation;
-using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Edges.Grpc;
-using Kurrent.Kontext.Embeddings;
-using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
-using Kurrent.Kontext.Modules.Records;
+using Kurrent.Kontext.Memory.Data;
+using Kurrent.Kontext.Memory.Grpc;
+using Kurrent.Kontext.Memory.Mcp;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Surge.Schema;
-using KurrentDB.Core;
 using KurrentDB.Core.Hosting;
-using KurrentDB.Core.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
-namespace Kurrent.Kontext.Modules.Memory;
+namespace Kurrent.Kontext.Memory;
 
 public static class KontextMemoryWireUp {
     extension(IServiceCollection services) {
         /// <summary>The memory service: the store, the domain workflows, and their validation surface.</summary>
         public IServiceCollection AddKontextMemory() {
       
-            services.TryAddSingleton<KontextDataStore>();                                 // TODO SS: Rename to KontextMemoryStore
+            services.TryAddSingleton<KontextMemoryDataStore>();                                 // TODO SS: Rename to KontextMemoryStore
             services.TryAddSingleton<KontextMemory>();                                    // TODO SS: Rename to KontextMemoryService
             services.TryAddSingleton<IKontextMemory, KontextMemoryValidationDecorator>(); // TODO SS: Rename to KontextMemoryValidationService
 
@@ -129,7 +121,7 @@ public static class KontextMemoryWireUp {
             services.TryAddSingleton<IKontextRetriever>(sp => KontextRetriever
                 .New()
                 .Focused(
-                    sp.GetRequiredService<KontextDataStore>(),
+                    sp.GetRequiredService<KontextMemoryDataStore>(),
                     sp.GetRequiredService<EmbeddingGenerator>(),
                     sp.GetService<TimeProvider>())
                 .Build());

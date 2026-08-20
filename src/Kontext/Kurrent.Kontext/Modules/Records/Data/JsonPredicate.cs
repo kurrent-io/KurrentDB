@@ -3,7 +3,7 @@
 
 using System.Globalization;
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Records.Data;
 
 public readonly record struct JsonPredicate {
     readonly string _predicate;

@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// Parses the canonical encoded tag form ("scope:value", or bare "value") and owns the sanitization

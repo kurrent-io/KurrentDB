@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-namespace Kurrent.Kontext.Mcp.Model;
+namespace Kurrent.Kontext.Memory.Mcp.Model;
 
 // No id: the server mints every memory_id and returns them positionally, so a caller can neither
 // collide with an existing memory nor cite one it is sending in the same batch.

@@ -3,7 +3,7 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Sessions;
+using Kurrent.Kontext.Sessions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kurrent.Kontext.Tests.Data;

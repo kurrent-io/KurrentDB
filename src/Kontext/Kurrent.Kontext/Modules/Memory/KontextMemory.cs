@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
-using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 
-namespace Kurrent.Kontext;
+namespace Kurrent.Kontext.Memory;
 
 public delegate Task AppendEvent(object evt, CancellationToken ct = default);
 
 /// <summary>
 /// The transport-neutral memory service, composed over the projector-owned
-/// <see cref="KontextDataStore"/> read model. The store only READS the lance table the projector
+/// <see cref="KontextMemoryDataStore"/> read model. The store only READS the lance table the projector
 /// writes, so every operation that mutates memory state — retain and the recall
 /// reconsolidation touches — is not implemented here: writes go through the KurrentDB log and land
 /// in the read model via the projector, a path this service does not own yet.
@@ -25,7 +25,7 @@ public delegate Task AppendEvent(object evt, CancellationToken ct = default);
 /// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
 ///   outside the data-store surface.
 /// </summary>
-public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retriever, AppendEvent appendEvent) : IKontextMemory {
+public sealed class KontextMemory(KontextMemoryDataStore store, IKontextRetriever retriever, AppendEvent appendEvent) : IKontextMemory {
 	const int DefaultRecallLimit    = 10;
 	const int DefaultRecollectLimit = 100;
 

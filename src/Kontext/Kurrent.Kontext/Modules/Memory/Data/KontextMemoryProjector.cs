@@ -2,15 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Memory.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Client;
 using Kurrent.Surge.Consumers.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Memory;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// The memories read-model projector: consumes the <c>$kontext/memories</c> stream directly

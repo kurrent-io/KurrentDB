@@ -1,5 +1,5 @@
 
-namespace Kurrent.Kontext.Mcp.Model;
+namespace Kurrent.Kontext.Memory.Mcp.Model;
 
 public sealed class ReflectOptions {
     public string? QueryId { get; set; }

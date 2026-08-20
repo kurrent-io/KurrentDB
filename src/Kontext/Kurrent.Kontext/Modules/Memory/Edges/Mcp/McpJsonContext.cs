@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json.Serialization;
-using Kurrent.Kontext.Mcp.Model;
+using Kurrent.Kontext.Memory.Mcp.Model;
 using ModelContextProtocol;
 
-namespace Kurrent.Kontext.Mcp;
+namespace Kurrent.Kontext.Memory.Mcp;
 
 /// <summary>
 /// Source-generated serialization metadata for the MCP tool model. The registered roots are the tool
@@ -19,8 +19,8 @@ namespace Kurrent.Kontext.Mcp;
 	PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
 	DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 	UseStringEnumConverter = true)]
-[JsonSerializable(typeof(Memory))]
-[JsonSerializable(typeof(IReadOnlyList<Memory>))]
+[JsonSerializable(typeof(Model.Memory))]
+[JsonSerializable(typeof(IReadOnlyList<Model.Memory>))]
 [JsonSerializable(typeof(IReadOnlyList<string>))]
 [JsonSerializable(typeof(RecallOptions))]
 [JsonSerializable(typeof(RecollectOptions))]

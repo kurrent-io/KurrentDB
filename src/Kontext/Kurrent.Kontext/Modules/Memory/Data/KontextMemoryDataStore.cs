@@ -7,10 +7,10 @@ using System.Runtime.CompilerServices;
 using DuckDB.NET.Data;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// Access the memories read model.
@@ -34,7 +34,7 @@ namespace Kurrent.Kontext.Data;
 /// - every value travels as a named $parameter, never inlined into the text (validated live:
 ///   even Lance's named arguments bind); only a clause or the FLOAT[N] dimension is interpolated
 /// </summary>
-public sealed class KontextDataStore(KontextDataSource connections) : IMemoryIndex {
+public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMemoryIndex {
     /// <summary>
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///

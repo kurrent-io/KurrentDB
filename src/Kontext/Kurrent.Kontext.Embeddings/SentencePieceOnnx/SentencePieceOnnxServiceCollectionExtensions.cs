@@ -20,7 +20,7 @@ public static class SentencePieceOnnxServiceCollectionExtensions {
 		/// </summary>
 		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddSentencePieceOnnxEmbeddings(
 			Action<SentencePieceOnnxOptions>? configure = null) =>
-			services.AddEmbeddingGenerator<string, Embedding<float>>(sp => {
+			services.AddEmbeddingGenerator(sp => {
 				var options = new SentencePieceOnnxOptions();
 				configure?.Invoke(options);
 				return new SentencePieceOnnxEmbeddingGenerator(sp.GetRequiredService<OnnxModelRegistry>(), options);

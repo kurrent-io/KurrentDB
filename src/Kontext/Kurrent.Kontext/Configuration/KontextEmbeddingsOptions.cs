@@ -7,7 +7,7 @@ using Kurrent.Kontext.Embeddings.GoogleVertexAI;
 using Kurrent.Kontext.Embeddings.Ollama;
 using Kurrent.Kontext.Embeddings.OpenAI;
 
-namespace Kurrent.Kontext;
+namespace Kurrent.Kontext.Configuration;
 
 /// <summary>
 /// The <c>Embeddings</c> section of <see cref="KontextOptions"/> — Kontext config that selects

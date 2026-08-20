@@ -1,16 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DuckDB.NET.Data;
 using Kurrent.Kontext.Contracts;
-using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge;
 using Microsoft.Extensions.AI;
 
-namespace Kurrent.Kontext.Modules.Memory.Data;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// The memories read model's batch writer: applies one consumed batch of memory events as one
@@ -80,7 +76,7 @@ public sealed class KontextMemoryWriter(
             switch (record.Value) {
                 case MemoriesRetained retained: {
                     // One event carries a whole retain call — one row per memory.
-                    var retainedAt = KontextDataStore.EncodeTimestamp(retained.RetainedAt);
+                    var retainedAt = KontextMemoryDataStore.EncodeTimestamp(retained.RetainedAt);
 
                     foreach (var entry in retained.Memories) {
                         Touch(entry.MemoryId, position).Retain(entry.Memory, retainedAt);
@@ -96,7 +92,7 @@ public sealed class KontextMemoryWriter(
 
                 case MemoriesRecalled recall: {
                     // Reconsolidation: a recall IS an access — the recency clock resets.
-                    var recalledAt = KontextDataStore.EncodeTimestamp(recall.RecalledAt);
+                    var recalledAt = KontextMemoryDataStore.EncodeTimestamp(recall.RecalledAt);
                     foreach (var scored in recall.Memories)
                         Touch(scored.MemoryId, position).Recall(recalledAt);
 
@@ -236,13 +232,13 @@ public sealed class KontextMemoryWriter(
             memoryTypes.Add(memory is not null ? (int)memory.MemoryType : 0);
             contents.Add(memory?.Content);
             importances.Add(memory is not null ? (int)memory.Importance : 0);
-            tags.Add(memory?.Tags.Select(KontextDataStore.EncodeTag).ToList() ?? []);
+            tags.Add(memory?.Tags.Select(KontextMemoryDataStore.EncodeTag).ToList() ?? []);
             reasonings.Add(memory?.Reasoning);
-            evidence.Add(memory?.Evidence.Select(KontextDataStore.EncodeEvidence).ToList() ?? []);
-            citedMemoryIds.Add(memory is not null ? KontextDataStore.EncodeCitedMemoryIds(memory) : []);
+            evidence.Add(memory?.Evidence.Select(KontextMemoryDataStore.EncodeEvidence).ToList() ?? []);
+            citedMemoryIds.Add(memory is not null ? KontextMemoryDataStore.EncodeCitedMemoryIds(memory) : []);
             supersedes.Add(memory?.Supersedes.ToList() ?? []);
-            validityStarts.Add(memory?.Validity?.PerceivedStart is { } start ? KontextDataStore.EncodeTimestamp(start) : null);
-            validityEnds.Add(memory?.Validity?.PerceivedEnd is { } end ? KontextDataStore.EncodeTimestamp(end) : null);
+            validityStarts.Add(memory?.Validity?.PerceivedStart is { } start ? KontextMemoryDataStore.EncodeTimestamp(start) : null);
+            validityEnds.Add(memory?.Validity?.PerceivedEnd is { } end ? KontextMemoryDataStore.EncodeTimestamp(end) : null);
             retainedAts.Add(memory is not null ? pendingMemory.RetainedAt : null);
             supersededBys.Add(pendingMemory.SupersededBy);
             supersededAts.Add(pendingMemory.SupersededBy is not null ? pendingMemory.SupersededAt : null);

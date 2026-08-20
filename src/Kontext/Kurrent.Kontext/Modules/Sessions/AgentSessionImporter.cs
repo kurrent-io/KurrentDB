@@ -2,9 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
 
-namespace Kurrent.Kontext.Modules.Sessions;
+namespace Kurrent.Kontext.Sessions;
 
 /// <summary>
 /// Copies Claude Code agent session data into plain relational tables using the DuckDB

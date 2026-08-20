@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Kurrent.Kontext.Mcp.Model;
+namespace Kurrent.Kontext.Memory.Mcp.Model;
 
 // Without polymorphism metadata STJ serializes via the DECLARED type's contract, so a Lean hit travelling
 // as RecalledMemory would emit only the base's `score` and silently drop the body. The discriminator

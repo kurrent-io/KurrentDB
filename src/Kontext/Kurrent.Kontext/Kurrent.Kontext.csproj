@@ -76,5 +76,8 @@
           CopyToOutputDirectory="PreserveNewest"
           Visible="false" />
   </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Modules\Memory\Edges\Mcp\McpInstructions.resx" />
+  </ItemGroup>
 
 </Project>

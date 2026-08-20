@@ -3,7 +3,7 @@
 
 using Kurrent.Kontext.Infrastructure.Validation;
 
-namespace Kurrent.Kontext.Infrastructure.FluentValidation;
+namespace Kurrent.Kontext.Memory;
 
 /// <summary>
 /// Validates every request against its registered validator before delegating to the inner

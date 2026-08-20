@@ -2,17 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using ModelContextProtocol.Server;
-using static Kurrent.Kontext.Mcp.McpMappers;
-using Memory = Kurrent.Kontext.Mcp.Model.Memory;
-using RecallOptions = Kurrent.Kontext.Mcp.Model.RecallOptions;
-using RecallResult = Kurrent.Kontext.Mcp.Model.RecallResult;
-using RecollectOptions = Kurrent.Kontext.Mcp.Model.RecollectOptions;
-using ReflectOptions = Kurrent.Kontext.Mcp.Model.ReflectOptions;
-using ReflectResult = Kurrent.Kontext.Mcp.Model.ReflectResult;
-using RetainResult = Kurrent.Kontext.Mcp.Model.RetainResult;
-using StoredMemory = Kurrent.Kontext.Mcp.Model.StoredMemory;
+using static Kurrent.Kontext.Memory.Mcp.McpMappers;
+using RecallOptions = Kurrent.Kontext.Memory.Mcp.Model.RecallOptions;
+using RecallResult = Kurrent.Kontext.Memory.Mcp.Model.RecallResult;
+using RecollectOptions = Kurrent.Kontext.Memory.Mcp.Model.RecollectOptions;
+using ReflectOptions = Kurrent.Kontext.Memory.Mcp.Model.ReflectOptions;
+using ReflectResult = Kurrent.Kontext.Memory.Mcp.Model.ReflectResult;
+using RetainResult = Kurrent.Kontext.Memory.Mcp.Model.RetainResult;
+using StoredMemory = Kurrent.Kontext.Memory.Mcp.Model.StoredMemory;
 
-namespace Kurrent.Kontext.Mcp;
+namespace Kurrent.Kontext.Memory.Mcp;
 
 /// <summary>
 /// The MCP edge for the memory service. Unlike the gRPC edge (a pure pass-through over the canonical model),
@@ -34,7 +33,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         UseStructuredContent = true,
         Destructive = false,
         OpenWorld = false)]
-    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Memory> memories, CancellationToken ct = default) {
+    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Model.Memory> memories, CancellationToken ct = default) {
         var request = new Contracts.RetainRequest {
             Memories = { memories.Select(ToContract) }
         };

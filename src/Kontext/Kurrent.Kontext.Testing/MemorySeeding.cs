@@ -4,6 +4,7 @@
 using DuckDB.NET.Data;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Memory.Data;
 
 namespace Kurrent.Kontext.Testing;
 
@@ -28,7 +29,7 @@ public static class MemorySeeding {
 		new(dir, $"{dir}.tmp", Path.Combine(dir, "kurrent.ddb"));
 
 	/// <summary>Creates the schema and seeds the given rows, then hands back a store over the same data sources.</summary>
-	public static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource, params MemoryRow[] rows) {
+	public static async ValueTask<KontextMemoryDataStore> Seed(KontextDataSource dataSource, params MemoryRow[] rows) {
 		await CreateSchema(dataSource);
 		Insert(dataSource, rows);
 

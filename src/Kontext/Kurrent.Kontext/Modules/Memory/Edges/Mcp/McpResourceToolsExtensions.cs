@@ -5,13 +5,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Kurrent.Kontext.Mcp;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 
-namespace Kurrent.Kontext.Mcp;
+namespace Kurrent.Kontext.Memory.Mcp;
 
 /// <summary>
 /// Registers every [McpServerTool] method of a tool type with all agent-facing text sourced from

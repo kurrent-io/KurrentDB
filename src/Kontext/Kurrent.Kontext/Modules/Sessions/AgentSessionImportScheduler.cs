@@ -5,7 +5,7 @@ using Kurrent.Kontext.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Kurrent.Kontext.Modules.Sessions;
+namespace Kurrent.Kontext.Sessions;
 
 /// <summary>
 /// The agent session import's background loop: on a fixed cadence it runs the importer's one

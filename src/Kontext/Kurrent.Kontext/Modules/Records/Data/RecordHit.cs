@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Records.Data;
 
 // A struct because Quack's query surface requires TRow to be a non-nullable value type.
 public readonly record struct StoredRecord(
