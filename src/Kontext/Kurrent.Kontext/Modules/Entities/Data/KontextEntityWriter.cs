@@ -26,8 +26,7 @@ public sealed class KontextEntityWriter(
         string EntityType,
         string Alias,
         bool   IsCanonical,
-        long   CreatedAt,
-        long   LogPosition
+        long   CreatedAt
     );
 
     sealed record PendingMention(
@@ -37,8 +36,7 @@ public sealed class KontextEntityWriter(
         string EntityId,
         float  Confidence,
         int    ResolvedBy,
-        long   LinkedAt,
-        long   LogPosition
+        long   LinkedAt
     );
 
     /// <summary>
@@ -55,7 +53,6 @@ public sealed class KontextEntityWriter(
             if (record.Value is not EntitiesMentioned resolved)
                 continue;
 
-            var position   = (long)record.LogPosition.CommitPosition!;
             var resolvedAt = KontextDataStore.EncodeTimestamp(resolved.ResolvedAt);
 
             for (var spanIndex = 0; spanIndex < resolved.Mentions.Count; spanIndex++) {
@@ -68,12 +65,12 @@ public sealed class KontextEntityWriter(
 
                     foreach (var alias in entity.Aliases)
                         aliases[(entityId, alias)] = new PendingAlias(
-                            entityId, entity.Type, alias, alias == entity.CanonicalName, resolvedAt, position);
+                            entityId, entity.Type, alias, alias == entity.CanonicalName, resolvedAt);
                 }
 
                 mentions[(resolved.MemoryId, spanIndex)] = new PendingMention(
                     resolved.MemoryId, spanIndex, mention.SpanText, entityId,
-                    (float)mention.Confidence, (int)mention.ResolvedBy, resolvedAt, position);
+                    (float)mention.Confidence, (int)mention.ResolvedBy, resolvedAt);
             }
         }
 
@@ -101,18 +98,16 @@ public sealed class KontextEntityWriter(
                  unnest(CAST($aliases AS VARCHAR[])) AS alias,
                  unnest(CAST($is_canonicals AS BOOLEAN[])) AS is_canonical,
                  unnest(CAST($created_ats AS BIGINT[])) AS created_at,
-                 unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
              ON t.entity_id = s.entity_id AND t.alias = s.alias
-             WHEN NOT MATCHED THEN INSERT (entity_id, entity_type, alias, is_canonical, created_at, log_position, embedding)
+             WHEN NOT MATCHED THEN INSERT (entity_id, entity_type, alias, is_canonical, created_at, embedding)
              VALUES (
-                 s.entity_id, s.entity_type, s.alias, s.is_canonical, s.created_at, s.log_position,
+                 s.entity_id, s.entity_type, s.alias, s.is_canonical, s.created_at,
                  CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]))
              WHEN MATCHED THEN UPDATE SET
                  entity_type  = s.entity_type
                , is_canonical = s.is_canonical
                , embedding    = CAST(s.embedding_raw AS FLOAT[{options.Dimensions}])
-               , log_position = s.log_position
              """;
 
         var count        = aliases.Count;
@@ -121,7 +116,6 @@ public sealed class KontextEntityWriter(
         var aliasTexts   = new List<string>(count);
         var isCanonicals = new List<bool>(count);
         var createdAts   = new List<long>(count);
-        var logPositions = new List<long>(count);
 
         foreach (var alias in aliases) {
             entityIds.Add(alias.EntityId);
@@ -129,7 +123,6 @@ public sealed class KontextEntityWriter(
             aliasTexts.Add(alias.Alias);
             isCanonicals.Add(alias.IsCanonical);
             createdAts.Add(alias.CreatedAt);
-            logPositions.Add(alias.LogPosition);
         }
 
         var generated = await embeddings
@@ -145,7 +138,6 @@ public sealed class KontextEntityWriter(
         command.Parameters.Add(new("aliases", aliasTexts));
         command.Parameters.Add(new("is_canonicals", isCanonicals));
         command.Parameters.Add(new("created_ats", createdAts));
-        command.Parameters.Add(new("log_positions", logPositions));
         command.Parameters.Add(new("embeddings", batchEmbeddings));
         command.ExecuteNonQuery();
     }
@@ -164,33 +156,30 @@ public sealed class KontextEntityWriter(
                 unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
                 unnest(CAST($confidences AS FLOAT[])) AS confidence,
                 unnest(CAST($resolved_bys AS INTEGER[])) AS resolved_by,
-                unnest(CAST($linked_ats AS BIGINT[])) AS linked_at,
-                unnest(CAST($log_positions AS BIGINT[])) AS log_position) AS s
+                unnest(CAST($linked_ats AS BIGINT[])) AS linked_at) AS s
             ON t.memory_id = s.memory_id AND t.span_index = s.span_index
             WHEN NOT MATCHED THEN INSERT (
                 memory_id, span_index, span_text, entity_id,
-                confidence, resolved_by, linked_at, log_position)
+                confidence, resolved_by, linked_at)
             VALUES (
                 s.memory_id, s.span_index, s.span_text, s.entity_id,
-                s.confidence, s.resolved_by, s.linked_at, s.log_position)
+                s.confidence, s.resolved_by, s.linked_at)
             WHEN MATCHED THEN UPDATE SET
-                span_text    = s.span_text
-              , entity_id    = s.entity_id
-              , confidence   = s.confidence
-              , resolved_by  = s.resolved_by
-              , linked_at    = s.linked_at
-              , log_position = s.log_position
+                span_text   = s.span_text
+              , entity_id   = s.entity_id
+              , confidence  = s.confidence
+              , resolved_by = s.resolved_by
+              , linked_at   = s.linked_at
             """;
 
-        var count        = mentions.Count;
-        var memoryIds    = new List<string>(count);
-        var spanIndexes  = new List<int>(count);
-        var spanTexts    = new List<string>(count);
-        var entityIds    = new List<string>(count);
-        var confidences  = new List<float>(count);
-        var resolvedBys  = new List<int>(count);
-        var linkedAts    = new List<long>(count);
-        var logPositions = new List<long>(count);
+        var count       = mentions.Count;
+        var memoryIds   = new List<string>(count);
+        var spanIndexes = new List<int>(count);
+        var spanTexts   = new List<string>(count);
+        var entityIds   = new List<string>(count);
+        var confidences = new List<float>(count);
+        var resolvedBys = new List<int>(count);
+        var linkedAts   = new List<long>(count);
 
         foreach (var mention in mentions) {
             memoryIds.Add(mention.MemoryId);
@@ -200,7 +189,6 @@ public sealed class KontextEntityWriter(
             confidences.Add(mention.Confidence);
             resolvedBys.Add(mention.ResolvedBy);
             linkedAts.Add(mention.LinkedAt);
-            logPositions.Add(mention.LogPosition);
         }
 
         using var command = connection.CreateCommand();
@@ -212,7 +200,6 @@ public sealed class KontextEntityWriter(
         command.Parameters.Add(new("confidences", confidences));
         command.Parameters.Add(new("resolved_bys", resolvedBys));
         command.Parameters.Add(new("linked_ats", linkedAts));
-        command.Parameters.Add(new("log_positions", logPositions));
         command.ExecuteNonQuery();
     }
 }

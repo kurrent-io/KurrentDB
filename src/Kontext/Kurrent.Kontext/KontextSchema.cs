@@ -95,14 +95,12 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
               alias        VARCHAR,
               is_canonical BOOLEAN,
               created_at   BIGINT,
-              log_position BIGINT,
               embedding    FLOAT[{Dimension}]);
 
             CREATE INDEX entity_id_idx    ON ldb.main.entity_aliases (entity_id)    USING BTREE    WITH (replace = true);
             CREATE INDEX entity_type_idx  ON ldb.main.entity_aliases (entity_type)  USING BTREE    WITH (replace = true);
             CREATE INDEX alias_idx        ON ldb.main.entity_aliases (alias)        USING BTREE    WITH (replace = true);
             CREATE INDEX alias_fts        ON ldb.main.entity_aliases (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
-            CREATE INDEX log_position_idx ON ldb.main.entity_aliases (log_position) USING BTREE    WITH (replace = true);
 
             ALTER TABLE ldb.main.entity_aliases SET AUTO_CLEANUP WITH (
                 interval        = {CleanupIntervalCommits},
@@ -117,12 +115,10 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
               entity_id    VARCHAR,
               confidence   FLOAT,
               resolved_by  INTEGER,
-              linked_at    BIGINT,
-              log_position BIGINT);
+              linked_at    BIGINT);
 
-            CREATE INDEX memory_id_idx    ON ldb.main.entity_mentions (memory_id)    USING BTREE WITH (replace = true);
-            CREATE INDEX entity_id_idx    ON ldb.main.entity_mentions (entity_id)    USING BTREE WITH (replace = true);
-            CREATE INDEX log_position_idx ON ldb.main.entity_mentions (log_position) USING BTREE WITH (replace = true);
+            CREATE INDEX memory_id_idx ON ldb.main.entity_mentions (memory_id) USING BTREE WITH (replace = true);
+            CREATE INDEX entity_id_idx ON ldb.main.entity_mentions (entity_id) USING BTREE WITH (replace = true);
 
             ALTER TABLE ldb.main.entity_mentions SET AUTO_CLEANUP WITH (
                 interval        = {CleanupIntervalCommits},
