@@ -24,14 +24,14 @@ public sealed class KontextEntityWriter(
     sealed record PendingEntity(
         string EntityId,
         string EntityType,
-        string CanonicalName,
         long   CreatedAt,
         long   LogPosition
     );
 
-    sealed class PendingAlias(string entityId, string alias, long createdAt, long logPosition) {
+    sealed class PendingAlias(string entityId, string alias, bool isCanonical, long createdAt, long logPosition) {
         public string EntityId    { get; } = entityId;
         public string Alias       { get; } = alias;
+        public bool   IsCanonical { get; } = isCanonical;
         public long   CreatedAt   { get; } = createdAt;
         public long   LogPosition { get; } = logPosition;
 
@@ -77,11 +77,11 @@ public sealed class KontextEntityWriter(
                     var entity = mention.Created;
                     entityId = entity.EntityId;
 
-                    entities[entityId] = new PendingEntity(
-                        entityId, entity.Type, entity.CanonicalName, resolvedAt, position);
+                    entities[entityId] = new PendingEntity(entityId, entity.Type, resolvedAt, position);
 
                     foreach (var alias in entity.Aliases)
-                        aliases[(entityId, alias)] = new PendingAlias(entityId, alias, resolvedAt, position);
+                        aliases[(entityId, alias)] = new PendingAlias(
+                            entityId, alias, alias == entity.CanonicalName, resolvedAt, position);
                 }
 
                 mentions[(resolved.MemoryId, spanIndex)] = new PendingMention(
@@ -128,29 +128,26 @@ public sealed class KontextEntityWriter(
             USING (SELECT
                 unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
                 unnest(CAST($entity_types AS VARCHAR[])) AS entity_type,
-                unnest(CAST($canonical_names AS VARCHAR[])) AS canonical_name,
                 unnest(CAST($created_ats AS BIGINT[])) AS created_at,
                 unnest(CAST($log_positions AS BIGINT[])) AS log_position) AS s
             ON t.entity_id = s.entity_id
             WHEN NOT MATCHED THEN INSERT (
-                entity_id, entity_type, canonical_name, created_at, log_position)
+                entity_id, entity_type, created_at, log_position)
             VALUES (
-                s.entity_id, s.entity_type, s.canonical_name, s.created_at, s.log_position)
+                s.entity_id, s.entity_type, s.created_at, s.log_position)
             WHEN MATCHED THEN UPDATE SET
                 log_position = s.log_position
             """;
 
-        var count          = entities.Count;
-        var entityIds      = new List<string>(count);
-        var entityTypes    = new List<string>(count);
-        var canonicalNames = new List<string>(count);
-        var createdAts     = new List<long>(count);
-        var logPositions   = new List<long>(count);
+        var count        = entities.Count;
+        var entityIds    = new List<string>(count);
+        var entityTypes  = new List<string>(count);
+        var createdAts   = new List<long>(count);
+        var logPositions = new List<long>(count);
 
         foreach (var entity in entities) {
             entityIds.Add(entity.EntityId);
             entityTypes.Add(entity.EntityType);
-            canonicalNames.Add(entity.CanonicalName);
             createdAts.Add(entity.CreatedAt);
             logPositions.Add(entity.LogPosition);
         }
@@ -159,7 +156,6 @@ public sealed class KontextEntityWriter(
         command.CommandText = sql;
         command.Parameters.Add(new("entity_ids", entityIds));
         command.Parameters.Add(new("entity_types", entityTypes));
-        command.Parameters.Add(new("canonical_names", canonicalNames));
         command.Parameters.Add(new("created_ats", createdAts));
         command.Parameters.Add(new("log_positions", logPositions));
         command.ExecuteNonQuery();
@@ -175,22 +171,25 @@ public sealed class KontextEntityWriter(
              USING (SELECT
                  unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
                  unnest(CAST($aliases AS VARCHAR[])) AS alias,
+                 unnest(CAST($is_canonicals AS BOOLEAN[])) AS is_canonical,
                  unnest(CAST($created_ats AS BIGINT[])) AS created_at,
                  unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
              ON t.entity_id = s.entity_id AND t.alias = s.alias
-             WHEN NOT MATCHED THEN INSERT (entity_id, alias, created_at, log_position, embedding)
+             WHEN NOT MATCHED THEN INSERT (entity_id, alias, is_canonical, created_at, log_position, embedding)
              VALUES (
-                 s.entity_id, s.alias, s.created_at, s.log_position,
+                 s.entity_id, s.alias, s.is_canonical, s.created_at, s.log_position,
                  CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]))
              WHEN MATCHED THEN UPDATE SET
-                 embedding    = CAST(s.embedding_raw AS FLOAT[{options.Dimensions}])
+                 is_canonical = s.is_canonical
+               , embedding    = CAST(s.embedding_raw AS FLOAT[{options.Dimensions}])
                , log_position = s.log_position
              """;
 
         var count           = aliases.Count;
         var entityIds       = new List<string>(count);
         var aliasTexts      = new List<string>(count);
+        var isCanonicals    = new List<bool>(count);
         var createdAts      = new List<long>(count);
         var logPositions    = new List<long>(count);
         var batchEmbeddings = new List<float[]>(count);
@@ -198,6 +197,7 @@ public sealed class KontextEntityWriter(
         foreach (var alias in aliases) {
             entityIds.Add(alias.EntityId);
             aliasTexts.Add(alias.Alias);
+            isCanonicals.Add(alias.IsCanonical);
             createdAts.Add(alias.CreatedAt);
             logPositions.Add(alias.LogPosition);
             batchEmbeddings.Add(alias.Embedding);
@@ -207,6 +207,7 @@ public sealed class KontextEntityWriter(
         command.CommandText = sql;
         command.Parameters.Add(new("entity_ids", entityIds));
         command.Parameters.Add(new("aliases", aliasTexts));
+        command.Parameters.Add(new("is_canonicals", isCanonicals));
         command.Parameters.Add(new("created_ats", createdAts));
         command.Parameters.Add(new("log_positions", logPositions));
         command.Parameters.Add(new("embeddings", batchEmbeddings));

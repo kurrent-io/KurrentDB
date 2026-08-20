@@ -90,11 +90,10 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             );
 
             CREATE TABLE IF NOT EXISTS ldb.main.entities (
-              entity_id      VARCHAR,
-              entity_type    VARCHAR,
-              canonical_name VARCHAR,
-              created_at     BIGINT,
-              log_position   BIGINT);
+              entity_id    VARCHAR,
+              entity_type  VARCHAR,
+              created_at   BIGINT,
+              log_position BIGINT);
 
             CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE WITH (replace = true);
             CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE WITH (replace = true);
@@ -109,6 +108,7 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             CREATE TABLE IF NOT EXISTS ldb.main.entity_aliases (
               entity_id    VARCHAR,
               alias        VARCHAR,
+              is_canonical BOOLEAN,
               created_at   BIGINT,
               log_position BIGINT,
               embedding    FLOAT[{Dimension}]);
