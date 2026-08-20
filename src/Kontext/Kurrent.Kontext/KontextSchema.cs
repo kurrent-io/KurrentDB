@@ -93,14 +93,11 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
               entity_id      VARCHAR,
               entity_type    VARCHAR,
               canonical_name VARCHAR,
-              merged_into    VARCHAR,
-              merged_at      BIGINT,
               created_at     BIGINT,
               log_position   BIGINT);
 
             CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE WITH (replace = true);
             CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE WITH (replace = true);
-            CREATE INDEX merged_into_idx  ON ldb.main.entities (merged_into)  USING BTREE WITH (replace = true);
             CREATE INDEX log_position_idx ON ldb.main.entities (log_position) USING BTREE WITH (replace = true);
 
             ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (

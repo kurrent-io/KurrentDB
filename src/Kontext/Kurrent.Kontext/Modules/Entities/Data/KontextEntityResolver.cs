@@ -8,8 +8,7 @@ namespace Kurrent.Kontext.Modules.Entities.Data;
 
 /// <summary>
 /// The resolution step's catalog reads, the seam where candidate generation grows (FTS, vector
-/// similarity, ranking, LLM disambiguation). The join follows one merged_into hop: the writer
-/// keeps merge chains terminal, so one hop always lands on the survivor.
+/// similarity, ranking, LLM disambiguation).
 /// </summary>
 public sealed class KontextEntityResolver(KontextDataSource dataSource) {
     /// <summary>
@@ -25,11 +24,9 @@ public sealed class KontextEntityResolver(KontextDataSource dataSource) {
 
         const string sql =
             """
-            SELECT lower(a.alias) AS matched,
-                   coalesce(e.merged_into, e.entity_id) AS entity_id
-            FROM ldb.main.entity_aliases AS a
-            JOIN ldb.main.entities AS e ON e.entity_id = a.entity_id
-            WHERE array_contains(CAST($aliases AS VARCHAR[]), lower(a.alias))
+            SELECT lower(alias) AS matched, entity_id
+            FROM ldb.main.entity_aliases
+            WHERE array_contains(CAST($aliases AS VARCHAR[]), lower(alias))
             """;
 
         return await dataSource.ExecuteAsync(

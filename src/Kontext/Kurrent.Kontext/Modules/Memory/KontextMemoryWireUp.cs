@@ -172,7 +172,6 @@ public static class KontextMemoryWireUp {
                     KontextConventions.RegisterMessages<MemoryContracts.MemoriesAccessed>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
                     KontextConventions.RegisterMessages<MemoryContracts.ReflectionCompleted>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
                     KontextConventions.RegisterMessages<EntityContracts.EntitiesMentioned>(registry, KontextConventions.Streams.EntitiesStreamPrefix, ct),
-                    KontextConventions.RegisterMessages<EntityContracts.EntitiesMerged>(registry, KontextConventions.Streams.EntitiesStreamPrefix, ct),
 
                     // Surge's Checkpoint contract: type resolution on read is in-process, so
                     // without this a restarted node cannot decode its own checkpoint stream and

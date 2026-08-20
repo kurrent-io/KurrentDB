@@ -32,22 +32,3 @@ message EntitiesMentioned {
   // When the resolution pass processed the memory.
   google.protobuf.Timestamp resolved_at = 3;
 }
-
-// Emitted by the deduplication processor: entities recognized as the same real-world thing, folded
-// into their survivors. One dedup pass produces one event.
-message EntitiesMerged {
-  // The folds decided by the pass.
-  repeated Merge merges = 1;
-
-  // When the dedup pass decided.
-  google.protobuf.Timestamp merged_at = 2;
-
-  message Merge {
-    // The entity folded away. Its row and aliases remain, marked merged.
-    string entity_id = 1;
-
-    // The surviving entity. Always terminal: a processor merging into an already-merged entity
-    // names that entity's survivor, never the middle of a chain.
-    string merged_into = 2;
-  }
-}
