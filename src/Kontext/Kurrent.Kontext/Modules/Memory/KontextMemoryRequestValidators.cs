@@ -5,10 +5,11 @@
 
 using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Infrastructure.FluentValidation;
 
-public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRequest> {
+public sealed class RetainRequestValidator : RequestValidator<MemoryContracts.RetainRequest> {
     public RetainRequestValidator() {
         RuleFor(x => x.Memories)
             .NotEmpty()
@@ -36,12 +37,12 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
         // documented, because this is the memory-hacking guard: a citation is exactly how a
         // fabricated claim would dress itself up as trustworthy.
         RuleForEach(x => x.Memories)
-            .Must(m => m.MemoryType != Contracts.MemoryType.Hearsay || m.Evidence.Count == 0)
+            .Must(m => m.MemoryType != MemoryContracts.MemoryType.Hearsay || m.Evidence.Count == 0)
             .WithMessage("A HEARSAY memory carries no evidence — verify the claim and retain a FACT that supersedes it.");
     }
 }
 
-public sealed class RetractRequestValidator : RequestValidator<Contracts.RetractRequest> {
+public sealed class RetractRequestValidator : RequestValidator<MemoryContracts.RetractRequest> {
     public RetractRequestValidator() {
         RuleFor(x => x.MemoryId)
             .NotEmpty()
@@ -51,7 +52,7 @@ public sealed class RetractRequestValidator : RequestValidator<Contracts.Retract
     }
 }
 
-public sealed class RecallRequestValidator : RequestValidator<Contracts.RecallRequest> {
+public sealed class RecallRequestValidator : RequestValidator<MemoryContracts.RecallRequest> {
     public RecallRequestValidator() {
         RuleFor(x => x.Query)
             .NotEmpty()
@@ -71,7 +72,7 @@ public sealed class RecallRequestValidator : RequestValidator<Contracts.RecallRe
     }
 }
 
-public sealed class ReclaimRequestValidator : RequestValidator<Contracts.ReclaimRequest> {
+public sealed class ReclaimRequestValidator : RequestValidator<MemoryContracts.ReclaimRequest> {
     public ReclaimRequestValidator() {
         RuleFor(x => x.Ids)
             .NotEmpty()
@@ -83,7 +84,7 @@ public sealed class ReclaimRequestValidator : RequestValidator<Contracts.Reclaim
     }
 }
 
-public sealed class RecollectRequestValidator : RequestValidator<Contracts.RecollectRequest> {
+public sealed class RecollectRequestValidator : RequestValidator<MemoryContracts.RecollectRequest> {
     public RecollectRequestValidator() {
         RuleFor(x => x.Limit)
             .GreaterThanOrEqualTo(0)
@@ -91,7 +92,7 @@ public sealed class RecollectRequestValidator : RequestValidator<Contracts.Recol
     }
 }
 
-public sealed class ReflectRequestValidator : RequestValidator<Contracts.ReflectRequest> {
+public sealed class ReflectRequestValidator : RequestValidator<MemoryContracts.ReflectRequest> {
     public ReflectRequestValidator() {
         RuleFor(x => x.Query)
             .NotEmpty()
@@ -116,12 +117,12 @@ static class MemoryRequestRules {
 
     public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || global::System.Guid.TryParse(value, out _);
 
-    public static bool ValidWebExcerpts(Contracts.Evidence.Types.WebRef web) =>
+    public static bool ValidWebExcerpts(MemoryContracts.Evidence.Types.WebRef web) =>
         web.Excerpts.Count > 0
      && web.Excerpts.Count <= MaxWebExcerpts
      && web.Excerpts.All(WithinExcerptBounds);
 
-    public static bool ValidGitExcerpt(Contracts.Evidence.Types.GitRef git) =>
+    public static bool ValidGitExcerpt(MemoryContracts.Evidence.Types.GitRef git) =>
         string.IsNullOrEmpty(git.Excerpt) || WithinExcerptBounds(git.Excerpt);
 
     static bool WithinExcerptBounds(string excerpt) =>

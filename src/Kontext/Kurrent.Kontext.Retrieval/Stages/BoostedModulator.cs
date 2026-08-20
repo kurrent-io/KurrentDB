@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -76,14 +78,14 @@ public sealed class BoostModulationOptions {
     public TimeSpan RecencyHalfLife { get; set; } = TimeSpan.FromDays(90);
 
     /// <summary>Salience [0,1] per importance level; NORMAL sits at the neutral 0.5 so it neither boosts nor penalizes.</summary>
-    public Dictionary<Contracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
-        [Contracts.MemoryImportance.Unspecified] = 0.50,
-        [Contracts.MemoryImportance.Low]         = 0.25,
-        [Contracts.MemoryImportance.Normal]      = 0.50,
-        [Contracts.MemoryImportance.High]        = 0.75,
-        [Contracts.MemoryImportance.Critical]    = 1.00,
+    public Dictionary<MemoryContracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
+        [MemoryContracts.MemoryImportance.Unspecified] = 0.50,
+        [MemoryContracts.MemoryImportance.Low]         = 0.25,
+        [MemoryContracts.MemoryImportance.Normal]      = 0.50,
+        [MemoryContracts.MemoryImportance.High]        = 0.75,
+        [MemoryContracts.MemoryImportance.Critical]    = 1.00,
     };
 
-    internal double SalienceOf(Contracts.MemoryImportance importance) =>
+    internal double SalienceOf(MemoryContracts.MemoryImportance importance) =>
         ImportanceWeights.GetValueOrDefault(importance, 0.5);
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -11,7 +13,7 @@ namespace Kurrent.Kontext.Retrieval;
 ///
 /// No field ever lies: a score a mode does not produce is null, never a fabricated number.
 /// </summary>
-public readonly record struct MemoryHit(Contracts.StoredMemory Memory, double? HybridScore, double? VectorDistance, double? KeywordScore);
+public readonly record struct MemoryHit(MemoryContracts.StoredMemory Memory, double? HybridScore, double? VectorDistance, double? KeywordScore);
 
 /// <summary>
 /// The Lance vector-search knobs plus the result limit. Defaults are the validated operational

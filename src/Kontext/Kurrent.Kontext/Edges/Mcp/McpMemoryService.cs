@@ -12,6 +12,7 @@ using ReflectResult = Kurrent.Kontext.Mcp.Model.ReflectResult;
 using RetainResult = Kurrent.Kontext.Mcp.Model.RetainResult;
 using RetractResult = Kurrent.Kontext.Mcp.Model.RetractResult;
 using StoredMemory = Kurrent.Kontext.Mcp.Model.StoredMemory;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Mcp;
 
@@ -36,7 +37,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         Destructive = false,
         OpenWorld = false)]
     public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Memory> memories, CancellationToken ct = default) {
-        var request = new Contracts.RetainRequest {
+        var request = new MemoryContracts.RetainRequest {
             Memories = { memories.Select(ToContract) }
         };
 
@@ -55,7 +56,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         string? reason = null,
         CancellationToken ct = default
     ) {
-        var request  = new Contracts.RetractRequest {
+        var request  = new MemoryContracts.RetractRequest {
             MemoryId = memoryId,
             Reason = reason ?? ""
         };
@@ -78,7 +79,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
     ) {
         options ??= new();
 
-        var request = new Contracts.RecallRequest {
+        var request = new MemoryContracts.RecallRequest {
             Query       = query,
             QueryId     = options.QueryId ?? "",
             Limit       = options.Limit,
@@ -99,7 +100,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         IReadOnlyList<string> ids,
         CancellationToken ct = default
     ) {
-        var request = new Contracts.ReclaimRequest { Ids = { ids } };
+        var request = new MemoryContracts.ReclaimRequest { Ids = { ids } };
 
         var memories = new List<StoredMemory>();
 
@@ -116,7 +117,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         RecollectOptions options,
         CancellationToken ct = default
     ) {
-        var request = new Contracts.RecollectRequest {
+        var request = new MemoryContracts.RecollectRequest {
             Limit     = options.Limit,
             Sort      = ToContract(options.Sort),
             Direction = ToContract(options.Direction),
@@ -142,7 +143,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
     ) {
         options ??= new();
 
-        var request = new Contracts.ReflectRequest {
+        var request = new MemoryContracts.ReflectRequest {
             Query   = query,
             QueryId = options.QueryId ?? "",
             Tags    = { options.Tags.Select(ToContract) }

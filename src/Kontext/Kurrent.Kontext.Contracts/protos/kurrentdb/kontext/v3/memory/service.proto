@@ -1,11 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
 edition = "2023";
 
-package kurrent.kontext;
+package kurrentdb.kontext.v3.memory;
 
-option csharp_namespace = "Kurrent.Kontext.Contracts";
+option csharp_namespace = "Kurrent.Kontext.Contracts.V3.Memory";
 
 import "kurrentdb/kontext/v3/memory/resources.proto";
 
@@ -34,7 +38,7 @@ service MemoryService {
   // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
   // ones stay readable, marked superseded (there is no separate supersede call).
   //
-  // YOU DO NOT SUPPLY IDS. The server mints every memory_id and returns them positionally:
+  // YOU DO NOT SUPPLY IDS. The server assigns every memory_id and returns them positionally:
   // results[i] is the memory you sent at memories[i], always, same length, same order. A
   // consequence: you cannot cite a memory you are sending in this same request, because its id does
   // not exist yet. Retain the sources first, then retain the memory that cites them. If the second

@@ -1,12 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>Shared fusion plumbing: accumulate per-memory provenance across sets, emit a totally ordered pool.</summary>
 static class FusionAccumulator {
     internal sealed class Entry {
-        public required Contracts.StoredMemory Memory { get; init; }
+        public required MemoryContracts.StoredMemory Memory { get; init; }
 
         public double Fused { get; set; }
 

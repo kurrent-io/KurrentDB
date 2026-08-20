@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
@@ -11,11 +13,11 @@ public class ModulationOptionsTests {
 		// argument eagerly, so omitting Normal threw a KeyNotFoundException even though Critical,
 		// the key actually requested, was present
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Critical),
+			Fixtures.Scored("a", 0.5, importance: MemoryContracts.MemoryImportance.Critical),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
-			[Contracts.MemoryImportance.Critical] = 1.0,
+			[MemoryContracts.MemoryImportance.Critical] = 1.0,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);
@@ -26,7 +28,7 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask empty_importance_weights_falls_back_to_neutral_salience() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Normal),
+			Fixtures.Scored("a", 0.5, importance: MemoryContracts.MemoryImportance.Normal),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new());
@@ -39,11 +41,11 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask unknown_importance_value_falls_back_to_neutral_salience() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: (Contracts.MemoryImportance) 999),
+			Fixtures.Scored("a", 0.5, importance: (MemoryContracts.MemoryImportance) 999),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
-			[Contracts.MemoryImportance.Normal] = 0.5,
+			[MemoryContracts.MemoryImportance.Normal] = 0.5,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);
@@ -56,11 +58,11 @@ public class ModulationOptionsTests {
 		// same eager-evaluation hazard as importance: CertaintyWeights[Unspecified] being absent
 		// must not throw while resolving a memory typed Observation, which IS present
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, type: Contracts.MemoryType.Observation),
+			Fixtures.Scored("a", 0.5, type: MemoryContracts.MemoryType.Observation),
 		];
 
 		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new() {
-			[Contracts.MemoryType.Observation] = 1.0,
+			[MemoryContracts.MemoryType.Observation] = 1.0,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);
@@ -71,7 +73,7 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask empty_certainty_weights_falls_back_to_neutral_certainty() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, type: Contracts.MemoryType.Fact),
+			Fixtures.Scored("a", 0.5, type: MemoryContracts.MemoryType.Fact),
 		];
 
 		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new());
@@ -84,11 +86,11 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask unknown_memory_type_falls_back_to_neutral_certainty() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, type: (Contracts.MemoryType) 999),
+			Fixtures.Scored("a", 0.5, type: (MemoryContracts.MemoryType) 999),
 		];
 
 		var options = CognitiveModulator.Create(o => o.CertaintyWeights = new() {
-			[Contracts.MemoryType.Unspecified] = 0.5,
+			[MemoryContracts.MemoryType.Unspecified] = 0.5,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);
@@ -104,15 +106,15 @@ public class ModulationOptionsTests {
 
 	[Test]
 	public async ValueTask derived_certainty_depends_on_whether_the_cited_memory_is_in_the_pool() {
-		var citingObs = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary, cites: ["obs"]);
+		var citingObs = Fixtures.Scored("synth", 0.5, type: MemoryContracts.MemoryType.Summary, cites: ["obs"]);
 
 		IReadOnlyList<ScoredMemory> poolWithCitedMemory = [
-			Fixtures.Scored("obs", 0.5, type: Contracts.MemoryType.Observation),
+			Fixtures.Scored("obs", 0.5, type: MemoryContracts.MemoryType.Observation),
 			citingObs,
 		];
 
 		IReadOnlyList<ScoredMemory> poolWithoutCitedMemory = [
-			Fixtures.Scored("filler", 0.5, type: Contracts.MemoryType.Fact),
+			Fixtures.Scored("filler", 0.5, type: MemoryContracts.MemoryType.Fact),
 			citingObs,
 		];
 
@@ -128,16 +130,16 @@ public class ModulationOptionsTests {
 
 	[Test]
 	public async ValueTask record_citation_certainty_ignores_pool_composition() {
-		var citingRecord = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary);
-		citingRecord.Memory.Evidence.Add(new Contracts.Evidence {
-			Record = new Contracts.Evidence.Types.RecordRef { Id = "record-1" },
+		var citingRecord = Fixtures.Scored("synth", 0.5, type: MemoryContracts.MemoryType.Summary);
+		citingRecord.Memory.Evidence.Add(new MemoryContracts.Evidence {
+			Record = new MemoryContracts.Evidence.Types.RecordRef { Id = "record-1" },
 		});
 
 		IReadOnlyList<ScoredMemory> alone = [citingRecord];
 
 		IReadOnlyList<ScoredMemory> withCompany = [
 			citingRecord,
-			Fixtures.Scored("obs", 0.5, type: Contracts.MemoryType.Observation),
+			Fixtures.Scored("obs", 0.5, type: MemoryContracts.MemoryType.Observation),
 		];
 
 		var resultAlone      = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), alone);
@@ -150,11 +152,11 @@ public class ModulationOptionsTests {
 
 	[Test]
 	public async ValueTask mixed_resolvable_and_unresolvable_citations_average_correctly() {
-		var synth = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary, cites: ["obs", "gossip", "gone"]);
+		var synth = Fixtures.Scored("synth", 0.5, type: MemoryContracts.MemoryType.Summary, cites: ["obs", "gossip", "gone"]);
 
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("obs", 0.5, type: Contracts.MemoryType.Observation),
-			Fixtures.Scored("gossip", 0.5, type: Contracts.MemoryType.Hearsay),
+			Fixtures.Scored("obs", 0.5, type: MemoryContracts.MemoryType.Observation),
+			Fixtures.Scored("gossip", 0.5, type: MemoryContracts.MemoryType.Hearsay),
 			synth,
 		];
 
@@ -171,9 +173,9 @@ public class ModulationOptionsTests {
 		// 0.25 — but outer, which cites innerCited, must land on CertaintyWeights[Summary] = 0.80,
 		// the flat type weight, never the 0.25 innerCited actually earned. Trust does not compound.
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("gossip", 0.5, type: Contracts.MemoryType.Hearsay),
-			Fixtures.Scored("innerCited", 0.5, type: Contracts.MemoryType.Summary, cites: ["gossip"]),
-			Fixtures.Scored("outer", 0.5, type: Contracts.MemoryType.Summary, cites: ["innerCited"]),
+			Fixtures.Scored("gossip", 0.5, type: MemoryContracts.MemoryType.Hearsay),
+			Fixtures.Scored("innerCited", 0.5, type: MemoryContracts.MemoryType.Summary, cites: ["gossip"]),
+			Fixtures.Scored("outer", 0.5, type: MemoryContracts.MemoryType.Summary, cites: ["innerCited"]),
 		];
 
 		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);

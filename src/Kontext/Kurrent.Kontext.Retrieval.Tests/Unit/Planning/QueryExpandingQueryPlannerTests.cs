@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Planning;
 
 [Category("Planning")]
@@ -18,7 +20,7 @@ public class QueryExpandingQueryPlannerTests {
 	[Test]
 	public async ValueTask every_other_field_survives_the_decorator_untouched() {
 		var pinned = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
-		var tags   = new List<Contracts.Tag> { new() { Scope = "project", Value = "rivers" } };
+		var tags   = new List<MemoryContracts.Tag> { new() { Scope = "project", Value = "rivers" } };
 
 		var inner   = new RecordingQueryPlanner();
 		var planner = new QueryExpandingQueryPlanner(new FixedQueryExpander("expanded"), inner);

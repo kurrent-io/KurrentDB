@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reflection;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
@@ -21,9 +22,9 @@ public class StageInvariantTests {
 	};
 
 	static IReadOnlyList<ScoredMemory> Pool() => [
-		Fixtures.Scored("a", 0.9, "aardvarks burrow deep underground", Contracts.MemoryType.Observation, Contracts.MemoryImportance.High, TimeSpan.FromDays(1)),
-		Fixtures.Scored("b", 0.6, "penguins waddle across antarctic ice", Contracts.MemoryType.Fact, Contracts.MemoryImportance.Normal, TimeSpan.FromDays(10)),
-		Fixtures.Scored("c", 0.3, "giraffes browse the tallest acacia leaves", Contracts.MemoryType.Hearsay, Contracts.MemoryImportance.Low, TimeSpan.FromDays(30)),
+		Fixtures.Scored("a", 0.9, "aardvarks burrow deep underground", MemoryContracts.MemoryType.Observation, MemoryContracts.MemoryImportance.High, TimeSpan.FromDays(1)),
+		Fixtures.Scored("b", 0.6, "penguins waddle across antarctic ice", MemoryContracts.MemoryType.Fact, MemoryContracts.MemoryImportance.Normal, TimeSpan.FromDays(10)),
+		Fixtures.Scored("c", 0.3, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryType.Hearsay, MemoryContracts.MemoryImportance.Low, TimeSpan.FromDays(30)),
 	];
 
 	static IReadOnlyList<ScoredMemory> FusedPool() => [

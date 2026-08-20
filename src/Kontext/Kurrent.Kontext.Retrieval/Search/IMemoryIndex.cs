@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -16,14 +18,14 @@ public interface IMemoryIndex {
     /// <summary>Vector mode: ranks by embedding similarity alone. Hits carry <see cref="MemoryHit.VectorDistance"/>, smaller = closer.</summary>
     IAsyncEnumerable<MemoryHit> SearchAsync(
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         VectorSearchOptions? options = null,
         CancellationToken ct = default);
 
     /// <summary>Full-text mode: ranks by BM25 over content alone. Hits carry <see cref="MemoryHit.KeywordScore"/>, larger = better.</summary>
     IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         FullTextSearchOptions? options = null,
         CancellationToken ct = default);
 
@@ -31,7 +33,7 @@ public interface IMemoryIndex {
     IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         HybridSearchOptions? options = null,
         CancellationToken ct = default);
 }

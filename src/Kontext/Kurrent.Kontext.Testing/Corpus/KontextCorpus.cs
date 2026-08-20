@@ -7,6 +7,7 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
 using TUnit.Core.Interfaces;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Testing;
 
@@ -49,9 +50,9 @@ public sealed class KontextCorpus(Action<SentencePieceOnnxOptions>? embeddingOpt
 		await _store.SeedEmbedded([
 			.. Data.Memories.Select(memory => new MemoryRow(
 				Id: memory.Id,
-				Type: Contracts.MemoryType.Observation,
+				Type: MemoryContracts.MemoryType.Observation,
 				Content: memory.Content,
-				Importance: Contracts.MemoryImportance.Normal,
+				Importance: MemoryContracts.MemoryImportance.Normal,
 				RetainedAt: memory.RetainedAt)),
 		]);
 

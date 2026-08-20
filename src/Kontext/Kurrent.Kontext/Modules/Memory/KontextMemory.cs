@@ -4,6 +4,7 @@
 using System.Runtime.CompilerServices;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext;
 
@@ -31,14 +32,14 @@ public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retr
 
 	public AppendEvent AppendEvent { get; } = appendEvent;
 
-	public ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default) =>
+	public ValueTask<MemoryContracts.RetainResponse> RetainAsync(MemoryContracts.RetainRequest request, CancellationToken ct = default) =>
 		throw new NotImplementedException("Retain writes memories; the read model is projector-owned — retain goes through the KurrentDB log once the write path lands.");
 
-	public ValueTask<Contracts.RetractResponse> RetractAsync(Contracts.RetractRequest request, CancellationToken ct = default) =>
+	public ValueTask<MemoryContracts.RetractResponse> RetractAsync(MemoryContracts.RetractRequest request, CancellationToken ct = default) =>
 		throw new NotImplementedException("Retract mutates memories; the read model is projector-owned — retract goes through the KurrentDB log once the write path lands.");
 
-	public async ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
-		var response = new Contracts.RecallResponse {
+	public async ValueTask<MemoryContracts.RecallResponse> RecallAsync(MemoryContracts.RecallRequest request, CancellationToken ct = default) {
+		var response = new MemoryContracts.RecallResponse {
 			QueryId = request.QueryId.Length > 0 ? request.QueryId : Guid.CreateVersion7().ToString(),
 		};
 
@@ -52,7 +53,7 @@ public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retr
 		var ranked = await retriever.RetrieveAsync(query, ct).ConfigureAwait(false);
 
 		foreach (var scored in ranked) {
-			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = scored.Score };
+			var memory = new MemoryContracts.RecallResponse.Types.RecalledMemory { Score = scored.Score };
 
 			if (request.IncludeFull)
 				memory.Full = scored.Memory;
@@ -64,8 +65,8 @@ public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retr
 
 		return response;
 
-        static Contracts.LeanMemory ToLean(Contracts.StoredMemory stored) {
-            var lean = new Contracts.LeanMemory {
+        static MemoryContracts.LeanMemory ToLean(MemoryContracts.StoredMemory stored) {
+            var lean = new MemoryContracts.LeanMemory {
                 MemoryId   = stored.MemoryId,
                 MemoryType = stored.MemoryType,
                 Content    = stored.Content,
@@ -78,16 +79,16 @@ public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retr
         }
 	}
 
-	public IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default) =>
+	public IAsyncEnumerable<MemoryContracts.StoredMemory> ReclaimAsync(MemoryContracts.ReclaimRequest request, CancellationToken ct = default) =>
 		store.GetAsync([.. request.Ids], ct);
 
-	public async IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
+	public async IAsyncEnumerable<MemoryContracts.StoredMemory> RecollectAsync(MemoryContracts.RecollectRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
 		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
 
 		await foreach (var memory in store.ListAsync(request.Tags, request.Types_, request.Sort, request.Direction, top, ct).ConfigureAwait(false))
 			yield return memory;
 	}
 
-	public ValueTask<Contracts.ReflectResponse> ReflectAsync(Contracts.ReflectRequest request, CancellationToken ct = default) =>
+	public ValueTask<MemoryContracts.ReflectResponse> ReflectAsync(MemoryContracts.ReflectRequest request, CancellationToken ct = default) =>
 		throw new NotImplementedException("Reflect synthesizes derived memories with a language model — not part of the data-store surface.");
 }

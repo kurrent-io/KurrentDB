@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Retrieval;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -89,9 +90,9 @@ public class RetrievalPipelineTests {
 	static MemoryRow Memory(string id, string content) =>
 		new(
 			Id: id,
-			Type: Contracts.MemoryType.Fact,
+			Type: MemoryContracts.MemoryType.Fact,
 			Content: content,
-			Importance: Contracts.MemoryImportance.Normal,
+			Importance: MemoryContracts.MemoryImportance.Normal,
 			RetainedAt: Base);
 
 	#endregion // Test Infrastructure

@@ -9,6 +9,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Retrieval;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Data;
 
@@ -53,7 +54,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// <param name="ct">Cancels the read.</param>
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         VectorSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -163,7 +164,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// <param name="ct">Cancels the read.</param>
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         FullTextSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -268,7 +269,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         HybridSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -369,11 +370,11 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     }
 
     /// <summary>The stored memory with the given id, or null. Never hides: retracted and superseded memories come back too.</summary>
-    public async ValueTask<Contracts.StoredMemory?> GetAsync(string memoryId, CancellationToken ct = default) => 
+    public async ValueTask<MemoryContracts.StoredMemory?> GetAsync(string memoryId, CancellationToken ct = default) => 
         await GetAsync([memoryId], ct).FirstOrDefaultAsync(ct);
 
     /// <summary>Streams the stored memories for the given ids; ids that don't exist are simply absent. Never hides.</summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> GetAsync(string[] memoryIds, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> GetAsync(string[] memoryIds, [EnumeratorCancellation] CancellationToken ct = default) {
         const string sql =
             """
             SELECT memory_id,
@@ -434,7 +435,7 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     /// - UNION (not UNION ALL) makes the recursion set-based: a row already in the family is
     ///   never expanded twice, and the recursion stops when no new row appears
     /// </summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> GetLineageAsync(string memoryId, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> GetLineageAsync(string memoryId, [EnumeratorCancellation] CancellationToken ct = default) {
         // One statement, three parts:
         // - the seed: the requested memory
         // - the recursive step: everything ONE supersession hop away from the family so far,
@@ -499,11 +500,11 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     ///   descending = most important, most recently used first; ascending = least important,
     ///   longest untouched first (the eviction sweep)
     /// </summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> ListAsync(
-        IReadOnlyCollection<Contracts.Tag> tags,
-        IReadOnlyCollection<Contracts.MemoryType> types,
-        Contracts.RecollectSort sort,
-        Contracts.SortDirection direction,
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> ListAsync(
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.MemoryType> types,
+        MemoryContracts.RecollectSort sort,
+        MemoryContracts.SortDirection direction,
         int limit,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -567,14 +568,14 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
         var tagValues  = tags.Select(EncodeTag).ToList();
 
         var sortKey = sort switch {
-            Contracts.RecollectSort.LastAccessedAt => "last_accessed_at",
-            Contracts.RecollectSort.Importance     => "importance",
+            MemoryContracts.RecollectSort.LastAccessedAt => "last_accessed_at",
+            MemoryContracts.RecollectSort.Importance     => "importance",
             _                                      => "retained_at", // default: when the memory was recorded
         };
 
         // The number every sort term is multiplied by: 1 keeps the natural (ascending) order,
         // -1 flips it to descending.
-        var sortSign = direction == Contracts.SortDirection.Ascending ? 1 : -1;
+        var sortSign = direction == MemoryContracts.SortDirection.Ascending ? 1 : -1;
 
         var memories = await connections.ExecuteAsync(
                 connection => {
@@ -594,8 +595,8 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
             yield return memory;
     }
 
-    static List<Contracts.StoredMemory> ReadAllStoredMemories(DbCommand command) {
-        var memories = new List<Contracts.StoredMemory>();
+    static List<MemoryContracts.StoredMemory> ReadAllStoredMemories(DbCommand command) {
+        var memories = new List<MemoryContracts.StoredMemory>();
 
         using var reader = command.ExecuteReader();
 
@@ -607,27 +608,27 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
 
     // The tag wire encoding shared with the projector: a tag is stored as "scope:value" (bare
     // "value" when the scope is empty), sanitized by TagParser on the way in.
-    public static string EncodeTag(Contracts.Tag tag) {
+    public static string EncodeTag(MemoryContracts.Tag tag) {
         var scope = TagParser.Sanitize(tag.Scope);
         var value = TagParser.Sanitize(tag.Value);
         return scope.Length == 0 ? value : $"{scope}:{value}";
     }
 
-    public static Contracts.Tag DecodeTag(string encoded) {
+    public static MemoryContracts.Tag DecodeTag(string encoded) {
         var (value, scope) = TagParser.Parse(encoded);
         return new() { Scope = scope, Value = value };
     }
 
     // The evidence wire encoding shared with the projector: one citation per VARCHAR[] element, as
     // protobuf canonical JSON (see the column's note in KontextSchemaTask).
-    public static string EncodeEvidence(Contracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
+    public static string EncodeEvidence(MemoryContracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
 
-    public static Contracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<Contracts.Evidence>(encoded);
+    public static MemoryContracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<MemoryContracts.Evidence>(encoded);
 
     // The memory citations, flattened into their own column for the lineage walk. Only a cited
     // MEMORY makes a record derived; git, web, and record citations are provenance, so they stay
     // out of this column.
-    public static List<string> EncodeCitedMemoryIds(Contracts.Memory memory) =>
+    public static List<string> EncodeCitedMemoryIds(MemoryContracts.Memory memory) =>
         memory.Evidence
             .Where(evidence => evidence.Memory is not null)
             .Select(evidence => evidence.Memory.Id)
@@ -652,12 +653,12 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
     // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in KontextSchemaTask)
     // - timestamps are BIGINT Unix epoch milliseconds (UTC) — the schema's one stated rule
-    static Contracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
-        var stored = new Contracts.StoredMemory {
+    static MemoryContracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
+        var stored = new MemoryContracts.StoredMemory {
             MemoryId       = reader.GetString(0),
-            MemoryType     = (Contracts.MemoryType)reader.GetInt32(1),
+            MemoryType     = (MemoryContracts.MemoryType)reader.GetInt32(1),
             Content        = reader.GetString(2),
-            Importance     = (Contracts.MemoryImportance)reader.GetInt32(3),
+            Importance     = (MemoryContracts.MemoryImportance)reader.GetInt32(3),
             Reasoning      = reader.GetString(5),
             RetainedAt     = DecodeTimestamp(reader, 10),
             LastAccessedAt = DecodeTimestamp(reader, 11),

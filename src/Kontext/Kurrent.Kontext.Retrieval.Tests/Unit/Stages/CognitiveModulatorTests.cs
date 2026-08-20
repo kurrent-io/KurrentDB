@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
@@ -9,14 +11,14 @@ public class CognitiveModulatorTests {
 	public async ValueTask derives_certainty_from_citations() {
 		// identical age, importance, and relevance leave every normalized dimension at the neutral
 		// 0.5, so base = 0.5 and final = 0.5 × certainty — the certainty rules decide alone
-		var synth = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary, cites: ["obs", "gossip", "missing"]);
-		synth.Memory.Evidence.Add(new Contracts.Evidence {
-			Record = new Contracts.Evidence.Types.RecordRef { Id = "record-1" },
+		var synth = Fixtures.Scored("synth", 0.5, type: MemoryContracts.MemoryType.Summary, cites: ["obs", "gossip", "missing"]);
+		synth.Memory.Evidence.Add(new MemoryContracts.Evidence {
+			Record = new MemoryContracts.Evidence.Types.RecordRef { Id = "record-1" },
 		});
 
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("obs", 0.5, type: Contracts.MemoryType.Observation),
-			Fixtures.Scored("gossip", 0.5, type: Contracts.MemoryType.Hearsay),
+			Fixtures.Scored("obs", 0.5, type: MemoryContracts.MemoryType.Observation),
+			Fixtures.Scored("gossip", 0.5, type: MemoryContracts.MemoryType.Hearsay),
 			synth,
 		];
 
@@ -34,9 +36,9 @@ public class CognitiveModulatorTests {
 	[Test]
 	public async ValueTask breakdown_reproduces_score() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.9, importance: Contracts.MemoryImportance.Critical, age: TimeSpan.Zero),
-			Fixtures.Scored("b", 0.5, importance: Contracts.MemoryImportance.Normal, age: TimeSpan.FromDays(7)),
-			Fixtures.Scored("c", 0.2, importance: Contracts.MemoryImportance.Low, age: TimeSpan.FromDays(30)),
+			Fixtures.Scored("a", 0.9, importance: MemoryContracts.MemoryImportance.Critical, age: TimeSpan.Zero),
+			Fixtures.Scored("b", 0.5, importance: MemoryContracts.MemoryImportance.Normal, age: TimeSpan.FromDays(7)),
+			Fixtures.Scored("c", 0.2, importance: MemoryContracts.MemoryImportance.Low, age: TimeSpan.FromDays(30)),
 		];
 
 		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);

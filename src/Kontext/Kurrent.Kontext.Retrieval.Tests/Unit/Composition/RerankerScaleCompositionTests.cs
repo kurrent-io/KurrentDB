@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Composition;
 
 // RelevanceModelReranker replaces head scores with model relevance in [0,1] and concatenates a tail
@@ -8,9 +10,9 @@ namespace Kurrent.Kontext.Retrieval.Tests.Composition;
 // stage that treats Score as one axis — CognitiveModulator's relevance min-max — reads them together.
 [Category("Composition")]
 public class RerankerScaleCompositionTests {
-	static readonly Contracts.StoredMemory Alpha   = Fixtures.Memory("a", "alpha passage about vector indexes");
-	static readonly Contracts.StoredMemory Bravo   = Fixtures.Memory("b", "bravo passage about query planning");
-	static readonly Contracts.StoredMemory Charlie = Fixtures.Memory("c", "charlie passage about rank fusion");
+	static readonly MemoryContracts.StoredMemory Alpha   = Fixtures.Memory("a", "alpha passage about vector indexes");
+	static readonly MemoryContracts.StoredMemory Bravo   = Fixtures.Memory("b", "bravo passage about query planning");
+	static readonly MemoryContracts.StoredMemory Charlie = Fixtures.Memory("c", "charlie passage about rank fusion");
 
 	static KontextRetrieverBuilder Pipeline(IRelevanceModel model) =>
 		KontextRetriever.New()

@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -81,14 +83,14 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
         return ValueTask.FromResult(modulated);
     }
 
-    double RecencyOf(Contracts.StoredMemory memory, DateTimeOffset asOf) =>
+    double RecencyOf(MemoryContracts.StoredMemory memory, DateTimeOffset asOf) =>
         ScoreNormalization.ExponentialDecay(asOf - memory.LastAccessedAt.ToDateTimeOffset(), options.RecencyTau);
 
     // A raw memory trusts its type; a derived one inherits the mean trust of what it cites.
     // Citations resolve against the candidate pool (one hop, no store round-trip): a cited memory
     // in the pool contributes its type weight, a cited log record its own trust level, and an
     // unresolvable citation the configured fallback.
-    double CertaintyOf(Contracts.StoredMemory memory, IReadOnlyDictionary<string, Contracts.StoredMemory> pool) {
+    double CertaintyOf(MemoryContracts.StoredMemory memory, IReadOnlyDictionary<string, MemoryContracts.StoredMemory> pool) {
         var citations = memory.Evidence;
 
         if (citations.Count == 0)
@@ -98,10 +100,10 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
 
         foreach (var citation in citations)
             sum += citation.SourceCase switch {
-                Contracts.Evidence.SourceOneofCase.Memory when pool.TryGetValue(citation.Memory.Id, out var cited)
+                MemoryContracts.Evidence.SourceOneofCase.Memory when pool.TryGetValue(citation.Memory.Id, out var cited)
                     => options.CertaintyOf(cited.MemoryType),
-                Contracts.Evidence.SourceOneofCase.Memory => options.UnresolvedCitationCertainty,
-                Contracts.Evidence.SourceOneofCase.Record => options.RecordCitationCertainty,
+                MemoryContracts.Evidence.SourceOneofCase.Memory => options.UnresolvedCitationCertainty,
+                MemoryContracts.Evidence.SourceOneofCase.Record => options.RecordCitationCertainty,
                 _                                         => options.UnresolvedCitationCertainty,
             };
 
@@ -135,22 +137,22 @@ public sealed class CognitiveModulationOptions {
     public TimeSpan RecencyTau { get; set; } = TimeSpan.FromDays(30);
 
     /// <summary>Salience [0,1] per importance level — the agent's coarse enum resolved to the number the ranking uses.</summary>
-    public Dictionary<Contracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
-        [Contracts.MemoryImportance.Unspecified] = 0.50,
-        [Contracts.MemoryImportance.Low]         = 0.25,
-        [Contracts.MemoryImportance.Normal]      = 0.50,
-        [Contracts.MemoryImportance.High]        = 0.75,
-        [Contracts.MemoryImportance.Critical]    = 1.00,
+    public Dictionary<MemoryContracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
+        [MemoryContracts.MemoryImportance.Unspecified] = 0.50,
+        [MemoryContracts.MemoryImportance.Low]         = 0.25,
+        [MemoryContracts.MemoryImportance.Normal]      = 0.50,
+        [MemoryContracts.MemoryImportance.High]        = 0.75,
+        [MemoryContracts.MemoryImportance.Critical]    = 1.00,
     };
 
     /// <summary>The trust multiplier per memory type for RAW memories — the certainty a derived memory inherits from.</summary>
-    public Dictionary<Contracts.MemoryType, double> CertaintyWeights { get; set; } = new() {
-        [Contracts.MemoryType.Unspecified] = 0.50,
-        [Contracts.MemoryType.Observation] = 1.00,
-        [Contracts.MemoryType.Hearsay]     = 0.25,
-        [Contracts.MemoryType.Fact]        = 0.90,
-        [Contracts.MemoryType.UserProfile] = 0.90,
-        [Contracts.MemoryType.Summary]     = 0.80,
+    public Dictionary<MemoryContracts.MemoryType, double> CertaintyWeights { get; set; } = new() {
+        [MemoryContracts.MemoryType.Unspecified] = 0.50,
+        [MemoryContracts.MemoryType.Observation] = 1.00,
+        [MemoryContracts.MemoryType.Hearsay]     = 0.25,
+        [MemoryContracts.MemoryType.Fact]        = 0.90,
+        [MemoryContracts.MemoryType.UserProfile] = 0.90,
+        [MemoryContracts.MemoryType.Summary]     = 0.80,
     };
 
     /// <summary>Trust of a citation pointing at a KurrentDB log record — a verifiable primary source, so near-observation.</summary>
@@ -163,13 +165,13 @@ public sealed class CognitiveModulationOptions {
     // second argument is evaluated eagerly, so indexing the fallback key unconditionally would
     // throw even for a present key); the fallback lookup itself degrades to a literal neutral
     // instead of indexing, so a partial dictionary that omits Normal/Unspecified can't throw either.
-    internal double SalienceOf(Contracts.MemoryImportance importance) =>
+    internal double SalienceOf(MemoryContracts.MemoryImportance importance) =>
         ImportanceWeights.TryGetValue(importance, out var weight)
             ? weight
-            : ImportanceWeights.GetValueOrDefault(Contracts.MemoryImportance.Normal, 0.5);
+            : ImportanceWeights.GetValueOrDefault(MemoryContracts.MemoryImportance.Normal, 0.5);
 
-    internal double CertaintyOf(Contracts.MemoryType type) =>
+    internal double CertaintyOf(MemoryContracts.MemoryType type) =>
         CertaintyWeights.TryGetValue(type, out var weight)
             ? weight
-            : CertaintyWeights.GetValueOrDefault(Contracts.MemoryType.Unspecified, 0.5);
+            : CertaintyWeights.GetValueOrDefault(MemoryContracts.MemoryType.Unspecified, 0.5);
 }

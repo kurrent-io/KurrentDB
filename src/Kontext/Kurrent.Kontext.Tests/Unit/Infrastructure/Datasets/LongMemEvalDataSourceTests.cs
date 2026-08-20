@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Tests.Infrastructure.Datasets.LongMemEval;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Tests.Infrastructure.Datasets;
 
@@ -59,14 +60,14 @@ public class LongMemEvalDataSourceTests {
         // Arrange
         using var dataset = new TempDataset(KnowledgeUpdateInstance);
 
-        var expectedTag = new Contracts.Tag { Scope = "lme", Value = "q1" };
+        var expectedTag = new MemoryContracts.Tag { Scope = "lme", Value = "q1" };
 
         // Act
         var events = await new LongMemEvalDataSource(dataset.Path).ReadEvents().ToListAsync();
 
         // Assert
         foreach (var retained in events) {
-            await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(Contracts.MemoryType.Hearsay);
+            await Assert.That(retained.Memories[0].Memory.MemoryType).IsEqualTo(MemoryContracts.MemoryType.Hearsay);
             await Assert.That(retained.Memories[0].Memory.Tags).Contains(expectedTag);
         }
     }

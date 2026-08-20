@@ -31,4 +31,11 @@ static class EmbeddingsTestSupport {
 	static string PlaygroundModelsDir => Path.Combine(TestsDir(), "..", "Kurrent.Kontext.Embeddings.Playground", "models");
 	public static string E5ModelPath => Path.Combine(PlaygroundModelsDir, "model.onnx");
 	public static string E5SentencePiecePath => Path.Combine(PlaygroundModelsDir, "sentencepiece.bpe.model");
+
+	// The GLiNER assets follow the OnnxModelRegistry layout (<key>/onnx/<model>, <key>/<asset>) inside the
+	// same playground cache. The playground does not download them; fetch from
+	// https://huggingface.co/onnx-community/gliner_small-v2.1 (onnx/model_quantized.onnx + spm.model).
+	static string GlinerDir => Path.Combine(PlaygroundModelsDir, "gliner-small-v2.1");
+	public static string GlinerModelPath => Path.Combine(GlinerDir, "onnx", "model_quantized.onnx");
+	public static string GlinerSentencePiecePath => Path.Combine(GlinerDir, "spm.model");
 }

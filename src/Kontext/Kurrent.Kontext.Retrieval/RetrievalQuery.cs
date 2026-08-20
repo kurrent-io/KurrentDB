@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -12,7 +14,7 @@ public sealed record RetrievalQuery {
     public required string Text { get; init; }
 
     /// <summary>Pre-filter: only memories carrying ALL of these tags enter the candidate pool. Empty = search everything.</summary>
-    public IReadOnlyCollection<Contracts.Tag> Tags { get; init; } = [];
+    public IReadOnlyCollection<MemoryContracts.Tag> Tags { get; init; } = [];
 
     /// <summary>Max memories returned after ranking.</summary>
     public int Limit { get; init; } = 10;
@@ -39,7 +41,7 @@ public sealed record RetrievalQuery {
 public sealed record PlannedQuery {
     public required string Text { get; init; }
 
-    public required IReadOnlyCollection<Contracts.Tag> Tags { get; init; }
+    public required IReadOnlyCollection<MemoryContracts.Tag> Tags { get; init; }
 
     public required int Limit { get; init; }
 

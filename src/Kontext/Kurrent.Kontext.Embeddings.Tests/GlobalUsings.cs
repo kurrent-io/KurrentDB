@@ -3,5 +3,6 @@
 
 global using Kurrent.Kontext.Embeddings.WordPieceOnnx;
 global using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
+global using Kurrent.Kontext.Embeddings.GlinerOnnx;
 global using Kurrent.Kontext.Embeddings.Prototype;
 global using Kurrent.Kontext.Models;

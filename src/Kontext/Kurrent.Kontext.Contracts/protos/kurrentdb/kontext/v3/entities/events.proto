@@ -1,0 +1,53 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+edition = "2023";
+
+package kurrentdb.kontext.v3.entities;
+
+option csharp_namespace = "Kurrent.Kontext.Contracts.V3.Entities";
+
+import "google/protobuf/timestamp.proto";
+
+import "kurrentdb/kontext/v3/entities/resources.proto";
+
+// Emitted by the resolution processor: one memory's spans, extracted and resolved against
+// the catalog in a single pass. Each mention carries its own outcome, including the entity it
+// created when nothing matched.
+//
+// One event covers one memory, so a reader never observes a memory half-linked and replaying the
+// event reproduces the memory's full mention set.
+message EntitiesMentioned {
+  // The memory whose content was processed.
+  string memory_id = 1;
+
+  // Every span found in the memory, in span order. A mention's position in this list is its
+  // span index, which is the mention's identity within the memory and is stable across replay.
+  repeated EntityMention mentions = 2;
+
+  // When the resolution pass processed the memory.
+  google.protobuf.Timestamp resolved_at = 3;
+}
+
+// Emitted by the deduplication processor: entities recognized as the same real-world thing, folded
+// into their survivors. One dedup pass produces one event.
+message EntitiesMerged {
+  // The folds decided by the pass.
+  repeated Merge merges = 1;
+
+  // When the dedup pass decided.
+  google.protobuf.Timestamp merged_at = 2;
+
+  message Merge {
+    // The entity folded away. Its row and aliases remain, marked merged.
+    string entity_id = 1;
+
+    // The surviving entity. Always terminal: a processor merging into an already-merged entity
+    // names that entity's survivor, never the middle of a chain.
+    string merged_into = 2;
+  }
+}

@@ -7,22 +7,6 @@ using Kurrent.Quack;
 
 namespace Kurrent.Kontext.Data;
 
-// The Kontext store's schema — the migration stream, one step class per change.
-// New steps are appended to THIS file and registered in KontextSchemaBootstrap.
-
-/// <summary>
-/// v1 of the Kontext store: the memories and records lance tables and their eager indexes.
-/// The vector indexes are NOT here — they have a training floor, so they cannot exist on a
-/// fresh store; <see cref="KontextIndexMaintenance"/> and the records indexer own their
-/// lifecycle.
-///
-/// Idempotent despite RunOnce: journal recording is at-least-once, and stores deployed
-/// before the migration stream existed already carry these tables over an empty journal.
-///
-/// Addressing rules (the lance extension's dual addressing):
-/// - table DDL uses the qualified name (ldb.main.* — hardcoded, matching store and writer)
-/// - index DDL uses the RAW dataset path, and inside WITH (...) it is always '=', never ':='
-/// </summary>
 public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
     /// <summary>
     /// The embedding dimension — the N in the FLOAT[N] column type, and the dimension of the
@@ -73,10 +57,10 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             CREATE INDEX supersedes_idx       ON ldb.main.memories (supersedes)       USING LABEL_LIST WITH (replace = true);
             CREATE INDEX superseded_by_idx    ON ldb.main.memories (superseded_by)    USING BTREE      WITH (replace = true);
             CREATE INDEX log_position_idx     ON ldb.main.memories (log_position)     USING BTREE      WITH (replace = true);
-            
+
             ALTER TABLE ldb.main.memories SET AUTO_CLEANUP WITH (
-                interval        = {CleanupIntervalCommits}, 
-                older_than      = '{CleanupOlderThan}', 
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
                 retain_versions = {CleanupRetainVersions}
             );
 
@@ -100,12 +84,70 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             CREATE INDEX content_fts      ON ldb.main.records (content)      USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
 
             ALTER TABLE ldb.main.records SET AUTO_CLEANUP WITH (
-                interval        = {CleanupIntervalCommits}, 
-                older_than      = '{CleanupOlderThan}', 
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            );
+
+            CREATE TABLE IF NOT EXISTS ldb.main.entities (
+              entity_id      VARCHAR,
+              entity_type    VARCHAR,
+              canonical_name VARCHAR,
+              merged_into    VARCHAR,
+              merged_at      BIGINT,
+              created_at     BIGINT,
+              log_position   BIGINT);
+
+            CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE WITH (replace = true);
+            CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE WITH (replace = true);
+            CREATE INDEX merged_into_idx  ON ldb.main.entities (merged_into)  USING BTREE WITH (replace = true);
+            CREATE INDEX log_position_idx ON ldb.main.entities (log_position) USING BTREE WITH (replace = true);
+
+            ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            );
+
+            CREATE TABLE IF NOT EXISTS ldb.main.entity_aliases (
+              entity_id    VARCHAR,
+              alias        VARCHAR,
+              created_at   BIGINT,
+              log_position BIGINT,
+              embedding    FLOAT[{Dimension}]);
+
+            CREATE INDEX entity_id_idx    ON ldb.main.entity_aliases (entity_id)    USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_idx        ON ldb.main.entity_aliases (alias)        USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_fts        ON ldb.main.entity_aliases (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
+            CREATE INDEX log_position_idx ON ldb.main.entity_aliases (log_position) USING BTREE    WITH (replace = true);
+
+            ALTER TABLE ldb.main.entity_aliases SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
+                retain_versions = {CleanupRetainVersions}
+            );
+
+            CREATE TABLE IF NOT EXISTS ldb.main.entity_mentions (
+              memory_id    VARCHAR,
+              span_index   INTEGER,
+              span_text    VARCHAR,
+              entity_id    VARCHAR,
+              confidence   FLOAT,
+              resolved_by  INTEGER,
+              linked_at    BIGINT,
+              log_position BIGINT);
+
+            CREATE INDEX memory_id_idx    ON ldb.main.entity_mentions (memory_id)    USING BTREE WITH (replace = true);
+            CREATE INDEX entity_id_idx    ON ldb.main.entity_mentions (entity_id)    USING BTREE WITH (replace = true);
+            CREATE INDEX log_position_idx ON ldb.main.entity_mentions (log_position) USING BTREE WITH (replace = true);
+
+            ALTER TABLE ldb.main.entity_mentions SET AUTO_CLEANUP WITH (
+                interval        = {CleanupIntervalCommits},
+                older_than      = '{CleanupOlderThan}',
                 retain_versions = {CleanupRetainVersions}
             )
             """;
-        
+
         return executor.ExecuteAsync(
             connection => connection.ExecuteAdHocNonQuery(script, multipleStatements: true), ct
         ).AsTask();

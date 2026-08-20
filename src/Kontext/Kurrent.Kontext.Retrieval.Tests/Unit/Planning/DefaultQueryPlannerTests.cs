@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Planning;
 
 [Category("Planning")]
@@ -29,7 +31,7 @@ public class DefaultQueryPlannerTests {
 
 	[Test]
 	public async ValueTask text_tags_and_limit_pass_through_unchanged() {
-		var tags    = new List<Contracts.Tag> { new() { Scope = "project", Value = "rivers" } };
+		var tags    = new List<MemoryContracts.Tag> { new() { Scope = "project", Value = "rivers" } };
 		var planner = new DefaultQueryPlanner(new OverfetchOptions(), new FixedTimeProvider(Fixtures.Now));
 
 		var query   = new RetrievalQuery { Text = "what did we decide about rivers", Tags = tags, Limit = 7 };

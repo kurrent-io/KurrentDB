@@ -1,11 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
 edition = "2023";
 
-package kurrent.kontext;
+package kurrentdb.kontext.v3.memory;
 
-option csharp_namespace = "Kurrent.Kontext.Contracts";
+option csharp_namespace = "Kurrent.Kontext.Contracts.V3.Memory";
 
 import "google/protobuf/timestamp.proto";
 import "kurrentdb/kontext/v3/memory/resources.proto";
@@ -26,7 +30,7 @@ message MemoriesRetained {
 
   message RetainedMemory {
     // The id the server assigned. It lives here rather than on `Memory` because the write shape
-    // carries no id — clients never mint one — so this is the record's primary key.
+    // carries no id — clients never supply one — so this is the record's primary key.
     string memory_id = 1;
 
     // the stored memory body, exactly as supplied to Retain

@@ -11,6 +11,7 @@ using Kurrent.Quack;
 using Kurrent.Surge;
 using Kurrent.Surge.Schema;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Tests.Modules.Memory.Data;
 
@@ -249,7 +250,7 @@ public class KontextMemoryWriterTests {
 
 		var retractedAt = Base.AddHours(3);
 
-		var retracted = new Contracts.MemoryRetracted {
+		var retracted = new MemoryContracts.MemoryRetracted {
 			MemoryId           = "m1",
 			Reason             = "test cascade",
 			RetractedMemoryIds = { "m1", "m2" },
@@ -267,8 +268,8 @@ public class KontextMemoryWriterTests {
 		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
 
 		var listed = await store.ListAsync(
-				[], [], Contracts.RecollectSort.RetainedAt,
-				Contracts.SortDirection.Descending, 10)
+				[], [], MemoryContracts.RecollectSort.RetainedAt,
+				MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		await Assert.That(listed).IsEmpty();
@@ -369,7 +370,7 @@ public class KontextMemoryWriterTests {
 		var supersededAt = Base.AddHours(2);
 		var retractedAt  = Base.AddHours(3);
 
-		var retracted = new Contracts.MemoryRetracted {
+		var retracted = new MemoryContracts.MemoryRetracted {
 			MemoryId           = "m1",
 			Reason             = "born terminal",
 			RetractedMemoryIds = { "m1" },
@@ -396,19 +397,19 @@ public class KontextMemoryWriterTests {
 	#region ->> Test Infrastructure <<-
 
 	/// <summary>One MemoriesRetained event carrying several memories, in request order.</summary>
-	static Contracts.MemoriesRetained NewRetainedBatch(
+	static MemoryContracts.MemoriesRetained NewRetainedBatch(
 		DateTimeOffset retainedAt,
 		params (string MemoryId, string Content, string[] Supersedes)[] memories
 	) {
-		var retained = new Contracts.MemoriesRetained { RetainedAt = Timestamp.FromDateTimeOffset(retainedAt) };
+		var retained = new MemoryContracts.MemoriesRetained { RetainedAt = Timestamp.FromDateTimeOffset(retainedAt) };
 
 		foreach (var (memoryId, content, supersedes) in memories)
-			retained.Memories.Add(new Contracts.MemoriesRetained.Types.RetainedMemory {
+			retained.Memories.Add(new MemoryContracts.MemoriesRetained.Types.RetainedMemory {
 				MemoryId = memoryId,
-				Memory = new Contracts.Memory {
-					MemoryType = Contracts.MemoryType.Observation,
+				Memory = new MemoryContracts.Memory {
+					MemoryType = MemoryContracts.MemoryType.Observation,
 					Content    = content,
-					Importance = Contracts.MemoryImportance.Normal,
+					Importance = MemoryContracts.MemoryImportance.Normal,
 					Supersedes = { supersedes },
 				},
 			});
@@ -417,15 +418,15 @@ public class KontextMemoryWriterTests {
 	}
 
 	/// <summary>A single-memory MemoriesRetained event: two tags, evidence citing "cited-1", a validity window.</summary>
-	static Contracts.MemoriesRetained NewRetained(string memoryId, string content, DateTimeOffset retainedAt, params string[] supersedes) {
-		var memory = new Contracts.Memory {
-			MemoryType = Contracts.MemoryType.Fact,
+	static MemoryContracts.MemoriesRetained NewRetained(string memoryId, string content, DateTimeOffset retainedAt, params string[] supersedes) {
+		var memory = new MemoryContracts.Memory {
+			MemoryType = MemoryContracts.MemoryType.Fact,
 			Content    = content,
-			Importance = Contracts.MemoryImportance.High,
+			Importance = MemoryContracts.MemoryImportance.High,
 			Reasoning  = "because the tests say so",
-			Evidence   = { new Contracts.Evidence { Memory = new() { Id = "cited-1" } } },
-			Tags       = { new Contracts.Tag { Scope = "work", Value = "alpha" }, new Contracts.Tag { Value = "research" } },
-			Validity   = new Contracts.TemporalContext {
+			Evidence   = { new MemoryContracts.Evidence { Memory = new() { Id = "cited-1" } } },
+			Tags       = { new MemoryContracts.Tag { Scope = "work", Value = "alpha" }, new MemoryContracts.Tag { Value = "research" } },
+			Validity   = new MemoryContracts.TemporalContext {
 				PerceivedStart = Timestamp.FromDateTimeOffset(retainedAt.AddHours(-24)),
 				PerceivedEnd   = Timestamp.FromDateTimeOffset(retainedAt.AddHours(24))
 			},
@@ -433,15 +434,15 @@ public class KontextMemoryWriterTests {
 		};
 
 		return new() {
-			Memories   = { new Contracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory } },
+			Memories   = { new MemoryContracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory } },
 			RetainedAt = Timestamp.FromDateTimeOffset(retainedAt),
 		};
 	}
 
-	static Contracts.MemoriesRecalled NewRecalled(string memoryId, DateTimeOffset recalledAt) => new() {
+	static MemoryContracts.MemoriesRecalled NewRecalled(string memoryId, DateTimeOffset recalledAt) => new() {
 		QueryId    = Guid.NewGuid().ToString(),
 		Query      = "query",
-		Memories   = { new Contracts.ScoredMemory { MemoryId = memoryId } },
+		Memories   = { new MemoryContracts.ScoredMemory { MemoryId = memoryId } },
 		RecalledAt = Timestamp.FromDateTimeOffset(recalledAt)
 	};
 

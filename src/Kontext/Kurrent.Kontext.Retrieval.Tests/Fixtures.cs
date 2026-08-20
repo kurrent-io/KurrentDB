@@ -2,21 +2,22 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf.WellKnownTypes;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Retrieval.Tests;
 
 static class Fixtures {
 	public static readonly DateTimeOffset Now = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
-	public static Contracts.StoredMemory Memory(
+	public static MemoryContracts.StoredMemory Memory(
 		string id,
 		string content = "content",
-		Contracts.MemoryType type = Contracts.MemoryType.Fact,
-		Contracts.MemoryImportance importance = Contracts.MemoryImportance.Normal,
+		MemoryContracts.MemoryType type = MemoryContracts.MemoryType.Fact,
+		MemoryContracts.MemoryImportance importance = MemoryContracts.MemoryImportance.Normal,
 		TimeSpan age = default,
 		params string[] cites
 	) {
-		var memory = new Contracts.StoredMemory {
+		var memory = new MemoryContracts.StoredMemory {
 			MemoryId       = id,
 			Content        = content,
 			MemoryType     = type,
@@ -25,8 +26,8 @@ static class Fixtures {
 		};
 
 		foreach (var cited in cites)
-			memory.Evidence.Add(new Contracts.Evidence {
-				Memory = new Contracts.Evidence.Types.MemoryRef { Id = cited },
+			memory.Evidence.Add(new MemoryContracts.Evidence {
+				Memory = new MemoryContracts.Evidence.Types.MemoryRef { Id = cited },
 			});
 
 		return memory;
@@ -39,8 +40,8 @@ static class Fixtures {
 		string id,
 		double score,
 		string content = "content",
-		Contracts.MemoryType type = Contracts.MemoryType.Fact,
-		Contracts.MemoryImportance importance = Contracts.MemoryImportance.Normal,
+		MemoryContracts.MemoryType type = MemoryContracts.MemoryType.Fact,
+		MemoryContracts.MemoryImportance importance = MemoryContracts.MemoryImportance.Normal,
 		TimeSpan age = default,
 		IReadOnlyDictionary<string, int>? sourceRanks = null,
 		IReadOnlyDictionary<string, double>? sourceScores = null,

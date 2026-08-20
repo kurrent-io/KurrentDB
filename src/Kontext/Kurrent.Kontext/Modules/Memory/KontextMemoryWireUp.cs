@@ -6,6 +6,8 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
+using Kurrent.Kontext.Modules.Entities;
+using Kurrent.Kontext.Modules.Entities.Data;
 using Kurrent.Kontext.Modules.Records;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Surge.Schema;
@@ -20,6 +22,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+using EntityContracts = Kurrent.Kontext.Contracts.V3.Entities;
+using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Modules.Memory;
 
@@ -149,6 +153,8 @@ public static class KontextMemoryWireUp {
             });
 
             services.AddKontextMemoryProjector();
+            services.AddKontextEntityProjector();
+            services.AddKontextEntityResolution();
             services.AddKontextRecordsIndexer();
 
             return services;
@@ -156,15 +162,22 @@ public static class KontextMemoryWireUp {
 
         IServiceCollection AddMessageRegistration() {
             return services.AddSystemStartupTask("Kontext Message Registration", static (_, sp, ct) =>
-                RegisterMemoryMessages(sp.GetRequiredService<ISchemaRegistry>(), ct));
+                RegisterKontextMessages(sp.GetRequiredService<ISchemaRegistry>(), ct));
 
-            static async Task RegisterMemoryMessages(ISchemaRegistry registry, CancellationToken ct) {
+            static async Task RegisterKontextMessages(ISchemaRegistry registry, CancellationToken ct) {
                 Task[] tasks = [
-                    KontextConventions.RegisterMessages<Contracts.MemoriesRetained>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.MemoryRetracted>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.MemoriesRecalled>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.MemoriesAccessed>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.ReflectionCompleted>(registry, ct),
+                    KontextConventions.RegisterMessages<MemoryContracts.MemoriesRetained>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<MemoryContracts.MemoryRetracted>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<MemoryContracts.MemoriesRecalled>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<MemoryContracts.MemoriesAccessed>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<MemoryContracts.ReflectionCompleted>(registry, KontextConventions.Streams.MemoriesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<EntityContracts.EntitiesMentioned>(registry, KontextConventions.Streams.EntitiesStreamPrefix, ct),
+                    KontextConventions.RegisterMessages<EntityContracts.EntitiesMerged>(registry, KontextConventions.Streams.EntitiesStreamPrefix, ct),
+
+                    // Surge's Checkpoint contract: type resolution on read is in-process, so
+                    // without this a restarted node cannot decode its own checkpoint stream and
+                    // silently reprocesses from Earliest.
+                    KontextConventions.RegisterMessages<Kurrent.Surge.Protocol.Consumers.Checkpoint>(registry, KontextConventions.Streams.KontextStreamPrefix, ct),
                 ];
 
                 await Task.WhenAll(tasks);
@@ -172,12 +185,12 @@ public static class KontextMemoryWireUp {
         }
 
         IServiceCollection AddRequestValidation() {
-            services.TryAddSingleton<IValidator<Contracts.RetainRequest>, RetainRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.RetractRequest>, RetractRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.RecallRequest>, RecallRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.ReclaimRequest>, ReclaimRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.RecollectRequest>, RecollectRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.ReflectRequest>, ReflectRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.RetainRequest>, RetainRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.RetractRequest>, RetractRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.RecallRequest>, RecallRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.ReclaimRequest>, ReclaimRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.RecollectRequest>, RecollectRequestValidator>();
+            services.TryAddSingleton<IValidator<MemoryContracts.ReflectRequest>, ReflectRequestValidator>();
             services.TryAddSingleton<RequestValidationService>();
             return services;
         }
