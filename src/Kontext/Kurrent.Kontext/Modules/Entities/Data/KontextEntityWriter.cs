@@ -21,15 +21,14 @@ public sealed class KontextEntityWriter(
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
     EmbeddingGenerationOptions options
 ) {
-    sealed class PendingAlias(string entityId, string entityType, string alias, bool isCanonical, long createdAt, long logPosition) {
-        public string EntityId    { get; } = entityId;
-        public string EntityType  { get; } = entityType;
-        public string Alias       { get; } = alias;
-        public bool   IsCanonical { get; } = isCanonical;
-        public long   CreatedAt   { get; } = createdAt;
-        public long   LogPosition { get; } = logPosition;
-
-    }
+    sealed record PendingAlias(
+        string EntityId,
+        string EntityType,
+        string Alias,
+        bool   IsCanonical,
+        long   CreatedAt,
+        long   LogPosition
+    );
 
     sealed record PendingMention(
         string MemoryId,
