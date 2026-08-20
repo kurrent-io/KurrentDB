@@ -29,9 +29,6 @@ public sealed class KontextEntityWriter(
         public long   CreatedAt   { get; } = createdAt;
         public long   LogPosition { get; } = logPosition;
 
-        public float[] Embedding { get; private set; } = [];
-
-        public void Embed(float[] embedding) => Embedding = embedding;
     }
 
     sealed record PendingMention(
@@ -84,9 +81,7 @@ public sealed class KontextEntityWriter(
         if (aliases.Count == 0 && mentions.Count == 0)
             return 0;
 
-        await EmbedAliases(aliases.Values, ct).ConfigureAwait(false);
-
-        ApplyAliases(aliases.Values);
+        await ApplyAliases(aliases.Values, ct).ConfigureAwait(false);
         ApplyMentions(mentions.Values);
 
         return aliases.Count;
@@ -94,21 +89,7 @@ public sealed class KontextEntityWriter(
 
     // One embedding call for the whole batch — the events carry only the alias text; the
     // embeddings live in the read model.
-    async ValueTask EmbedAliases(IReadOnlyCollection<PendingAlias> aliases, CancellationToken ct) {
-        if (aliases.Count == 0)
-            return;
-
-        var pending = aliases.ToList();
-
-        var generated = await embeddings
-            .GenerateAsync(pending.Select(alias => alias.Alias), cancellationToken: ct)
-            .ConfigureAwait(false);
-
-        foreach (var (alias, embedding) in pending.Zip(generated))
-            alias.Embed(embedding.Vector.ToArray());
-    }
-
-    void ApplyAliases(IReadOnlyCollection<PendingAlias> aliases) {
+    async ValueTask ApplyAliases(IReadOnlyCollection<PendingAlias> aliases, CancellationToken ct) {
         if (aliases.Count == 0)
             return;
 
@@ -135,14 +116,13 @@ public sealed class KontextEntityWriter(
                , log_position = s.log_position
              """;
 
-        var count           = aliases.Count;
-        var entityIds       = new List<string>(count);
-        var entityTypes     = new List<string>(count);
-        var aliasTexts      = new List<string>(count);
-        var isCanonicals    = new List<bool>(count);
-        var createdAts      = new List<long>(count);
-        var logPositions    = new List<long>(count);
-        var batchEmbeddings = new List<float[]>(count);
+        var count        = aliases.Count;
+        var entityIds    = new List<string>(count);
+        var entityTypes  = new List<string>(count);
+        var aliasTexts   = new List<string>(count);
+        var isCanonicals = new List<bool>(count);
+        var createdAts   = new List<long>(count);
+        var logPositions = new List<long>(count);
 
         foreach (var alias in aliases) {
             entityIds.Add(alias.EntityId);
@@ -151,8 +131,13 @@ public sealed class KontextEntityWriter(
             isCanonicals.Add(alias.IsCanonical);
             createdAts.Add(alias.CreatedAt);
             logPositions.Add(alias.LogPosition);
-            batchEmbeddings.Add(alias.Embedding);
         }
+
+        var generated = await embeddings
+            .GenerateAsync(aliasTexts, cancellationToken: ct)
+            .ConfigureAwait(false);
+
+        var batchEmbeddings = generated.Select(embedding => embedding.Vector.ToArray()).ToList();
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
