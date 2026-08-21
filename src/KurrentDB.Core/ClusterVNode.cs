@@ -32,6 +32,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Caching;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Cluster;
+using KurrentDB.KontrolPlane;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
@@ -1631,6 +1632,31 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
 		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(gossip);
+
+		// KONTROL PLANE
+		if (ClusterVNodeController.KontrolPlaneMode) {
+			var memberInfoLite = memberInfo.ToLite();
+			var databaseStateHandler = new DatabaseStateHandler(
+				mainQueue: _mainQueue,
+				epochManager: epochManager,
+				writerCheckpoint: Db.Config.WriterCheckpoint.AsReadOnly(),
+				chaserCheckpoint: Db.Config.ChaserCheckpoint.AsReadOnly(),
+				currentNode: new DatabaseNode {
+					DatabaseId = Database.MainDatabaseId,
+					Address = memberInfoLite.HttpEndPoint,
+					Role = options.Cluster.ReadOnlyReplica
+						? DatabaseNodeRole.ReadOnlyReplica
+						: DatabaseNodeRole.Regular,
+					ClientApiAddress = memberInfoLite.ClientHttpEndPoint,
+					ClientTcpApiPort = memberInfoLite.ClientTcpPort,
+					ClientTcpApiIsSecure = memberInfoLite.ClientTcpApiIsSecure,
+					ReplicationProtocolAddress = memberInfoLite.ReplicationEndPoint,
+					Version = VersionInfo.Version,
+					InstanceId = NodeInfo.InstanceId,
+				},
+				nodePriority: options.Cluster.NodePriority);
+			_mainBus.Subscribe<GossipMessage.UpdateNodePriority>(databaseStateHandler);
+		}
 
 		var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
 		_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);

@@ -26,6 +26,7 @@ namespace KurrentDB.Core.Services.VNode;
 public abstract class ClusterVNodeController {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController>();
 	public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
+	public static bool KontrolPlaneMode = true;
 }
 
 public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
@@ -44,9 +45,21 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private VNodeState State {
 		get => _state;
 		set {
+			if (_state.CanReplicateToOtherNodes() &&
+				!value.CanReplicateToOtherNodes())
+				EndLeadership();
+
 			_state = value;
 			_statusTracker.OnStateChange(value);
 		}
+	}
+
+	private IEnvelope _leadershipEnvelope = NoopEnvelope.Instance;
+
+	private void EndLeadership() {
+		var envelope = _leadershipEnvelope;
+		_leadershipEnvelope = NoopEnvelope.Instance;
+		envelope.ReplyWith(ElectionMessage.LeadershipEnded.Instance);
 	}
 
 	private MemberInfoLite _leader;
@@ -120,6 +133,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	public ISubscriber MainBus => _outputBus;
 
 	private VNodeFSM CreateFSM() {
+		// Order of registrations is irrelevant.
+		// Most derived match wins.
+		// Duplicate registrations is an error at registration time.
 		var stm = new VNodeFSMBuilder(new(this, in _state))
 			.InAnyState()
 			.When<SystemMessage.StateChangeMessage>().Do(m =>
@@ -426,6 +442,27 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<SystemMessage.NoQuorumMessage>().Ignore()
 			.When<ReplicationMessage.ReplicaSubscriptionRequest>().Ignore()
 
+			.InStates(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
+			.When<SystemMessage.Freeze>().Do(Handle)
+
+			.InAllStatesExcept(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
+			.When<SystemMessage.Freeze>().Do(m =>
+				m.Envelope.ReplyWith(SystemMessage.Frozen.Instance))
+
 			.InState(VNodeState.PreLeader)
 			.When<SystemMessage.BecomeLeader>().Do(Handle)
 			.When<SystemMessage.WaitForChaserToCatchUp>().Do(Handle)
@@ -484,7 +521,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		var id = Guid.NewGuid();
 		Message msg = _nodeInfo.IsReadOnlyReplica
 			? new SystemMessage.BecomeReadOnlyLeaderless(id)
-			: _clusterSize > 1
+			: _clusterSize > 1 && !KontrolPlaneMode
 				? new SystemMessage.BecomeDiscoverLeader(id)
 				: new SystemMessage.BecomeUnknown(id);
 
@@ -497,10 +534,21 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		State = VNodeState.Unknown;
 		_leader = null;
 		await _outputBus.DispatchAsync(message, token);
-		_mainQueue.Publish(new ElectionMessage.StartElections());
+
+		if (KontrolPlaneMode) {
+			// NoOp. KPlane will tell us what to do next.
+		} else {
+			_mainQueue.Publish(new ElectionMessage.StartElections());
+		}
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomeDiscoverLeader message, CancellationToken token) {
+		if (KontrolPlaneMode) {
+			// Not allowed to discover leader from gossip in KPlane mode, must be told the leader by the kplane.
+			// If we discover it from gossip we may subvert the KPlane's fence on an old epoch.
+			throw new InvalidOperationException();
+		}
+
 		Log.Information("========== [{httpEndPoint}] IS ATTEMPTING TO DISCOVER EXISTING LEADER...", _nodeInfo.HttpEndPoint);
 
 		State = VNodeState.DiscoverLeader;
@@ -704,8 +752,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		await OnLeaderDecided(message, message.Leader, token);
 	}
 
-	private ValueTask Handle(ElectionMessage.LeaderAppointed message, CancellationToken token) =>
-		OnLeaderDecided(message, message.Leader, token);
+	private ValueTask Handle(ElectionMessage.LeaderAppointed message, CancellationToken token) {
+		if (message.Leader.InstanceId == _nodeInfo.InstanceId) {
+			EndLeadership();
+			_leadershipEnvelope = message.Envelope;
+		}
+
+		return OnLeaderDecided(message, message.Leader, token);
+	}
 
 	private async ValueTask OnLeaderDecided(Message message, MemberInfoLite leader, CancellationToken token) {
 		_leader = leader;
@@ -1177,7 +1231,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (_leader is null)
 			return ValueTask.FromException(new Exception("_leader == null"));
 
-		if (message.ClusterInfo.Members.Count(IsAliveLeader) > 1) {
+		if (KontrolPlaneMode) {
+			// Don't start elections, KPlane will tell us what to do.
+		} else if (message.ClusterInfo.Members.Count(IsAliveLeader) > 1) {
 			Log.Debug("There are MULTIPLE LEADERS according to gossip, need to start elections. LEADER: [{leader}]",
 				_leader);
 			Log.Debug("GOSSIP:");
@@ -1236,6 +1292,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (_leader is null)
 			return ValueTask.FromException(new Exception("_leader == null"));
 
+		if (KontrolPlaneMode) {
+			// Don't start elections. KPlane will tell us what to do.
+			return _outputBus.DispatchAsync(message, token);
+		}
+
 		var leader = message.ClusterInfo.Members.FirstOrDefault(x => x.InstanceId == _leader.InstanceId);
 		if (leader is null or { IsAlive: false }) {
 			Log.Debug(
@@ -1285,6 +1346,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private ValueTask Handle(SystemMessage.NoQuorumMessage message, CancellationToken token) {
 		Log.Information("=== NO QUORUM EMERGED WITHIN TIMEOUT... RETIRING...");
 		return _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
+	}
+
+	private async ValueTask Handle(SystemMessage.Freeze message, CancellationToken token) {
+		Log.Information("========== [{httpEndPoint}] IS FROZEN BY THE KONTROL PLANE. State was {State}.",
+			_nodeInfo.HttpEndPoint, State);
+		await _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
+		message.Envelope.ReplyWith(SystemMessage.Frozen.Instance);
 	}
 
 	private ValueTask Handle(SystemMessage.WaitForChaserToCatchUp message, CancellationToken token) {

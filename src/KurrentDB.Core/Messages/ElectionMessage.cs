@@ -355,13 +355,21 @@ public static partial class ElectionMessage {
 	}
 
 	// KPlane equivalent of ElectionsDone.
+	// When the appointed node is this one, Envelope is answered with LeadershipEnded once the node
+	// leaves the leader states again.
 	[DerivedMessage(CoreMessage.Election)]
-	public partial class LeaderAppointed(int epochNumber, MemberInfoLite leader) : Message {
+	public partial class LeaderAppointed(int epochNumber, MemberInfoLite leader, IEnvelope envelope = null) : Message {
 		public int EpochNumber => epochNumber;
 		public MemberInfoLite Leader => leader;
+		public IEnvelope Envelope => envelope ?? NoopEnvelope.Instance;
 
 		public override string ToString() {
 			return $"---- LeaderAppointed: epoch number {EpochNumber}, leader {Leader}";
 		}
+	}
+
+	[DerivedMessage(CoreMessage.Election)]
+	public partial class LeadershipEnded : Message {
+		public static readonly LeadershipEnded Instance = new();
 	}
 }
