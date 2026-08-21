@@ -37,7 +37,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 
 	protected readonly MemberInfo MemberInfo;
 	protected VNodeState CurrentRole = VNodeState.Initializing;
-	private MemberInfo _currentLeader;
+	private MemberInfoLite _currentLeader;
 	private readonly TimeSpan _gossipInterval;
 	private readonly TimeSpan _allowedTimeDifference;
 	private readonly TimeSpan _gossipTimeout;

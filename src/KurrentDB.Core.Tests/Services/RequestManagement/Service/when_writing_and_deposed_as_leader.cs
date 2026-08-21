@@ -20,7 +20,7 @@ public class when_writing_and_deposed_as_leader : RequestManagerServiceSpecifica
 	}
 
 	protected override Message When() {
-		return new SystemMessage.BecomePreReplica(Guid.NewGuid(), Guid.NewGuid(), FakeMemberInfo());
+		return new SystemMessage.BecomePreReplica(Guid.NewGuid(), Guid.NewGuid(), FakeMemberInfo().ToLite());
 	}
 
 	[Test]

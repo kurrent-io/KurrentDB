@@ -100,7 +100,7 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 		_state = VNodeState.CatchingUp;
 		_outputBus.Publish(new SystemMessage.BecomeCatchingUp(
 			correlationId: Guid.NewGuid(),
-			leader: _leaderInfo.MemberInfo));
+			leader: _leaderInfo.MemberInfo.ToLite()));
 		_outputBus.Publish(message);
 	}
 
@@ -111,7 +111,7 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 		_state = VNodeState.Clone;
 		_outputBus.Publish(new SystemMessage.BecomeClone(
 			correlationId: Guid.NewGuid(),
-			leader: _leaderInfo.MemberInfo));
+			leader: _leaderInfo.MemberInfo.ToLite()));
 		_outputBus.Publish(message);
 	}
 
@@ -122,7 +122,7 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 		_state = VNodeState.Follower;
 		_outputBus.Publish(new SystemMessage.BecomeFollower(
 			correlationId: Guid.NewGuid(),
-			leader: _leaderInfo.MemberInfo));
+			leader: _leaderInfo.MemberInfo.ToLite()));
 		_outputBus.Publish(message);
 	}
 

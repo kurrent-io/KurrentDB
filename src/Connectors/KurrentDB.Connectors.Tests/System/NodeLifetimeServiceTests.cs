@@ -134,7 +134,7 @@ public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemb
 
 			await waitForLeadershipTask;
 
-			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 			// Act & Assert
 

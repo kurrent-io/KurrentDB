@@ -29,7 +29,7 @@ public class HttpSendService : IHttpForwarder,
 	private readonly HttpMessagePipe _httpPipe;
 	private readonly bool _forwardRequests;
 	private readonly HttpClient _forwardClient;
-	private MemberInfo _leaderInfo;
+	private MemberInfoLite _leaderInfo;
 
 	public HttpSendService(HttpMessagePipe httpPipe, bool forwardRequests, CertificateDelegates.ServerCertificateValidator externServerCertValidator) {
 		_httpPipe = Ensure.NotNull(httpPipe);
