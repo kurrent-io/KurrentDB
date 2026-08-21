@@ -30,7 +30,7 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 			heartbeatTask = SendHeartbeatsAsync(linkedCts);
 			await stateMachine
 				.DatabaseHandler
-				.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token)
+				.RunLeadershipAsync(cluster, stateMachine.DatabaseChanges, linkedCts.Token)
 				.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
 				                | ConfigureAwaitOptions.SuppressThrowing);
 
