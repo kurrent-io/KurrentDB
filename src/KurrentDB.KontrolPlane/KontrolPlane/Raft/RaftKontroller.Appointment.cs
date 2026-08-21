@@ -183,15 +183,23 @@ partial class RaftKontroller {
 				break;
 
 			int quorum;
-			await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, token)) {
-				try {
-					var pair = await task;
-					responses.Add(pair.Key, pair.Value);
-				} catch (OperationCanceledException e) when (e.CancellationToken == token) {
-					responses.Clear();
-					goto exit; // cancellation requested, abort appointment
-				} catch (Exception) {
-					// member is unavailable, don't add it to a collection of successful responses
+			using (var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, tokenSource.Token)) {
+					try {
+						var pair = await task;
+						responses.Add(pair.Key, pair.Value);
+
+						if (responses.Count >= quorum) {
+							// Don't break the loop, we want to make sure
+							// that all background tasks related to the network access are finished
+							await tokenSource.CancelAsync();
+						}
+					} catch (OperationCanceledException) when (token.IsCancellationRequested) {
+						responses.Clear();
+						goto exit; // cancellation requested, abort appointment
+					} catch (Exception) {
+						// member is unavailable, don't add it to a collection of successful responses
+					}
 				}
 			}
 
