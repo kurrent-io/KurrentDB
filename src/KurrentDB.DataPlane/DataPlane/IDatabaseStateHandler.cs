@@ -14,6 +14,7 @@ public interface IDatabaseStateHandler {
 	/// </summary>
 	/// <remarks>
 	/// This method implements Follower state logic.
+	/// If method returns, it doesn't force DPlane to switch the state.
 	/// </remarks>
 	/// <param name="database">The database descriptor.</param>
 	/// <param name="leaderNode">The appointed leader.</param>
@@ -26,6 +27,7 @@ public interface IDatabaseStateHandler {
 	/// </summary>
 	/// <remarks>
 	/// This method implements Leader state logic.
+	/// When it returns, the leadership is over and the node moves to Frozen state.
 	/// </remarks>
 	/// <param name="changes">An infinite sequence of database cluster changes.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>

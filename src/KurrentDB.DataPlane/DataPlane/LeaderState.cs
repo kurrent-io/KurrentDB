@@ -9,29 +9,48 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	DatabaseCluster cluster,
 	double renewalRate) : DatabaseState {
 
-	protected override async Task RunAsync() {
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token);
-		var mainTask = stateMachine.DatabaseHandler.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token);
-		var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate);
-		try {
+	private async Task SendHeartbeatsAsync(CancellationTokenSource heartbeatSource) {
+		var token = heartbeatSource.Token; // cached to avoid ObjectDisposedException
+		using (var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate)) {
 			while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(cluster.Id,
-				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, linkedCts.Token)) {
-				await timer.WaitForNextTickAsync(linkedCts.Token);
+				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, token)) {
+				await timer.WaitForNextTickAsync(token);
 			}
-
-			await linkedCts.CancelAsync();
-		} catch (OperationCanceledException) {
-			// suppress exception
-		} finally {
-			timer.Dispose();
-			linkedCts.Dispose();
 		}
 
-		// ensure that the leadership background task is finished
-		try {
-			await mainTask;
-		} finally {
-			stateMachine.MoveToFrozenState(new(this));
+		// Renewal is rejected
+		await heartbeatSource.CancelAsync();
+	}
+
+	protected override async Task RunAsync() {
+		Task heartbeatTask;
+		bool resignRequired;
+		using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(Token)) {
+			heartbeatTask = SendHeartbeatsAsync(linkedCts);
+			await stateMachine
+				.DatabaseHandler
+				.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token)
+				.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
+				                | ConfigureAwaitOptions.SuppressThrowing);
+
+			if (linkedCts.IsCancellationRequested) {
+				// Canceled by the state machine or heartbeat loop
+				resignRequired = false;
+			} else {
+				// Leadership is finished because RunLeadershipAsync stops, send Resign to KPlane.
+				// This step is necessary when DPlane Leader has normal communication with KPlane
+				// to renew its leadership, but it can't replicate to the quorum (due to
+				// network partitioning).
+				resignRequired = true;
+				await linkedCts.CancelAsync();
+			}
+		}
+
+		await heartbeatTask.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
+		                                   | ConfigureAwaitOptions.SuppressThrowing);
+
+		if (resignRequired) {
+			await stateMachine.KontrolPlane.ResignLeaderAsync(cluster.Id, cluster.Epoch, Token);
 		}
 	}
 }

@@ -41,6 +41,9 @@ internal sealed class TestDatabaseStateHandler(DatabaseNode currentNode, Replica
 				break;
 			}
 		}
+
+		// simulate long-running work
+		await token.WaitAsync();
 	}
 
 	public ValueTask<ReplicaState> GetReplicaStateAsync(CancellationToken token)
