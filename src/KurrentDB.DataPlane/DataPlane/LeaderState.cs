@@ -5,6 +5,7 @@ namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
 
+// Leader, replicating to other nodes.
 internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	DatabaseCluster cluster,
 	double renewalRate) : DatabaseState {

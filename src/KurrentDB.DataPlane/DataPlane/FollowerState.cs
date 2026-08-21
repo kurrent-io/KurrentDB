@@ -5,6 +5,7 @@ namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
 
+// Follower (including RoR), replicating from the leader.
 internal sealed class FollowerState(IDatabaseStateHandler handler, DatabaseCluster database) : DatabaseState {
 	protected override Task RunAsync() {
 		return database.LeaderNode is { } leaderNode

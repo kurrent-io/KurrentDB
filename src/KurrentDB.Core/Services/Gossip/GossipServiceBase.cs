@@ -266,6 +266,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 		_bus.Publish(new GossipMessage.GossipUpdated(_cluster));
 	}
 
+	// Replication connection dropped so we tried to get gossip via grpc and couldn't.
 	public void Handle(GossipMessage.GetGossipFailed message) {
 		if (_state != GossipState.Working)
 			return;
