@@ -252,11 +252,11 @@ static class KontextRetrievalServiceCollectionExtensions {
         }
     }
 
-    static IKontextRetriever CreateDefaultRetriever(IServiceProvider sp) =>
-        KontextRetriever.New()
-            .Focused(
-                sp.GetRequiredService<KontextDataStore>(),
-                sp.GetRequiredService<EmbeddingGenerator>(),
-                sp.GetService<TimeProvider>())
+    static IKontextRetriever CreateDefaultRetriever(IServiceProvider sp) {
+        var store = sp.GetRequiredService<KontextDataStore>();
+
+        return KontextRetriever.New()
+            .Connected(store, store, sp.GetRequiredService<EmbeddingGenerator>(), sp.GetService<TimeProvider>())
             .Build();
+    }
 }

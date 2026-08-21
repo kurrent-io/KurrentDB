@@ -35,7 +35,7 @@ namespace Kurrent.Kontext.Data;
 /// - every value travels as a named $parameter, never inlined into the text (validated live:
 ///   even Lance's named arguments bind); only a clause or the FLOAT[N] dimension is interpolated
 /// </summary>
-public sealed class KontextDataStore(KontextDataSource connections) : IMemoryIndex {
+public sealed class KontextDataStore(KontextDataSource connections) : IMemoryIndex, IEntityIndex {
     /// <summary>
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///
@@ -360,6 +360,130 @@ public sealed class KontextDataStore(KontextDataSource connections) : IMemoryInd
                             VectorDistance: reader.IsDBNull(15) ? null : Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture),
                             KeywordScore: reader.IsDBNull(16) ? null : Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture)));
                     }
+
+                    return results;
+                }, ct)
+            .ConfigureAwait(false);
+
+        foreach (var hit in hits)
+            yield return hit;
+    }
+
+    /// <summary>
+    /// Entity search: ranks memories by the resolution confidence of the query-named entities
+    /// they mention.
+    ///
+    /// Recall's view of the world:
+    /// - retracted and superseded memories never surface
+    /// - every requested tag must be present
+    /// - scores sum each distinct matched entity's best mention confidence — larger = better,
+    ///   bounded by the number of entities the query names
+    ///
+    /// An alias matches on whole words, case- and punctuation-insensitive: "who runs Acme Corp?"
+    /// names the entity behind "acme corp", and "art" never matches inside "started".
+    /// </summary>
+    /// <param name="query">The question as plain words — scanned for catalog aliases.</param>
+    /// <param name="tags">Every requested tag must be present on a memory for it to surface.</param>
+    /// <param name="options">The entity-leg knobs; null = the defaults.</param>
+    /// <param name="ct">Cancels the read.</param>
+    /// <remarks>
+    /// Explicit implementation on purpose: a public overload would make the two-argument
+    /// full-text <c>SearchAsync(string, tags)</c> call ambiguous for direct store callers.
+    /// </remarks>
+    async IAsyncEnumerable<EntityHit> IEntityIndex.SearchAsync(
+        string query,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
+        EntitySearchOptions? options,
+        [EnumeratorCancellation] CancellationToken ct
+    ) {
+        options ??= new();
+
+        var tagFilter = tags.Count > 0
+            ? "AND array_has_all(m.tags, CAST($tags AS VARCHAR[]))"
+            : "";
+
+        // Both sides of the alias match collapse to lowercase space-separated words with the SAME
+        // expression, so word boundaries survive and the two sides can never disagree.
+        var commandText =
+            $"""
+             -- the query as ' word word ' for whole-word containment
+             WITH query_words AS (
+                 SELECT ' ' || trim(regexp_replace(lower($query), '[^\pL\pN]+', ' ', 'g')) || ' ' AS text
+             ),
+
+             -- every alias in the same shape
+             alias_words AS (
+                 SELECT entity_id,
+                        ' ' || trim(regexp_replace(lower(alias), '[^\pL\pN]+', ' ', 'g')) || ' ' AS needle
+                 FROM ldb.main.entities
+             ),
+
+             -- entities whose alias occurs in the query
+             named_entities AS (
+                 SELECT DISTINCT entity_id
+                 FROM alias_words, query_words
+                 WHERE needle <> '  '
+                   AND contains(query_words.text, needle)
+             ),
+
+             -- one confidence per (memory, entity): the best mention
+             best_mentions AS (
+                 SELECT memory_id, entity_id, max(confidence) AS confidence
+                 FROM ldb.main.entity_mentions
+                 JOIN named_entities USING (entity_id)
+                 GROUP BY memory_id, entity_id
+             ),
+
+             -- one score per memory: the sum over its named entities
+             memory_scores AS (
+                 SELECT memory_id, sum(confidence) AS entity_score
+                 FROM best_mentions
+                 GROUP BY memory_id
+             )
+             SELECT m.memory_id,
+                    m.memory_type,
+                    m.content,
+                    m.importance,
+                    m.tags,
+                    m.reasoning,
+                    m.evidence,
+                    m.supersedes,
+                    m.validity_start,
+                    m.validity_end,
+                    m.retained_at,
+                    m.last_accessed_at,
+                    m.retracted_at,
+                    m.superseded_at,
+                    m.superseded_by,
+                    s.entity_score
+             FROM ldb.main.memories m
+             JOIN memory_scores s ON s.memory_id = m.memory_id
+             WHERE m.is_retracted = false
+               AND m.is_superseded = false
+               {tagFilter}
+             ORDER BY s.entity_score DESC
+             LIMIT $limit
+             """;
+
+        var tagValues = tags.Select(EncodeTag).ToList();
+
+        var hits = await connections.ExecuteAsync(
+                connection => {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = commandText;
+                    command.Parameters.Add(new("query", query));
+                    command.Parameters.Add(new("limit", options.Limit));
+
+                    if (tags.Count > 0)
+                        command.Parameters.Add(new("tags", tagValues));
+
+                    var       results = new List<EntityHit>();
+                    using var reader  = command.ExecuteReader();
+
+                    while (reader.Read())
+                        results.Add(new(
+                            ReadStoredMemory(reader),
+                            Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture)));
 
                     return results;
                 }, ct)

@@ -127,6 +127,33 @@ public static class KontextRetrieverBuilderExtensions {
                 .AddStage(MmrReorderer.Create());
         }
 
+        /// <summary>
+        /// The entity-aware chain: <see cref="Focused"/>'s alpha blend plus the entity leg —
+        /// memories mentioning the entities the query names — rank-fused, then the same reread
+        /// and modulation. Unmeasured against <see cref="Focused"/> on LoCoMo yet: it exists to
+        /// put resolved entities into recall, benchmark it before calling it optimal.
+        /// </summary>
+        /// <param name="index">The memories read model the hybrid leg queries.</param>
+        /// <param name="entities">The entity read model the entity leg queries.</param>
+        /// <param name="embeddingGenerator">The generator the vector half embeds the query with — the same model that embedded the stored memories.</param>
+        /// <param name="time">The clock the planner ages candidates against; null uses the system clock.</param>
+        public KontextRetrieverBuilder Connected(
+            IMemoryIndex index,
+            IEntityIndex entities,
+            EmbeddingGenerator embeddingGenerator,
+            TimeProvider? time = null
+        ) {
+            const double measuredAlpha = 0.45;
+
+            return builder
+                .Planner(new OverfetchOptions(), time)
+                .AddSearch(new HybridSearch(index, embeddingGenerator, measuredAlpha))
+                .AddSearch(new EntitySearch(entities))
+                .Fuser(ReciprocalRankFuser.Create())
+                .AddStage(Bm25Reranker.Create())
+                .AddStage(CognitiveModulator.Create());
+        }
+
         /// <inheritdoc cref="Legacy(IMemoryIndex,EmbeddingGenerator,KontextRetrievalOptions)"/>
         public KontextRetrieverBuilder Legacy(
             IMemoryIndex index,

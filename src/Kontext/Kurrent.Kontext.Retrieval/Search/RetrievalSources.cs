@@ -8,4 +8,5 @@ public static class RetrievalSources {
     public const string Vector  = "vector";
     public const string Keyword = "keyword";
     public const string Hybrid  = "hybrid";
+    public const string Entity  = "entity";
 }
