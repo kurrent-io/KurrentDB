@@ -11,6 +11,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DotNext.Threading"/>
+		<PackageReference Include="Serilog"/>
 		<ProjectReference Include="..\KurrentDB.KontrolPlane.ObjectModel\KurrentDB.KontrolPlane.ObjectModel.csproj" />
 	</ItemGroup>
 </Project>

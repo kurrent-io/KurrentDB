@@ -18,11 +18,14 @@ partial class RaftKontroller {
 				break;
 			}
 
+			Logger.Information("Kontroller is now a KPlane leader");
+
 			// the local node is elected as Kontrol Plane leader
 			try {
 				await ProcessAppointmentsAsync(leadershipToken);
 			} catch (OperationCanceledException e) when (e.CancellationToken == leadershipToken) {
 				// the local node is not a leader anymore
+				Logger.Information("Kontroller lost its leadership");
 			}
 		}
 	}

@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DotNext.Net.Cluster" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
 	</ItemGroup>

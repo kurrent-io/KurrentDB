@@ -146,6 +146,7 @@ partial class RaftKontroller {
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
+		Logger.Information($"Appointing leader for database '{databaseId}'");
 		(var responses, var maxEpoch, currentEpoch)
 			= await FenceDatabaseAsync(databaseId, dataPlane, nodes, currentEpoch, token);
 
@@ -162,6 +163,7 @@ partial class RaftKontroller {
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
 		if (candidate is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate, CancellationToken.None)) {
+			Logger.Information($"DPlane node '{candidate}' is appointed as leader for database '{databaseId}'");
 			_appointmentState[databaseId] = new(candidate, currentEpoch);
 			_state.NotifyDatabaseChanged(databaseId);
 		}

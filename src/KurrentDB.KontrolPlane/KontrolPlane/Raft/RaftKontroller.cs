@@ -5,6 +5,8 @@ using System.Net;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
+using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
@@ -15,6 +17,8 @@ using StateMachine;
 /// Represents Raft-based implementation of <see cref="IKontroller"/> interface.
 /// </summary>
 public partial class RaftKontroller : IAsyncDisposable {
+	private static readonly ILogger Logger = Log.ForContext<RaftKontroller>();
+
 	private readonly WriteAheadLog _wal;
 	private readonly ClusterStateMachine _state;
 	private readonly RaftCluster _raft;
@@ -42,6 +46,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			LowerElectionTimeout = options.LowerElectionTimeout,
 			UpperElectionTimeout = options.UpperElectionTimeout,
 			SslOptions = options.Tls,
+			LoggerFactory = new SerilogLoggerFactory(Logger),
 		};
 
 		_raft = new(config) {
