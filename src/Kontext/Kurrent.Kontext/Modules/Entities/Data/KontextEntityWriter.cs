@@ -91,7 +91,7 @@ public sealed class KontextEntityWriter(
 
         var sql =
             $"""
-             MERGE INTO ldb.main.entity_aliases AS t
+             MERGE INTO ldb.main.entities AS t
              USING (SELECT
                  unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
                  unnest(CAST($entity_types AS VARCHAR[])) AS entity_type,

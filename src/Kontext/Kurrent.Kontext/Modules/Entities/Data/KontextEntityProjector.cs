@@ -96,8 +96,8 @@ public sealed class KontextEntityProjector(
             if (aliasesWritten == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
                 continue;
 
-            dataSource.EnsureInvertedIndex("entity_aliases");
-            dataSource.EnsureVectorIndex("entity_aliases", "embedding");
+            dataSource.EnsureInvertedIndex("entities");
+            dataSource.EnsureVectorIndex("entities", "embedding");
 
             lastOptimize = TimeProvider.System.GetTimestamp();
         }

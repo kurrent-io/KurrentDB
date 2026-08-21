@@ -89,7 +89,7 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
                 retain_versions = {CleanupRetainVersions}
             );
 
-            CREATE TABLE IF NOT EXISTS ldb.main.entity_aliases (
+            CREATE TABLE IF NOT EXISTS ldb.main.entities (
               entity_id    VARCHAR,
               entity_type  VARCHAR,
               alias        VARCHAR,
@@ -97,12 +97,12 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
               created_at   BIGINT,
               embedding    FLOAT[{Dimension}]);
 
-            CREATE INDEX entity_id_idx    ON ldb.main.entity_aliases (entity_id)    USING BTREE    WITH (replace = true);
-            CREATE INDEX entity_type_idx  ON ldb.main.entity_aliases (entity_type)  USING BTREE    WITH (replace = true);
-            CREATE INDEX alias_idx        ON ldb.main.entity_aliases (alias)        USING BTREE    WITH (replace = true);
-            CREATE INDEX alias_fts        ON ldb.main.entity_aliases (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
+            CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE    WITH (replace = true);
+            CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_idx        ON ldb.main.entities (alias)        USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_fts        ON ldb.main.entities (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
 
-            ALTER TABLE ldb.main.entity_aliases SET AUTO_CLEANUP WITH (
+            ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (
                 interval        = {CleanupIntervalCommits},
                 older_than      = '{CleanupOlderThan}',
                 retain_versions = {CleanupRetainVersions}

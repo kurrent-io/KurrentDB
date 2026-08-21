@@ -25,7 +25,7 @@ public sealed class KontextEntityResolver(KontextDataSource dataSource) {
         const string sql =
             """
             SELECT lower(alias) AS matched, entity_id
-            FROM ldb.main.entity_aliases
+            FROM ldb.main.entities
             WHERE array_contains(CAST($aliases AS VARCHAR[]), lower(alias))
             """;
 
