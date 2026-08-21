@@ -68,7 +68,7 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	}
 
 	/// <summary>
-	/// Stops any incoming replication.
+	/// Stops any incoming & outgoing replication.
 	/// </summary>
 	/// <param name="currentEpoch">The epoch reported by the KPlane.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
