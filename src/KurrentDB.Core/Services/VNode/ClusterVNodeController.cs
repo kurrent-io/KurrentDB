@@ -44,9 +44,21 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private VNodeState State {
 		get => _state;
 		set {
+			if (_state.CanReplicateToOtherNodes() &&
+				!value.CanReplicateToOtherNodes())
+				EndLeadership();
+
 			_state = value;
 			_statusTracker.OnStateChange(value);
 		}
+	}
+
+	private IEnvelope<ElectionMessage.LeadershipEnded> _leadershipEnvelope = NoopEnvelope.Instance;
+
+	private void EndLeadership() {
+		var envelope = _leadershipEnvelope;
+		_leadershipEnvelope = NoopEnvelope.Instance;
+		envelope.ReplyWith(ElectionMessage.LeadershipEnded.Instance);
 	}
 
 	private MemberInfoLite _leader;
@@ -314,6 +326,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 				VNodeState.ReadOnlyLeaderless,
 				VNodeState.PreReadOnlyReplica,
 				VNodeState.ReadOnlyReplica)
+			.When<ElectionMessage.LeaderAppointed>().Do(Handle)
 			.When<ElectionMessage.ElectionsDone>().Do(Handle);
 
 		stm.InStates(
@@ -428,6 +441,27 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 				VNodeState.ResigningLeader)
 			.When<SystemMessage.NoQuorumMessage>().Ignore()
 			.When<ReplicationMessage.ReplicaSubscriptionRequest>().Ignore();
+
+		stm.InStates(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
+			.When<SystemMessage.Freeze>().Do(Handle);
+
+		stm.InAllStatesExcept(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
+			.When<SystemMessage.Freeze>().Do(m =>
+				m.Envelope.ReplyWith(SystemMessage.Frozen.Instance));
 
 		stm.InState(VNodeState.PreLeader)
 			.When<SystemMessage.BecomeLeader>().Do(Handle)
@@ -704,7 +738,20 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			return;
 		}
 
-		_leader = message.Leader;
+		await OnLeaderDecided(message, message.Leader, token);
+	}
+
+	private ValueTask Handle(ElectionMessage.LeaderAppointed message, CancellationToken token) {
+		if (message.Leader.InstanceId == _nodeInfo.InstanceId) {
+			EndLeadership();
+			_leadershipEnvelope = message.Envelope;
+		}
+
+		return OnLeaderDecided(message, message.Leader, token);
+	}
+
+	private async ValueTask OnLeaderDecided(Message message, MemberInfoLite leader, CancellationToken token) {
+		_leader = leader;
 		_subscriptionId = Guid.NewGuid();
 		_stateCorrelationId = Guid.NewGuid();
 		_leaderConnectionCorrelationId = Guid.NewGuid();
@@ -1281,6 +1328,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private ValueTask Handle(SystemMessage.NoQuorumMessage message, CancellationToken token) {
 		Log.Information("=== NO QUORUM EMERGED WITHIN TIMEOUT... RETIRING...");
 		return _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
+	}
+
+	private async ValueTask Handle(SystemMessage.Freeze message, CancellationToken token) {
+		Log.Information("========== [{httpEndPoint}] IS FROZEN BY THE KONTROL PLANE. State was {State}.",
+			_nodeInfo.HttpEndPoint, State);
+		await _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
+		message.Envelope.ReplyWith(SystemMessage.Frozen.Instance);
 	}
 
 	private ValueTask Handle(SystemMessage.WaitForChaserToCatchUp message, CancellationToken token) {

@@ -164,9 +164,11 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		var _electionsDoneMessage = new ElectionMessage.ElectionsDone(1, mem1.EpochNumber, mem1.ToLite());
 		var _leaderFoundMessage = new LeaderDiscoveryMessage.LeaderFound(mem1.ToLite());
 		var _replicaStateMessage = new SystemMessage.BecomeReadOnlyReplica(mem1.InstanceId, mem1.ToLite());
+		var _leaderAppointedMessage = new ElectionMessage.LeaderAppointed(mem1.EpochNumber, mem1.ToLite());
 		_sut.Handle(_electionsDoneMessage);
 		_sut.Handle(_leaderFoundMessage);
 		_sut.Handle(_replicaStateMessage);
+		_sut.Handle(_leaderAppointedMessage);
 		Assert.IsType<TelemetryMessage.Collect>(schedule.ReplyMessage);
 		schedule.Reply();
 
@@ -204,6 +206,9 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 
 		Assert.Equal(Guid.Parse(_sink.Data["cluster"]["leaderId"].ToString()), _replicaStateMessage.Leader.InstanceId);
 		Assert.Equal(Int32.Parse(_sink.Data["database"]["epochNumber"].ToString()), _replicaStateMessage.Leader.EpochNumber);
+
+		Assert.Equal(Guid.Parse(_sink.Data["cluster"]["leaderId"].ToString()), _leaderAppointedMessage.Leader.InstanceId);
+		Assert.Equal(Int32.Parse(_sink.Data["database"]["epochNumber"].ToString()), _leaderAppointedMessage.EpochNumber);
 
 		Assert.NotNull(_sink.Data["fakeComponent"]);
 	}
