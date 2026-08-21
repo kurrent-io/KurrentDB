@@ -34,7 +34,7 @@ public interface IDatabaseStateHandler {
 	/// <param name="changes">An infinite sequence of database cluster changes.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The task representing asynchronous state of the operation.</returns>
-	Task RunLeadershipAsync(IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token);
+	Task RunLeadershipAsync(DatabaseCluster initial, IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token);
 
 	/// <summary>
 	/// Gets the replication state
