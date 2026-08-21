@@ -10,9 +10,5 @@ public enum RetainOutcome {
 
 	Created = 1,
 
-	Merged = 2,
-
-	Noop = 3,
-
-	Deferred = 4,
+	Noop = 2,
 }

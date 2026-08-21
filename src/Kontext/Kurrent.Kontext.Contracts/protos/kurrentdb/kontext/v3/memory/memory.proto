@@ -45,35 +45,30 @@ service MemoryService {
   // not exist yet. Retain the sources first, then retain the memory that cites them. If the second
   // call fails you are left with valid standalone memories, which is a harmless outcome.
   //
-  // RETAIN DECIDES BEFORE IT WRITES. The server searches for what you are about to duplicate and
-  // acts on what it finds, so the same claim sent twice does not become two memories. Every result
-  // carries an `outcome` saying what happened:
-  //   - CREATED  → nothing close enough existed. A new memory, superseding nothing.
-  //   - MERGED   → a live memory said the same thing. A new memory superseding it, carrying the
-  //                union of both tag sets and both citation lists.
-  //   - NOOP     → an identical memory already exists under the same tags. Nothing was written and
-  //                `memory_id` is that existing memory.
-  //   - DEFERRED → too close to call. NOTHING WAS WRITTEN. `candidates` holds the live memories
-  //                that made it ambiguous, nearest first.
+  // RETAIN ALWAYS STORES. It does not merge, block, refuse, or deduplicate — the only thing it
+  // will not do is write a memory byte-for-byte identical to one already live (same content, same
+  // tags, same evidence), which comes back NOOP with that memory's id. That is an idempotency
+  // guard against a resend, not deduplication: anything less than identical is stored.
   //
-  // DEFERRED is the only outcome that needs you. Read the candidates, decide, and send the memory
-  // again with `decided` set: `supersedes: [candidate_id]` to merge with one, or `supersedes`
-  // empty to create it as a distinct claim. Without `decided` the check runs again and defers
-  // again.
+  // Duplicates are therefore YOUR call and the curation pass's, never the server's. Deciding from
+  // a similarity score at write time means guessing which tags and which citations you meant to
+  // keep, and a memory the server rewrote is one you did not author. Search first with `recall`
+  // when it matters, and correct with `supersedes` when you find you already knew something.
   //
-  // The server cannot decide every case, and does not pretend to. A reworded duplicate that shares
-  // almost no vocabulary can fall outside the merge band, so duplicates still reach the store; the
-  // scheduled "dream" pass folds what the write path could not.
+  // Set `neighbours` and each stored memory comes back with that many existing memories nearest
+  // it, so "what am I storing next to?" costs no extra round trip. They are reported AFTER the
+  // write and change nothing — you owe no answer, and ignoring them loses nothing but a duplicate
+  // the curation pass will fold.
   //
-  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_FACT,
+  // Example: retain { neighbours: 3, memories: [{ memory_type: MEMORY_TYPE_FACT,
   //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
   //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
   //
-  // Returns: one result per input memory, in order, each with its `outcome`.
+  // Returns: one result per input memory, in order, each with its `outcome` and `memory_id`.
   //
-  // Safety: writing, additive — never overwrites or deletes. A MERGE marks its predecessor
-  // superseded; the predecessor stays readable. Reading candidates does NOT touch their recency
-  // clocks (see THE ACCESS RULE).
+  // Safety: writing, additive — never overwrites or deletes. Supersession is expressed by YOU
+  // through `supersedes`, and the superseded memory stays readable. Reporting neighbours does NOT
+  // touch their recency clocks (see THE ACCESS RULE).
   rpc Retain(RetainRequest) returns (RetainResponse);
 
   // TOOL — recall — search by MEANING (input: a natural-language `query`).
@@ -185,10 +180,11 @@ message RetainRequest {
   // Results come back in this order, one per entry.
   repeated Memory memories = 1;
 
-  // Set this ONLY when re-sending memories the server returned as DEFERRED. It commits the call you
-  // made from the candidates: `supersedes` populated merges with those memories, `supersedes` empty
-  // creates a distinct claim. Without it the duplicate check runs again and defers again.
-  bool decided = 2;
+  // How many existing memories nearest each stored one to report back, capped by server
+  // configuration. Leave it at 0 and the server does no search at all, which is the cheap path:
+  // the embedding and the vector search exist ONLY to answer this. Ask for a few (2-3) when you
+  // want to know what you are storing next to.
+  int32 neighbours = 2;
 }
 
 message RetainResponse {
@@ -199,24 +195,19 @@ message RetainResponse {
     // What the server did with the memory you sent at this position.
     RetainOutcome outcome = 1;
 
-    // The memory this result resolves to: the newly written one for CREATED and MERGED, the
-    // existing untouched one for NOOP. EMPTY for DEFERRED, where nothing was written.
+    // The newly written memory for CREATED; the existing, untouched one for NOOP.
     string memory_id = 2;
 
-    // MERGED only: the live memories this one superseded. They stay readable, marked superseded.
-    // One entry when the server made the call; however many you listed when you supplied
-    // `supersedes` yourself.
-    repeated string superseded_memory_ids = 3;
-
-    // DEFERRED only: the live memories too close to call against, nearest first, capped by server
-    // configuration. Live means the tip of a supersession chain — superseded memories never appear.
-    // `reclaim` the one you intend to merge with when you need its evidence to build the successor.
-    repeated RelatedMemory candidates = 4;
+    // The live memories nearest this one, nearest first — present only when you asked for them and
+    // the memory was CREATED. Live means the tip of a supersession chain, so superseded memories
+    // never appear. ADVISORY: they were reported after the write, nothing was blocked or changed,
+    // and you owe no response. `reclaim` one when you need its evidence or reasoning.
+    repeated Neighbour neighbours = 3;
   }
 
-  message RelatedMemory {
+  message Neighbour {
     // Raw vector distance, SMALLER = more alike. Squared L2 over unit-length embeddings, so it
-    // means the same thing in every query — unlike the engine's blended score, which is normalised
+    // means the same thing in every query — unlike a blended search score, which is normalised
     // across whatever that one search happened to return.
     double distance = 1;
 
@@ -225,28 +216,22 @@ message RetainResponse {
     bool keyword_match = 2;
 
     // The lean projection — enough to judge whether this duplicates, corroborates, or contradicts
-    // what you are storing, without a round trip. `reclaim` it when you need evidence/reasoning.
+    // what you just stored, without a round trip.
     LeanMemory memory = 3;
   }
 }
 
-// What retain did with one memory. See the Retain rpc for how to answer a DEFERRED result.
+// What retain did with one memory.
 enum RetainOutcome {
   RETAIN_OUTCOME_UNSPECIFIED = 0;
 
-  // Nothing close enough existed. A new memory, superseding nothing.
+  // The memory was stored.
   RETAIN_OUTCOME_CREATED = 1;
 
-  // A live memory said the same thing. A new memory superseding it, carrying the union of both
-  // tag sets and both citation lists.
-  RETAIN_OUTCOME_MERGED = 2;
-
-  // An identical memory already exists under the same tags. Nothing was written.
-  RETAIN_OUTCOME_NOOP = 3;
-
-  // Too close to call. NOTHING WAS WRITTEN — read `candidates`, decide, and retain again with
-  // `decided` set.
-  RETAIN_OUTCOME_DEFERRED = 4;
+  // A live memory is already byte-for-byte this one — same content, same tags, same evidence — so
+  // nothing was written and `memory_id` is that memory. An idempotency guard, not deduplication:
+  // anything less than identical is stored.
+  RETAIN_OUTCOME_NOOP = 2;
 }
 
 //===================================================================

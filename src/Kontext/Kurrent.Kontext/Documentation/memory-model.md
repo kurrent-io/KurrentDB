@@ -377,31 +377,29 @@ reasoning: It mutates _cache without a lock while Publish runs on the thread poo
 
 Changing the code kills the claim and both reasons together. There is nothing to supersede separately.
 
-### Retain decides before it writes
+### Retain always stores
 
-The server searches for what you are about to duplicate and acts on it, so the same claim sent twice does not become two
-memories. Every result carries an outcome:
+There are two outcomes, and only one of them is a decision:
 
-| Outcome    | What happened                                                                     | Written? |
-|------------|-----------------------------------------------------------------------------------|----------|
-| `CREATED`  | nothing close enough existed                                                      | yes      |
-| `MERGED`   | a live memory said the same thing; the successor carries the union of both        | yes      |
-| `NOOP`     | an identical memory already exists under the same tags                            | no       |
-| `DEFERRED` | too close to call — `candidates` holds the memories that made it ambiguous        | **no**   |
+| Outcome   | What happened                                                                       | Written? |
+|-----------|--------------------------------------------------------------------------------------|----------|
+| `CREATED` | the memory was stored                                                                | yes      |
+| `NOOP`    | a live memory is already byte-for-byte this one — same content, tags and evidence     | no       |
 
-`DEFERRED` is the only outcome that needs you. Read the candidates, then send the memory again with `decided` set:
-`supersedes` populated to merge with one, `supersedes` empty to create it as a distinct claim. Without `decided` the
-check runs again and defers again. Supplying `supersedes` yourself skips the check entirely, because you have already
-made the call.
+`NOOP` is an idempotency guard against a resend, not deduplication. Anything less than identical is stored, including
+the same content under different tags.
 
-### Why three bands and not one threshold
+Set `neighbours` on the request and each stored memory comes back with that many existing memories nearest it, each
+carrying its raw `distance` and whether the keyword leg matched. They are reported after the write and change nothing.
+You owe no answer, and ignoring them costs a duplicate that curation folds.
 
-The decision reads the **raw vector distance**, never the engine's blended score. That blend min-max normalises each leg
-across whatever the search returned and adds nothing for a leg that missed the row, so a semantic duplicate found only
-by the vector leg and a lexical stranger found only by the keyword leg both land on exactly `alpha`. The number cannot
-separate them, and that is arithmetic rather than tuning.
+### Why the server does not decide
 
-Raw distance can, but not with a single cut. Measured over 12 planted pairs against 300 real conversation turns
+Merging at write time means guessing what you meant. If you retain a claim carrying three tags and the store already
+holds it under seven, folding the two together hands back a memory labelled in ways you never chose — and you did not
+"forget" to supersede the old one, you did not know it existed. A memory the server rewrote is one you did not author.
+
+The measurement says the same thing. Over 12 planted pairs against 300 real conversation turns
 (`DuplicateDistanceSeparationProbeTests`):
 
 ```
@@ -410,16 +408,23 @@ semantic reword       0.6157 - 1.7604      keyword leg found 0/6
 nearest stranger      1.2230 - 1.5868
 ```
 
-Rewords overlap strangers by 0.54, so no threshold splits duplicates from strangers. Three bands are forced: merge below
-the closest stranger, append above the furthest duplicate, and defer in between rather than guess.
+Rewords and strangers overlap by 0.54. There is no cut that separates a duplicate from an unrelated memory, so any
+write-time rule either merges things that are not the same or interrogates you about things that obviously are not.
+Mem0 takes the first road and is known for silently deleting memories its users still wanted.
 
-The bands are **provisional**. They come from 12 pairs on one model, and they are configuration for that reason.
+Duplicates are therefore yours to resolve and the curation pass's — with `recall` before you write when it matters, and
+`supersedes` when you find you already knew something. Curation gets the whole corpus and a model; the write path gets
+one number.
 
-### What the write path cannot catch
+### The distance, when you ask for it
 
-A reword sharing almost no vocabulary can fall outside the merge band, and one of the twelve landed above every stranger.
-Duplicates still reach the store, and the scheduled pass folds what the write path could not. Retain narrows the problem;
-it does not close it.
+A neighbour reports the **raw vector distance**, never the engine's blended score. That blend min-max normalises each
+leg across whatever the search returned and adds nothing for a leg that missed the row, so a duplicate found only by the
+vector leg and a stranger found only by the keyword leg both land on exactly `alpha`. Raw squared L2 over unit-length
+embeddings means the same thing in every query; the blend does not survive leaving its own result set.
+
+`keyword_match` is the second half of the signal. A keyword match at a low distance is a restatement in mostly the same
+words. A low distance alone is a reword.
 
 ---
 
@@ -645,7 +650,7 @@ The clock advances when **the agent's intent** selected the memory, never when t
 | `recall` — you asked, this answered                  | **refreshes** |
 | `reclaim` — you named the id                         | **refreshes** |
 | `recollect` — an enumeration you mostly discard      | no            |
-| `candidates` on a deferred retain — offered unbidden | no            |
+| `neighbours` on retain — the server offered them unbidden | no       |
 
 Refreshing on the last two would record accesses that never happened and inflate memories nobody used.
 
@@ -699,7 +704,7 @@ would be exempt by construction, because his `content_time` is closed.
 3. Is the attribution inside the content, where it belongs?
 4. Would a reader six months out understand this with no other context?
 5. Do the parts die together? If not, split them.
-6. If it came back `DEFERRED`, did I read the candidates before answering with `decided`?
+6. Did I `recall` first, if storing a duplicate would actually matter here?
 
 **Grounding.** The retrieval mechanics come from *Generative Agents: Interactive Simulacra of Human Behavior* (Park et
 al., 2023) — the memory stream, the recency-importance-relevance score, and reflection as a process rather than a record

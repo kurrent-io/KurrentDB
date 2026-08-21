@@ -12,12 +12,10 @@ public sealed class RetainedMemory {
 
 	public string MemoryId { get; set; } = "";
 
-	public IReadOnlyList<string> SupersededMemoryIds { get; set; } = [];
-
-	public IReadOnlyList<RelatedMemory> Candidates { get; set; } = [];
+	public IReadOnlyList<Neighbour> Neighbours { get; set; } = [];
 }
 
-public sealed class RelatedMemory {
+public sealed class Neighbour {
 	public double Distance { get; set; }
 
 	public bool KeywordMatch { get; set; }

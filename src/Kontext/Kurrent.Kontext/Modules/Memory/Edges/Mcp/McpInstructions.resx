@@ -94,29 +94,26 @@ position i, always, same length, same order. So you cannot cite a memory you are
 sources first, then retain the memory that cites them. If that second call fails you are left with valid standalone
 memories, which is harmless.
 
-RETAIN DECIDES BEFORE IT WRITES. The server searches for what you are about to duplicate and acts on what it finds, so
-the same claim sent twice does not become two memories. Every result carries an outcome:
-- Created: nothing close enough existed. A new memory, superseding nothing.
-- Merged: a live memory said the same thing. A new memory superseding it, carrying the union of both tag sets and both
-  citation lists.
-- Noop: an identical memory already exists under the same tags. Nothing was written, and memoryId is that memory.
-- Deferred: too close to call. NOTHING WAS WRITTEN. candidates holds the live memories that made it ambiguous.
+RETAIN ALWAYS STORES. It does not merge, block, refuse, or deduplicate. The only write it refuses is a memory already
+live in exactly this form — same content, same tags, same evidence — which comes back Noop with that memory's id. That
+is an idempotency guard against a resend, not deduplication: anything less than identical is stored.
 
-DEFERRED IS THE ONLY OUTCOME THAT NEEDS YOU. Read the candidates, decide, and send the memory again with decided set:
-supersedes on it to merge with one, supersedes empty to create it as a distinct claim. Without decided the check runs
-again and defers again. Supplying supersedes yourself skips the check entirely — you have already made the call.
+DUPLICATES ARE YOUR CALL. Deciding from a similarity score at write time means guessing which tags and which citations
+you meant to keep, and a memory the server rewrote is one you did not author. Search with recall first when it matters,
+and correct with supersedes when you find you already knew something.
 
-The server cannot decide every case and does not pretend to. A reworded duplicate sharing almost no vocabulary can fall
-outside the merge band, so duplicates still reach the store; a scheduled pass folds what the write path could not.
+Set neighbours and each stored memory comes back with that many existing memories nearest it, so "what am I storing next
+to?" costs no extra round trip. They are reported AFTER the write and change nothing — you owe no answer, and ignoring
+them loses nothing but a duplicate the curation pass will fold.
 
-Additive: a merge marks its predecessor superseded, and the predecessor stays readable. Returns one result per memory,
+Additive: nothing is overwritten or deleted, and a memory you supersede stays readable. Returns one result per memory,
 in order.</value>
   </data>
   <data name="tool.retain.param.memories" xml:space="preserve">
     <value>One or more memories to store — each written to stand on its own.</value>
   </data>
-  <data name="tool.retain.param.decided" xml:space="preserve">
-    <value>Set this ONLY when re-sending memories the server returned as Deferred. It commits the call you made from the candidates: supersedes populated merges with those memories, supersedes empty creates a distinct claim. Without it the duplicate check runs again and defers again.</value>
+  <data name="tool.retain.param.neighbours" xml:space="preserve">
+    <value>How many existing memories nearest each stored one to report back. Leave it at 0 and the server does no search at all, which is the cheap path. Ask for a few (2-3) when you want to know what you are storing next to.</value>
   </data>
   <data name="tool.reclaim.param.ids" xml:space="preserve">
     <value>The exact memory ids to fetch back.</value>
@@ -437,16 +434,16 @@ rather than arbitrary ones.</value>
   <data name="type.ReflectResult.synthesizedMemoryIds" xml:space="preserve">
     <value>Ids of memories synthesized.</value>
   </data>
-  <data name="type.RelatedMemory" xml:space="preserve">
-    <value>A live memory too close to the incoming one for the server to call.</value>
+  <data name="type.Neighbour" xml:space="preserve">
+    <value>An existing memory near one you just stored. Advisory — it was reported after the write and you owe no answer.</value>
   </data>
-  <data name="type.RelatedMemory.memory" xml:space="preserve">
-    <value>The candidate memory itself.</value>
+  <data name="type.Neighbour.memory" xml:space="preserve">
+    <value>The neighbouring memory itself.</value>
   </data>
-  <data name="type.RelatedMemory.distance" xml:space="preserve">
+  <data name="type.Neighbour.distance" xml:space="preserve">
     <value>Vector distance, SMALLER = more alike. Comparable across queries, unlike a blended search score.</value>
   </data>
-  <data name="type.RelatedMemory.keywordMatch" xml:space="preserve">
+  <data name="type.Neighbour.keywordMatch" xml:space="preserve">
     <value>The keyword search matched this memory too. A keyword match at a low distance is a restatement in mostly the same words; a low distance alone is a reword.</value>
   </data>
   <data name="type.RetainOutcome" xml:space="preserve">
@@ -454,10 +451,8 @@ rather than arbitrary ones.</value>
 
 Values:
 - Unspecified: Not set.
-- Created: Nothing close enough existed. A new memory, superseding nothing.
-- Merged: A live memory said the same thing. A new memory superseding it, carrying the union of both tag sets and both citation lists.
-- Noop: An identical memory already exists under the same tags. Nothing was written.
-- Deferred: Too close to call. NOTHING WAS WRITTEN — read candidates, decide, and retain again with decided set.</value>
+- Created: The memory was stored.
+- Noop: A live memory is already byte-for-byte this one — same content, same tags, same evidence — so nothing was written and memoryId is that memory.</value>
   </data>
   <data name="type.RetainResult" xml:space="preserve">
     <value>Result of a retain — one outcome per input memory, in the same order.</value>
@@ -469,16 +464,13 @@ Values:
     <value>The outcome for a single stored memory.</value>
   </data>
   <data name="type.RetainedMemory.outcome" xml:space="preserve">
-    <value>What the server did with this memory: Created, Merged, Noop or Deferred.</value>
+    <value>What the server did with this memory: Created or Noop.</value>
   </data>
   <data name="type.RetainedMemory.memoryId" xml:space="preserve">
-    <value>The memory this result resolves to: the newly written one for Created and Merged, the existing untouched one for Noop. EMPTY for Deferred, where nothing was written.</value>
+    <value>The newly written memory for Created; the existing, untouched one for Noop.</value>
   </data>
-  <data name="type.RetainedMemory.supersededMemoryIds" xml:space="preserve">
-    <value>Merged only: the live memories this one superseded. They stay readable, marked superseded.</value>
-  </data>
-  <data name="type.RetainedMemory.candidates" xml:space="preserve">
-    <value>Deferred only: the live memories too close to call against, nearest first. Read them, decide, then retain again with decided set.</value>
+  <data name="type.RetainedMemory.neighbours" xml:space="preserve">
+    <value>The live memories nearest this one, nearest first — present only when you asked for them. Advisory: reported after the write, nothing was blocked or changed, and you owe no answer.</value>
   </data>
   <data name="type.SortDirection" xml:space="preserve">
     <value>Sort direction for a recollect listing.

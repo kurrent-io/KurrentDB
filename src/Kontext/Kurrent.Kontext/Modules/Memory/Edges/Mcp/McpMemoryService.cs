@@ -33,10 +33,10 @@ public sealed class McpMemoryService(IKontextMemory service) {
         UseStructuredContent = true,
         Destructive = false,
         OpenWorld = false)]
-    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Model.Memory> memories, bool decided = false, CancellationToken ct = default) {
+    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Model.Memory> memories, int neighbours = 0, CancellationToken ct = default) {
         var request = new Contracts.RetainRequest {
-            Memories = { memories.Select(ToContract) },
-            Decided  = decided,
+            Memories   = { memories.Select(ToContract) },
+            Neighbours = neighbours,
         };
 
         var response = await service

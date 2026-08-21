@@ -8,13 +8,13 @@ using LeanMemory = Kurrent.Kontext.Memory.Mcp.Model.LeanMemory;
 using MemoryImportance = Kurrent.Kontext.Memory.Mcp.Model.MemoryImportance;
 using MemoryRef = Kurrent.Kontext.Memory.Mcp.Model.MemoryRef;
 using MemoryType = Kurrent.Kontext.Memory.Mcp.Model.MemoryType;
+using Neighbour = Kurrent.Kontext.Memory.Mcp.Model.Neighbour;
 using RetainOutcome = Kurrent.Kontext.Memory.Mcp.Model.RetainOutcome;
 using RecalledMemory = Kurrent.Kontext.Memory.Mcp.Model.RecalledMemory;
 using RecallResult = Kurrent.Kontext.Memory.Mcp.Model.RecallResult;
 using RecollectSort = Kurrent.Kontext.Memory.Mcp.Model.RecollectSort;
 using RecordRef = Kurrent.Kontext.Memory.Mcp.Model.RecordRef;
 using ReflectResult = Kurrent.Kontext.Memory.Mcp.Model.ReflectResult;
-using RelatedMemory = Kurrent.Kontext.Memory.Mcp.Model.RelatedMemory;
 using RetainedMemory = Kurrent.Kontext.Memory.Mcp.Model.RetainedMemory;
 using RetainResult = Kurrent.Kontext.Memory.Mcp.Model.RetainResult;
 using SortDirection = Kurrent.Kontext.Memory.Mcp.Model.SortDirection;
@@ -201,14 +201,13 @@ static class McpMappers {
 	public static RetainedMemory ToModel(Contracts.RetainResponse.Types.RetainResult m) => new() {
 		Outcome = ToModel(m.Outcome),
 		MemoryId = m.MemoryId,
-		SupersededMemoryIds = m.SupersededMemoryIds.ToList(),
-		Candidates = m.Candidates.Select(ToModel).ToList(),
+		Neighbours = m.Neighbours.Select(ToModel).ToList(),
 	};
 
-	public static RelatedMemory ToModel(Contracts.RetainResponse.Types.RelatedMemory r) => new() {
-		Distance = r.Distance,
-		KeywordMatch = r.KeywordMatch,
-		Memory = ToModel(r.Memory),
+	public static Neighbour ToModel(Contracts.RetainResponse.Types.Neighbour n) => new() {
+		Distance = n.Distance,
+		KeywordMatch = n.KeywordMatch,
+		Memory = ToModel(n.Memory),
 	};
 
 	public static RecallResult ToModel(Contracts.RecallResponse r) => new() {
