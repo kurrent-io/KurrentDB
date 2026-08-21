@@ -10,6 +10,12 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Messages;
 
 public static partial class ElectionMessage {
+	// Triggered by
+	//  - Unknown node state
+	//  - Gossip says:
+	//      - Multiple live leaders
+	//      - 0 live leaders
+	//      - the node we think is the leader is no longer in a leader related state.
 	[DerivedMessage(CoreMessage.Election)]
 	public partial class StartElections : Message {
 		public override string ToString() {
