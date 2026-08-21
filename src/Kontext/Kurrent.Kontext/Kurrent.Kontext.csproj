@@ -32,6 +32,7 @@
     <PackageReference Include="Kurrent.Quack" />
     <PackageReference Include="Kurrent.Surge.Core" />
     <PackageReference Include="Kurrent.Surge.DuckDB" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.Managed" />
     <!-- Surge pulls System.Linq.Async transitively; net10's built-in System.Linq.AsyncEnumerable
          makes its operators ambiguous at compile time, so compile assets are excluded — the
          repo-wide remedy (see KurrentDB.Surge.csproj). -->
