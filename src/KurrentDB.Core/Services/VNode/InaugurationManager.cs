@@ -20,6 +20,7 @@ public class InaugurationManager :
 	IHandle<SystemMessage.EpochWritten>,
 	IHandle<SystemMessage.CheckInaugurationConditions>,
 	IHandle<ElectionMessage.ElectionsDone>,
+	IHandle<ElectionMessage.LeaderAppointed>,
 	IHandle<ReplicationTrackingMessage.ReplicatedTo>,
 	IHandle<ReplicationTrackingMessage.IndexedTo> {
 
@@ -73,6 +74,11 @@ public class InaugurationManager :
 
 	public void Handle(ElectionMessage.ElectionsDone received) {
 		_currentEpochNumber = received.ProposalNumber;
+		Received(received, "currentEpochNumber {currentEpochNumber}.", _currentEpochNumber);
+	}
+
+	public void Handle(ElectionMessage.LeaderAppointed received) {
+		_currentEpochNumber = received.EpochNumber;
 		Received(received, "currentEpochNumber {currentEpochNumber}.", _currentEpochNumber);
 	}
 

@@ -830,6 +830,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.EpochWritten>(inaugurationManager);
 		_mainBus.Subscribe<SystemMessage.CheckInaugurationConditions>(inaugurationManager);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(inaugurationManager);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(inaugurationManager);
 		_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(inaugurationManager);
 		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(inaugurationManager);
 
@@ -1519,6 +1520,7 @@ public class ClusterVNode<TStreamId> :
 
 		// ELECTIONS TRACKER
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(trackers.ElectionCounterTracker);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(trackers.ElectionCounterTracker);
 
 		// TELEMETRY
 		var telemetryService = new TelemetryService(
@@ -1534,6 +1536,7 @@ public class ClusterVNode<TStreamId> :
 			_mainBus.Subscribe<SystemMessage.ReplicaStateMessage>(telemetryService);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(telemetryService);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(telemetryService);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(telemetryService);
 		_mainBus.Subscribe<LeaderDiscoveryMessage.LeaderFound>(telemetryService);
 
 		// LEADER REPLICATION
@@ -1633,6 +1636,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<GossipMessage.GetGossipFailed>(gossip);
 		_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(gossip);
 
 		var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
 		_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);

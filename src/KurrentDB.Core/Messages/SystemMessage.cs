@@ -64,6 +64,9 @@ public static partial class SystemMessage {
 	public partial class RequestQueueDrained : Message {
 	}
 
+	// These trigger state changes, they are not requests for state changes.
+	// These should only be emitted by the ClusterVNodeController so that it is
+	// in full control of the transitions.
 	[DerivedMessage]
 	public abstract partial class StateChangeMessage : Message {
 		public readonly Guid CorrelationId;
@@ -306,6 +309,17 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class NoQuorumMessage : Message {
+	}
+
+	// Asks the node to stop taking part in replication.
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Freeze(IEnvelope<Frozen> envelope) : Message {
+		public IEnvelope<Frozen> Envelope => envelope;
+	}
+
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Frozen : Message {
+		public static readonly Frozen Instance = new();
 	}
 
 	[DerivedMessage(CoreMessage.System)]

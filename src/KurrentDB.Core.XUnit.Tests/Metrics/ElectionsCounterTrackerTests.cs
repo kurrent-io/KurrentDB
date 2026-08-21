@@ -17,6 +17,7 @@ namespace KurrentDB.Core.XUnit.Tests.Metrics;
 public class ElectionsCounterTrackerTests : IDisposable {
 	private Scope _disposables = new();
 	private readonly ElectionMessage.ElectionsDone _electionsDoneMessage;
+	private readonly ElectionMessage.LeaderAppointed _leaderAppointedMessage;
 
 	public ElectionsCounterTrackerTests() {
 		var endPoint = new DnsEndPoint("127.0.0.1", 1113);
@@ -25,6 +26,7 @@ public class ElectionsCounterTrackerTests : IDisposable {
 			endPoint, endPoint, endPoint, endPoint, endPoint,
 			null, 0, 0, 0, false);
 		_electionsDoneMessage = new ElectionMessage.ElectionsDone(1, 1, memberInfo.ToLite());
+		_leaderAppointedMessage = new ElectionMessage.LeaderAppointed(1, memberInfo.ToLite());
 	}
 
 	public void Dispose() {
@@ -64,6 +66,25 @@ public class ElectionsCounterTrackerTests : IDisposable {
 		sut.Handle(_electionsDoneMessage);
 
 		AssertMeasurements(listener, AssertMeasurement(5));
+	}
+
+	[Fact]
+	public void test_election_count_for_one_appointment() {
+		var (sut, listener) = GenSut();
+		sut.Handle(_leaderAppointedMessage);
+
+		AssertMeasurements(listener, AssertMeasurement(1));
+	}
+
+	// An appointment is an election as far as the metric is concerned, so the two sources add up.
+	[Fact]
+	public void test_election_count_for_elections_and_appointments() {
+		var (sut, listener) = GenSut();
+		sut.Handle(_electionsDoneMessage);
+		sut.Handle(_leaderAppointedMessage);
+		sut.Handle(_leaderAppointedMessage);
+
+		AssertMeasurements(listener, AssertMeasurement(3));
 	}
 
 	static Action<TestMeterListener<long>.TestMeasurement> AssertMeasurement(
