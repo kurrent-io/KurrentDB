@@ -266,7 +266,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 		_replicaInfo.Publisher.Publish(new SystemMessage.BecomePreReplica(
 			correlationId: Guid.NewGuid(),
 			leaderConnectionCorrelationId: Guid.NewGuid(),
-			leader: _leaderInfo.MemberInfo));
+			leader: _leaderInfo.MemberInfo.ToLite()));
 		_replicaInfo.ConnectionEstablished.WaitOne();
 		_replicaInfo.Publisher.Publish(new ReplicationMessage.SubscribeToLeader(
 			stateCorrelationId: Guid.NewGuid(),

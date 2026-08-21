@@ -24,7 +24,7 @@ public class ElectionsCounterTrackerTests : IDisposable {
 			VNodeState.Unknown, true,
 			endPoint, endPoint, endPoint, endPoint, endPoint,
 			null, 0, 0, 0, false);
-		_electionsDoneMessage = new ElectionMessage.ElectionsDone(1, 1, memberInfo);
+		_electionsDoneMessage = new ElectionMessage.ElectionsDone(1, 1, memberInfo.ToLite());
 	}
 
 	public void Dispose() {
