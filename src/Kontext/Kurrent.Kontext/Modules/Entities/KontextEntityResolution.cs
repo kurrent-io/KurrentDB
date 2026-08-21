@@ -2,116 +2,77 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf.WellKnownTypes;
-using Kurrent.Kontext.Contracts.V3.Entities;
 using Kurrent.Kontext.Contracts.V3.Memory;
-using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Modules.Entities.Extraction;
-using Kurrent.Kontext.Modules.Entities.Data;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Configuration;
 
+using Candidate = (string MemoryId, System.Collections.Generic.IReadOnlyList<Kurrent.Kontext.Modules.Entities.Extraction.ExtractedEntity> Entities);
+
 namespace Kurrent.Kontext.Modules.Entities;
 
+using Contracts = Kurrent.Kontext.Contracts.V3.Entities;
+
 /// <summary>
-/// Reads each new memory, spots the names in it, links each name to a known entity or creates
-/// one, and writes the result as an event.
+/// Reads each new memory and has the resolver decide every name's fate. Each decision lands as
+/// an event where the mention links to its entity or carries the one it created.
 /// </summary>
 public sealed class KontextEntityResolution : ProcessingModule {
-    public KontextEntityResolution(KontextDataSource dataSource, IEntityExtractor extractor, IProducerBuilder producerBuilder) {
-        Resolver  = new KontextEntityResolver(dataSource);
-        Extractor = extractor;
-        Producer  = producerBuilder.ProducerId("KontextEntityResolutionProducer").Create();
+    public KontextEntityResolution(KontextEntityResolver resolver, IEntityExtractor extractor, IProducerBuilder producerBuilder) {
+        var producer = producerBuilder.ProducerId("KontextEntityResolutionProducer").Create();
 
         Process<MemoriesRetained>(async (retained, ctx) => {
-            try {
-                var events = await ResolveRetained(retained, ctx.CancellationToken);
+            var candidates = new List<Candidate>(retained.Memories.Count);
 
-                if (events.Count == 0)
-                    return;
+            foreach (var memory in retained.Memories)
+                candidates.Add((memory.MemoryId, await extractor
+                    .ExtractAsync(memory.Memory.Content, ctx.CancellationToken)
+                    .ConfigureAwait(false)));
 
-                await Produce(events);
-            }
-            catch (Exception ex) {
-                throw new Exception($"Failed to resolve entities on {nameof(MemoriesRetained)}", ex);
-            }
+            var resolutions = await resolver
+                .ResolveAsync(candidates.SelectMany(candidate => candidate.Entities), ctx.CancellationToken)
+                .ConfigureAwait(false);
+
+            var events = candidates
+                .Where(result => result.Entities.Count > 0)
+                .Select(result => new Contracts.EntitiesMentioned {
+                    MemoryId   = result.MemoryId,
+                    ResolvedAt = Timestamp.FromDateTimeOffset(TimeProvider.System.GetUtcNow()),
+                    Mentions   = { result.Entities.Select(entity => Mention(entity, resolutions[EntityKey.For(entity.EntityType, entity.Text)])) },
+                })
+                .ToList();
+
+            if (events.Count == 0)
+                return;
+
+            var request = events
+                .Aggregate(
+                    ProduceRequest.Builder.Stream(KontextConventions.Streams.EntitiesStreamPrefix),
+                    (builder, evt) => builder.Message(evt))
+                .Create();
+
+            await producer.Produce(request, throwOnError: true).ConfigureAwait(false);
         });
     }
 
-    KontextEntityResolver Resolver  { get; }
-    IEntityExtractor      Extractor { get; }
-    IProducer             Producer  { get; }
-
-    Dictionary<EntityKey, string> CreatedIds { get; } = [];
-
-    async ValueTask<List<EntitiesMentioned>> ResolveRetained(MemoriesRetained retained, CancellationToken ct) {
-        var extractions = new List<(string MemoryId, IReadOnlyList<ExtractedEntity> Entities)>(retained.Memories.Count);
-
-        foreach (var entry in retained.Memories)
-            extractions.Add((entry.MemoryId, await Extractor.ExtractAsync(entry.Memory.Content, ct)));
-
-        var unknown = extractions
-            .SelectMany(extraction => extraction.Entities)
-            .Select(entity => EntityKey.For(entity.EntityType, entity.Text))
-            .Where(key => !CreatedIds.ContainsKey(key))
-            .ToHashSet();
-
-        var known = await Resolver.ResolveExactAsync(unknown, ct);
-
-        var resolvedAt = Timestamp.FromDateTimeOffset(TimeProvider.System.GetUtcNow());
-        var events     = new List<EntitiesMentioned>();
-
-        foreach (var (memoryId, entities) in extractions) {
-            if (entities.Count == 0)
-                continue;
-
-            var evt = new EntitiesMentioned { MemoryId = memoryId, ResolvedAt = resolvedAt };
-
-            foreach (var entity in entities)
-                evt.Mentions.Add(Resolve(entity, known));
-
-            events.Add(evt);
-        }
-
-        return events;
-    }
-
-    EntityMention Resolve(ExtractedEntity extracted, IReadOnlyDictionary<EntityKey, string> known) {
-        var key = EntityKey.For(extracted.EntityType, extracted.Text);
-
-        if (CreatedIds.TryGetValue(key, out var entityId) || known.TryGetValue(key, out entityId!)) {
-            return new EntityMention {
-                SpanText   = extracted.Text,
-                EntityId   = entityId,
-                Confidence = 1.0,
-                ResolvedBy = ResolutionMethod.Exact,
-            };
-        }
-
-        entityId = EntityId.For(extracted.EntityType, extracted.Text);
-
-        CreatedIds[key] = entityId;
-
-        return new EntityMention {
-            SpanText = extracted.Text,
-            Created = new Entity {
-                EntityId      = entityId,
-                Type          = extracted.EntityType,
-                CanonicalName = extracted.Text,
-                Aliases       = { extracted.Text },
-            },
-            Confidence = 1.0,
-            ResolvedBy = ResolutionMethod.Created,
+    static Contracts.EntityMention Mention(ExtractedEntity span, ResolvedEntity resolved) {
+        var mention = new Contracts.EntityMention {
+            SpanText   = span.Text,
+            Confidence = resolved.Confidence,
+            ResolvedBy = resolved.Method,
         };
-    }
 
-    async ValueTask Produce(List<EntitiesMentioned> events) {
-        var request = events
-            .Aggregate(
-                ProduceRequest.Builder.Stream(KontextConventions.Streams.EntitiesStreamPrefix),
-                (builder, evt) => builder.Message(evt))
-            .Create();
+        if (resolved.Method is Contracts.ResolutionMethod.Created)
+            mention.Created = new Contracts.Entity {
+                EntityId      = resolved.EntityId,
+                Type          = span.EntityType,
+                CanonicalName = span.Text,
+                Aliases       = { span.Text },
+            };
+        else
+            mention.EntityId = resolved.EntityId;
 
-        await Producer.Produce(request, throwOnError: true);
+        return mention;
     }
 }

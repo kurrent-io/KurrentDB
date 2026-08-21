@@ -58,8 +58,12 @@ static class KontextEntityResolutionWireUp {
 
         services.AddNodeSystemInfoProvider();
 
-        services.AddSingleton(ctx => new KontextEntityResolution(
+        services.AddSingleton(ctx => new KontextEntityResolver(
             ctx.GetRequiredService<KontextDataSource>(),
+            ctx.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()));
+
+        services.AddSingleton(ctx => new KontextEntityResolution(
+            ctx.GetRequiredService<KontextEntityResolver>(),
             ctx.GetRequiredService<IEntityExtractor>(),
             ctx.GetRequiredService<IProducerBuilder>()));
 
