@@ -9,6 +9,7 @@ using static System.Globalization.CultureInfo;
 namespace KurrentDB.KontrolPlane.Raft.StateMachine;
 
 partial class ClusterStateMachine {
+	private readonly nint openFileFunction;
 	private volatile SnapshotFile? _persistentSnapshot;
 
 	ISnapshot? ISnapshotManager.Snapshot => _persistentSnapshot;
@@ -90,9 +91,19 @@ partial class ClusterStateMachine {
 		clusterState.SaveToFile(tempFileName);
 
 		// This operation is atomic on modern file systems
-		File.Move(tempFileName, snapshotFileName, overwrite: true);
+		Move(tempFileName, snapshotFileName);
 
 		_persistentSnapshot = new(snapshotFileName, info);
+	}
+
+	private unsafe void Move(string sourceFileName, string destFileName) {
+		// This operation is atomic on modern file systems
+		File.Move(sourceFileName, destFileName, overwrite: true);
+
+		if (OperatingSystem.IsLinux() && openFileFunction is not 0) {
+			FlushToDisk(Path.GetDirectoryName(destFileName),
+				(delegate*unmanaged<byte*, int, int, int>)openFileFunction);
+		}
 	}
 
 	private sealed class SnapshotFile(string fileName, in CommandInfo info) : ISnapshot {

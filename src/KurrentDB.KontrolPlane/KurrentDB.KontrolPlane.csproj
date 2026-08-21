@@ -7,6 +7,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<GitVersion>false</GitVersion>
 		<RootNamespace>KurrentDB</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>

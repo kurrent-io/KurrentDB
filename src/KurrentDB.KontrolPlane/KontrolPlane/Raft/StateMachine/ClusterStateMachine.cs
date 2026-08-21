@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotNext;
 using DotNext.Collections.Generic;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
@@ -30,6 +31,10 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, I
 		_state = new(connectionPoolCapacity);
 		_databases = new();
 		_poolCapacity = connectionPoolCapacity;
+
+		if (OperatingSystem.IsLinux()) {
+			NativeLibrary.TryGetExport(NativeLibrary.GetMainProgramHandle(), "open", out openFileFunction);
+		}
 	}
 
 	public void NotifyAllTrackers() {
