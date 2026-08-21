@@ -17,11 +17,10 @@ public static partial class EntityExtractor {
         static readonly JsonSerializerOptions PayloadJson = new(JsonSerializerDefaults.Web);
 
         readonly IChatClient _chat = options.Chat
-            ?? throw new InvalidOperationException($"{nameof(Options)}.{nameof(Options.Chat)} is required.");
+            ?? throw new InvalidOperationException("No chat client configured. Set Options.Chat when creating the extractor.");
 
         /// <summary>Creates the extractor from pre-built options — the config-binding door.</summary>
-        public static Llm Create(Options options) =>
-            new(options);
+        public static Llm Create(Options options) => new(options);
 
         /// <summary>Creates the extractor over default options, tuned via the callback.</summary>
         public static Llm Create(Action<Options> configure) {
@@ -58,38 +57,33 @@ public static partial class EntityExtractor {
             var seen      = new HashSet<string>();
 
             foreach (var entity in entities) {
-                if (string.IsNullOrWhiteSpace(entity.Name))
-                    continue;
-
-                var text = entity.Name.Trim();
-
-                if (!seen.Add(EntityId.Normalize(text)))
+                if (entity.Name?.Trim() is not { Length: > 0 } text || !seen.Add(EntityId.Normalize(text)))
                     continue;
 
                 extracted.Add(new(text, EntityTypes.Normalize(entity.Type), Math.Clamp(entity.Confidence ?? 1.0, 0, 1)));
             }
 
             return extracted;
-        }
 
-        // Models fence JSON in markdown despite instructions — strip a leading ```/```json line
-        // and a trailing ``` so the fence never poisons the parse.
-        static string Unfence(string? answer) {
-            var trimmed = answer?.Trim() ?? "";
+            // Models fence JSON in markdown despite instructions — strip a leading ```/```json line
+            // and a trailing ``` so the fence never poisons the parse.
+            static string Unfence(string? answer) {
+                var trimmed = answer?.Trim() ?? "";
 
-            if (!trimmed.StartsWith("```", StringComparison.Ordinal))
-                return trimmed;
+                if (!trimmed.StartsWith("```", StringComparison.Ordinal))
+                    return trimmed;
 
-            var opening = trimmed.IndexOf('\n');
-            var closing = trimmed.LastIndexOf("```", StringComparison.Ordinal);
+                var opening = trimmed.IndexOf('\n');
+                var closing = trimmed.LastIndexOf("```", StringComparison.Ordinal);
 
-            return opening < 0 || closing <= opening ? trimmed : trimmed[(opening + 1)..closing].Trim();
-        }
+                return opening < 0 || closing <= opening ? trimmed : trimmed[(opening + 1)..closing].Trim();
+            }
 
-        static string Head(string? answer) {
-            var trimmed = answer?.Trim() ?? "<empty>";
+            static string Head(string? answer) {
+                var trimmed = answer?.Trim() ?? "<empty>";
 
-            return trimmed.Length <= 120 ? trimmed : trimmed[..120] + "…";
+                return trimmed.Length <= 120 ? trimmed : trimmed[..120] + "…";
+            }
         }
 
         sealed record ExtractionPayload(List<ExtractedEntityPayload>? Entities);

@@ -12,36 +12,40 @@ namespace Kurrent.Kontext.Modules.Entities.Data;
 /// </summary>
 public sealed class KontextEntityResolver(KontextDataSource dataSource) {
     /// <summary>
-    /// Maps each normalized surface form that exactly matches a stored alias to its entity id.
-    /// An alias shared by several entities resolves to the first scanned, disambiguation is a
-    /// later slice.
+    /// Maps each key whose normalized surface form exactly matches a stored alias of the same
+    /// entity type to its entity id. An alias shared by several entities of one type resolves to
+    /// the first scanned, disambiguation is a later slice.
     /// </summary>
-    public async ValueTask<IReadOnlyDictionary<string, string>> ResolveExactAsync(
-        IReadOnlyCollection<string> normalizedTexts, CancellationToken ct = default
+    public async ValueTask<IReadOnlyDictionary<EntityKey, string>> ResolveExactAsync(
+        IReadOnlyCollection<EntityKey> keys, CancellationToken ct = default
     ) {
-        if (normalizedTexts.Count == 0)
-            return new Dictionary<string, string>();
+        if (keys.Count == 0)
+            return new Dictionary<EntityKey, string>();
 
         const string sql =
             """
             SELECT lower(alias) AS matched, entity_id
             FROM ldb.main.entities
-            WHERE array_contains(CAST($aliases AS VARCHAR[]), lower(alias))
+            WHERE entity_type = $entity_type
+              AND array_contains(CAST($aliases AS VARCHAR[]), lower(alias))
             """;
 
         return await dataSource.ExecuteAsync(
             connection => {
-                using var command = connection.CreateCommand();
-                command.CommandText = sql;
-                command.Parameters.Add(new DuckDBParameter("aliases", normalizedTexts.ToList()));
+                var resolved = new Dictionary<EntityKey, string>();
 
-                var resolved = new Dictionary<string, string>();
+                foreach (var group in keys.GroupBy(key => key.EntityType)) {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = sql;
+                    command.Parameters.Add(new DuckDBParameter("entity_type", group.Key));
+                    command.Parameters.Add(new DuckDBParameter("aliases", group.Select(key => key.NormalizedText).ToList()));
 
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    resolved.TryAdd(reader.GetString(0), reader.GetString(1));
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                        resolved.TryAdd(new EntityKey(group.Key, reader.GetString(0)), reader.GetString(1));
+                }
 
-                return (IReadOnlyDictionary<string, string>)resolved;
+                return (IReadOnlyDictionary<EntityKey, string>)resolved;
             }, ct
         ).ConfigureAwait(false);
     }

@@ -42,7 +42,7 @@ public sealed class KontextEntityResolution : ProcessingModule {
     IEntityExtractor      Extractor { get; }
     IProducer             Producer  { get; }
 
-    Dictionary<string, string> CreatedIds { get; } = [];
+    Dictionary<EntityKey, string> CreatedIds { get; } = [];
 
     async ValueTask<List<EntitiesMentioned>> ResolveRetained(MemoriesRetained retained, CancellationToken ct) {
         var extractions = new List<(string MemoryId, IReadOnlyList<ExtractedEntity> Entities)>(retained.Memories.Count);
@@ -52,8 +52,8 @@ public sealed class KontextEntityResolution : ProcessingModule {
 
         var unknown = extractions
             .SelectMany(extraction => extraction.Entities)
-            .Select(entity => EntityId.Normalize(entity.Text))
-            .Where(normalized => !CreatedIds.ContainsKey(normalized))
+            .Select(entity => EntityKey.For(entity.EntityType, entity.Text))
+            .Where(key => !CreatedIds.ContainsKey(key))
             .ToHashSet();
 
         var known = await Resolver.ResolveExactAsync(unknown, ct);
@@ -76,10 +76,10 @@ public sealed class KontextEntityResolution : ProcessingModule {
         return events;
     }
 
-    EntityMention Resolve(ExtractedEntity extracted, IReadOnlyDictionary<string, string> known) {
-        var normalized = EntityId.Normalize(extracted.Text);
+    EntityMention Resolve(ExtractedEntity extracted, IReadOnlyDictionary<EntityKey, string> known) {
+        var key = EntityKey.For(extracted.EntityType, extracted.Text);
 
-        if (CreatedIds.TryGetValue(normalized, out var entityId) || known.TryGetValue(normalized, out entityId!)) {
+        if (CreatedIds.TryGetValue(key, out var entityId) || known.TryGetValue(key, out entityId!)) {
             return new EntityMention {
                 SpanText   = extracted.Text,
                 EntityId   = entityId,
@@ -90,7 +90,7 @@ public sealed class KontextEntityResolution : ProcessingModule {
 
         entityId = EntityId.For(extracted.EntityType, extracted.Text);
 
-        CreatedIds[normalized] = entityId;
+        CreatedIds[key] = entityId;
 
         return new EntityMention {
             SpanText = extracted.Text,
