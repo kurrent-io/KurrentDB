@@ -45,34 +45,35 @@ service MemoryService {
   // not exist yet. Retain the sources first, then retain the memory that cites them. If the second
   // call fails you are left with valid standalone memories, which is a harmless outcome.
   //
-  // EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always runs a hybrid search
-  // for each memory you store and hands back the closest LIVE memories in `related` (nearest first,
-  // capped by configuration). Live means the tip of a supersession chain — superseded
-  // memories never appear. The server does not adjudicate: it will not merge, block, or deduplicate
-  // anything. It reports; YOU DECIDE. Reading `related` is part of making this call, not a
-  // courtesy — ignore it and you leave near-duplicates for the scheduled "dream" pass to clean up.
+  // RETAIN DECIDES BEFORE IT WRITES. The server searches for what you are about to duplicate and
+  // acts on what it finds, so the same claim sent twice does not become two memories. Every result
+  // carries an `outcome` saying what happened:
+  //   - CREATED  → nothing close enough existed. A new memory, superseding nothing.
+  //   - MERGED   → a live memory said the same thing. A new memory superseding it, carrying the
+  //                union of both tag sets and both citation lists.
+  //   - NOOP     → an identical memory already exists under the same tags. Nothing was written and
+  //                `memory_id` is that existing memory.
+  //   - DEFERRED → too close to call. NOTHING WAS WRITTEN. `candidates` holds the live memories
+  //                that made it ambiguous, nearest first.
   //
-  // What to do when a neighbour matches what you just stored:
-  //   - You brought NEW SUPPORT (a second encounter, a different source) → `retain` a successor
-  //     with `supersedes: [neighbour_id]`, carrying the UNION of its citations and yours. This is
-  //     consolidation: re-encountering a belief is corroboration and should be recorded, not
-  //     discarded.
-  //   - You brought NOTHING NEW (the neighbour already says it, on the same support) → leave both
-  //     standing and move on. A successor that adds no support is not consolidation, it is a third
-  //     copy; the scheduled "dream" pass folds duplicates.
-  // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
-  // to act on when you need its evidence to build the successor.
+  // DEFERRED is the only outcome that needs you. Read the candidates, decide, and send the memory
+  // again with `decided` set: `supersedes: [candidate_id]` to merge with one, or `supersedes`
+  // empty to create it as a distinct claim. Without `decided` the check runs again and defers
+  // again.
+  //
+  // The server cannot decide every case, and does not pretend to. A reworded duplicate that shares
+  // almost no vocabulary can fall outside the merge band, so duplicates still reach the store; the
+  // scheduled "dream" pass folds what the write path could not.
   //
   // Example: retain { memories: [{ memory_type: MEMORY_TYPE_FACT,
   //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
   //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
   //
-  // Returns: one result per stored memory, in order, each with its server-assigned `memory_id` and
-  // its `related` neighbours.
+  // Returns: one result per input memory, in order, each with its `outcome`.
   //
-  // Safety: writing, additive — never overwrites or deletes, and always creates. Not idempotent:
-  // retaining the same content twice creates two memories, which is why you must act on `related`.
-  // Reporting neighbours does NOT touch their recency clocks (see THE ACCESS RULE).
+  // Safety: writing, additive — never overwrites or deletes. A MERGE marks its predecessor
+  // superseded; the predecessor stays readable. Reading candidates does NOT touch their recency
+  // clocks (see THE ACCESS RULE).
   rpc Retain(RetainRequest) returns (RetainResponse);
 
   // TOOL — recall — search by MEANING (input: a natural-language `query`).
@@ -183,6 +184,11 @@ message RetainRequest {
   // Required. One or more memories to store — see resources.proto Memory for the fields you set.
   // Results come back in this order, one per entry.
   repeated Memory memories = 1;
+
+  // Set this ONLY when re-sending memories the server returned as DEFERRED. It commits the call you
+  // made from the candidates: `supersedes` populated merges with those memories, `supersedes` empty
+  // creates a distinct claim. Without it the duplicate check runs again and defers again.
+  bool decided = 2;
 }
 
 message RetainResponse {
@@ -190,27 +196,57 @@ message RetainResponse {
   repeated RetainResult results = 1;
 
   message RetainResult {
-    // The id the server assigned to the memory you sent at this position. Always a NEW memory —
-    // retain always creates.
-    string memory_id = 1;
+    // What the server did with the memory you sent at this position.
+    RetainOutcome outcome = 1;
 
-    // Existing LIVE memories closest to the one just stored, nearest first, capped by server
-    // configuration. Live means the tip of a supersession chain. Advisory: the server does not act
-    // on these, you do — supersede the neighbour when you brought new support, and leave it
-    // standing when you did not. Populated on every retain; reading it is part of the call.
-    repeated RelatedMemory related = 2;
+    // The memory this result resolves to: the newly written one for CREATED and MERGED, the
+    // existing untouched one for NOOP. EMPTY for DEFERRED, where nothing was written.
+    string memory_id = 2;
+
+    // MERGED only: the live memories this one superseded. They stay readable, marked superseded.
+    // One entry when the server made the call; however many you listed when you supplied
+    // `supersedes` yourself.
+    repeated string superseded_memory_ids = 3;
+
+    // DEFERRED only: the live memories too close to call against, nearest first, capped by server
+    // configuration. Live means the tip of a supersession chain — superseded memories never appear.
+    // `reclaim` the one you intend to merge with when you need its evidence to build the successor.
+    repeated RelatedMemory candidates = 4;
   }
 
   message RelatedMemory {
-    // Hybrid retrieval score, higher = more alike. A CONTINUOUS, inferential signal: it can never
-    // tell you two records are the same, because different sentences embed alike and quantization
-    // rounds. Compare `memory.content` yourself when that is the question.
-    double similarity = 1;
+    // Raw vector distance, SMALLER = more alike. Squared L2 over unit-length embeddings, so it
+    // means the same thing in every query — unlike the engine's blended score, which is normalised
+    // across whatever that one search happened to return.
+    double distance = 1;
+
+    // True when the keyword leg matched this memory too. A keyword match at a low distance is a
+    // restatement in mostly the same words; a low distance alone is a reword.
+    bool keyword_match = 2;
 
     // The lean projection — enough to judge whether this duplicates, corroborates, or contradicts
-    // what you just stored, without a round trip. `reclaim` it when you need evidence/reasoning.
-    LeanMemory memory = 2;
+    // what you are storing, without a round trip. `reclaim` it when you need evidence/reasoning.
+    LeanMemory memory = 3;
   }
+}
+
+// What retain did with one memory. See the Retain rpc for how to answer a DEFERRED result.
+enum RetainOutcome {
+  RETAIN_OUTCOME_UNSPECIFIED = 0;
+
+  // Nothing close enough existed. A new memory, superseding nothing.
+  RETAIN_OUTCOME_CREATED = 1;
+
+  // A live memory said the same thing. A new memory superseding it, carrying the union of both
+  // tag sets and both citation lists.
+  RETAIN_OUTCOME_MERGED = 2;
+
+  // An identical memory already exists under the same tags. Nothing was written.
+  RETAIN_OUTCOME_NOOP = 3;
+
+  // Too close to call. NOTHING WAS WRITTEN — read `candidates`, decide, and retain again with
+  // `decided` set.
+  RETAIN_OUTCOME_DEFERRED = 4;
 }
 
 //===================================================================

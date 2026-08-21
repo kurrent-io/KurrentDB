@@ -8,13 +8,19 @@ public sealed class RetainResult {
 }
 
 public sealed class RetainedMemory {
+	public RetainOutcome Outcome { get; set; }
+
 	public string MemoryId { get; set; } = "";
 
-	public IReadOnlyList<RelatedMemory> Related { get; set; } = [];
+	public IReadOnlyList<string> SupersededMemoryIds { get; set; } = [];
+
+	public IReadOnlyList<RelatedMemory> Candidates { get; set; } = [];
 }
 
 public sealed class RelatedMemory {
-	public double Similarity { get; set; }
+	public double Distance { get; set; }
+
+	public bool KeywordMatch { get; set; }
 
 	// The lean projection, not just an id: without the content there is no way to tell a duplicate
 	// from a contradiction without a reclaim round trip — which would also refresh the recency clock

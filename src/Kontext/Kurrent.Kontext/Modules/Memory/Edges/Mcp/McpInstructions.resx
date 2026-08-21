@@ -94,19 +94,29 @@ position i, always, same length, same order. So you cannot cite a memory you are
 sources first, then retain the memory that cites them. If that second call fails you are left with valid standalone
 memories, which is harmless.
 
-EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always searches for the closest LIVE memories to each
-one you store and returns them in related, nearest first. It does not merge, block, or deduplicate anything — it
-reports, YOU decide. Reading related is part of making this call, not a courtesy. When a neighbour matches what you just
-stored: if you brought NEW SUPPORT (a second encounter, a different source), retain a successor with supersedes on it,
-carrying the union of its citations and yours — re-encountering a belief is corroboration and worth recording. If you
-brought nothing new, leave both standing and move on; a successor that adds no support is a third copy, not
-consolidation.
+RETAIN DECIDES BEFORE IT WRITES. The server searches for what you are about to duplicate and acts on what it finds, so
+the same claim sent twice does not become two memories. Every result carries an outcome:
+- Created: nothing close enough existed. A new memory, superseding nothing.
+- Merged: a live memory said the same thing. A new memory superseding it, carrying the union of both tag sets and both
+  citation lists.
+- Noop: an identical memory already exists under the same tags. Nothing was written, and memoryId is that memory.
+- Deferred: too close to call. NOTHING WAS WRITTEN. candidates holds the live memories that made it ambiguous.
 
-Additive and always creates: retaining the same content twice creates two memories, which is exactly why you must act on
-related. Returns one result per memory, in order, with its server-assigned id and its neighbours.</value>
+DEFERRED IS THE ONLY OUTCOME THAT NEEDS YOU. Read the candidates, decide, and send the memory again with decided set:
+supersedes on it to merge with one, supersedes empty to create it as a distinct claim. Without decided the check runs
+again and defers again. Supplying supersedes yourself skips the check entirely — you have already made the call.
+
+The server cannot decide every case and does not pretend to. A reworded duplicate sharing almost no vocabulary can fall
+outside the merge band, so duplicates still reach the store; a scheduled pass folds what the write path could not.
+
+Additive: a merge marks its predecessor superseded, and the predecessor stays readable. Returns one result per memory,
+in order.</value>
   </data>
   <data name="tool.retain.param.memories" xml:space="preserve">
     <value>One or more memories to store — each written to stand on its own.</value>
+  </data>
+  <data name="tool.retain.param.decided" xml:space="preserve">
+    <value>Set this ONLY when re-sending memories the server returned as Deferred. It commits the call you made from the candidates: supersedes populated merges with those memories, supersedes empty creates a distinct claim. Without it the duplicate check runs again and defers again.</value>
   </data>
   <data name="tool.reclaim.param.ids" xml:space="preserve">
     <value>The exact memory ids to fetch back.</value>
@@ -428,13 +438,26 @@ rather than arbitrary ones.</value>
     <value>Ids of memories synthesized.</value>
   </data>
   <data name="type.RelatedMemory" xml:space="preserve">
-    <value>A pre-existing memory that looks related to a just-stored one.</value>
+    <value>A live memory too close to the incoming one for the server to call.</value>
   </data>
   <data name="type.RelatedMemory.memory" xml:space="preserve">
-    <value>The related, pre-existing memory.</value>
+    <value>The candidate memory itself.</value>
   </data>
-  <data name="type.RelatedMemory.similarity" xml:space="preserve">
-    <value>Embedding cosine, ~0..1 (higher = more alike).</value>
+  <data name="type.RelatedMemory.distance" xml:space="preserve">
+    <value>Vector distance, SMALLER = more alike. Comparable across queries, unlike a blended search score.</value>
+  </data>
+  <data name="type.RelatedMemory.keywordMatch" xml:space="preserve">
+    <value>The keyword search matched this memory too. A keyword match at a low distance is a restatement in mostly the same words; a low distance alone is a reword.</value>
+  </data>
+  <data name="type.RetainOutcome" xml:space="preserve">
+    <value>What retain did with one memory.
+
+Values:
+- Unspecified: Not set.
+- Created: Nothing close enough existed. A new memory, superseding nothing.
+- Merged: A live memory said the same thing. A new memory superseding it, carrying the union of both tag sets and both citation lists.
+- Noop: An identical memory already exists under the same tags. Nothing was written.
+- Deferred: Too close to call. NOTHING WAS WRITTEN — read candidates, decide, and retain again with decided set.</value>
   </data>
   <data name="type.RetainResult" xml:space="preserve">
     <value>Result of a retain — one outcome per input memory, in the same order.</value>
@@ -445,11 +468,17 @@ rather than arbitrary ones.</value>
   <data name="type.RetainedMemory" xml:space="preserve">
     <value>The outcome for a single stored memory.</value>
   </data>
-  <data name="type.RetainedMemory.memoryId" xml:space="preserve">
-    <value>The stored memory's id. Retain always stores; the related list never blocks it.</value>
+  <data name="type.RetainedMemory.outcome" xml:space="preserve">
+    <value>What the server did with this memory: Created, Merged, Noop or Deferred.</value>
   </data>
-  <data name="type.RetainedMemory.related" xml:space="preserve">
-    <value>Advisory: existing live memories closest to the one just stored, nearest first. Populated on EVERY retain — the server reports, you decide. Supersede a neighbour when you brought new support; leave it standing when you did not.</value>
+  <data name="type.RetainedMemory.memoryId" xml:space="preserve">
+    <value>The memory this result resolves to: the newly written one for Created and Merged, the existing untouched one for Noop. EMPTY for Deferred, where nothing was written.</value>
+  </data>
+  <data name="type.RetainedMemory.supersededMemoryIds" xml:space="preserve">
+    <value>Merged only: the live memories this one superseded. They stay readable, marked superseded.</value>
+  </data>
+  <data name="type.RetainedMemory.candidates" xml:space="preserve">
+    <value>Deferred only: the live memories too close to call against, nearest first. Read them, decide, then retain again with decided set.</value>
   </data>
   <data name="type.SortDirection" xml:space="preserve">
     <value>Sort direction for a recollect listing.

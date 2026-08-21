@@ -1,7 +1,7 @@
 # The Kontext memory model
 
-> **Status: implemented** in the contracts, the MCP instructions and the retrieval pipeline. The
-> write path (`RetainAsync`) is not landed, so nothing exercises this end to end yet.
+> **Status: implemented** in the contracts, the MCP instructions, the retrieval pipeline and the
+> write path.
 
 Kontext is an agent's long-term memory. This document explains what a memory is, how to write one,
 and how recall ranks them.
@@ -377,18 +377,49 @@ reasoning: It mutates _cache without a lock while Publish runs on the thread poo
 
 Changing the code kills the claim and both reasons together. There is nothing to supersede separately.
 
-### Read the neighbours
+### Retain decides before it writes
 
-Every retain returns the closest live memories in `related`. The server never merges, blocks or deduplicates — it
-reports, and you decide.
+The server searches for what you are about to duplicate and acts on it, so the same claim sent twice does not become two
+memories. Every result carries an outcome:
 
-| What you found                                  | What to do                                                            |
-|-------------------------------------------------|-----------------------------------------------------------------------|
-| a neighbour says the same thing, on new support | retain a successor with `supersedes`, carrying the union of citations |
-| a neighbour says the same thing, nothing new    | leave both and move on. The scheduled pass folds duplicates           |
-| a neighbour contradicts it                      | one of you is wrong. Check, then supersede the loser                  |
+| Outcome    | What happened                                                                     | Written? |
+|------------|-----------------------------------------------------------------------------------|----------|
+| `CREATED`  | nothing close enough existed                                                      | yes      |
+| `MERGED`   | a live memory said the same thing; the successor carries the union of both        | yes      |
+| `NOOP`     | an identical memory already exists under the same tags                            | no       |
+| `DEFERRED` | too close to call — `candidates` holds the memories that made it ambiguous        | **no**   |
 
-Reading `related` is part of making the call, not a courtesy.
+`DEFERRED` is the only outcome that needs you. Read the candidates, then send the memory again with `decided` set:
+`supersedes` populated to merge with one, `supersedes` empty to create it as a distinct claim. Without `decided` the
+check runs again and defers again. Supplying `supersedes` yourself skips the check entirely, because you have already
+made the call.
+
+### Why three bands and not one threshold
+
+The decision reads the **raw vector distance**, never the engine's blended score. That blend min-max normalises each leg
+across whatever the search returned and adds nothing for a leg that missed the row, so a semantic duplicate found only
+by the vector leg and a lexical stranger found only by the keyword leg both land on exactly `alpha`. The number cannot
+separate them, and that is arithmetic rather than tuning.
+
+Raw distance can, but not with a single cut. Measured over 12 planted pairs against 300 real conversation turns
+(`DuplicateDistanceSeparationProbeTests`):
+
+```
+lexical restatement   0.0513 - 0.5871      keyword leg found 6/6
+semantic reword       0.6157 - 1.7604      keyword leg found 0/6
+nearest stranger      1.2230 - 1.5868
+```
+
+Rewords overlap strangers by 0.54, so no threshold splits duplicates from strangers. Three bands are forced: merge below
+the closest stranger, append above the furthest duplicate, and defer in between rather than guess.
+
+The bands are **provisional**. They come from 12 pairs on one model, and they are configuration for that reason.
+
+### What the write path cannot catch
+
+A reword sharing almost no vocabulary can fall outside the merge band, and one of the twelve landed above every stranger.
+Duplicates still reach the store, and the scheduled pass folds what the write path could not. Retain narrows the problem;
+it does not close it.
 
 ---
 
@@ -614,7 +645,7 @@ The clock advances when **the agent's intent** selected the memory, never when t
 | `recall` — you asked, this answered                  | **refreshes** |
 | `reclaim` — you named the id                         | **refreshes** |
 | `recollect` — an enumeration you mostly discard      | no            |
-| `related` on retain — the server offered it unbidden | no            |
+| `candidates` on a deferred retain — offered unbidden | no            |
 
 Refreshing on the last two would record accesses that never happened and inflate memories nobody used.
 
@@ -668,7 +699,7 @@ would be exempt by construction, because his `content_time` is closed.
 3. Is the attribution inside the content, where it belongs?
 4. Would a reader six months out understand this with no other context?
 5. Do the parts die together? If not, split them.
-6. Did I read `related`?
+6. If it came back `DEFERRED`, did I read the candidates before answering with `decided`?
 
 **Grounding.** The retrieval mechanics come from *Generative Agents: Interactive Simulacra of Human Behavior* (Park et
 al., 2023) — the memory stream, the recency-importance-relevance score, and reflection as a process rather than a record

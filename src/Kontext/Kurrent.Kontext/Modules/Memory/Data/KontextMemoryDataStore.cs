@@ -412,6 +412,48 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             yield return memory;
     }
 
+    /// <summary>The live memory whose content is exactly this, or null. Superseded memories never appear.</summary>
+    /// <remarks>
+    /// Deliberately unscoped by tags. The caller compares tag sets itself, and a filter here would
+    /// hide the case it needs most: an existing memory carrying FEWER tags than the incoming one,
+    /// which is a merge rather than a duplicate. Cross-principal isolation therefore rests entirely
+    /// on server-stamped tags, which are not implemented yet.
+    /// </remarks>
+    public async ValueTask<Contracts.StoredMemory?> FindLiveByContentAsync(string content, CancellationToken ct = default) {
+        const string commandText =
+            """
+            SELECT memory_id,
+                   memory_type,
+                   content,
+                   importance,
+                   tags,
+                   reasoning,
+                   evidence,
+                   supersedes,
+                   content_time_start,
+                   content_time_end,
+                   retained_at,
+                   last_accessed_at,
+                   superseded_at,
+                   superseded_by
+            FROM ldb.main.memories
+            WHERE is_superseded = false
+              AND content = $content
+            """;
+
+        var memories = await connections.ExecuteAsync(
+                connection => {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = commandText;
+                    command.Parameters.Add(new DuckDBParameter("content", content));
+
+                    return ReadAllStoredMemories(command);
+                }, ct)
+            .ConfigureAwait(false);
+
+        return memories.Count > 0 ? memories[0] : null;
+    }
+
     /// <summary>
     /// Streams the whole supersession family that contains the given memory — every memory
     /// connected to it through the supersession chain — oldest retained first (memory_id

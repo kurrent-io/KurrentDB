@@ -20,10 +20,11 @@ namespace Kurrent.Kontext.Tests;
 
 /// <summary>
 /// Behavioural tests for <see cref="KontextMemory"/> against a REAL DuckDB + Lance engine, over the
-/// projector-owned <see cref="KontextMemoryDataStore"/> read model. The write path is not built yet, so
-/// each test seeds the memories table directly with SQL — exactly how the projector will write it —
-/// and exercises the read-only surface the service exposes:
-/// - retain appends one MemoriesRetained event per call and mints the ids; reflect still throws
+/// projector-owned <see cref="KontextMemoryDataStore"/> read model. The projector is not in the loop
+/// here, so each test seeds the memories table directly with SQL — exactly how the projector writes
+/// it — and exercises the surface the service exposes:
+/// - retain decides each memory against the store, then appends one MemoriesRetained event for
+///   whatever it wrote; reflect still throws
 /// - recall is keyword-only BM25 search, lean by default, and never surfaces hidden memories
 /// - reclaim is an exact-id passthrough that skips ids it does not hold
 /// - recollect lists by type/tag with a sort
@@ -41,17 +42,14 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
-		// The dataset must exist even with nothing in it: retain searches for neighbours before it
+		// The dataset must exist even with nothing in it: retain searches for a duplicate before it
 		// appends, so an unseeded store would fail the search rather than return none.
 		await MemorySeeding.CreateSchema(dataSources);
 
 		var appended = new List<Contracts.MemoriesRetained>();
 		var clock    = new FakeTimeProvider(Base);
 		var store    = new KontextMemoryDataStore(dataSources);
-		var memory   = NewMemory(store, (evt, _) => {
-			appended.Add((Contracts.MemoriesRetained)evt);
-			return Task.CompletedTask;
-		}, clock);
+		var memory   = NewMemory(store, Capture(appended), clock);
 
 		var request = new Contracts.RetainRequest();
 		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "the suite runs via test-runner.cs" });
@@ -80,34 +78,196 @@ public class KontextMemoryTests {
 	}
 
 	[Test]
-	public async ValueTask retain_reports_the_near_duplicate_it_is_about_to_create() {
-		// Arrange — a store already holding the memory the caller is about to restate.
+	public async ValueTask retain_noops_when_identical_content_is_already_stored_under_the_same_tags() {
+		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
-		var       store       = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, "the test runner lives at scripts/testing/test-runner.cs", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("unrelated", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 
-		var memory  = NewMemory(store, NoOp, TimeProvider.System);
-		var request = new Contracts.RetainRequest();
+		const string content = "the test runner lives at scripts/testing/test-runner.cs";
+
+		var repo  = new Contracts.Tag { Scope = "repo", Value = "kurrentdb" };
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Tags = [KontextMemoryDataStore.EncodeTag(repo)],
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		incoming.Tags.Add(repo);
+		request.Memories.Add(incoming);
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — the same claim under tags the store already covers adds nothing, so nothing is
+		// written and the caller is handed the memory that already says it.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].MemoryId).IsEqualTo("existing");
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask retain_merges_identical_content_that_arrives_with_a_new_tag() {
+		// Arrange
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		const string content = "the test runner lives at scripts/testing/test-runner.cs";
+
+		var repo    = new Contracts.Tag { Scope = "repo", Value = "kurrentdb" };
+		var session = new Contracts.Tag { Scope = "session", Value = "9fb733bd" };
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Tags     = [KontextMemoryDataStore.EncodeTag(repo)],
+				Evidence = SeedEvidenceBlobs(),
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		incoming.Tags.Add(session);
+		request.Memories.Add(incoming);
+
+		var expectedTags = new[] { session, repo };
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — a new tag widens the claim's reach, so the successor carries both tag sets and
+		// both citation lists rather than leaving a second copy behind.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Merged);
+		await Assert.That(response.Results[0].SupersededMemoryIds).IsEquivalentTo(["existing"]);
+
+		var written = appended[0].Memories[0].Memory;
+
+		await Assert.That(written.Tags).IsEquivalentTo(expectedTags, CollectionOrdering.Any);
+		await Assert.That(written.Evidence).IsEquivalentTo([SeedEvidence()], CollectionOrdering.Any);
+	}
+
+	[Test]
+	public async ValueTask retain_merges_the_nearest_memory_when_it_sits_inside_the_merge_band() {
+		// Arrange — the stored vector and the query vector are identical, so the distance is 0 and
+		// the pair sits well inside MergeCeiling.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, "the projector checkpoints after the batch lands", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Evidence = SeedEvidenceBlobs(),
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
+		var request  = new Contracts.RetainRequest();
 
 		request.Memories.Add(new Contracts.Memory {
 			MemoryType = Contracts.MemoryType.Fact,
-			Content    = "tests run only through scripts/testing/test-runner.cs",
+			Content    = "the projector checkpoints once the batch has landed",
 		});
 
 		// Act
 		var response = await memory.RetainAsync(request);
 
-		// Assert — the neighbour is reported so the caller can supersede instead of duplicating.
-		// The server never merges or blocks: retain always stores, and the judgement stays with the
-		// caller, because similarity cannot prove two memories are the same.
-		var related = response.Results[0].Related;
+		// Assert — support accumulates along the chain: the successor inherits what it replaced.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Merged);
+		await Assert.That(response.Results[0].SupersededMemoryIds).IsEquivalentTo(["existing"]);
+		await Assert.That(appended[0].Memories[0].Memory.Evidence).IsEquivalentTo([SeedEvidence()], CollectionOrdering.Any);
+	}
 
-		await Assert.That(related).IsNotEmpty();
-		await Assert.That(related[0].Memory.MemoryId).IsEqualTo("existing");
-		await Assert.That(related[0].Similarity).IsGreaterThan(0);
-		await Assert.That(related[0].Memory.Content).IsEqualTo("the test runner lives at scripts/testing/test-runner.cs");
+	[Test]
+	public async ValueTask retain_defers_and_writes_nothing_when_the_nearest_memory_is_ambiguous() {
+		// Arrange — a query vector at cosine 0.25 to the stored one puts the pair at squared L2
+		// 2 - 2(0.25) = 1.5, between MergeCeiling and AppendFloor.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, "a colleague reported the outage during standup", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(Ambiguous));
+		var request  = new Contracts.RetainRequest();
+
+		request.Memories.Add(new Contracts.Memory {
+			MemoryType = Contracts.MemoryType.Fact,
+			Content    = "someone mentioned the downtime at the morning meeting",
+		});
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — too close to call means NOTHING was stored. The caller reads the candidates and
+		// answers with `decided`; a server that guessed here would either duplicate or destroy.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Deferred);
+		await Assert.That(response.Results[0].MemoryId).IsEmpty();
+		await Assert.That(appended).IsEmpty();
+
+		var candidates = response.Results[0].Candidates;
+
+		await Assert.That(candidates).IsNotEmpty();
+		await Assert.That(candidates[0].Memory.MemoryId).IsEqualTo("existing");
+		await Assert.That(candidates[0].Distance).IsEqualTo(1.5).Within(1e-4);
+	}
+
+	[Test]
+	public async ValueTask decided_creates_the_memory_the_server_would_otherwise_defer() {
+		// Arrange — the same ambiguous distance as the deferral above.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, "a colleague reported the outage during standup", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(Ambiguous));
+		var request  = new Contracts.RetainRequest { Decided = true };
+
+		request.Memories.Add(new Contracts.Memory {
+			MemoryType = Contracts.MemoryType.Fact,
+			Content    = "someone mentioned the downtime at the morning meeting",
+		});
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — without this the deferral has no answer for "I looked, and it is genuinely new",
+		// and an ambiguous memory could never be written at all.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].SupersededMemoryIds).IsEmpty();
+		await Assert.That(appended[0].Memories.Count).IsEqualTo(1);
+	}
+
+	[Test]
+	public async ValueTask retain_creates_when_the_nearest_memory_is_beyond_the_append_floor() {
+		// Arrange — an orthogonal query vector puts the pair at squared L2 2.0, above AppendFloor.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(0f, 1f)));
+		var request  = new Contracts.RetainRequest();
+
+		request.Memories.Add(new Contracts.Memory {
+			MemoryType = Contracts.MemoryType.Fact,
+			Content    = "the certificate rotation job runs every ninety days",
+		});
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].SupersededMemoryIds).IsEmpty();
+		await Assert.That(appended[0].Memories[0].MemoryId).IsEqualTo(response.Results[0].MemoryId);
 	}
 
 	[Test]
@@ -296,8 +456,34 @@ public class KontextMemoryTests {
 
 	#region ->> Test Infrastructure <<-
 
-	static KontextMemory NewMemory(KontextMemoryDataStore store, AppendEvent append, TimeProvider clock) =>
-		new(store, KeywordRetriever(store), append, clock, new StubEmbeddings(), new KontextMemoryOptions());
+	static KontextMemory NewMemory(KontextMemoryDataStore store, AppendEvent append, TimeProvider clock, EmbeddingGenerator? embeddings = null) =>
+		new(store, KeywordRetriever(store), append, clock, embeddings ?? new StubEmbeddings(), new KontextMemoryOptions());
+
+	/// <summary>Records what reaches the log; the projector, not this service, applies it.</summary>
+	static AppendEvent Capture(List<Contracts.MemoriesRetained> appended) =>
+		(evt, _) => {
+			appended.Add((Contracts.MemoriesRetained)evt);
+			return Task.CompletedTask;
+		};
+
+	/// <summary>
+	/// A unit vector at cosine 0.25 to <c>MemorySeeding.Vector(1f)</c>, which puts the pair at
+	/// squared L2 1.5 — between the default MergeCeiling and AppendFloor.
+	/// </summary>
+	static float[] Ambiguous => MemorySeeding.Vector(0.25f, MathF.Sqrt(1f - 0.25f * 0.25f));
+
+	/// <summary>One fixed vector for every text, so a test states the distance it wants exactly.</summary>
+	sealed class FixedEmbeddings(float[] vector) : EmbeddingGenerator {
+		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
+			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
+		) =>
+			Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(
+				values.Select(_ => new Embedding<float>(vector)).ToList()));
+
+		public object? GetService(Type serviceType, object? serviceKey = null) => null;
+
+		public void Dispose() { }
+	}
 
 	/// <summary>
 	/// Deterministic vectors keyed off the text's hash — enough to keep the vector leg well-formed
@@ -323,7 +509,7 @@ public class KontextMemoryTests {
 		public void Dispose() { }
 	}
 
-	/// <summary>A no-op append: the write path is not built, so nothing this service does emits events yet.</summary>
+	/// <summary>Discards the appended event, for the tests that assert on the response alone.</summary>
 	static readonly AppendEvent NoOp = static (_, _) => Task.CompletedTask;
 
 	/// <summary>A keyword-only pipeline over the store — recall here is raw BM25, so the seeded vectors never decide a result.</summary>
