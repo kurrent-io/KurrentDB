@@ -130,9 +130,9 @@ public static partial class SystemMessage {
 
 	[DerivedMessage]
 	public abstract partial class ReplicaStateMessage : StateChangeMessage {
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 
-		protected ReplicaStateMessage(Guid correlationId, VNodeState state, MemberInfo leader)
+		protected ReplicaStateMessage(Guid correlationId, VNodeState state, MemberInfoLite leader)
 			: base(correlationId, state) {
 			Ensure.NotNull(leader, "leader");
 			Leader = leader;
@@ -143,7 +143,7 @@ public static partial class SystemMessage {
 	public partial class BecomePreReplica : ReplicaStateMessage {
 		public readonly Guid LeaderConnectionCorrelationId;
 
-		public BecomePreReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfo leader)
+		public BecomePreReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.PreReplica, leader) {
 			LeaderConnectionCorrelationId = leaderConnectionCorrelationId;
 		}
@@ -151,20 +151,20 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeCatchingUp : ReplicaStateMessage {
-		public BecomeCatchingUp(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.CatchingUp,
+		public BecomeCatchingUp(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.CatchingUp,
 			leader) {
 		}
 	}
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeClone : ReplicaStateMessage {
-		public BecomeClone(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.Clone, leader) {
+		public BecomeClone(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.Clone, leader) {
 		}
 	}
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeFollower : ReplicaStateMessage {
-		public BecomeFollower(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.Follower,
+		public BecomeFollower(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.Follower,
 			leader) {
 		}
 	}
@@ -180,7 +180,7 @@ public static partial class SystemMessage {
 	public partial class BecomePreReadOnlyReplica : ReplicaStateMessage {
 		public readonly Guid LeaderConnectionCorrelationId;
 
-		public BecomePreReadOnlyReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfo leader)
+		public BecomePreReadOnlyReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.PreReadOnlyReplica, leader) {
 			LeaderConnectionCorrelationId = leaderConnectionCorrelationId;
 		}
@@ -188,7 +188,7 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeReadOnlyReplica : ReplicaStateMessage {
-		public BecomeReadOnlyReplica(Guid correlationId, MemberInfo leader)
+		public BecomeReadOnlyReplica(Guid correlationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.ReadOnlyReplica, leader) {
 		}
 	}

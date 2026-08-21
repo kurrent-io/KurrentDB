@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
@@ -13,49 +12,39 @@ namespace KurrentDB.Core.Services.VNode;
 
 public class LeaderInfoProvider {
 	private readonly GossipAdvertiseInfo _gossipInfo;
-	private readonly MemberInfo _leaderInfo;
+	private readonly MemberInfoLite _leaderInfo;
 	private readonly Guid _nodeInstanceId;
 
-	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, MemberInfo leaderInfo, Guid nodeInstanceId) {
+	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, MemberInfoLite leaderInfo, Guid nodeInstanceId) {
 		Ensure.NotNull(gossipInfo, "gossipInfo");
 		_gossipInfo = gossipInfo;
 		_leaderInfo = leaderInfo;
 		_nodeInstanceId = nodeInstanceId;
 	}
 
+	// Get the endpoints for a client to talk to the leader.
+	// If we have leader info this is best. Otherwise go with what we heard on the grape vine.
 	public (EndPoint AdvertisedTcpEndPoint, bool IsTcpEndPointSecure, EndPoint AdvertisedHttpEndPoint, Guid InstanceId)
 		GetLeaderInfoEndPoints() {
 
-		var endpoints = _leaderInfo != null
-			? (TcpEndPoint: _leaderInfo.ExternalTcpEndPoint ?? _leaderInfo.ExternalSecureTcpEndPoint,
-				IsTcpEndPointSecure: _leaderInfo.ExternalSecureTcpEndPoint != null,
-				HttpEndPoint: _leaderInfo.HttpEndPoint,
-				AdvertiseHost: _leaderInfo.AdvertiseHostToClientAs,
-				AdvertiseHttpPort: _leaderInfo.AdvertiseHttpPortToClientAs,
-				AdvertiseTcpPort: _leaderInfo.AdvertiseTcpPortToClientAs,
-				InstanceId: _leaderInfo.InstanceId)
-			// TC: if we don't know who the leader is we return our own info. is this ideal?
-			: (TcpEndPoint: _gossipInfo.ExternalTcp ?? _gossipInfo.ExternalSecureTcp,
-				IsTcpEndPointSecure: _gossipInfo.ExternalSecureTcp != null,
-				HttpEndPoint: _gossipInfo.HttpEndPoint,
-				AdvertiseHost: _gossipInfo.AdvertiseHostToClientAs,
-				AdvertiseHttpPort: _gossipInfo.AdvertiseHttpPortToClientAs,
-				AdvertiseTcpPort: _gossipInfo.AdvertiseTcpPortToClientAs,
-				InstanceId: _nodeInstanceId);
+		if (_leaderInfo is { } leader)
+			return (
+				AdvertisedTcpEndPoint: leader.ClientTcpEndPoint,
+				IsTcpEndPointSecure: leader.ClientTcpApiIsSecure,
+				AdvertisedHttpEndPoint: leader.ClientHttpEndPoint,
+				InstanceId: leader.InstanceId);
 
-		var advertisedTcpEndPoint = endpoints.TcpEndPoint == null
-			? null
-			: new DnsEndPoint(
-				string.IsNullOrEmpty(endpoints.AdvertiseHost)
-					? endpoints.TcpEndPoint.GetHost()
-					: endpoints.AdvertiseHost,
-				endpoints.AdvertiseTcpPort == 0 ? endpoints.TcpEndPoint.GetPort() : endpoints.AdvertiseTcpPort);
-		var advertisedHttpEndPoint = new DnsEndPoint(
-			string.IsNullOrEmpty(endpoints.AdvertiseHost)
-				? endpoints.HttpEndPoint.GetHost()
-				: endpoints.AdvertiseHost,
-			endpoints.AdvertiseHttpPort == 0 ? endpoints.HttpEndPoint.GetPort() : endpoints.AdvertiseHttpPort);
-
-		return (advertisedTcpEndPoint, endpoints.IsTcpEndPointSecure, advertisedHttpEndPoint, endpoints.InstanceId);
+		// TC: if we don't know who the leader is we return our own info. is this ideal?
+		return (
+			AdvertisedTcpEndPoint: MemberInfoLite.ToClientEndPoint(
+				endPoint: _gossipInfo.ExternalTcp ?? _gossipInfo.ExternalSecureTcp,
+				advertiseHost: _gossipInfo.AdvertiseHostToClientAs,
+				advertisePort: _gossipInfo.AdvertiseTcpPortToClientAs),
+			IsTcpEndPointSecure: _gossipInfo.ExternalSecureTcp != null,
+			AdvertisedHttpEndPoint: MemberInfoLite.ToClientEndPoint(
+				endPoint: _gossipInfo.HttpEndPoint,
+				advertiseHost: _gossipInfo.AdvertiseHostToClientAs,
+				advertisePort: _gossipInfo.AdvertiseHttpPortToClientAs),
+			InstanceId: _nodeInstanceId);
 	}
 }

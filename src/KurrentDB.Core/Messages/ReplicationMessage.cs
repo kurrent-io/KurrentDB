@@ -146,10 +146,10 @@ public static partial class ReplicationMessage {
 
 	[DerivedMessage(CoreMessage.Replication)]
 	public partial class ReconnectToLeader : Message {
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 		public readonly Guid ConnectionCorrelationId;
 
-		public ReconnectToLeader(Guid connectionCorrelationId, MemberInfo leader) {
+		public ReconnectToLeader(Guid connectionCorrelationId, MemberInfoLite leader) {
 			Ensure.NotEmptyGuid(connectionCorrelationId, nameof(connectionCorrelationId));
 			Ensure.NotNull(leader, nameof(leader));
 			ConnectionCorrelationId = connectionCorrelationId;
@@ -159,10 +159,10 @@ public static partial class ReplicationMessage {
 
 	[DerivedMessage(CoreMessage.Replication)]
 	public partial class LeaderConnectionFailed : Message {
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 		public readonly Guid LeaderConnectionCorrelationId;
 
-		public LeaderConnectionFailed(Guid leaderConnectionCorrelationId, MemberInfo leader) {
+		public LeaderConnectionFailed(Guid leaderConnectionCorrelationId, MemberInfoLite leader) {
 			Ensure.NotEmptyGuid(leaderConnectionCorrelationId, nameof(leaderConnectionCorrelationId));
 			Ensure.NotNull(leader, nameof(leader));
 			LeaderConnectionCorrelationId = leaderConnectionCorrelationId;
