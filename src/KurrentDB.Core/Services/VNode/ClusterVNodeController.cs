@@ -253,6 +253,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.InAllStatesExcept(VNodeState.Initializing, VNodeState.ShuttingDown, VNodeState.Shutdown,
 			VNodeState.ReadOnlyLeaderless, VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
 			.When<ElectionMessage.ElectionsDone>().Do(Handle)
+			.When<ElectionMessage.LeaderAppointed>().Do(Handle)
 			.InStates(VNodeState.DiscoverLeader, VNodeState.Unknown,
 				VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower,
 				VNodeState.PreLeader, VNodeState.Leader)
@@ -584,7 +585,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			return;
 		}
 
-		_leader = message.Leader;
+		await OnLeaderDecided(message, message.Leader, token);
+	}
+
+	private ValueTask Handle(ElectionMessage.LeaderAppointed message, CancellationToken token) =>
+		OnLeaderDecided(message, message.Leader, token);
+
+	private async ValueTask OnLeaderDecided(Message message, MemberInfoLite leader, CancellationToken token) {
+		_leader = leader;
 		_subscriptionId = Guid.NewGuid();
 		_stateCorrelationId = Guid.NewGuid();
 		_leaderConnectionCorrelationId = Guid.NewGuid();

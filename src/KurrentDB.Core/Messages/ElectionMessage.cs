@@ -353,4 +353,15 @@ public static partial class ElectionMessage {
 			return $"---- ElectionsDone: installedView {InstalledView}, proposal number {ProposalNumber}, leader {Leader}";
 		}
 	}
+
+	// KPlane equivalent of ElectionsDone.
+	[DerivedMessage(CoreMessage.Election)]
+	public partial class LeaderAppointed(int epochNumber, MemberInfoLite leader) : Message {
+		public int EpochNumber => epochNumber;
+		public MemberInfoLite Leader => leader;
+
+		public override string ToString() {
+			return $"---- LeaderAppointed: epoch number {EpochNumber}, leader {Leader}";
+		}
+	}
 }
