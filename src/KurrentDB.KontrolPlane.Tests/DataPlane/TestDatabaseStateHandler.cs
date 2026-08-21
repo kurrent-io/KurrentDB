@@ -32,14 +32,12 @@ internal sealed class TestDatabaseStateHandler(DatabaseNode currentNode, Replica
 		return Task.CompletedTask;
 	}
 
-	async Task IDatabaseStateHandler.RunLeadershipAsync(IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token) {
+	async Task IDatabaseStateHandler.RunLeadershipAsync(DatabaseCluster initial, IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token) {
 		Interlocked.Exchange(ref _leadership, null)?.TrySetResult();
-		await foreach (var snapshot in changes.WithCancellation(token)) {
-			if (snapshot.LeaderNode is { } leaderNode) {
-				_leaderNode = leaderNode;
-				_leaderNodeTracker.TryAdvance();
-				break;
-			}
+
+		if (initial.LeaderNode is { } leaderNode) {
+			_leaderNode = leaderNode;
+			_leaderNodeTracker.TryAdvance();
 		}
 
 		// simulate long-running work
