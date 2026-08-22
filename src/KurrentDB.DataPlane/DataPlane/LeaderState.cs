@@ -52,5 +52,9 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 		if (resignRequired) {
 			await stateMachine.KontrolPlane.ResignLeaderAsync(cluster.Id, cluster.Epoch, Token);
 		}
+
+		if (!Token.IsCancellationRequested) {
+			stateMachine.MoveToFrozenState(new(this));
+		}
 	}
 }
