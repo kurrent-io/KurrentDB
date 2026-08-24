@@ -17,6 +17,15 @@ public sealed partial class KontextEntityResolver {
     /// <summary>The merge bar when the spelling agrees with the semantic match.</summary>
     const double CorroboratedMergeThreshold = 0.90;
 
+    /// <summary>A catalog neighbour of one name: agreeing spelling averages into the semantic score.</summary>
+    sealed record SemanticNeighbour(string EntityId, string Alias, double Semantic, double Fuzzy) {
+        public bool Corroborated => Fuzzy >= FuzzyCorroborationFloor;
+
+        public double Score => Corroborated ? (Semantic + Fuzzy) / 2 : Semantic;
+
+        public EntityCandidate AsCandidate => new(EntityId, Alias, CandidateSource.Semantic);
+    }
+
     /// <summary>
     /// Semantic tier: the nearest same-type entity by embedding merges when close enough, with a
     /// matching spelling lowering the bar. Near misses stay candidates for the disambiguation tier.
@@ -32,7 +41,7 @@ public sealed partial class KontextEntityResolver {
             .ConfigureAwait(false);
 
         var neighbors = await LookupSemanticAsync(
-            [.. misses.Select((miss, index) => new SemanticQuery(miss.Key, embedded[index].Vector.ToArray()))], ct
+            [.. misses.Zip(embedded, (miss, embedding) => new SemanticQuery(miss.Key, embedding.Vector.ToArray()))], ct
         ).ConfigureAwait(false);
 
         foreach (var (key, _) in misses) {
@@ -84,31 +93,22 @@ public sealed partial class KontextEntityResolver {
                     command.Parameters.Add(new DuckDBParameter("text", query.Key.NormalizedText));
                     command.Parameters.Add(new DuckDBParameter("entity_type", query.Key.EntityType));
 
-                    string? bestId       = null;
-                    var     bestScore    = 0.0;
-                    var     corroborated = false;
-                    var     neighbours   = new List<EntityCandidate>();
+                    var neighbours = new List<SemanticNeighbour>();
 
                     using var reader = command.ExecuteReader();
                     while (reader.Read()) {
-                        var entityId = reader.GetString(0);
-                        var alias    = reader.GetString(1);
                         var semantic = Convert.ToDouble(reader.GetValue(2), CultureInfo.InvariantCulture);
                         var fuzzy    = Convert.ToDouble(reader.GetValue(3), CultureInfo.InvariantCulture);
-                        var score    = fuzzy >= FuzzyCorroborationFloor ? (semantic + fuzzy) / 2 : semantic;
 
-                        neighbours.Add(new EntityCandidate(entityId, alias, CandidateSource.Semantic));
-
-                        if (score <= bestScore)
-                            continue;
-
-                        bestScore    = score;
-                        bestId       = entityId;
-                        corroborated = fuzzy >= FuzzyCorroborationFloor;
+                        neighbours.Add(new SemanticNeighbour(reader.GetString(0), reader.GetString(1), semantic, fuzzy));
                     }
 
-                    if (bestId is not null)
-                        resolved[query.Key] = new SemanticMatch(bestId, bestScore, corroborated, neighbours);
+                    // A nonpositive score is no match at all, not a weak one.
+                    if (neighbours.Where(neighbour => neighbour.Score > 0).MaxBy(neighbour => neighbour.Score) is { } nearest)
+                        resolved[query.Key] = new SemanticMatch(
+                            nearest.EntityId, nearest.Score, nearest.Corroborated,
+                            [.. neighbours.Select(neighbour => neighbour.AsCandidate)]
+                        );
                 }
 
                 return resolved;

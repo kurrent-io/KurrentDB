@@ -51,18 +51,12 @@ public sealed partial class KontextEntityResolver {
                 var prefixed = new Dictionary<EntityKey, List<EntityCandidate>>();
 
                 foreach (var group in keys.GroupBy(key => key.EntityType)) {
-                    var norms     = new List<string>();
-                    var nickables = new List<bool>();
-                    var byNorm    = new Dictionary<string, EntityKey>();
-
                     // Prefix matching applies to person names only.
                     var properNames = group.Key is EntityTypes.Person;
 
-                    foreach (var key in group) {
-                        norms.Add(key.NormalizedText);
-                        nickables.Add(properNames && key.NormalizedText.Length >= 3 && !key.NormalizedText.Contains(' '));
-                        byNorm.TryAdd(key.NormalizedText, key);
-                    }
+                    var norms     = group.Select(key => key.NormalizedText).ToList();
+                    var nickables = norms.Select(norm => properNames && norm.Length >= 3 && !norm.Contains(' ')).ToList();
+                    var byNorm    = group.DistinctBy(key => key.NormalizedText).ToDictionary(key => key.NormalizedText);
 
                     using var command = connection.CreateCommand();
 
