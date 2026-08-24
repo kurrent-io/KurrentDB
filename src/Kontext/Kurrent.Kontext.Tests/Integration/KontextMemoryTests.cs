@@ -71,9 +71,9 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("a1", MemoryContracts.MemoryType.Observation, "aardvark burrows deep underground", MemoryContracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]),
-			new Row("a2", MemoryContracts.MemoryType.Fact, "penguins waddle across antarctic ice", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]),
-			new Row("a3", MemoryContracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryImportance.Low, Base.AddHours(3), [0f, 0f, 1f, 0f]));
+			new Row("a1", MemoryContracts.MemoryType.Observation, "aardvark burrows deep underground", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)),
+			new Row("a2", MemoryContracts.MemoryType.Fact, "penguins waddle across antarctic ice", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Embed(0f, 1f, 0f, 0f)),
+			new Row("a3", MemoryContracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryImportance.Low, Base.AddHours(3), MemorySeeding.Embed(0f, 0f, 1f, 0f)));
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request            = new MemoryContracts.RecallRequest { Query = "aardvark" };
@@ -106,7 +106,7 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("b1", MemoryContracts.MemoryType.Fact, "flamingo stands gracefully on one leg", MemoryContracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) {
+			new Row("b1", MemoryContracts.MemoryType.Fact, "flamingo stands gracefully on one leg", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)) {
 				Evidence      = SeedEvidenceBlobs(),
 				ValidityStart = Base.AddHours(-24),
 				ValidityEnd   = Base.AddHours(24),
@@ -139,12 +139,12 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("c1", MemoryContracts.MemoryType.Observation, "wombat digs a cozy burrow", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]),
-			new Row("c2", MemoryContracts.MemoryType.Observation, "wombat mistaken hidden note", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]) {
+			new Row("c1", MemoryContracts.MemoryType.Observation, "wombat digs a cozy burrow", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)),
+			new Row("c2", MemoryContracts.MemoryType.Observation, "wombat mistaken hidden note", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Embed(0f, 1f, 0f, 0f)) {
 				IsRetracted = true,
 				RetractedAt = Base.AddHours(5),
 			},
-			new Row("c3", MemoryContracts.MemoryType.Observation, "wombat obsolete replaced entry", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) {
+			new Row("c3", MemoryContracts.MemoryType.Observation, "wombat obsolete replaced entry", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Embed(0f, 0f, 1f, 0f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(4),
 				SupersededBy = "c1",
@@ -169,10 +169,10 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("d1", MemoryContracts.MemoryType.Fact, "salmon swim upstream every year", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]) {
+			new Row("d1", MemoryContracts.MemoryType.Fact, "salmon swim upstream every year", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)) {
 				Tags = ["project:rivers"],
 			},
-			new Row("d2", MemoryContracts.MemoryType.Fact, "salmon spawn in shallow gravel", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]));
+			new Row("d2", MemoryContracts.MemoryType.Fact, "salmon spawn in shallow gravel", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Embed(0f, 1f, 0f, 0f)));
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request        = new MemoryContracts.RecallRequest { Query = "salmon" };
@@ -194,8 +194,8 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("e1", MemoryContracts.MemoryType.Observation, "kangaroo hops across the plains", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), [1f, 0f, 0f, 0f]),
-			new Row("e2", MemoryContracts.MemoryType.Observation, "kangaroo mistaken claim", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]) {
+			new Row("e1", MemoryContracts.MemoryType.Observation, "kangaroo hops across the plains", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)),
+			new Row("e2", MemoryContracts.MemoryType.Observation, "kangaroo mistaken claim", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Embed(0f, 1f, 0f, 0f)) {
 				IsRetracted = true,
 				RetractedAt = Base.AddHours(5),
 			});
@@ -222,10 +222,10 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("f1", MemoryContracts.MemoryType.Fact, "fact about caching", MemoryContracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) { LastAccessedAt = Base.AddHours(10) },
-			new Row("f2", MemoryContracts.MemoryType.Fact, "fact about the checkpoint format", MemoryContracts.MemoryImportance.Critical, Base.AddHours(2), [0f, 1f, 0f, 0f]) { LastAccessedAt = Base.AddHours(20) },
-			new Row("f3", MemoryContracts.MemoryType.Hearsay, "plan to rewrite the projector", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) { LastAccessedAt = Base.AddHours(30) },
-			new Row("f4", MemoryContracts.MemoryType.Fact, "fact about tags", MemoryContracts.MemoryImportance.Low, Base.AddHours(4), [0f, 0f, 0f, 1f]) { LastAccessedAt = Base.AddHours(5) });
+			new Row("f1", MemoryContracts.MemoryType.Fact, "fact about caching", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Embed(1f, 0f, 0f, 0f)) { LastAccessedAt = Base.AddHours(10) },
+			new Row("f2", MemoryContracts.MemoryType.Fact, "fact about the checkpoint format", MemoryContracts.MemoryImportance.Critical, Base.AddHours(2), MemorySeeding.Embed(0f, 1f, 0f, 0f)) { LastAccessedAt = Base.AddHours(20) },
+			new Row("f3", MemoryContracts.MemoryType.Hearsay, "plan to rewrite the projector", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Embed(0f, 0f, 1f, 0f)) { LastAccessedAt = Base.AddHours(30) },
+			new Row("f4", MemoryContracts.MemoryType.Fact, "fact about tags", MemoryContracts.MemoryImportance.Low, Base.AddHours(4), MemorySeeding.Embed(0f, 0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(5) });
 		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request = new MemoryContracts.RecollectRequest {

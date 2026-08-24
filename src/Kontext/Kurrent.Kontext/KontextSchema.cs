@@ -90,17 +90,16 @@ public sealed class KontextSchemaTask : IMigrationStep<IDuckDBSchemaExecutor> {
             );
 
             CREATE TABLE IF NOT EXISTS ldb.main.entities (
-              entity_id    VARCHAR,
-              entity_type  VARCHAR,
-              alias        VARCHAR,
-              is_canonical BOOLEAN,
-              created_at   BIGINT,
-              embedding    FLOAT[{Dimension}]);
+              entity_id     VARCHAR,
+              entity_type   VARCHAR,
+              alias         VARCHAR,
+              first_seen_at BIGINT,
+              embedding     FLOAT[{Dimension}]);
 
-            CREATE INDEX entity_id_idx    ON ldb.main.entities (entity_id)    USING BTREE    WITH (replace = true);
-            CREATE INDEX entity_type_idx  ON ldb.main.entities (entity_type)  USING BTREE    WITH (replace = true);
-            CREATE INDEX alias_idx        ON ldb.main.entities (alias)        USING BTREE    WITH (replace = true);
-            CREATE INDEX alias_fts        ON ldb.main.entities (alias)        USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
+            CREATE INDEX entity_id_idx   ON ldb.main.entities (entity_id)   USING BTREE    WITH (replace = true);
+            CREATE INDEX entity_type_idx ON ldb.main.entities (entity_type) USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_idx       ON ldb.main.entities (alias)       USING BTREE    WITH (replace = true);
+            CREATE INDEX alias_fts       ON ldb.main.entities (alias)       USING INVERTED WITH (replace = true, base_tokenizer = 'simple', language = 'English', stem = true);
 
             ALTER TABLE ldb.main.entities SET AUTO_CLEANUP WITH (
                 interval        = {CleanupIntervalCommits},

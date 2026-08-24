@@ -130,26 +130,41 @@ public static class KontextRetrieverBuilderExtensions {
         /// <summary>
         /// The entity-aware chain: <see cref="Focused"/>'s alpha blend plus the entity leg —
         /// memories mentioning the entities the query names — rank-fused, then the same reread
-        /// and modulation. Unmeasured against <see cref="Focused"/> on LoCoMo yet: it exists to
-        /// put resolved entities into recall, benchmark it before calling it optimal.
+        /// and modulation.
+        /// <para>The leg's knobs are the LoCoMo conv-26 measured optimum (2026-08-21, the
+        /// benchmark's <c>--entities-ab</c> mode): a small fusion vote (0.3), a hard candidate cap
+        /// (3), and rare-entity-only scoring. Measured against <see cref="Focused"/>: ndcg@10
+        /// +0.006, mrr +0.009, recall@10 +0.007 — the leg's wins move a first hit from #3-#4 to
+        /// #1-#2 on questions naming rare entities, and recover misses no text leg surfaced. The
+        /// leg is deliberately a tie-break, not a peer: uncapped and equal-weighted it hands the
+        /// pool-local BM25 reread lexical distractors that displace evidence the vector leg found
+        /// on meaning alone (measured at ndcg@10 -0.01 to -0.05 across permissive variants).</para>
         /// </summary>
         /// <param name="index">The memories read model the hybrid leg queries.</param>
         /// <param name="entities">The entity read model the entity leg queries.</param>
         /// <param name="embeddingGenerator">The generator the vector half embeds the query with — the same model that embedded the stored memories.</param>
         /// <param name="time">The clock the planner ages candidates against; null uses the system clock.</param>
+        /// <param name="configureEntities">Tunes the entity leg; null keeps the measured constants.</param>
         public KontextRetrieverBuilder Connected(
             IMemoryIndex index,
             IEntityIndex entities,
             EmbeddingGenerator embeddingGenerator,
-            TimeProvider? time = null
+            TimeProvider? time = null,
+            Action<EntitySearchOptions>? configureEntities = null
         ) {
-            const double measuredAlpha = 0.45;
+            const double measuredAlpha        = 0.45;
+            const double measuredEntityWeight = 0.3;
 
             return builder
                 .Planner(new OverfetchOptions(), time)
                 .AddSearch(new HybridSearch(index, embeddingGenerator, measuredAlpha))
-                .AddSearch(new EntitySearch(entities))
-                .Fuser(ReciprocalRankFuser.Create())
+                .AddSearch(new EntitySearch(entities, options => {
+                    options.MaxDocumentFrequencyRatio = 0.10;
+                    options.MaxCandidates             = 3;
+                    options.ScoreRareEntitiesOnly     = true;
+                    configureEntities?.Invoke(options);
+                }))
+                .Fuser(ReciprocalRankFuser.Create(static fusion => fusion.Weights[RetrievalSources.Entity] = measuredEntityWeight))
                 .AddStage(Bm25Reranker.Create())
                 .AddStage(CognitiveModulator.Create());
         }

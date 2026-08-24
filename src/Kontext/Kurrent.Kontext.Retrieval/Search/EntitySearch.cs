@@ -8,11 +8,13 @@ namespace Kurrent.Kontext.Retrieval;
 /// the entity catalog — the graph hop embeddings and keywords both miss when a memory talks about
 /// an entity under a different alias than the query uses.
 /// </summary>
-public sealed class EntitySearch(IEntityIndex index) : ISearch {
+public sealed class EntitySearch(IEntityIndex index, Action<EntitySearchOptions>? configure = null) : ISearch {
     public string Name => RetrievalSources.Entity;
 
     public async ValueTask<CandidateSet> SearchAsync(PlannedQuery query, CancellationToken ct = default) {
-        var options = new EntitySearchOptions { Limit = query.PoolSize };
+        var options = new EntitySearchOptions();
+        configure?.Invoke(options);
+        options.Limit = Math.Min(query.PoolSize, options.MaxCandidates);
 
         var candidates = new List<SearchCandidate>(query.PoolSize);
 

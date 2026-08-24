@@ -39,7 +39,7 @@ public sealed class KontextEntityResolution : ProcessingModule {
                 .Select(result => new Contracts.EntitiesMentioned {
                     MemoryId   = result.MemoryId,
                     ResolvedAt = Timestamp.FromDateTimeOffset(TimeProvider.System.GetUtcNow()),
-                    Mentions   = { result.Entities.Select(entity => Mention(entity, resolutions[EntityKey.For(entity.EntityType, entity.Text)])) },
+                    Mentions   = { result.Entities.Select(entity => entity.ToContract(resolutions[EntityKey.For(entity.EntityType, entity.Text)])) },
                 })
                 .ToList();
 
@@ -56,23 +56,4 @@ public sealed class KontextEntityResolution : ProcessingModule {
         });
     }
 
-    static Contracts.EntityMention Mention(ExtractedEntity span, ResolvedEntity resolved) {
-        var mention = new Contracts.EntityMention {
-            SpanText   = span.Text,
-            Confidence = resolved.Confidence,
-            ResolvedBy = resolved.Method,
-        };
-
-        if (resolved.Method is Contracts.ResolutionMethod.Created)
-            mention.Created = new Contracts.Entity {
-                EntityId      = resolved.EntityId,
-                Type          = span.EntityType,
-                CanonicalName = span.Text,
-                Aliases       = { span.Text },
-            };
-        else
-            mention.EntityId = resolved.EntityId;
-
-        return mention;
-    }
 }

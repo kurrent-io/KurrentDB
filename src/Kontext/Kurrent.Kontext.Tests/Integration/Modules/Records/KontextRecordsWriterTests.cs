@@ -48,7 +48,7 @@ public class KontextRecordsWriterTests {
 		// undecodable record and the control record never land, one flush = one lance commit.
 		using var command = connection.CreateCommand();
 		command.CommandText =
-			"""
+			$"""
 			SELECT count(*) FROM ldb.main.records
 			WHERE log_position = 100
 			  AND octet_length(record_id) = 16
@@ -59,7 +59,7 @@ public class KontextRecordsWriterTests {
 			  AND schema_format = 'Json'
 			  AND content = $content
 			  AND created_at = $created_at
-			  AND embedding = CAST($embedding AS FLOAT[4])
+			  AND embedding = CAST($embedding AS FLOAT[{KontextSchemaTask.Dimension}])
 			""";
 		command.Parameters.Add(new("content", content));
 		command.Parameters.Add(new("created_at", expectedCreatedAt));
@@ -126,7 +126,7 @@ public class KontextRecordsWriterTests {
 			connection,
 			PoisonExtractor,
 			new FakeEmbeddingGenerator(),
-			new EmbeddingGenerationOptions { Dimensions = 4 },
+			new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
 			NullLogger<KontextRecordsWriter>.Instance);
 
 		var timestamp = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
@@ -175,7 +175,7 @@ public class KontextRecordsWriterTests {
 		new(connection,
 			KontextRecordsContent.Json,
 			new FakeEmbeddingGenerator(),
-			new EmbeddingGenerationOptions { Dimensions = 4 },
+			new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
 			NullLogger<KontextRecordsWriter>.Instance);
 
 	static long Scalar(DuckDBAdvancedConnection connection, string sql) {
@@ -195,7 +195,7 @@ public class KontextRecordsWriterTests {
 	/// </summary>
 	sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
 		public static float[] Embed(string content) {
-			var vector = new float[4];
+			var vector = new float[KontextSchemaTask.Dimension];
 			vector[content.Length % 4] = 1f;
 			return vector;
 		}

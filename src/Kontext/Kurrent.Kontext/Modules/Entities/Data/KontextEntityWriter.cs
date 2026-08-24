@@ -12,10 +12,16 @@ using Microsoft.Extensions.AI;
 namespace Kurrent.Kontext.Modules.Entities.Data;
 
 /// <summary>
-/// Writes one consumed batch of entity events into the catalog tables, one MERGE per table.
+/// Writes one consumed batch of entity events into the catalog tables, one statement per table.
 /// Replaying the same batch produces the same rows. Runs on the caller's connection, the
 /// projector owns the connection, transaction, and checkpoint. Not thread safe.
 /// </summary>
+/// <remarks>
+/// Nothing here is conditional on what the event says about itself: a mention states the spelling
+/// it saw and the entity it named, and the catalog works out for itself whether that spelling is
+/// new. Nothing branches on <c>resolved_by</c>, and a "created" mention is just the first one to
+/// name its id.
+/// </remarks>
 public sealed class KontextEntityWriter(
     DuckDBAdvancedConnection connection,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
@@ -25,8 +31,7 @@ public sealed class KontextEntityWriter(
         string EntityId,
         string EntityType,
         string Alias,
-        bool   IsCanonical,
-        long   CreatedAt
+        long   FirstSeenAt
     );
 
     sealed record PendingMention(
@@ -40,10 +45,10 @@ public sealed class KontextEntityWriter(
     );
 
     /// <summary>
-    /// Applies one consumed batch: collapse the events into one pending state per key, embed the
-    /// new aliases in one call, then run each table's MERGE. Safe to replay: a crash before the
-    /// checkpoint only costs re-running the batch, never wrong rows. Returns how many aliases
-    /// were written so the projector knows when to rebuild the alias search indexes.
+    /// Applies one consumed batch: collapse the events into one pending state per key, then write
+    /// the spellings and the mentions. Safe to replay: a crash before the checkpoint only costs
+    /// re-running the batch, never wrong rows. Returns how many alias rows were inserted, so the
+    /// projector knows when to rebuild the alias search indexes.
     /// </summary>
     public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct = default) {
         var aliases  = new Dictionary<(string EntityId, string Alias), PendingAlias>();
@@ -56,96 +61,119 @@ public sealed class KontextEntityWriter(
             var resolvedAt = KontextDataStore.EncodeTimestamp(resolved.ResolvedAt);
 
             for (var spanIndex = 0; spanIndex < resolved.Mentions.Count; spanIndex++) {
-                var mention  = resolved.Mentions[spanIndex];
-                var entityId = mention.EntityId;
+                var mention = resolved.Mentions[spanIndex];
 
-                if (mention.OutcomeCase == EntityMention.OutcomeOneofCase.Created) {
-                    var entity = mention.Created;
-                    entityId = entity.EntityId;
-
-                    foreach (var alias in entity.Aliases)
-                        aliases[(entityId, alias)] = new PendingAlias(
-                            entityId, entity.Type, alias, alias == entity.CanonicalName, resolvedAt);
-                }
+                // An unresolved span is a mention of nothing: recorded so a reconciliation pass can
+                // find it, but it names no entity and teaches the catalog no spelling.
+                if (mention.HasEntityId)
+                    aliases.TryAdd(
+                        (mention.EntityId, mention.SpanText),
+                        new PendingAlias(mention.EntityId, mention.EntityType, mention.SpanText, resolvedAt));
 
                 mentions[(resolved.MemoryId, spanIndex)] = new PendingMention(
-                    resolved.MemoryId, spanIndex, mention.SpanText, entityId,
+                    resolved.MemoryId, spanIndex, mention.SpanText, mention.EntityId,
                     (float)mention.Confidence, (int)mention.ResolvedBy, resolvedAt);
             }
         }
 
-        if (aliases.Count == 0 && mentions.Count == 0)
+        if (mentions.Count == 0)
             return 0;
 
-        await ApplyAliases(aliases.Values, ct).ConfigureAwait(false);
+        var written = await ApplyAliases(aliases.Values, ct).ConfigureAwait(false);
+
         ApplyMentions(mentions.Values);
 
-        return aliases.Count;
+        return written;
     }
 
-    // One embedding call for the whole batch — the events carry only the alias text; the
-    // embeddings live in the read model.
-    async ValueTask ApplyAliases(IReadOnlyCollection<PendingAlias> aliases, CancellationToken ct) {
+    /// <summary>
+    /// Records every spelling the batch saw. Which of them the catalog already holds is the
+    /// catalog's answer, not the event's: <see cref="SelectUnknown"/> asks, and only what comes
+    /// back gets embedded and inserted. Returns how many rows were written.
+    /// </summary>
+    /// <remarks>
+    /// Asking first is what keeps an exact hit free. Embedding is the expensive part of this
+    /// writer, and a mention of a spelling the catalog already indexed must not pay for it.
+    /// </remarks>
+    async ValueTask<int> ApplyAliases(IReadOnlyCollection<PendingAlias> aliases, CancellationToken ct) {
         if (aliases.Count == 0)
-            return;
+            return 0;
+
+        var unknown = SelectUnknown(aliases);
+
+        if (unknown.Count == 0)
+            return 0;
 
         var sql =
             $"""
-             MERGE INTO ldb.main.entities AS t
-             USING (SELECT
+             INSERT INTO ldb.main.entities (entity_id, entity_type, alias, first_seen_at, embedding)
+             SELECT entity_id, entity_type, alias, first_seen_at,
+                    CAST(embedding_raw AS FLOAT[{options.Dimensions}])
+             FROM (SELECT
                  unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
                  unnest(CAST($entity_types AS VARCHAR[])) AS entity_type,
                  unnest(CAST($aliases AS VARCHAR[])) AS alias,
-                 unnest(CAST($is_canonicals AS BOOLEAN[])) AS is_canonical,
-                 unnest(CAST($created_ats AS BIGINT[])) AS created_at,
-                 unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
-             ON t.entity_id = s.entity_id AND t.alias = s.alias
-             WHEN NOT MATCHED THEN INSERT (entity_id, entity_type, alias, is_canonical, created_at, embedding)
-             VALUES (
-                 s.entity_id, s.entity_type, s.alias, s.is_canonical, s.created_at,
-                 CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]))
-             WHEN MATCHED THEN UPDATE SET
-                 entity_type  = s.entity_type
-               , is_canonical = s.is_canonical
-               , embedding    = CAST(s.embedding_raw AS FLOAT[{options.Dimensions}])
+                 unnest(CAST($first_seen_ats AS BIGINT[])) AS first_seen_at,
+                 unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw)
              """;
 
-        var count        = aliases.Count;
-        var entityIds    = new List<string>(count);
-        var entityTypes  = new List<string>(count);
-        var aliasTexts   = new List<string>(count);
-        var isCanonicals = new List<bool>(count);
-        var createdAts   = new List<long>(count);
-
-        foreach (var alias in aliases) {
-            entityIds.Add(alias.EntityId);
-            entityTypes.Add(alias.EntityType);
-            aliasTexts.Add(alias.Alias);
-            isCanonicals.Add(alias.IsCanonical);
-            createdAts.Add(alias.CreatedAt);
-        }
+        var aliasTexts = unknown.Select(alias => alias.Alias).ToList();
 
         var generated = await embeddings
             .GenerateAsync(aliasTexts, cancellationToken: ct)
             .ConfigureAwait(false);
 
-        var batchEmbeddings = generated.Select(embedding => embedding.Vector.ToArray()).ToList();
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+
+        Bind(command, "entity_ids", unknown.Select(alias => alias.EntityId));
+        Bind(command, "entity_types", unknown.Select(alias => alias.EntityType));
+        Bind(command, "aliases", aliasTexts);
+        Bind(command, "first_seen_ats", unknown.Select(alias => alias.FirstSeenAt));
+        Bind(command, "embeddings", generated.Select(embedding => embedding.Vector.ToArray()));
+
+        command.ExecuteNonQuery();
+
+        return unknown.Count;
+    }
+
+    // Every statement here binds one array per column, so the column name appears once and the
+    // rows are read straight off the pending records.
+    static void Bind<T>(DuckDBCommand command, string name, IEnumerable<T> values) =>
+        command.Parameters.Add(new DuckDBParameter(name, values.ToList()));
+
+    // The spellings the catalog does not hold for their entity, compared case-insensitively: "Mel"
+    // and "MEL" are one spelling written two ways, and resolution matches them as one.
+    List<PendingAlias> SelectUnknown(IReadOnlyCollection<PendingAlias> aliases) {
+        const string sql =
+            """
+            SELECT s.entity_id, s.alias
+            FROM (SELECT
+                unnest(CAST($entity_ids AS VARCHAR[])) AS entity_id,
+                unnest(CAST($aliases AS VARCHAR[])) AS alias) AS s
+            ANTI JOIN ldb.main.entities AS a
+              ON a.entity_id = s.entity_id AND lower(a.alias) = lower(s.alias)
+            """;
+
+        var byKey = aliases.ToDictionary(alias => (alias.EntityId, alias.Alias));
 
         using var command = connection.CreateCommand();
         command.CommandText = sql;
-        command.Parameters.Add(new("entity_ids", entityIds));
-        command.Parameters.Add(new("entity_types", entityTypes));
-        command.Parameters.Add(new("aliases", aliasTexts));
-        command.Parameters.Add(new("is_canonicals", isCanonicals));
-        command.Parameters.Add(new("created_ats", createdAts));
-        command.Parameters.Add(new("embeddings", batchEmbeddings));
-        command.ExecuteNonQuery();
+
+        Bind(command, "entity_ids", aliases.Select(alias => alias.EntityId));
+        Bind(command, "aliases", aliases.Select(alias => alias.Alias));
+
+        var unknown = new List<PendingAlias>();
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+            unknown.Add(byKey[(reader.GetString(0), reader.GetString(1))]);
+
+        return unknown;
     }
 
+    // Never called with an empty batch: ProjectAsync returns before it when there are no mentions.
     void ApplyMentions(IReadOnlyCollection<PendingMention> mentions) {
-        if (mentions.Count == 0)
-            return;
-
         const string sql =
             """
             MERGE INTO ldb.main.entity_mentions AS t
@@ -172,34 +200,17 @@ public sealed class KontextEntityWriter(
               , linked_at   = s.linked_at
             """;
 
-        var count       = mentions.Count;
-        var memoryIds   = new List<string>(count);
-        var spanIndexes = new List<int>(count);
-        var spanTexts   = new List<string>(count);
-        var entityIds   = new List<string>(count);
-        var confidences = new List<float>(count);
-        var resolvedBys = new List<int>(count);
-        var linkedAts   = new List<long>(count);
-
-        foreach (var mention in mentions) {
-            memoryIds.Add(mention.MemoryId);
-            spanIndexes.Add(mention.SpanIndex);
-            spanTexts.Add(mention.SpanText);
-            entityIds.Add(mention.EntityId);
-            confidences.Add(mention.Confidence);
-            resolvedBys.Add(mention.ResolvedBy);
-            linkedAts.Add(mention.LinkedAt);
-        }
-
         using var command = connection.CreateCommand();
         command.CommandText = sql;
-        command.Parameters.Add(new("memory_ids", memoryIds));
-        command.Parameters.Add(new("span_indexes", spanIndexes));
-        command.Parameters.Add(new("span_texts", spanTexts));
-        command.Parameters.Add(new("entity_ids", entityIds));
-        command.Parameters.Add(new("confidences", confidences));
-        command.Parameters.Add(new("resolved_bys", resolvedBys));
-        command.Parameters.Add(new("linked_ats", linkedAts));
+
+        Bind(command, "memory_ids", mentions.Select(mention => mention.MemoryId));
+        Bind(command, "span_indexes", mentions.Select(mention => mention.SpanIndex));
+        Bind(command, "span_texts", mentions.Select(mention => mention.SpanText));
+        Bind(command, "entity_ids", mentions.Select(mention => mention.EntityId));
+        Bind(command, "confidences", mentions.Select(mention => mention.Confidence));
+        Bind(command, "resolved_bys", mentions.Select(mention => mention.ResolvedBy));
+        Bind(command, "linked_ats", mentions.Select(mention => mention.LinkedAt));
+
         command.ExecuteNonQuery();
     }
 }

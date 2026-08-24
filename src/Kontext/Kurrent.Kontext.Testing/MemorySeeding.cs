@@ -14,6 +14,17 @@ namespace Kurrent.Kontext.Testing;
 /// and insert rows directly with SQL.
 /// </summary>
 public static class MemorySeeding {
+	/// <summary>
+	/// Pads a small hand-computable vector to the schema dimension. The zero tail contributes
+	/// nothing to any cosine, so an asserted distance stays a figure a human can recompute while
+	/// the row still satisfies the FLOAT[N] column.
+	/// </summary>
+	public static float[] Embed(params float[] head) {
+		var padded = new float[KontextSchemaTask.Dimension];
+		head.CopyTo(padded, 0);
+		return padded;
+	}
+
 	public static KontextDataSource NewDataSources(string dir) =>
 		new(dir, $"{dir}.tmp", Path.Combine(dir, "kurrent.ddb"));
 
@@ -95,7 +106,7 @@ public sealed record MemoryRow(
 	/// Inert unless the pipeline has a vector leg; the default just keeps the row well-formed.
 	/// Suites that rank on vectors set it.
 	/// </summary>
-	public float[]         Embedding      { get; init; } = [1f, 0f, 0f, 0f];
+	public float[]         Embedding      { get; init; } = MemorySeeding.Embed(1f);
 
 	public List<string>    Tags           { get; init; } = [];
 	public List<string>    Evidence       { get; init; } = [];

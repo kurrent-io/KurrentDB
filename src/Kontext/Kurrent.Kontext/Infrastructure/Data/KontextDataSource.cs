@@ -18,6 +18,21 @@ public sealed class KontextDataSource : IDuckDBSchemaExecutor, IDisposable {
 
     const string LanceExtension = "lance";
     const string LanceFilename  = $"{LanceExtension}.duckdb_extension";
+
+    /// <summary>Where <c>stem</c> lives — <see cref="FoldMacro"/> folds through it, so every connection needs it.</summary>
+    const string FtsExtension = "fts";
+    const string FtsFilename  = $"{FtsExtension}.duckdb_extension";
+
+    /// <summary>Normalizes text for matching: lowercase, strip punctuation, drop determiners, stem each word.</summary>
+    public const string FoldMacro =
+        """
+        CREATE TEMP MACRO fold(t) AS array_to_string(list_transform(list_filter(
+            regexp_extract_all(lower(t), '[\p{L}\p{N}]+'),
+            lambda word: word NOT IN (
+                'the','a','an','my','your','his','her','its','our','their',
+                'this','that','these','those','s')),
+            lambda word: stem(word, 'english')), ' ');
+        """;
     
     static readonly ResiliencePipeline StaleHandleRecycle;
 
@@ -167,11 +182,19 @@ public sealed class KontextDataSource : IDuckDBSchemaExecutor, IDisposable {
                     extensions.LoadFrom(lancePath);
                 else
                     extensions.Install(LanceExtension);
+
+                // Stock build, so the vendored copy is only about reaching it offline. Declared
+                // rather than left to autoload: a missing stemmer should fail the data source, not
+                // the first query that folds an alias.
+                if (DuckDBVendorExtensions.TryGetAppExtensionPath(FtsFilename, out var ftsPath))
+                    extensions.LoadFrom(ftsPath);
+                else
+                    extensions.Install(FtsExtension);
             })
             .AttachDatabase($"lance:{storagePath}", LanceAlias)
             .UseInitializer(static connection => {
                 using var command = connection.CreateCommand();
-                command.CommandText = $"USE {LanceAlias};";
+                command.CommandText = $"USE {LanceAlias}; {FoldMacro}";
                 command.ExecuteNonQuery();
             });
 

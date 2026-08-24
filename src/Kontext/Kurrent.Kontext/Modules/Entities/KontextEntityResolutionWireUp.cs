@@ -58,9 +58,14 @@ static class KontextEntityResolutionWireUp {
 
         services.AddNodeSystemInfoProvider();
 
+        services.TryAddSingleton<IEntityDisambiguator>(ctx =>
+            EntityDisambiguator.Create(options => options.Chat = ctx.GetRequiredService<IChatClient>()));
+
         services.AddSingleton(ctx => new KontextEntityResolver(
             ctx.GetRequiredService<KontextDataSource>(),
-            ctx.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()));
+            ctx.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
+            options: null,
+            ctx.GetRequiredService<IEntityDisambiguator>()));
 
         services.AddSingleton(ctx => new KontextEntityResolution(
             ctx.GetRequiredService<KontextEntityResolver>(),

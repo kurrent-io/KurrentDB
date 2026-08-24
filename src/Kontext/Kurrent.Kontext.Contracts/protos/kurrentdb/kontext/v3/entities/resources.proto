@@ -11,46 +11,30 @@ package kurrentdb.kontext.v3.entities;
 
 option csharp_namespace = "Kurrent.Kontext.Contracts.V3.Entities";
 
-// A canonical entity in the catalog: one real-world thing, indexed by its surface forms.
-//
-// The server assigns the id. Clients and extractors never supply one.
-message Entity {
-  // The id the server assigned.
-  string entity_id = 1;
-
-  // Open vocabulary ("person", "project", "team"), not an enum, so connectors and extractors can
-  // introduce types without a contract change.
-  string type = 2;
-
-  // The display form, taken from the span that created it.
-  string canonical_name = 3;
-
-  // Every surface form to index for candidate generation, canonical_name included. Resolution
-  // searches aliases only, never entity rows.
-  repeated string aliases = 4;
-}
-
 // One span from a memory and the entity it names. A span becomes a mention here: extraction
-// supplies the surface form, resolution adds the outcome.
+// supplies the surface form, resolution decides which entity it is.
+//
+// The catalog is derived from this, not declared by it: a mention states what resolution knows
+// about the span, and the read model works out for itself whether that is a thing it had, a
+// spelling it had, or both. Nothing here tells it what to store.
 message EntityMention {
   // The surface form as it appeared in the memory content, such as "Tim" or "the CI project".
   string span_text = 1;
 
-  // Neither case set means unresolved, so a later reconciliation pass can retry the span against
-  // a grown catalog.
-  oneof outcome {
-    // The span linked to an entity already in the catalog, or created by an earlier mention in
-    // the stream.
-    string entity_id = 2;
+  // The entity the span names. Unset means unresolved, so a later reconciliation pass can retry
+  // the span against a grown catalog.
+  string entity_id = 2;
 
-    // The span matched nothing, so it created this entity.
-    Entity created = 3;
-  }
+  // Open vocabulary ("person", "project", "team"), not an enum, so connectors and extractors can
+  // introduce types without a contract change. Every resolution tier competes within one type, so
+  // this is the span's type and the entity's alike.
+  string entity_type = 3;
 
   // The resolver's confidence in the link, from 0 to 1.
   double confidence = 4;
 
-  // The path that produced the link.
+  // The path that produced the link. Provenance for the mention: the read model records it and
+  // never branches on it.
   ResolutionMethod resolved_by = 5;
 }
 
@@ -71,7 +55,7 @@ enum ResolutionMethod {
   // An LLM disambiguated between candidates.
   RESOLUTION_METHOD_LLM = 4;
 
-  // Nothing matched, so resolution created the entity carried in the mention's created field.
+  // Nothing matched, so resolution named a new entity and this mention is the one that named it.
   RESOLUTION_METHOD_CREATED = 5;
 
   // A human decided.

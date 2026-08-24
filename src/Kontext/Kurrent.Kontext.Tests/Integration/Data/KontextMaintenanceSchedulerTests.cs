@@ -234,12 +234,14 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = new KontextMaintenanceScheduler(dataSources, options);
 
-		// Act + Assert
-		await Assert.That(await PollAsync(dataSources, expected: (300L, "embedding_ivx", 300L), TimeSpan.FromSeconds(10))).IsTrue();
+		// Act + Assert — the budget is generous on purpose: this is the one test here that waits on
+		// a real timer AND a real index build, so it competes with every other suite for the machine.
+		// It settles in a few seconds alone and needs the headroom under a full parallel run.
+		await Assert.That(await PollAsync(dataSources, expected: (300L, "embedding_ivx", 300L), TimeSpan.FromSeconds(60))).IsTrue();
 
 		// Phase 2: a later background tick folds a fresh 50-row backlog in.
 		SeedFillers(dataSources, 50, "s");
-		await Assert.That(await PollAsync(dataSources, expected: (350L, "embedding_ivx", 350L), TimeSpan.FromSeconds(10))).IsTrue();
+		await Assert.That(await PollAsync(dataSources, expected: (350L, "embedding_ivx", 350L), TimeSpan.FromSeconds(60))).IsTrue();
 	}
 
 	#endregion // Ticks

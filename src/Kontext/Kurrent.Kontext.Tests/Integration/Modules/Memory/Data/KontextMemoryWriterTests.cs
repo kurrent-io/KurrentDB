@@ -158,7 +158,7 @@ public class KontextMemoryWriterTests {
 
 		// Act — replay the same record through a writer whose model produces DIFFERENT vectors:
 		// the in-place re-embed path (an embedding-model migration without dropping the table).
-		await Project(new KontextMemoryWriter(connection, new ShiftedEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = 4 }), record);
+		await Project(new KontextMemoryWriter(connection, new ShiftedEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension }), record);
 
 		// Assert — still one row, its embedding refreshed to the new model's vector.
 		var (logPosition, embeddingMatches, _) = ReadProjectionStamp(
@@ -467,7 +467,7 @@ public class KontextMemoryWriterTests {
 
 	// Dimension 4 matches FakeEmbeddingGenerator's vectors and the test schema.
 	static KontextMemoryWriter NewWriter(DuckDBAdvancedConnection connection) =>
-		new(connection, new FakeEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = 4 });
+		new(connection, new FakeEmbeddingGenerator(), new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
 
 	/// <summary>Reads the write-side columns the store never surfaces, in one round trip.</summary>
 	static (ulong LogPosition, bool EmbeddingMatches, bool CitesSource) ReadProjectionStamp(
@@ -476,9 +476,9 @@ public class KontextMemoryWriterTests {
 		dataSource.Execute(connection => {
 			using var command = connection.CreateCommand();
 			command.CommandText =
-				"""
+				$"""
 				SELECT log_position,
-				       embedding = CAST($expected_embedding AS FLOAT[4]),
+				       embedding = CAST($expected_embedding AS FLOAT[{KontextSchemaTask.Dimension}]),
 				       list_contains(cited_memory_ids, $cited_id)
 				FROM ldb.main.memories
 				WHERE memory_id = $memory_id
@@ -518,7 +518,7 @@ public class KontextMemoryWriterTests {
 	/// </summary>
 	sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
 		public static float[] Embed(string content) {
-			var vector = new float[4];
+			var vector = new float[KontextSchemaTask.Dimension];
 			vector[content.Length % 4] = 1f;
 			return vector;
 		}
@@ -545,7 +545,7 @@ public class KontextMemoryWriterTests {
 	/// </summary>
 	sealed class ShiftedEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
 		public static float[] Embed(string content) {
-			var vector = new float[4];
+			var vector = new float[KontextSchemaTask.Dimension];
 			vector[(content.Length + 1) % 4] = 1f;
 			return vector;
 		}

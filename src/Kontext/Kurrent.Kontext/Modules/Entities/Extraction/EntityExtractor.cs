@@ -13,7 +13,13 @@ public static partial class EntityExtractor {
     /// opinion wins, ties keep the first, so extractor order is priority order. A failing
     /// extractor costs coverage, never the batch. Survivors come back filtered, in content order.
     /// </summary>
-    public sealed class Pipeline(IReadOnlyList<IEntityExtractor> extractors, ILogger<Pipeline> logger) : IEntityExtractor {
+    public sealed class Pipeline(
+        IReadOnlyList<IEntityExtractor> extractors,
+        ILogger<Pipeline> logger,
+        PipelineOptions? options = null
+    ) : IEntityExtractor {
+        readonly PipelineOptions _options = options ?? new PipelineOptions();
+
         public async ValueTask<IReadOnlyList<ExtractedEntity>> ExtractAsync(string content, CancellationToken ct = default) {
             var merged = new OrderedDictionary<string, ExtractedEntity>();
 
@@ -29,7 +35,7 @@ public static partial class EntityExtractor {
                     continue;
                 }
 
-                foreach (var entity in entities) {
+                foreach (var entity in Prepare(entities)) {
                     var name = EntityId.Normalize(entity.Text);
 
                     if (!merged.TryGetValue(name, out var existing))
@@ -50,6 +56,21 @@ public static partial class EntityExtractor {
 	            return index < 0 ? int.MaxValue : index;
             }
         }
+
+        IEnumerable<ExtractedEntity> Prepare(IReadOnlyList<ExtractedEntity> entities) =>
+            _options.SplitCoordinatedSpans
+                ? entities.SelectMany(SpanSplitter.Split)
+                : entities;
+    }
+
+    /// <summary>The merge's knobs.</summary>
+    public sealed class PipelineOptions {
+        /// <summary>
+        /// Whether a coordinated span is broken into the entities it names before merging:
+        /// "counseling and support groups" becomes both. Flat NER returns one span per range, so
+        /// without this the parts are lost at extraction and nothing downstream can recover them.
+        /// </summary>
+        public bool SplitCoordinatedSpans { get; set; } = true;
     }
 }
 

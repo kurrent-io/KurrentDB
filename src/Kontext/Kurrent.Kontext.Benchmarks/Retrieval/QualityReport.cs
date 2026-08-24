@@ -1,12 +1,24 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text.Json;
 using Kurrent.Kontext.Testing;
 
 namespace Benchmarks.Retrieval;
 
 /// <summary>The result tables bypass the logger on purpose — they are the deliverable, not log events.</summary>
 internal static class QualityReport {
+	public static void Dump(QualityRun run, string path) {
+		var outcomes = run.Outcomes.Select(outcome => new {
+			question = outcome.Question.Question,
+			category = outcome.Question.Category,
+			relevant = outcome.Question.Relevant,
+			returned = outcome.Outcome.Returned,
+		});
+
+		File.WriteAllText(path, JsonSerializer.Serialize(new { name = run.Name, outcomes }));
+	}
+
 	public static void PrintMetrics(IReadOnlyList<QualityRun> runs, QualityRun baseline) {
 		Console.WriteLine();
 		Console.WriteLine($@"{"composition",-28} {"recall@1",9} {"recall@5",9} {"recall@10",10} {"mrr",8} {"ndcg@10",9} {"vs base",10} {"mean ms",9}");

@@ -12,9 +12,9 @@ public static partial class EntityExtractor {
     /// so a custom label list stays consistent with the pipeline's merge.
     /// </summary>
     public sealed class Gliner(GlinerOnnxEntityRecognizer recognizer, IReadOnlyList<string> labels) : IEntityExtractor {
-        /// <summary>Creates the extractor over the canonical vocabulary.</summary>
+        /// <summary>Creates the extractor over the extraction vocabulary.</summary>
         public static Gliner Create(GlinerOnnxEntityRecognizer recognizer) =>
-            new(recognizer, EntityTypes.Canonical);
+            new(recognizer, EntityTypes.ExtractionLabels);
 
         public ValueTask<IReadOnlyList<ExtractedEntity>> ExtractAsync(string content, CancellationToken ct = default) {
             ct.ThrowIfCancellationRequested();

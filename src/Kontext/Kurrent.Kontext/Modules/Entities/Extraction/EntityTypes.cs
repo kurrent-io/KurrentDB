@@ -1,13 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Collections.Frozen;
+
 namespace Kurrent.Kontext.Modules.Entities.Extraction;
 
 /// <summary>
-/// The canonical entity-type vocabulary, POLE+O (person, organization, location, event, object),
-/// and the synonym fold-in that maps raw extractor labels onto it. The vocabulary anchors prompts
-/// and keeps types shared across sources, but stays open: an unrecognized label passes through
-/// lowercased instead of being coerced.
+/// The canonical entity-type vocabulary (POLE+O: person, organization, location, event, object)
+/// and the synonym fold that maps raw extractor labels onto it. The vocabulary is open:
+/// unrecognized labels pass through lowercased rather than being coerced.
 /// </summary>
 public static class EntityTypes {
     public const string Person       = "person";
@@ -22,7 +23,16 @@ public static class EntityTypes {
     /// <summary>The types extraction prompts ask for.</summary>
     public static readonly IReadOnlyList<string> Canonical = [Person, Organization, Location, Event, Object];
 
-    static readonly Dictionary<string, string> Synonyms = new(StringComparer.OrdinalIgnoreCase) {
+    /// <summary>
+    /// Everyday labels the abstract five under-recall: GLiNER fires on "activity" and "animal"
+    /// where "event" and "object" stay silent. They pass through as open-vocabulary types.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Everyday = ["activity", "animal", "food", "creative work", "health condition"];
+
+    /// <summary>The label vocabulary zero-shot extraction runs with.</summary>
+    public static readonly IReadOnlyList<string> ExtractionLabels = [..Canonical, ..Everyday];
+
+    static readonly FrozenDictionary<string, string> Synonyms = new Dictionary<string, string> {
         ["individual"]  = Person,
         ["human"]       = Person,
         ["company"]     = Organization,
@@ -43,20 +53,15 @@ public static class EntityTypes {
         ["fact"]        = Object,
         ["preference"]  = Object,
         ["emotion"]     = Object,
-    };
+    }.ToFrozenDictionary();
 
     /// <summary>
-    /// Folds a raw label into the vocabulary: trim + lowercase, known synonyms land on their
-    /// canonical type, everything else passes through. Blank means the extractor said nothing.
+    /// Folds a raw label into the vocabulary: trim + lowercase, synonyms land on their canonical
+    /// type, everything else passes through. Blank folds to <see cref="Unknown"/>.
     /// </summary>
-    public static string Normalize(string? entityType) {
-        var trimmed = entityType?.Trim();
-
-        if (string.IsNullOrEmpty(trimmed))
-            return Unknown;
-
-        var lowered = trimmed.ToLowerInvariant();
-
-        return Synonyms.GetValueOrDefault(lowered, lowered);
-    }
+    public static string Normalize(string? entityType) =>
+        entityType?.Trim().ToLowerInvariant() switch {
+            null or "" => Unknown,
+            var lowered => Synonyms.GetValueOrDefault(lowered, lowered)
+        };
 }
