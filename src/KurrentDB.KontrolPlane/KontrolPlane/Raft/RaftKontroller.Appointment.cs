@@ -20,6 +20,7 @@ using StateMachine.Queries;
 partial class RaftKontroller {
 	// key is database ID, value is the time when the leadership was updated for the particular database
 	private readonly ConcurrentDictionary<string, LeaderAppointment> _appointmentState = new();
+	private readonly ConcurrentDictionary<string, ulong> _reusableEpochs = new();
 	private readonly TimeSpan _heartbeatTimeout;
 	private readonly AsyncAutoResetEvent _appointmentRoundSignal = new(initialState: false);
 
@@ -61,6 +62,7 @@ partial class RaftKontroller {
 			}
 		} finally {
 			_appointmentState.Clear();
+			_reusableEpochs.Clear();
 			await dataPlane.DisposeAsync();
 		}
 
@@ -183,13 +185,13 @@ partial class RaftKontroller {
 		// When KPlane is started on top of existing database, we need to get the response
 		// for reach node, not for quorum only, to find the max observable epoch, because
 		// the epoch in KPlane is 0
-		for (var requiresAllNodes = databaseId is Database.MainDatabaseId && currentEpoch is 0UL;; responses.Clear()) {
-			if (nodes is [] || !await _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token))
-				break;
-
+		for (var requiresAllNodes = databaseId is Database.MainDatabaseId && currentEpoch is 0UL;
+		     nodes.Count > 0 && await BumpEpochAsync(databaseId, currentEpoch, ref newEpoch, token);
+		     responses.Clear()) {
 			int quorum;
 			using (var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes, tokenSource.Token)) {
+				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes,
+					               tokenSource.Token)) {
 					try {
 						var pair = await task;
 						responses.Add(pair.Key, pair.Value);
@@ -210,6 +212,8 @@ partial class RaftKontroller {
 
 			// Appoint leader only if we have a quorum
 			if (responses.Count < quorum) {
+				// Epoch is increased, but the quorum can't see it, we can reuse epoch in the next round
+				_reusableEpochs[databaseId] = newEpoch;
 				responses.Clear();
 				break;
 			}
@@ -228,6 +232,19 @@ partial class RaftKontroller {
 
 		exit:
 		return (responses, maxEpoch, newEpoch);
+	}
+
+	private ValueTask<bool> BumpEpochAsync(string databaseId, ulong currentEpoch, ref ulong newEpoch, CancellationToken token) {
+		ValueTask<bool> task;
+
+		if (_reusableEpochs.TryRemove(databaseId, out var cachedEpoch)) {
+			newEpoch = cachedEpoch;
+			task = ValueTask.FromResult(true);
+		} else {
+			task = _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token);
+		}
+
+		return task;
 	}
 
 	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
