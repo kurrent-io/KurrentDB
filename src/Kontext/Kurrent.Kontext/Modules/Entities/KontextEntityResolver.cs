@@ -308,27 +308,38 @@ public sealed class KontextEntityResolver(
                     // Fuzzy matching compares single words only, and prefix matching runs both ways.
                     command.CommandText =
                         """
+                        WITH aliases AS (
+                            SELECT entity_id, alias, lower(alias) AS alias_lower, fold(alias) AS alias_norm
+                            FROM ldb.main.entities
+                            WHERE entity_type = $entity_type
+                        ),
+                        claims AS (
+                            SELECT norm_text, nickable, fold(norm_text) AS folded
+                            FROM (SELECT unnest(CAST($norms AS VARCHAR[])) AS norm_text,
+                                         unnest(CAST($nickables AS BOOLEAN[])) AS nickable)
+                        ),
+                        scored AS (
+                            SELECT c.norm_text,
+                                   a.entity_id,
+                                   a.alias,
+                                   a.alias_norm = c.folded AND c.folded <> '' AS stem_hit,
+                                   CASE WHEN NOT contains(c.norm_text, ' ') AND NOT contains(a.alias_lower, ' ')
+                                        THEN jaro_winkler_similarity(a.alias_lower, c.norm_text)
+                                        ELSE 0
+                                   END AS jw,
+                                   c.nickable AND (
+                                       (starts_with(a.alias_lower, c.norm_text)
+                                        AND length(a.alias) > length(c.norm_text))
+                                    OR (starts_with(c.norm_text, a.alias_lower)
+                                        AND length(c.norm_text) > length(a.alias)
+                                        AND length(a.alias) >= 3
+                                        AND NOT contains(a.alias_lower, ' '))
+                                   ) AS prefix_hit
+                            FROM aliases a
+                            CROSS JOIN claims c
+                        )
                         SELECT norm_text, entity_id, alias, stem_hit, jw, prefix_hit
-                        FROM (SELECT k.norm_text,
-                                     e.entity_id,
-                                     e.alias,
-                                     e.alias_norm = k.folded AND k.folded <> '' AS stem_hit,
-                                     CASE WHEN NOT contains(k.norm_text, ' ') AND NOT contains(lower(e.alias), ' ')
-                                          THEN jaro_winkler_similarity(lower(e.alias), k.norm_text)
-                                          ELSE 0 END AS jw,
-                                     k.nickable AND (
-                                          (starts_with(lower(e.alias), k.norm_text)
-                                           AND length(e.alias) > length(k.norm_text))
-                                       OR (starts_with(k.norm_text, lower(e.alias))
-                                           AND length(k.norm_text) > length(e.alias)
-                                           AND length(e.alias) >= 3
-                                           AND NOT contains(lower(e.alias), ' '))) AS prefix_hit
-                              FROM (SELECT entity_id, alias, fold(alias) AS alias_norm
-                                    FROM ldb.main.entities
-                                    WHERE entity_type = $entity_type) e,
-                                   (SELECT norm_text, nickable, fold(norm_text) AS folded
-                                    FROM (SELECT unnest(CAST($norms AS VARCHAR[])) AS norm_text,
-                                                 unnest(CAST($nickables AS BOOLEAN[])) AS nickable)) k) claims
+                        FROM scored
                         WHERE stem_hit OR prefix_hit OR jw >= $jw_floor
                         """;
 
