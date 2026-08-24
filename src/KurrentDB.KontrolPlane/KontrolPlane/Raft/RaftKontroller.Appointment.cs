@@ -178,14 +178,18 @@ partial class RaftKontroller {
 		CancellationToken token) {
 		// bump epoch
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
-		ulong maxEpoch = 0UL, newEpoch;
-		for (newEpoch = currentEpoch + 1UL;; responses.Clear()) {
+		ulong maxEpoch = 0UL, newEpoch = currentEpoch + 1UL;
+
+		// When KPlane is started on top of existing database, we need to get the response
+		// for reach node, not for quorum only, to find the max observable epoch, because
+		// the epoch in KPlane is 0
+		for (var requiresAllNodes = databaseId is Database.MainDatabaseId && currentEpoch is 0UL;; responses.Clear()) {
 			if (nodes is [] || !await _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token))
 				break;
 
 			int quorum;
 			using (var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, tokenSource.Token)) {
+				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes, tokenSource.Token)) {
 					try {
 						var pair = await task;
 						responses.Add(pair.Key, pair.Value);
@@ -229,16 +233,20 @@ partial class RaftKontroller {
 	private static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
 		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
-		ulong currentEpoch,
+		ulong newEpoch,
 		out int quorum,
+		bool requiresAllNodes,
 		CancellationToken token) {
 		var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
 		regularNodes.AddRange(nodes
 			.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
 			.Select(static node => node.Address)
-			.Select(address => FenceDatabaseNodeAsync(dataPlane, address, currentEpoch, token)));
+			.Select(address => FenceDatabaseNodeAsync(dataPlane, address, newEpoch, token)));
 
-		quorum = regularNodes.Count / 2 + 1;
+		quorum = requiresAllNodes
+			? regularNodes.Count
+			: regularNodes.Count / 2 + 1;
+
 		return Task.WhenEach(regularNodes);
 
 		static async Task<KeyValuePair<EndPoint, ReplicaState>> FenceDatabaseNodeAsync(IDataPlane dataPlane,
