@@ -68,7 +68,7 @@ public sealed partial class KontextEntityResolver {
         if (queries.Count == 0)
             return new Dictionary<EntityKey, SemanticMatch>();
 
-        return await dts.ExecuteAsync<IReadOnlyDictionary<EntityKey, SemanticMatch>>(
+        return await dataSource.ExecuteAsync<IReadOnlyDictionary<EntityKey, SemanticMatch>>(
             connection => {
                 var resolved = new Dictionary<EntityKey, SemanticMatch>();
 

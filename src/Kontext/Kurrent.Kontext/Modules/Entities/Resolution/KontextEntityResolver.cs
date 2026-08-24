@@ -15,15 +15,20 @@ namespace Kurrent.Kontext.Entities;
 /// the catalog, which ingestion writes before the next batch resolves.
 /// </summary>
 public sealed partial class KontextEntityResolver(
-    KontextDataSource dts,
+    KontextDataSource dataSource,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
     EntityResolverOptions? options = null,
     IEntityDisambiguator? disambiguator = null
 ) {
-	readonly EntityResolverOptions _options = options ?? new EntityResolverOptions();
+    readonly EntityResolverOptions _options       = options ?? new EntityResolverOptions();
+    readonly IEntityDisambiguator  _disambiguator = disambiguator ?? UniquePrefixDisambiguator.Instance;
 
-	readonly IEntityDisambiguator _disambiguator = disambiguator ?? UniquePrefixDisambiguator.Instance;
-
+    /// <summary>
+    /// Runs the batch through every tier and returns the entity each distinct name resolved to.
+    /// </summary>
+    /// <param name="entities">Extracted mentions to resolve; duplicate name and type pairs collapse.</param>
+    /// <param name="ct">Token that cancels the cascade.</param>
+    /// <returns>One resolution per distinct name and type pair in the batch.</returns>
     public async ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
         IEnumerable<ExtractedEntity> entities, CancellationToken ct = default
     ) {
@@ -41,9 +46,12 @@ public sealed partial class KontextEntityResolver(
 
     static void CreateNewEntities(NameResolutions names) {
         foreach (var (key, name) in names.Unresolved)
-            names.ResolveTo(key, new ResolvedEntity(EntityId.For(key.EntityType, name.Text), 1.0, ResolutionMethod.Created));
+            names.ResolveTo(
+                key, new ResolvedEntity(EntityId.For(key.EntityType, name.Text), 1.0, ResolutionMethod.Created)
+            );
     }
 
+    /// <summary>One name in flight: the possible matches gathered for it and the entity it landed on.</summary>
     sealed class Name(string text) {
         public string                Text       { get; } = text;
         public List<EntityCandidate> Candidates { get; } = [];
@@ -61,8 +69,16 @@ public sealed partial class KontextEntityResolver(
             .ToDictionary(entry => entry.Key, entry => new Name(entry.Text));
 
         /// <summary>Names no tier has resolved yet, in batch order.</summary>
-        public List<KeyValuePair<EntityKey, Name>> Unresolved =>
+        public IReadOnlyList<KeyValuePair<EntityKey, Name>> Unresolved =>
             [.. _names.Where(entry => entry.Value.Resolution is null)];
+
+        /// <summary>Every name in the batch with the entity it resolved to.</summary>
+        public IReadOnlyDictionary<EntityKey, ResolvedEntity> Resolved =>
+            _names.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.Resolution
+                      ?? throw new InvalidOperationException($"'{entry.Value.Text}' left the cascade unresolved.")
+            );
 
         public void ResolveTo(EntityKey key, ResolvedEntity resolution) {
             var name = _names[key];
@@ -79,12 +95,5 @@ public sealed partial class KontextEntityResolver(
             if (candidates.All(known => known.EntityId != candidate.EntityId))
                 candidates.Add(candidate);
         }
-
-        public IReadOnlyDictionary<EntityKey, ResolvedEntity> Resolved =>
-            _names.ToDictionary(
-                entry => entry.Key,
-                entry => entry.Value.Resolution
-                      ?? throw new InvalidOperationException($"'{entry.Value.Text}' left the cascade unresolved.")
-            );
     }
 }

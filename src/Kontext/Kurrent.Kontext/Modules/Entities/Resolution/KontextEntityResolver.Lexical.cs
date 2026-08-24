@@ -45,7 +45,7 @@ public sealed partial class KontextEntityResolver {
         if (keys.Count == 0)
             return new LexicalResolution([], []);
 
-        return await dts.ExecuteAsync(
+        return await dataSource.ExecuteAsync(
             connection => {
                 var resolved = new Dictionary<EntityKey, ResolvedEntity>();
                 var prefixed = new Dictionary<EntityKey, List<EntityCandidate>>();
