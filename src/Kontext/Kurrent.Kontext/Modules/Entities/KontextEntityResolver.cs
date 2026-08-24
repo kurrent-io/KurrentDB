@@ -11,15 +11,10 @@ using Microsoft.Extensions.AI;
 
 namespace Kurrent.Kontext.Entities;
 
-/// <summary>Surface form the exact pass missed, plus its embedding for the vector search.</summary>
+/// <summary>A name to resolve semantically, with its embedding.</summary>
 public sealed record SemanticQuery(EntityKey Key, float[] Embedding);
 
-/// <summary>
-/// Best semantic candidate for a surface form. Confidence is the combined score, thresholding is
-/// the caller's call; <see cref="Corroborated"/> says the spelling agreed with the vector.
-/// <see cref="Candidates"/> is the whole same-type neighbourhood the search returned, near misses
-/// included, so a later tier can reconsider what this one would not merge.
-/// </summary>
+/// <summary>Best semantic match for a name, with the runners-up in <see cref="Candidates"/> for later tiers.</summary>
 public sealed record SemanticMatch(
     string EntityId,
     double Confidence,
@@ -27,58 +22,27 @@ public sealed record SemanticMatch(
     IReadOnlyList<EntityCandidate>? Candidates = null
 );
 
-/// <summary>The resolver's opt-in behaviour. The tier thresholds are constants, not knobs — they are measured.</summary>
 public sealed class EntityResolverOptions {
-    /// <summary>
-    /// Whether the lexical tier runs between exact and semantic matching: stem-identical forms,
-    /// near-identical single words, and unique-prefix person nicknames.
-    /// </summary>
+    /// <summary>Runs the lexical tier between exact and semantic matching.</summary>
     public bool LexicalTier { get; set; } = true;
 
-    /// <summary>
-    /// Whether a spelling that corroborates the vector lowers the merge bar. Off, every semantic
-    /// merge faces the uncorroborated threshold alone.
-    /// </summary>
+    /// <summary>Lets a matching spelling lower the semantic merge bar.</summary>
     public bool CorroboratedMerging { get; set; } = true;
 
-    /// <summary>
-    /// Whether a model gets the last word on names no deterministic tier would merge. Needs a
-    /// disambiguator; without one the tier is skipped and a unique prefix merges on its own, the
-    /// way it did before the tier existed.
-    /// </summary>
+    /// <summary>Lets a model decide names no other tier would merge, skipped when no disambiguator is given.</summary>
     public bool LlmTier { get; set; } = true;
 
-    /// <summary>
-    /// Vector similarity above which an uncorroborated match merges without review. The default is
-    /// measured, not chosen: an embedding puts related concepts close ("paintings", "art"), and a
-    /// wrong merge corrupts the catalog permanently while a missed one costs only an alias.
-    /// </summary>
+    /// <summary>Similarity above which a semantic match merges.</summary>
     public double SemanticMergeThreshold { get; set; } = 0.97;
 
-    /// <summary>
-    /// The cascade as it shipped before the 2026-08-21 resolution work: an exact alias hit, then
-    /// vector similarity, with nothing lexical in between. Kept measurable on purpose — the same
-    /// reason the retrieval chain keeps its Legacy composition — so the benchmark can price what
-    /// the lexical tier is worth instead of assuming it.
-    /// </summary>
+    /// <summary>The old cascade, kept for benchmarking.</summary>
     public static EntityResolverOptions Legacy =>
         new() { LexicalTier = false, CorroboratedMerging = false, SemanticMergeThreshold = 0.95 };
 }
 
-/// <summary>Entity a name resolved to, with method and confidence.</summary>
 public sealed record ResolvedEntity(string EntityId, double Confidence, ResolutionMethod Method);
 
-/// <summary>
-/// Resolves names mentioned in text, such as "Tim" or "Acme Corp", to entities in the catalog.
-/// Each name takes the first match that applies.
-/// <list type="number">
-///   <item><description>A name matching a known alias links to its entity.</description></item>
-///   <item><description>A close semantic match merges with the entity it resembles.</description></item>
-///   <item><description>An unrecognized name becomes a new entity with a deterministic id.</description></item>
-/// </list>
-/// Created names are remembered, so repeat mentions link instead of duplicating. Every name
-/// resolves to an entity id with a confidence and the method that produced it.
-/// </summary>
+/// <summary>Resolves names in text to catalog entities: exact, lexical, semantic, else creates one.</summary>
 public sealed class KontextEntityResolver(
     KontextDataSource dts,
     IEmbeddingGenerator<string, Embedding<float>> embeddings,
@@ -87,53 +51,35 @@ public sealed class KontextEntityResolver(
 ) {
     readonly EntityResolverOptions _options = options ?? new EntityResolverOptions();
 
-    /// <summary>Best lexical candidate for a surface form: a stem-identical, near-identical, or unique-prefix alias.</summary>
     sealed record LexicalMatch(string EntityId, double Confidence);
 
-    /// <summary>
-    /// What the lexical tier concluded: the names it claims outright, and the prefix candidates it
-    /// found for the rest. A prefix is the weakest evidence this resolver has, so it is a claim
-    /// only when no model is available to judge it.
-    /// </summary>
+    /// <summary>Names the lexical tier claims outright, plus prefix candidates for the rest.</summary>
     sealed record LexicalResolution(
         Dictionary<EntityKey, LexicalMatch> Matches,
         Dictionary<EntityKey, List<EntityCandidate>> Prefixes
     );
 
-    /// <summary>
-    /// How similar the spelling must be before it counts toward the score. At or above this, the
-    /// spelling and vector scores average. Below it, the vector score stands alone.
-    /// </summary>
+    /// <summary>Spelling similarity above which it counts toward the semantic score.</summary>
     const double FuzzyCorroborationFloor = 0.85;
 
-    /// <summary>How many nearest entities the vector search returns per name before the best one is picked.</summary>
     const int MaxCandidates = 8;
 
-    /// <summary>
-    /// The merge bar when the spelling corroborates the vector: two independent signals agreeing
-    /// buy a lower combined threshold than the vector alone.
-    /// </summary>
+    /// <summary>The merge bar when the spelling agrees with the semantic match.</summary>
     const double CorroboratedMergeThreshold = 0.90;
 
-    /// <summary>Jaro-Winkler similarity at which two same-type spellings alone name the same entity.</summary>
+    /// <summary>Spelling similarity at which two names alone merge.</summary>
     const double LexicalMergeThreshold = 0.94;
 
-    /// <summary>A stem-level hit is deterministic but not literal — confidently below exact, above any guess.</summary>
     const double StemMatchConfidence = 0.97;
 
-    /// <summary>A unique-prefix nickname hit rests on one corroborating signal, the weakest merge this resolver makes on its own.</summary>
     const double NicknameMatchConfidence = 0.90;
 
-    /// <summary>
-    /// A model read both names and said they are the same thing. Above a nickname guess, which
-    /// rests on spelling alone, and below a stem hit, which is deterministic.
-    /// </summary>
     const double LlmMatchConfidence = 0.95;
 
-    /// <summary>Names created here, so later mentions link instead of re-creating while the projector catches up.</summary>
+    /// <summary>Names created here, so later mentions link instead of re-creating.</summary>
     readonly Dictionary<EntityKey, string> _created = [];
 
-    /// <summary>The created names by folded shape, so "pottery classes" links to the "pottery class" created one batch earlier.</summary>
+    /// <summary>Created names by folded shape, so "pottery classes" links to "pottery class".</summary>
     readonly Dictionary<EntityKey, string> _createdFolded = [];
 
     public async ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
@@ -143,8 +89,6 @@ public sealed class KontextEntityResolver(
         var pending     = new Dictionary<EntityKey, string>();
         var batch       = entities as IReadOnlyCollection<ExtractedEntity> ?? [.. entities];
 
-        // The fold is a SQL expression, so the whole batch folds in one call rather than one per
-        // span. Only the lexical tier reads the folded shapes, so nothing else pays for them.
         var folded = _options.LexicalTier
             ? await FoldAsync([.. batch.Select(entity => entity.Text)], ct).ConfigureAwait(false)
             : new Dictionary<string, string>();
@@ -177,18 +121,13 @@ public sealed class KontextEntityResolver(
         foreach (var (key, match) in lexical.Matches)
             resolutions[key] = new ResolvedEntity(match.EntityId, match.Confidence, ResolutionMethod.FullText);
 
-        // With no judge, a UNIQUE prefix merges on its own and stops here — the behaviour that
-        // shipped before this tier, reported as the spelling guess it is. Turning the model off must
-        // cost recall on the names only a model can settle, never the nickname that never needed one,
-        // and must not make the name pay for an embedding nothing will read.
+        // Without a judge, a unique prefix merges on its own.
         var judged = disambiguator is not null && _options.LlmTier;
 
         if (!judged)
             foreach (var (key, only) in lexical.Prefixes.Where(entry => entry.Value.Count == 1))
                 resolutions[key] = new ResolvedEntity(only[0].EntityId, NicknameMatchConfidence, ResolutionMethod.FullText);
 
-        // Every entity a cheaper tier surfaced without merging, per name: the prefix hits, plus the
-        // vector neighbourhood added below.
         var candidates = lexical.Prefixes.ToDictionary(
             entry => entry.Key, entry => new List<EntityCandidate>(entry.Value));
 
@@ -197,7 +136,6 @@ public sealed class KontextEntityResolver(
         if (misses.Count == 0)
             return resolutions;
 
-        // The semantic pass embeds the spans as written, the same form the catalog embedded.
         var embedded = await embeddings
             .GenerateAsync(misses.Select(miss => miss.Value).ToList(), cancellationToken: ct)
             .ConfigureAwait(false);
@@ -258,11 +196,7 @@ public sealed class KontextEntityResolver(
             forKey.Add(candidate);
     }
 
-    /// <summary>
-    /// Hands the names no deterministic tier would merge to the model, each with the entities those
-    /// tiers surfaced and refused. A name no tier surfaced anything for is not asked about: there is
-    /// nothing to choose between, and it becomes a new entity.
-    /// </summary>
+    /// <summary>Hands undecided names with candidates to the model. A name with none becomes a new entity.</summary>
     async ValueTask<IReadOnlyDictionary<EntityKey, string>> DisambiguateAsync(
         List<KeyValuePair<EntityKey, string>> undecided,
         Dictionary<EntityKey, List<EntityCandidate>> candidates,
@@ -280,10 +214,7 @@ public sealed class KontextEntityResolver(
 
     static EntityKey FoldedKey(EntityKey key, string foldedText) => new(key.EntityType, foldedText);
 
-    /// <summary>
-    /// The folded shape of each text, from the engine that stored the catalog's own. One call for
-    /// the batch: a fold reads no rows, so the cost is the round trip, not the row count.
-    /// </summary>
+    /// <summary>The folded shape of each text, one call for the batch.</summary>
     async ValueTask<IReadOnlyDictionary<string, string>> FoldAsync(List<string> texts, CancellationToken ct) {
         if (texts.Count == 0)
             return new Dictionary<string, string>();
@@ -311,12 +242,7 @@ public sealed class KontextEntityResolver(
         ).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Looks up each name in the catalog and returns the entity id whose alias matches it exactly,
-    /// ignoring case and spacing. Only aliases of the same entity type count, so "apple" the
-    /// organization never matches "apple" the object. Names with no match are absent from the
-    /// result. When several entities share an alias, the first one scanned wins.
-    /// </summary>
+    /// <summary>Exact alias lookup per entity type. Unmatched names are absent.</summary>
     public async ValueTask<IReadOnlyDictionary<EntityKey, string>> ResolveExactAsync(
         IReadOnlyCollection<EntityKey> keys, CancellationToken ct = default
     ) {
@@ -351,16 +277,7 @@ public sealed class KontextEntityResolver(
         ).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Finds the catalog entity whose spelling alone claims each name, in three strengths. Only
-    /// aliases of the same type compete; names with no claim are absent from the result.
-    /// <list type="number">
-    ///   <item><description>Stem-identical: the folded shapes match ("pottery classes" is "pottery class").</description></item>
-    ///   <item><description>Near-identical: Jaro-Winkler at or above <see cref="LexicalMergeThreshold"/> ("Mell" is "Mel").</description></item>
-    ///   <item><description>Unique prefix: a single short name extends to exactly ONE entity ("Mel" is "Melanie") —
-    ///   two candidates mean ambiguity, and ambiguity never merges.</description></item>
-    /// </list>
-    /// </summary>
+    /// <summary>Spelling matches in three strengths: stem, near-identical, unique prefix.</summary>
     async ValueTask<LexicalResolution> ResolveLexicalAsync(
         IReadOnlyCollection<EntityKey> keys, CancellationToken ct
     ) {
@@ -377,12 +294,7 @@ public sealed class KontextEntityResolver(
                     var nickables = new List<bool>();
                     var byNorm    = new Dictionary<string, EntityKey>();
 
-                    // Prefix claims are a PERSON-name phenomenon: "Mel" extends to "Melanie".
-                    // Organizations were included until the resolution benchmark caught the cost —
-                    // a bare label prefixes every org named after it ("Riverside" claiming
-                    // "Riverside Library", "Riverside Clinic", "Riverside Cafe"), and each merge
-                    // grows the blob the next one joins. Common nouns share letters, not identity, so every other
-                    // type gets stem and near-identity matching only.
+                    // Prefix matching applies to person names only.
                     var properNames = group.Key is EntityTypes.Person;
 
                     foreach (var key in group) {
@@ -393,15 +305,7 @@ public sealed class KontextEntityResolver(
 
                     using var command = connection.CreateCommand();
 
-                    // The near-identity (Jaro-Winkler) tier compares single words only: JW's
-                    // prefix bonus makes "adoption interview" and "adoption meeting" near-twins,
-                    // but shared phrase heads are shared context, not shared identity — multiword
-                    // forms must earn their merge through the stem or semantic tiers instead.
-                    // prefix_hit runs both ways: a short name claims the longer alias that extends
-                    // it ("Mel" is "Melanie"), and a long name claims the shorter single-word
-                    // alias it extends ("Melanie" is "Mel") — whichever form the catalog met first.
-                    // Each tier is scored once and filtered on, so the predicate that admits a row
-                    // is the same expression the reader grades it by.
+                    // Fuzzy matching compares single words only, and prefix matching runs both ways.
                     command.CommandText =
                         """
                         SELECT norm_text, entity_id, alias, stem_hit, jw, prefix_hit
@@ -419,9 +323,6 @@ public sealed class KontextEntityResolver(
                                            AND length(k.norm_text) > length(e.alias)
                                            AND length(e.alias) >= 3
                                            AND NOT contains(lower(e.alias), ' '))) AS prefix_hit
-                              -- Both sides fold in their own subquery, once per row rather than
-                              -- once per candidate pair: the join below is a cross product, and
-                              -- the fold is the expensive half of it.
                               FROM (SELECT entity_id, alias, fold(alias) AS alias_norm
                                     FROM ldb.main.entities
                                     WHERE entity_type = $entity_type) e,
@@ -458,10 +359,7 @@ public sealed class KontextEntityResolver(
                                 Remember(prefixes, key, new EntityCandidate(entityId, alias, jw));
                         }
 
-                    // A stem or a near-identical spelling is evidence enough to merge on. A prefix
-                    // is not: it is reported as a candidate, and only the last tier decides whether
-                    // "Will" is this Will. Ambiguity is reported too — several entities claiming one
-                    // name is exactly what a judge needs to see.
+                    // Stem and near-identical merge outright while a prefix stays a candidate.
                     foreach (var key in group) {
                         if (stems.TryGetValue(key, out var stemId))
                             resolved[key] = new LexicalMatch(stemId, StemMatchConfidence);
@@ -477,17 +375,7 @@ public sealed class KontextEntityResolver(
         ).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Finds the catalog entity closest in meaning to each name and returns it with a similarity
-    /// score. Only entities of the same type compete.
-    /// <list type="number">
-    ///   <item><description>A vector search returns the nearest aliases by embedding.</description></item>
-    ///   <item><description>Candidates whose spelling also matches get their score boosted.</description></item>
-    ///   <item><description>The best-scoring candidate wins per name.</description></item>
-    /// </list>
-    /// Names with no same-type candidate are absent from the result. Scores come back raw, the
-    /// caller decides what is close enough.
-    /// </summary>
+    /// <summary>Nearest catalog entity per name by embedding, with scores returned raw.</summary>
     public async ValueTask<IReadOnlyDictionary<EntityKey, SemanticMatch>> ResolveSemanticAsync(
         IReadOnlyCollection<SemanticQuery> queries, CancellationToken ct = default
     ) {
@@ -501,10 +389,7 @@ public sealed class KontextEntityResolver(
                 foreach (var query in queries) {
                     using var command = connection.CreateCommand();
 
-                    // The type equality pushes down as a true prefilter, so only same-type rows
-                    // compete for k. The FLOAT[N] dimension is a type, not a value, it cannot bind.
-                    // _distance is squared L2 (the metric kontext's vector indexes are built for),
-                    // and the embeddings are L2-normalized, so 1 - d/2 is the cosine similarity.
+                    // The FLOAT[N] dimension is a type, so it cannot bind. 1 - d/2 converts distance to similarity.
                     command.CommandText =
                         $"""
                          SELECT entity_id,
