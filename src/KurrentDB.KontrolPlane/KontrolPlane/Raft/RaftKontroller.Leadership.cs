@@ -26,6 +26,8 @@ partial class RaftKontroller {
 			} catch (OperationCanceledException e) when (e.CancellationToken == leadershipToken) {
 				// the local node is not a leader anymore
 				Logger.Information("Kontroller lost its leadership");
+			} catch (Exception e) {
+				Logger.Error(e, "KPlane leader encountered an error");
 			}
 		}
 	}
