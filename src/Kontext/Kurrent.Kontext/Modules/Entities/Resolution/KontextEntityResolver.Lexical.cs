@@ -52,7 +52,7 @@ public sealed partial class KontextEntityResolver {
         if (keys.Count == 0)
             return new LexicalResolution([], []);
 
-        return await _dts.ExecuteAsync(
+        return await dts.ExecuteAsync(
             connection => {
                 var resolved = new Dictionary<EntityKey, ResolvedEntity>();
                 var prefixed = new Dictionary<EntityKey, List<EntityCandidate>>();
@@ -159,7 +159,7 @@ public sealed partial class KontextEntityResolver {
         if (texts.Count == 0)
             return new Dictionary<string, string>();
 
-        return await _dts.ExecuteAsync<IReadOnlyDictionary<string, string>>(
+        return await dts.ExecuteAsync<IReadOnlyDictionary<string, string>>(
             connection => {
                 using var command = connection.CreateCommand();
 

@@ -25,7 +25,7 @@ public sealed partial class KontextEntityResolver {
         if (pending.Count == 0)
             return;
 
-        var chosen = await _disambiguator!.ResolveAsync(pending, ct).ConfigureAwait(false);
+        var chosen = await disambiguator!.ResolveAsync(pending, ct).ConfigureAwait(false);
 
         foreach (var (key, entityId) in chosen)
             pass.Claim(key, new ResolvedEntity(entityId, LlmMatchConfidence, ResolutionMethod.Llm));

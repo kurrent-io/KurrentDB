@@ -19,12 +19,9 @@ public sealed partial class KontextEntityResolver(
     EntityResolverOptions? options = null,
     IEntityDisambiguator? disambiguator = null
 ) {
-    readonly KontextDataSource _dts = dts;
-    readonly IEmbeddingGenerator<string, Embedding<float>> _embeddings = embeddings;
-    readonly EntityResolverOptions _options = options ?? new EntityResolverOptions();
-    readonly IEntityDisambiguator? _disambiguator = disambiguator;
+	readonly EntityResolverOptions _options = options ?? new EntityResolverOptions();
 
-    /// <summary>Names created here, so later mentions link instead of re-creating.</summary>
+	/// <summary>Names created here, so later mentions link instead of re-creating.</summary>
     readonly Dictionary<EntityKey, string> _created = [];
 
     /// <summary>Created names by folded shape, so "pottery classes" links to "pottery class".</summary>
@@ -52,7 +49,7 @@ public sealed partial class KontextEntityResolver(
             ? await FoldAsync([.. batch.Select(entity => entity.Text)], ct).ConfigureAwait(false)
             : new Dictionary<string, string>();
 
-        var pass = new ResolutionPass(folded, Judged: _disambiguator is not null && _options.LlmTier);
+        var pass = new ResolutionPass(folded, Judged: disambiguator is not null && _options.LlmTier);
 
         foreach (var entity in batch) {
             var key = EntityKey.For(entity.EntityType, entity.Text);

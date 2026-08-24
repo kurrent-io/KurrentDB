@@ -22,7 +22,7 @@ public sealed partial class KontextEntityResolver {
         if (keys.Count == 0)
             return new Dictionary<EntityKey, string>();
 
-        return await _dts.ExecuteAsync<IReadOnlyDictionary<EntityKey, string>>(
+        return await dts.ExecuteAsync<IReadOnlyDictionary<EntityKey, string>>(
             connection => {
                 var resolved = new Dictionary<EntityKey, string>();
 
