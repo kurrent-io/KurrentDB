@@ -30,8 +30,8 @@ public sealed partial class KontextEntityResolver {
     /// Semantic tier: the nearest same-type entity by embedding merges when close enough, with a
     /// matching spelling lowering the bar. Near misses stay candidates for the disambiguation tier.
     /// </summary>
-    async ValueTask ResolveSemanticAsync(ResolutionPass pass, CancellationToken ct) {
-        var misses = pass.Undecided;
+    async ValueTask ResolveSemanticAsync(NameResolutions names, CancellationToken ct) {
+        var misses = names.Unresolved;
 
         if (misses.Count == 0)
             return;
@@ -52,17 +52,17 @@ public sealed partial class KontextEntityResolver {
                 : _options.SemanticMergeThreshold;
 
             if (nearest is not null && nearest.Confidence >= threshold) {
-                pass.Decide(key, new ResolvedEntity(nearest.EntityId, nearest.Confidence, ResolutionMethod.Semantic));
+                names.ResolveTo(key, new ResolvedEntity(nearest.EntityId, nearest.Confidence, ResolutionMethod.Semantic));
                 continue;
             }
 
             foreach (var candidate in nearest?.Candidates ?? [])
-                pass.AddCandidate(key, candidate);
+                names.AddPossibleMatch(key, candidate);
         }
     }
 
     /// <summary>Nearest catalog entity per name by embedding, with scores returned raw.</summary>
-    public async ValueTask<IReadOnlyDictionary<EntityKey, SemanticMatch>> LookupSemanticAsync(
+    internal async ValueTask<IReadOnlyDictionary<EntityKey, SemanticMatch>> LookupSemanticAsync(
         IReadOnlyCollection<SemanticQuery> queries, CancellationToken ct = default
     ) {
         if (queries.Count == 0)

@@ -24,18 +24,18 @@ public sealed partial class KontextEntityResolver {
     /// Lexical tier: stem-identical and near-identical spellings merge outright. A person prefix
     /// ("Mel" is "Melanie") stays a candidate for the disambiguation tier to decide.
     /// </summary>
-    async ValueTask ResolveLexicalAsync(ResolutionPass pass, CancellationToken ct) {
+    async ValueTask ResolveLexicalAsync(NameResolutions names, CancellationToken ct) {
         if (!_options.LexicalTier)
             return;
 
-        var lexical = await LookupLexicalAsync([.. pass.Undecided.Select(entry => entry.Key)], ct).ConfigureAwait(false);
+        var lexical = await LookupLexicalAsync([.. names.Unresolved.Select(entry => entry.Key)], ct).ConfigureAwait(false);
 
         foreach (var (key, match) in lexical.Matches)
-            pass.Decide(key, match);
+            names.ResolveTo(key, match);
 
         foreach (var (key, prefixes) in lexical.Prefixes)
             foreach (var candidate in prefixes)
-                pass.AddCandidate(key, candidate);
+                names.AddPossibleMatch(key, candidate);
     }
 
     /// <summary>Spelling matches in three strengths: stem, near-identical, unique prefix.</summary>

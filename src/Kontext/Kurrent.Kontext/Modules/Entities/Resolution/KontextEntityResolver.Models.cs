@@ -9,10 +9,10 @@ namespace Kurrent.Kontext.Entities;
 public sealed record ResolvedEntity(string EntityId, double Confidence, ResolutionMethod Method);
 
 /// <summary>A name to resolve semantically, with its embedding.</summary>
-public sealed record SemanticQuery(EntityKey Key, float[] Embedding);
+internal sealed record SemanticQuery(EntityKey Key, float[] Embedding);
 
 /// <summary>Best semantic match for a name, with the runners-up in <see cref="Candidates"/> for later tiers.</summary>
-public sealed record SemanticMatch(
+internal sealed record SemanticMatch(
     string EntityId,
     double Confidence,
     bool Corroborated = false,

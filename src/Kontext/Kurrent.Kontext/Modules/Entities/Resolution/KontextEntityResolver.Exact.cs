@@ -8,15 +8,15 @@ namespace Kurrent.Kontext.Entities;
 
 public sealed partial class KontextEntityResolver {
     /// <summary>Exact tier: a name matching a known alias links to its entity at full confidence.</summary>
-    async ValueTask ResolveExactAsync(ResolutionPass pass, CancellationToken ct) {
-        var aliases = await LookupExactAsync([.. pass.Undecided.Select(entry => entry.Key)], ct).ConfigureAwait(false);
+    async ValueTask ResolveExactAsync(NameResolutions names, CancellationToken ct) {
+        var aliases = await LookupExactAsync([.. names.Unresolved.Select(entry => entry.Key)], ct).ConfigureAwait(false);
 
         foreach (var (key, entityId) in aliases)
-            pass.Decide(key, new ResolvedEntity(entityId, 1.0, ResolutionMethod.Exact));
+            names.ResolveTo(key, new ResolvedEntity(entityId, 1.0, ResolutionMethod.Exact));
     }
 
     /// <summary>Exact alias lookup per entity type. Unmatched names are absent.</summary>
-    public async ValueTask<IReadOnlyDictionary<EntityKey, string>> LookupExactAsync(
+    internal async ValueTask<IReadOnlyDictionary<EntityKey, string>> LookupExactAsync(
         IReadOnlyCollection<EntityKey> keys, CancellationToken ct = default
     ) {
         if (keys.Count == 0)

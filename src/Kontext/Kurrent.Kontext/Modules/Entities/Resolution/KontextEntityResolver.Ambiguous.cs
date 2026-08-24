@@ -9,8 +9,8 @@ public sealed partial class KontextEntityResolver {
     /// abstains. A name with no candidates is not asked about — there is nothing to choose between,
     /// and it becomes a new entity.
     /// </summary>
-    async ValueTask ResolveAmbiguousAsync(ResolutionPass pass, CancellationToken ct) {
-        var pending = pass.Undecided
+    async ValueTask ResolveAmbiguousAsync(NameResolutions names, CancellationToken ct) {
+        var pending = names.Unresolved
             .Where(entry => entry.Value.Candidates.Count > 0)
             .Select(entry => new Disambiguation(entry.Key, entry.Value.Text, entry.Value.Candidates))
             .ToList();
@@ -21,6 +21,6 @@ public sealed partial class KontextEntityResolver {
         var chosen = await _disambiguator.ResolveAsync(pending, ct).ConfigureAwait(false);
 
         foreach (var (key, resolution) in chosen)
-            pass.Decide(key, resolution);
+            names.ResolveTo(key, resolution);
     }
 }
