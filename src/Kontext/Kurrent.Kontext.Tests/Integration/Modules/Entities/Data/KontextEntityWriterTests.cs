@@ -160,13 +160,13 @@ public class KontextEntityWriterTests {
 		var resolver = new KontextEntityResolver(dataSources, new FakeEmbeddings());
 
 		// Act + Assert — the written spelling exact-resolves, case-insensitively.
-		var exact = await resolver.ResolveExactAsync([EntityKey.For("organization", "ACME CORP")], cancellationToken);
+		var exact = await resolver.LookupExactAsync([EntityKey.For("organization", "ACME CORP")], cancellationToken);
 
 		await Assert.That(exact[new EntityKey("organization", "acme corp")]).IsEqualTo("e-acme");
 
 		// Act + Assert — a span whose embedding sits exactly on the written alias vector scores 1,
 		// proving the writer embedded the alias with its model, not garbage.
-		var semantic = await resolver.ResolveSemanticAsync(
+		var semantic = await resolver.LookupSemanticAsync(
 			[new SemanticQuery(new EntityKey("organization", "globex"), FakeEmbeddings.Embed("Acme Corp"))], cancellationToken);
 
 		await Assert.That(semantic[new EntityKey("organization", "globex")].EntityId).IsEqualTo("e-acme");
@@ -209,7 +209,7 @@ public class KontextEntityWriterTests {
 		await Assert.That(learned.EmbeddingMatches).IsTrue();
 
 		var resolver = new KontextEntityResolver(dataSources, new FakeEmbeddings());
-		var exact    = await resolver.ResolveExactAsync([EntityKey.For("person", "MEL")], cancellationToken);
+		var exact    = await resolver.LookupExactAsync([EntityKey.For("person", "MEL")], cancellationToken);
 
 		await Assert.That(exact[new EntityKey("person", "mel")]).IsEqualTo("e-melanie");
 	}

@@ -14,7 +14,7 @@ public sealed partial class KontextEntityResolver {
 
     const double StemMatchConfidence = 0.97;
 
-    /// <summary>Names the lexical tier claims outright, plus prefix candidates for the rest.</summary>
+    /// <summary>Names the lexical tier merges outright, plus prefix candidates for the rest.</summary>
     sealed record LexicalResolution(
         Dictionary<EntityKey, ResolvedEntity> Matches,
         Dictionary<EntityKey, List<EntityCandidate>> Prefixes
@@ -24,14 +24,14 @@ public sealed partial class KontextEntityResolver {
     /// Lexical tier: stem-identical and near-identical spellings merge outright. A person prefix
     /// ("Mel" is "Melanie") stays a candidate for the disambiguation tier to decide.
     /// </summary>
-    async ValueTask ClaimLexicalAsync(ResolutionPass pass, CancellationToken ct) {
+    async ValueTask ResolveLexicalAsync(ResolutionPass pass, CancellationToken ct) {
         if (!_options.LexicalTier)
             return;
 
-        var lexical = await ResolveLexicalAsync([.. pass.Undecided.Select(entry => entry.Key)], ct).ConfigureAwait(false);
+        var lexical = await LookupLexicalAsync([.. pass.Undecided.Select(entry => entry.Key)], ct).ConfigureAwait(false);
 
         foreach (var (key, match) in lexical.Matches)
-            pass.Claim(key, match);
+            pass.Decide(key, match);
 
         foreach (var (key, prefixes) in lexical.Prefixes)
             foreach (var candidate in prefixes)
@@ -39,7 +39,7 @@ public sealed partial class KontextEntityResolver {
     }
 
     /// <summary>Spelling matches in three strengths: stem, near-identical, unique prefix.</summary>
-    async ValueTask<LexicalResolution> ResolveLexicalAsync(
+    async ValueTask<LexicalResolution> LookupLexicalAsync(
         IReadOnlyCollection<EntityKey> keys, CancellationToken ct
     ) {
         if (keys.Count == 0)
@@ -74,7 +74,7 @@ public sealed partial class KontextEntityResolver {
                             FROM ldb.main.entities
                             WHERE entity_type = $entity_type
                         ),
-                        claims AS (
+                        names AS (
                             SELECT norm_text, nickable, fold(norm_text) AS folded
                             FROM (SELECT unnest(CAST($norms AS VARCHAR[])) AS norm_text,
                                          unnest(CAST($nickables AS BOOLEAN[])) AS nickable)
@@ -97,7 +97,7 @@ public sealed partial class KontextEntityResolver {
                                         AND NOT contains(a.alias_lower, ' '))
                                    ) AS prefix_hit
                             FROM aliases a
-                            CROSS JOIN claims c
+                            CROSS JOIN names c
                         )
                         SELECT norm_text, entity_id, alias, stem_hit, jw, prefix_hit
                         FROM scored

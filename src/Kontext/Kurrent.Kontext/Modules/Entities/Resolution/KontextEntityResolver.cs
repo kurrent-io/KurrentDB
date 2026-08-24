@@ -10,7 +10,7 @@ namespace Kurrent.Kontext.Entities;
 
 /// <summary>
 /// Resolves names in text to catalog entities through a cascade of tiers, cheapest first. Each
-/// tier claims the names it is confident about and passes the rest down; whatever survives every
+/// tier decides the names it is confident about and passes the rest down; whatever survives every
 /// tier becomes a new entity. One tier per partial file. Stateless: repeat mentions link through
 /// the catalog, which ingestion writes before the next batch resolves.
 /// </summary>
@@ -30,10 +30,10 @@ public sealed partial class KontextEntityResolver(
     ) {
         var pass = BeginPass(entities);
 
-        await ClaimExactAsync(pass, ct).ConfigureAwait(false);
-        await ClaimLexicalAsync(pass, ct).ConfigureAwait(false);
-        await ClaimSemanticAsync(pass, ct).ConfigureAwait(false);
-        await ClaimDisambiguatedAsync(pass, ct).ConfigureAwait(false);
+        await ResolveExactAsync(pass, ct).ConfigureAwait(false);
+        await ResolveLexicalAsync(pass, ct).ConfigureAwait(false);
+        await ResolveSemanticAsync(pass, ct).ConfigureAwait(false);
+        await ResolveAmbiguousAsync(pass, ct).ConfigureAwait(false);
 
         CreateNewEntities(pass);
 
@@ -50,13 +50,13 @@ public sealed partial class KontextEntityResolver(
         return pass;
     }
 
-    /// <summary>Turns every name no tier claimed into a new entity with a deterministic id.</summary>
+    /// <summary>Turns every name no tier decided into a new entity with a deterministic id.</summary>
     static void CreateNewEntities(ResolutionPass pass) {
         foreach (var (key, name) in pass.Undecided)
-            pass.Claim(key, new ResolvedEntity(EntityId.For(key.EntityType, name.Text), 1.0, ResolutionMethod.Created));
+            pass.Decide(key, new ResolvedEntity(EntityId.For(key.EntityType, name.Text), 1.0, ResolutionMethod.Created));
     }
 
-    /// <summary>A name's journey through the pass: undecided until a tier claims it.</summary>
+    /// <summary>A name's journey through the pass: undecided until a tier decides it.</summary>
     sealed class NameResolution(string text) {
         public string Text { get; } = text;
         public List<EntityCandidate> Candidates { get; } = [];
@@ -64,7 +64,7 @@ public sealed partial class KontextEntityResolver(
     }
 
     /// <summary>
-    /// One batch moving through the cascade. Every name enters undecided; a tier either claims it
+    /// One batch moving through the cascade. Every name enters undecided; a tier either decides it
     /// or surfaces the candidates it refused to merge, for the disambiguation tier to choose from.
     /// </summary>
     sealed class ResolutionPass {
@@ -72,15 +72,15 @@ public sealed partial class KontextEntityResolver(
 
         public void Enter(EntityKey key, string text) => _names.TryAdd(key, new NameResolution(text));
 
-        /// <summary>Names no tier has claimed yet, in batch order.</summary>
+        /// <summary>Names no tier has decided yet, in batch order.</summary>
         public List<KeyValuePair<EntityKey, NameResolution>> Undecided =>
             [.. _names.Where(entry => entry.Value.Resolution is null)];
 
-        public void Claim(EntityKey key, ResolvedEntity resolution) {
+        public void Decide(EntityKey key, ResolvedEntity resolution) {
             var name = _names[key];
 
             if (name.Resolution is not null)
-                throw new InvalidOperationException($"'{name.Text}' was already claimed by an earlier tier.");
+                throw new InvalidOperationException($"'{name.Text}' was already decided by an earlier tier.");
 
             name.Resolution = resolution;
         }

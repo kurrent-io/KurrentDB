@@ -34,7 +34,7 @@ public class KontextEntityResolverTests {
 		var resolver = new KontextEntityResolver(dataSource, new NoEmbeddings());
 
 		// Act
-		var resolved = await resolver.ResolveExactAsync([
+		var resolved = await resolver.LookupExactAsync([
 			new EntityKey("organization", "acme corp"),
 			new EntityKey("person", "acme corp"),
 		]);
@@ -55,7 +55,7 @@ public class KontextEntityResolverTests {
 
 		// Act — the span's embedding sits exactly on the stored alias vector and the normalized
 		// text equals the alias, so both legs score 1 and the combined score is exactly 1.
-		var resolved = await resolver.ResolveSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
+		var resolved = await resolver.LookupSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
 
 		// Assert
 		await Assert.That(resolved[key].EntityId).IsEqualTo("e-acme");
@@ -72,7 +72,7 @@ public class KontextEntityResolverTests {
 		var key      = new EntityKey("person", "acme corp");
 
 		// Act — the vector sits exactly on an organization alias, but the span is a person.
-		var resolved = await resolver.ResolveSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
+		var resolved = await resolver.LookupSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
 
 		// Assert
 		await Assert.That(resolved.ContainsKey(key)).IsFalse();
@@ -89,7 +89,7 @@ public class KontextEntityResolverTests {
 
 		// Act — the span's vector is closer to Zenith (cos 0.7) than to Acme (cos 0.6), but the
 		// name is identical to Acme's alias: (0.6 + 1.0) / 2 = 0.8 beats Zenith's lone 0.7.
-		var resolved = await resolver.ResolveSemanticAsync([
+		var resolved = await resolver.LookupSemanticAsync([
 			new SemanticQuery(key, Embed(0.6f, 0.7f, 0f, 0.38729833f)),
 		]);
 
@@ -109,7 +109,7 @@ public class KontextEntityResolverTests {
 
 		// Act — nothing in the catalog resembles the name, so the nearest same-type vector wins
 		// with its similarity unboosted.
-		var resolved = await resolver.ResolveSemanticAsync([
+		var resolved = await resolver.LookupSemanticAsync([
 			new SemanticQuery(key, Embed(0f, 0.9f, 0.43588989f, 0f)),
 		]);
 
@@ -130,7 +130,7 @@ public class KontextEntityResolverTests {
 		var key      = new EntityKey("organization", "acme corp");
 
 		// Act
-		var resolved = await resolver.ResolveSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
+		var resolved = await resolver.LookupSemanticAsync([new SemanticQuery(key, Embed(1f, 0f, 0f, 0f))]);
 
 		// Assert
 		await Assert.That(resolved).IsEmpty();
