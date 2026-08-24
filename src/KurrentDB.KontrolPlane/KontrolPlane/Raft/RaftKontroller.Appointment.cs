@@ -230,7 +230,7 @@ partial class RaftKontroller {
 		return (responses, maxEpoch, newEpoch);
 	}
 
-	private static IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
+	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
 		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
 		ulong newEpoch,
@@ -244,7 +244,7 @@ partial class RaftKontroller {
 			.Select(address => FenceDatabaseNodeAsync(dataPlane, address, newEpoch, token)));
 
 		quorum = requiresAllNodes
-			? regularNodes.Count
+			? int.Max(regularNodes.Count, _mainDatabaseClusterSize)
 			: regularNodes.Count / 2 + 1;
 
 		return Task.WhenEach(regularNodes);

@@ -85,5 +85,17 @@ partial class RaftKontroller {
 			get;
 			init;
 		}
+
+		/// <summary>
+		/// Gets or sets the expected number of nodes for the main database.
+		/// </summary>
+		/// <remarks>
+		/// This property is required in migration scenarios only.
+		/// </remarks>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		public int MainDatabaseClusterSize {
+			get => int.Max(field, 1);
+			init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+		}
 	}
 }

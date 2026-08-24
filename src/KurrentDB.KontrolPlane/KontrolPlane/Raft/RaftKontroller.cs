@@ -24,6 +24,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly RaftCluster _raft;
 	private readonly IReadOnlySet<EndPoint> _seed;
 	private readonly IClusterConfigurationStorage<EndPoint> _raftMembershipStorage;
+	private readonly int _mainDatabaseClusterSize;
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
@@ -63,6 +64,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_appointmentState = new();
 		_lifecycleTokenSource = new();
 		_lifecycleToken = _lifecycleTokenSource.Token;
+		_mainDatabaseClusterSize = options.MainDatabaseClusterSize;
 	}
 
 	public required Func<IDataPlane> DataPlaneClientFactory {

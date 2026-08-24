@@ -146,6 +146,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 				// 3-node Raft clusters compete for CPU in the same test process, which can livelock elections.
 				LowerElectionTimeout = 300,
 				UpperElectionTimeout = 600,
+				MainDatabaseClusterSize = 3,
 			}) {
 				DataPlaneClientFactory = dataPlaneClientFactory,
 			};
