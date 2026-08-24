@@ -45,9 +45,9 @@ public sealed partial class KontextEntityResolver(
     }
 
     sealed class Name(string text) {
-        public string Text                      { get; } = text;
+        public string                Text       { get; } = text;
         public List<EntityCandidate> Candidates { get; } = [];
-        public ResolvedEntity? Resolution       { get; set; }
+        public ResolvedEntity?       Resolution { get; set; }
     }
 
     /// <summary>
