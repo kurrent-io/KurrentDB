@@ -120,16 +120,22 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	public ISubscriber MainBus => _outputBus;
 
 	private VNodeFSM CreateFSM() {
-		var stm = new VNodeFSMBuilder(new(this, in _state))
-			.InAnyState()
-			.When<SystemMessage.StateChangeMessage>()
-				.Do(m => Application.Exit(ExitCode.Error,
+		// Order of registrations is irrelevant.
+		// Most derived match wins.
+		// Duplicate registrations is an error at registration time.
+		var stm = new VNodeFSMBuilder(new(this, in _state));
+
+		stm.InAnyState()
+			.When<SystemMessage.StateChangeMessage>().Do(m =>
+				Application.Exit(
+					ExitCode.Error,
 					$"{m.GetType().Name} message was unhandled in {GetType().Name}. State: {State}"))
 			.When<AuthenticationMessage.AuthenticationProviderInitialized>().Do(Handle)
 			.When<AuthenticationMessage.AuthenticationProviderInitializationFailed>().Do(Handle)
 			.When<SystemMessage.SubSystemInitialized>().Do(Handle)
-			.When<SystemMessage.SystemCoreReady>().Do(Handle)
-			.InState(VNodeState.Initializing)
+			.When<SystemMessage.SystemCoreReady>().Do(Handle);
+
+		stm.InState(VNodeState.Initializing)
 			.When<SystemMessage.SystemInit>().Do(Handle)
 			.When<SystemMessage.SystemStart>().Do(Handle)
 			.When<SystemMessage.ServiceInitialized>().Do(Handle)
@@ -137,25 +143,55 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<SystemMessage.BecomeDiscoverLeader>().Do(Handle)
 			.When<ClientMessage.ScavengeDatabase>().Ignore()
 			.When<ClientMessage.StopDatabaseScavenge>().Ignore()
-			.WhenOther().ForwardTo(_outputBus)
-			.InStates(VNodeState.DiscoverLeader, VNodeState.Unknown, VNodeState.ReadOnlyLeaderless)
-			.WhenOther().ForwardTo(_outputBus)
-			.InStates(VNodeState.Initializing, VNodeState.DiscoverLeader, VNodeState.Leader, VNodeState.ResigningLeader, VNodeState.PreLeader,
-				VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower)
-			.When<SystemMessage.BecomeUnknown>().Do(Handle)
-			.InAllStatesExcept(VNodeState.DiscoverLeader, VNodeState.Unknown,
-				VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower,
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InStates(
+				VNodeState.DiscoverLeader,
+				VNodeState.Unknown,
+				VNodeState.ReadOnlyLeaderless)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InStates(
+				VNodeState.Initializing,
+				VNodeState.DiscoverLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
 				VNodeState.PreLeader,
-				VNodeState.Leader, VNodeState.ResigningLeader, VNodeState.ReadOnlyLeaderless,
-				VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
-			.When<ClientMessage.ReadRequestMessage>()
-			.Do(msg => DenyRequestBecauseNotReady(msg.Envelope, msg.CorrelationId))
-			.InAllStatesExcept(VNodeState.Leader, VNodeState.ResigningLeader,
-				VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower,
-				VNodeState.ReadOnlyReplica, VNodeState.PreReadOnlyReplica)
-			.When<ClientMessage.WriteRequestMessage>()
-			.Do(msg => DenyRequestBecauseNotReady(msg.Envelope, msg.CorrelationId))
-			.InState(VNodeState.Leader)
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
+			.When<SystemMessage.BecomeUnknown>().Do(Handle);
+
+		stm.InAllStatesExcept(
+				VNodeState.DiscoverLeader,
+				VNodeState.Unknown,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.ReadOnlyLeaderless,
+				VNodeState.PreReadOnlyReplica,
+				VNodeState.ReadOnlyReplica)
+			.When<ClientMessage.ReadRequestMessage>().Do(msg =>
+				DenyRequestBecauseNotReady(msg.Envelope, msg.CorrelationId));
+
+		stm.InAllStatesExcept(
+				VNodeState.Leader,
+				VNodeState.ResigningLeader,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.ReadOnlyReplica,
+				VNodeState.PreReadOnlyReplica)
+			.When<ClientMessage.WriteRequestMessage>().Do(msg =>
+				DenyRequestBecauseNotReady(msg.Envelope, msg.CorrelationId));
+
+		stm.InState(VNodeState.Leader)
 			.When<ClientMessage.ReadEvent>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadStreamEventsForward>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadStreamEventsBackward>().ForwardTo(_outputBus)
@@ -177,8 +213,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.UpdatePersistentSubscriptionToAll>().ForwardTo(_outputBus)
 			.When<ClientMessage.DeletePersistentSubscriptionToAll>().ForwardTo(_outputBus)
 			.When<SystemMessage.InitiateLeaderResignation>().Do(Handle)
-			.When<SystemMessage.BecomeResigningLeader>().Do(Handle)
-			.InState(VNodeState.ResigningLeader)
+			.When<SystemMessage.BecomeResigningLeader>().Do(Handle);
+
+		stm.InState(VNodeState.ResigningLeader)
 			.When<ClientMessage.ReadEvent>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadStreamEventsForward>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadStreamEventsBackward>().ForwardTo(_outputBus)
@@ -197,12 +234,21 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.ConnectToPersistentSubscriptionToAll>().Do(HandleAsResigningLeader)
 			.When<ClientMessage.UpdatePersistentSubscriptionToAll>().Do(HandleAsResigningLeader)
 			.When<ClientMessage.DeletePersistentSubscriptionToAll>().Do(HandleAsResigningLeader)
-			.When<SystemMessage.RequestQueueDrained>().Do(Handle)
-			.InAllStatesExcept(VNodeState.ResigningLeader)
-			.When<SystemMessage.RequestQueueDrained>().Ignore()
-			.InStates(VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower,
-				VNodeState.DiscoverLeader, VNodeState.Unknown, VNodeState.ReadOnlyLeaderless,
-				VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
+			.When<SystemMessage.RequestQueueDrained>().Do(Handle);
+
+		stm.InAllStatesExcept(VNodeState.ResigningLeader)
+			.When<SystemMessage.RequestQueueDrained>().Ignore();
+
+		stm.InStates(
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.DiscoverLeader,
+				VNodeState.Unknown,
+				VNodeState.ReadOnlyLeaderless,
+				VNodeState.PreReadOnlyReplica,
+				VNodeState.ReadOnlyReplica)
 			.When<ClientMessage.ReadEvent>().Do(HandleAsNonLeader)
 			.When<ClientMessage.ReadStreamEventsForward>().Do(HandleAsNonLeader)
 			.When<ClientMessage.ReadStreamEventsBackward>().Do(HandleAsNonLeader)
@@ -220,22 +266,32 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.DeletePersistentSubscriptionToAll>().Do(HandleAsNonLeader)
 			.When<ClientMessage.ReplayParkedMessages>().Do(HandleAsNonLeader)
 			.When<ClientMessage.ReplayParkedMessage>().Do(HandleAsNonLeader)
-			.When<ClientMessage.TruncateParkedMessages>().Do(HandleAsNonLeader)
-			.InStates(VNodeState.ReadOnlyLeaderless, VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
+			.When<ClientMessage.TruncateParkedMessages>().Do(HandleAsNonLeader);
+
+		stm.InStates(
+				VNodeState.ReadOnlyLeaderless,
+				VNodeState.PreReadOnlyReplica,
+				VNodeState.ReadOnlyReplica)
 			.When<ClientMessage.WriteEvents>().Do(HandleAsReadOnlyReplica)
 			.When<ClientMessage.TransactionStart>().Do(HandleAsReadOnlyReplica)
 			.When<ClientMessage.TransactionWrite>().Do(HandleAsReadOnlyReplica)
 			.When<ClientMessage.TransactionCommit>().Do(HandleAsReadOnlyReplica)
 			.When<ClientMessage.DeleteStream>().Do(HandleAsReadOnlyReplica)
 			.When<SystemMessage.VNodeConnectionLost>().Do(HandleAsReadOnlyReplica)
-			.When<SystemMessage.BecomePreReadOnlyReplica>().Do(Handle)
-			.InStates(VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower)
+			.When<SystemMessage.BecomePreReadOnlyReplica>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
 			.When<ClientMessage.WriteEvents>().Do(HandleAsNonLeader)
 			.When<ClientMessage.TransactionStart>().Do(HandleAsNonLeader)
 			.When<ClientMessage.TransactionWrite>().Do(HandleAsNonLeader)
 			.When<ClientMessage.TransactionCommit>().Do(HandleAsNonLeader)
-			.When<ClientMessage.DeleteStream>().Do(HandleAsNonLeader)
-			.InAnyState()
+			.When<ClientMessage.DeleteStream>().Do(HandleAsNonLeader);
+
+		stm.InAnyState()
 			.When<ClientMessage.NotHandled>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadEventCompleted>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadStreamEventsForwardCompleted>().ForwardTo(_outputBus)
@@ -249,22 +305,47 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.TransactionWriteCompleted>().ForwardTo(_outputBus)
 			.When<ClientMessage.TransactionCommitCompleted>().ForwardTo(_outputBus)
 			.When<ClientMessage.DeleteStreamCompleted>().ForwardTo(_outputBus)
-			.When<SystemMessage.BecomeShuttingDown>().Do(Handle)
-			.InAllStatesExcept(VNodeState.Initializing, VNodeState.ShuttingDown, VNodeState.Shutdown,
-			VNodeState.ReadOnlyLeaderless, VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
-			.When<ElectionMessage.ElectionsDone>().Do(Handle)
-			.InStates(VNodeState.DiscoverLeader, VNodeState.Unknown,
-				VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower,
-				VNodeState.PreLeader, VNodeState.Leader)
+			.When<SystemMessage.BecomeShuttingDown>().Do(Handle);
+
+		stm.InAllStatesExcept(
+				VNodeState.Initializing,
+				VNodeState.ShuttingDown,
+				VNodeState.Shutdown,
+				VNodeState.ReadOnlyLeaderless,
+				VNodeState.PreReadOnlyReplica,
+				VNodeState.ReadOnlyReplica)
+			.When<ElectionMessage.ElectionsDone>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.DiscoverLeader,
+				VNodeState.Unknown,
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.PreLeader,
+				VNodeState.Leader)
 			.When<SystemMessage.BecomePreReplica>().Do(Handle)
-			.When<SystemMessage.BecomePreLeader>().Do(Handle)
-			.InStates(VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower)
+			.When<SystemMessage.BecomePreLeader>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.PreReplica,
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower)
 			.When<GossipMessage.GossipUpdated>().Do(HandleAsNonLeader)
-			.When<SystemMessage.VNodeConnectionLost>().Do(Handle)
-			.InAllStatesExcept(VNodeState.PreReplica, VNodeState.PreLeader, VNodeState.PreReadOnlyReplica)
+			.When<SystemMessage.VNodeConnectionLost>().Do(Handle);
+
+		stm.InAllStatesExcept(
+				VNodeState.PreReplica,
+				VNodeState.PreLeader,
+				VNodeState.PreReadOnlyReplica)
 			.When<SystemMessage.WaitForChaserToCatchUp>().Ignore()
-			.When<SystemMessage.ChaserCaughtUp>().Ignore()
-			.InStates(VNodeState.PreReplica, VNodeState.PreReadOnlyReplica)
+			.When<SystemMessage.ChaserCaughtUp>().Ignore();
+
+		stm.InStates(
+				VNodeState.PreReplica,
+				VNodeState.PreReadOnlyReplica)
 			.When<SystemMessage.BecomeCatchingUp>().Do(Handle)
 			.When<SystemMessage.WaitForChaserToCatchUp>().Do(Handle)
 			.When<SystemMessage.ChaserCaughtUp>().Do(HandleAsPreReplica)
@@ -273,65 +354,99 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ReplicationMessage.SubscribeToLeader>().Do(Handle)
 			.When<ReplicationMessage.ReplicaSubscriptionRetry>().Do(Handle)
 			.When<ReplicationMessage.ReplicaSubscribed>().Do(Handle)
-			.WhenOther().ForwardTo(_outputBus)
-			.InAllStatesExcept(VNodeState.PreReplica, VNodeState.PreReadOnlyReplica)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InAllStatesExcept(
+				VNodeState.PreReplica,
+				VNodeState.PreReadOnlyReplica)
 			.When<ReplicationMessage.ReconnectToLeader>().Ignore()
 			.When<ReplicationMessage.LeaderConnectionFailed>().Ignore()
 			.When<ReplicationMessage.SubscribeToLeader>().Ignore()
 			.When<ReplicationMessage.ReplicaSubscriptionRetry>().Ignore()
-			.When<ReplicationMessage.ReplicaSubscribed>().Ignore()
-			.InStates(VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower, VNodeState.ReadOnlyReplica)
+			.When<ReplicationMessage.ReplicaSubscribed>().Ignore();
+
+		stm.InStates(
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.ReadOnlyReplica)
 			.When<ReplicationMessage.CreateChunk>().Do(ForwardReplicationMessage)
 			.When<ReplicationMessage.RawChunkBulk>().Do(ForwardReplicationMessage)
 			.When<ReplicationMessage.DataChunkBulk>().Do(ForwardReplicationMessage)
 			.When<ReplicationMessage.AckLogPosition>().ForwardTo(_outputBus)
-			.WhenOther().ForwardTo(_outputBus)
-			.InAllStatesExcept(VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower, VNodeState.ReadOnlyReplica)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InAllStatesExcept(
+				VNodeState.CatchingUp,
+				VNodeState.Clone,
+				VNodeState.Follower,
+				VNodeState.ReadOnlyReplica)
 			.When<ReplicationMessage.CreateChunk>().Ignore()
 			.When<ReplicationMessage.RawChunkBulk>().Ignore()
 			.When<ReplicationMessage.DataChunkBulk>().Ignore()
-			.When<ReplicationMessage.AckLogPosition>().Ignore()
-			.InState(VNodeState.CatchingUp)
+			.When<ReplicationMessage.AckLogPosition>().Ignore();
+
+		stm.InState(VNodeState.CatchingUp)
 			.When<ReplicationMessage.CloneAssignment>().Do(Handle)
 			.When<ReplicationMessage.FollowerAssignment>().Do(Handle)
 			.When<SystemMessage.BecomeClone>().Do(Handle)
-			.When<SystemMessage.BecomeFollower>().Do(Handle)
-			.InState(VNodeState.Clone)
+			.When<SystemMessage.BecomeFollower>().Do(Handle);
+
+		stm.InState(VNodeState.Clone)
 			.When<ReplicationMessage.DropSubscription>().Do(Handle)
 			.When<ReplicationMessage.FollowerAssignment>().Do(Handle)
-			.When<SystemMessage.BecomeFollower>().Do(Handle)
-			.InState(VNodeState.Follower)
+			.When<SystemMessage.BecomeFollower>().Do(Handle);
+
+		stm.InState(VNodeState.Follower)
 			.When<ReplicationMessage.CloneAssignment>().Do(Handle)
-			.When<SystemMessage.BecomeClone>().Do(Handle)
-			.InStates(VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
+			.When<SystemMessage.BecomeClone>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.PreReadOnlyReplica,
+				VNodeState.ReadOnlyReplica)
 			.When<GossipMessage.GossipUpdated>().Do(HandleAsReadOnlyReplica)
-			.When<SystemMessage.BecomeReadOnlyLeaderless>().Do(Handle)
-			.InStates(VNodeState.ReadOnlyLeaderless)
-			.When<GossipMessage.GossipUpdated>().Do(HandleAsReadOnlyLeaderLess)
-			.InState(VNodeState.PreReadOnlyReplica)
-			.When<SystemMessage.BecomeReadOnlyReplica>().Do(Handle)
-			.InStates(VNodeState.PreLeader, VNodeState.Leader, VNodeState.ResigningLeader)
+			.When<SystemMessage.BecomeReadOnlyLeaderless>().Do(Handle);
+
+		stm.InStates(VNodeState.ReadOnlyLeaderless)
+			.When<GossipMessage.GossipUpdated>().Do(HandleAsReadOnlyLeaderLess);
+
+		stm.InState(VNodeState.PreReadOnlyReplica)
+			.When<SystemMessage.BecomeReadOnlyReplica>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader)
 			.When<SystemMessage.NoQuorumMessage>().Do(Handle)
 			.When<GossipMessage.GossipUpdated>().Do(HandleAsLeader)
 			.When<ReplicationMessage.ReplicaSubscriptionRequest>().ForwardTo(_outputBus)
-			.When<ReplicationMessage.ReplicaLogPositionAck>().ForwardTo(_outputBus)
-			.InAllStatesExcept(VNodeState.PreLeader, VNodeState.Leader, VNodeState.ResigningLeader)
+			.When<ReplicationMessage.ReplicaLogPositionAck>().ForwardTo(_outputBus);
+
+		stm.InAllStatesExcept(
+				VNodeState.PreLeader,
+				VNodeState.Leader,
+				VNodeState.ResigningLeader)
 			.When<SystemMessage.NoQuorumMessage>().Ignore()
-			.When<ReplicationMessage.ReplicaSubscriptionRequest>().Ignore()
-			.InState(VNodeState.PreLeader)
+			.When<ReplicationMessage.ReplicaSubscriptionRequest>().Ignore();
+
+		stm.InState(VNodeState.PreLeader)
 			.When<SystemMessage.BecomeLeader>().Do(Handle)
 			.When<SystemMessage.WaitForChaserToCatchUp>().Do(Handle)
 			.When<SystemMessage.ChaserCaughtUp>().Do(HandleAsPreLeader)
-			.WhenOther().ForwardTo(_outputBus)
-			.InStates(VNodeState.Leader, VNodeState.ResigningLeader)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InStates(
+				VNodeState.Leader,
+				VNodeState.ResigningLeader)
 			.When<StorageMessage.WritePrepares>().ForwardTo(_outputBus)
 			.When<StorageMessage.WriteDelete>().ForwardTo(_outputBus)
 			.When<StorageMessage.WriteTransactionStart>().ForwardTo(_outputBus)
 			.When<StorageMessage.WriteTransactionData>().ForwardTo(_outputBus)
 			.When<StorageMessage.WriteTransactionEnd>().ForwardTo(_outputBus)
 			.When<StorageMessage.WriteCommit>().ForwardTo(_outputBus)
-			.WhenOther().ForwardTo(_outputBus)
-			.InAllStatesExcept(VNodeState.Leader, VNodeState.ResigningLeader)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InAllStatesExcept(VNodeState.Leader, VNodeState.ResigningLeader)
 			.When<SystemMessage.InitiateLeaderResignation>().Ignore()
 			.When<SystemMessage.BecomeResigningLeader>().Ignore()
 			.When<StorageMessage.WritePrepares>().Ignore()
@@ -339,18 +454,23 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<StorageMessage.WriteTransactionStart>().Ignore()
 			.When<StorageMessage.WriteTransactionData>().Ignore()
 			.When<StorageMessage.WriteTransactionEnd>().Ignore()
-			.When<StorageMessage.WriteCommit>().Ignore()
-			.InState(VNodeState.ShuttingDown)
+			.When<StorageMessage.WriteCommit>().Ignore();
+
+		stm.InState(VNodeState.ShuttingDown)
 			.When<SystemMessage.BecomeShutdown>().Do(Handle)
-			.When<SystemMessage.ShutdownTimeout>().Do(Handle)
-			.InStates(VNodeState.ShuttingDown, VNodeState.Shutdown)
+			.When<SystemMessage.ShutdownTimeout>().Do(Handle);
+
+		stm.InStates(
+				VNodeState.ShuttingDown,
+				VNodeState.Shutdown)
 			.When<SystemMessage.ServiceShutdown>().Do(Handle)
-			.WhenOther().ForwardTo(_outputBus)
-			.InState(VNodeState.DiscoverLeader)
+			.WhenOther().ForwardTo(_outputBus);
+
+		stm.InState(VNodeState.DiscoverLeader)
 			.When<GossipMessage.GossipUpdated>().Do(HandleAsDiscoverLeader)
-			.When<LeaderDiscoveryMessage.DiscoveryTimeout>().Do(HandleAsDiscoverLeader)
-			.Build();
-		return stm;
+			.When<LeaderDiscoveryMessage.DiscoveryTimeout>().Do(HandleAsDiscoverLeader);
+
+		return stm.Build();
 	}
 
 	public void Start() => _mainQueue.Start();
