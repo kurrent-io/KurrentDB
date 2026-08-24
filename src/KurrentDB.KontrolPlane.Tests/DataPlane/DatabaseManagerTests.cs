@@ -202,7 +202,10 @@ public class DatabaseManagerTests {
 			}
 		}
 
-		public Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch,
+		public Task<bool> RenewLeaderAppointmentAsync(string databaseId,
+			EndPoint nodeAddress,
+			ulong nodeEpoch,
+			Guid instanceId,
 			CancellationToken token = default)
 			=> Task.FromResult(true);
 

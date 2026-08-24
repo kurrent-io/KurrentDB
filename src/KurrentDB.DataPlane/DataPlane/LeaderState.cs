@@ -13,7 +13,7 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 		var token = heartbeatSource.Token; // cached to avoid ObjectDisposedException
 		using (var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate)) {
 			while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(cluster.Id,
-				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, token)) {
+				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, stateMachine.DatabaseHandler.CurrentNode.InstanceId, token)) {
 				await timer.WaitForNextTickAsync(token);
 			}
 		}

@@ -84,11 +84,16 @@ internal static class ReplicationHelpers {
 		public async ValueTask<bool> AppointLeaderAsync(string databaseId,
 			ulong epoch,
 			EndPoint address,
+			Guid instanceId,
 			CancellationToken token) {
 			var box = new StrongBox<bool>();
 			await raft.ReplicateAsync(
-				new ProtobufLogEntry<AppointLeader>(new()
-						{ Address = address.ToByteString(), DatabaseId = databaseId, Epoch = epoch })
+				new ProtobufLogEntry<AppointLeader>(new() {
+						Address = address.ToByteString(),
+						DatabaseId = databaseId,
+						Epoch = epoch,
+						InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
+					})
 					{ Term = raft.Term, Context = box }, token);
 			return box.Value;
 		}

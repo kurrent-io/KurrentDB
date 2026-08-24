@@ -98,7 +98,7 @@ partial class RaftKontroller : IKontroller {
 		}
 	}
 
-	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, CancellationToken token = default) {
+	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId, CancellationToken token = default) {
 		ValueTask<bool> task;
 		var leadershipToken = LeadershipToken;
 
@@ -106,7 +106,7 @@ partial class RaftKontroller : IKontroller {
 			task = ValueTask.FromCanceled<bool>(token);
 		} else {
 			try {
-				if (RenewLeaderAppointment(databaseId, leaderAddress, epoch)) {
+				if (RenewLeaderAppointment(databaseId, leaderAddress, epoch, instanceId)) {
 					task = ValueTask.FromResult(true);
 				}
 				else if (leadershipToken.IsCancellationRequested) {

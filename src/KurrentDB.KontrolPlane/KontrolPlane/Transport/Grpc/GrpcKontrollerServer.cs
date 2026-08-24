@@ -24,7 +24,10 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 	public sealed override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
 		var response = new RenewLeaderAppointmentResponse();
 		try {
-			response.Success = await kontroller.RenewLeaderAppointmentAsync(request.DatabaseId, request.Address.ToEndPoint(), request.Epoch,
+			response.Success = await kontroller.RenewLeaderAppointmentAsync(request.DatabaseId,
+				request.Address.ToEndPoint(),
+				request.Epoch,
+				new(request.InstanceId.Span),
 				context.CancellationToken);
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader

@@ -35,9 +35,12 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		static TestDataPlane CreateDataPlane() {
 			var replicaSet = new TestDataPlane();
-			replicaSet.UpdateMember(TestDataPlane.Host1, new(Epoch: 1L, WriterCheckpoint: 100, ChaserCheckpoint: 0L, Priority: 0));
-			replicaSet.UpdateMember(TestDataPlane.Host2, new(Epoch: 0L, WriterCheckpoint: 200, ChaserCheckpoint: 0L, Priority: 0));
-			replicaSet.UpdateMember(TestDataPlane.Host3, new(Epoch: 1L, WriterCheckpoint: 150, ChaserCheckpoint: 0L, Priority: 0)); // leader
+			replicaSet.UpdateMember(TestDataPlane.Host1,
+				new(Epoch: 1L, WriterCheckpoint: 100, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.Empty));
+			replicaSet.UpdateMember(TestDataPlane.Host2,
+				new(Epoch: 0L, WriterCheckpoint: 200, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.Empty));
+			replicaSet.UpdateMember(TestDataPlane.Host3,
+				new(Epoch: 1L, WriterCheckpoint: 150, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.Empty)); // leader
 			return replicaSet;
 		}
 	}
@@ -48,9 +51,12 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		// initialize members
 		var replicaSet = new TestDataPlane();
-		replicaSet.UpdateMember(TestDataPlane.Host1, new(WriterCheckpoint: 100, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0));
-		replicaSet.UpdateMember(TestDataPlane.Host2, new(WriterCheckpoint: 200, Epoch: 0L, ChaserCheckpoint: 0L, Priority: 0));
-		replicaSet.UpdateMember(TestDataPlane.Host3, new(WriterCheckpoint: 150, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0)); // leader
+		replicaSet.UpdateMember(TestDataPlane.Host1,
+			new(WriterCheckpoint: 100, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.NewGuid()));
+		replicaSet.UpdateMember(TestDataPlane.Host2,
+			new(WriterCheckpoint: 200, Epoch: 0L, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.NewGuid()));
+		replicaSet.UpdateMember(TestDataPlane.Host3,
+			new(WriterCheckpoint: 150, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0, InstanceId: Guid.NewGuid())); // leader
 
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
@@ -69,7 +75,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		Assert.Equal(TestDataPlane.Host3, leader.Address);
 
 		// Start renewal process in the background
-		var process = new RenewalProcess(kontroller, TestDataPlane.Host3, leader.Epoch, appointmentTimeout);
+		var process = new RenewalProcess(kontroller, TestDataPlane.Host3, leader.Epoch, leader.InstanceId, appointmentTimeout);
 		var renewalTask = process.RunAsync();
 
 		// Make the current member as unavailable, but due to renewal process a new leader cannot be appointed
@@ -90,7 +96,12 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await kontroller.StopAsync(TestToken);
 	}
 
-	private sealed class RenewalProcess(IKontroller kontroller, EndPoint address, ulong epoch, TimeSpan appointmentTimeout) {
+	private sealed class RenewalProcess(
+		IKontroller kontroller,
+		EndPoint address,
+		ulong epoch,
+		Guid instanceId,
+		TimeSpan appointmentTimeout) {
 		private volatile bool _stopped;
 
 		public void RequestStop() => _stopped = true;
@@ -99,7 +110,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			while (!_stopped) {
 				await Task.Delay(appointmentTimeout / 3);
 
-				Assert.True(await kontroller.RenewLeaderAppointmentAsync(Database.MainDatabaseId, address, epoch, TestToken));
+				Assert.True(await kontroller.RenewLeaderAppointmentAsync(Database.MainDatabaseId, address, epoch, instanceId, TestToken));
 			}
 		}
 	}
@@ -135,13 +146,13 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 	}
 
-	private static async Task<(EndPoint? Address, ulong Epoch)> WaitForLeaderAsync(IKontroller kontroller) {
+	private static async Task<(EndPoint? Address, ulong Epoch, Guid InstanceId)> WaitForLeaderAsync(IKontroller kontroller) {
 		await foreach (var database in kontroller.ListenDatabaseAsync(Database.MainDatabaseId, TestToken)) {
-			if (database.LeaderAddress is { } address)
-				return (address, database.Epoch);
+			if (database.LeaderNode is { } leaderNode)
+				return (leaderNode.Address, database.Epoch, leaderNode.InstanceId);
 		}
 
-		return (null, 0L);
+		return (null, 0L, Guid.Empty);
 	}
 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;

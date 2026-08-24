@@ -16,6 +16,7 @@ message RenewLeaderAppointmentRequest
   string databaseId = 1;
   bytes address = 2;
   uint64 epoch = 3;
+  bytes instanceId = 4;
 }
 
 message RenewLeaderAppointmentResponse

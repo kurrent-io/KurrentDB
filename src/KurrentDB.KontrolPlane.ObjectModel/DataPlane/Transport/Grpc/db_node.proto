@@ -20,4 +20,5 @@ message FenceResponse
   int64 writerCheckpoint = 2;
   int64 chaserCheckpoint = 3;
   int32 priority = 4;
+  bytes instanceId = 5;
 }

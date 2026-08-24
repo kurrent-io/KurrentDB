@@ -4,6 +4,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext;
+using Google.Protobuf;
 using Grpc.Core;
 using static System.Threading.Timeout;
 
@@ -77,7 +78,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	}
 
 	/// <inheritdoc cref="IKontrolPlane.RenewLeaderAppointmentAsync"/>
-	public async Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default) {
+	public async Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, Guid instanceId, CancellationToken token = default) {
 		// Loop is needed to reach the KPlane leader
 		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
 			var entry = GetOrCreateClient(currentAddress);
@@ -86,7 +87,8 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 				var response = await entry.Client.RenewLeaderAppointmentAsync(new() {
 					DatabaseId = databaseId,
 					Epoch = nodeEpoch,
-					Address = nodeAddress.ToByteString()
+					Address = nodeAddress.ToByteString(),
+					InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
 				}, cancellationToken: token);
 
 				// We've got a response from the leader

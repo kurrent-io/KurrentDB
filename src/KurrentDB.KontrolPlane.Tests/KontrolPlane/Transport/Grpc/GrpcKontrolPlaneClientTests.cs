@@ -27,7 +27,7 @@ public class GrpcKontrolPlaneClientTests {
 		using var client = CreateClient(seed: nodeA.Address, nodeA, nodeB);
 
 		var success = await client
-			.RenewLeaderAppointmentAsync(Database.MainDatabaseId, new IPEndPoint(IPAddress.Loopback, 1112), nodeEpoch: 1UL, TestToken);
+			.RenewLeaderAppointmentAsync(Database.MainDatabaseId, new IPEndPoint(IPAddress.Loopback, 1112), nodeEpoch: 1UL, Guid.Empty, TestToken);
 
 		Assert.True(success);
 		Assert.Equal(1, nodeA.Service.RenewLeaderAppointmentCallCount);

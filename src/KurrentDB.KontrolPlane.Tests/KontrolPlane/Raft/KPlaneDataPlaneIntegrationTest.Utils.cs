@@ -47,7 +47,8 @@ partial class KPlaneDataPlaneIntegrationTest {
 
 		var nodes = new DPNode[databaseNodes.Count];
 		for (var i = 0; i < databaseNodes.Count; i++) {
-			var replicaState = new ReplicaState(Epoch: 0UL, WriterCheckpoint: databaseNodes.Count - i, ChaserCheckpoint: 0L, Priority: 0);
+			var replicaState = new ReplicaState(Epoch: 0UL, WriterCheckpoint: databaseNodes.Count - i, ChaserCheckpoint: 0L, Priority: 0,
+				databaseNodes[i].InstanceId);
 			nodes[i] = await DPNode.StartAsync(databaseNodes[i], kontrolPlaneNodes, replicaState, TestToken);
 		}
 

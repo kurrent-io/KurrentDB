@@ -30,10 +30,11 @@ public interface IKontrolPlane {
 	/// <param name="databaseId">The database identifier.</param>
 	/// <param name="nodeAddress">The address of the caller database node.</param>
 	/// <param name="nodeEpoch">The epoch of the caller database node.</param>
+	/// <param name="instanceId">Identifier of the current instance.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns><see langword="true"/> if leader appointment is updated successfully; otherwise, <see langword="false"/>.</returns>
 	/// <exception cref="OperationCanceledException"><paramref name="token"/> is canceled.</exception>
-	Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default);
+	Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, Guid instanceId, CancellationToken token = default);
 
 	/// <summary>
 	/// Resigns the database leader.

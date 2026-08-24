@@ -149,19 +149,24 @@ file readonly struct UnsetLeaderNodeConditionallyStmt : IPreparedStatement<(stri
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AppointLeaderNodeStmt(AppointLeader command)
-	: IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address)>,
+	: IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, Guid InstanceId)>,
 		ISupplier<DuckDBAdvancedConnection, bool> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE node SET is_leader=true WHERE database_id=$1 AND address=$2;"u8;
+	public static ReadOnlySpan<byte> CommandText => """
+	                                                UPDATE node
+	                                                SET is_leader=true, instance_id=$3
+	                                                WHERE database_id=$1 AND address=$2;
+	                                                """u8;
 
-	public static StatementBindingResult Bind(in (string DatabaseId, ReadOnlyMemory<byte> Address) args,
+	public static StatementBindingResult Bind(in (string DatabaseId, ReadOnlyMemory<byte> Address, Guid InstanceId) args,
 		PreparedStatement source)
 		=> new(source) {
 			args.DatabaseId,
 			args.Address.Span,
+			Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
 		};
 
 	public bool Invoke(DuckDBAdvancedConnection connection)
 		=> connection.ExecuteNonQuery<(string, ulong), UnsetLeaderNodeConditionallyStmt>(new(command.DatabaseId, command.Epoch)) is not 0L
-		   && connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), AppointLeaderNodeStmt>(new(command.DatabaseId,
-			   command.Address.Memory)) is not 0L;
+		   && connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, Guid), AppointLeaderNodeStmt>(new(command.DatabaseId,
+			   command.Address.Memory, new Guid(command.InstanceId.Span))) is not 0L;
 }

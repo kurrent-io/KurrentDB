@@ -151,20 +151,21 @@ partial class RaftKontroller {
 			= await FenceDatabaseAsync(databaseId, dataPlane, nodes, currentEpoch, token);
 
 		// Find the node with the max offset
-		EndPoint? candidate = responses
+		(EndPoint? Address, Guid InstanceId) candidate = responses
 			.Where(pair => pair.Value.Epoch == maxEpoch)
 			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
 			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
-			.ThenByDescending(resignedLeader is null ? Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0) : resignedLeader.GetOrder)
+			.ThenByDescending(
+				resignedLeader is null ? Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0) : resignedLeader.GetOrder)
 			.ThenByDescending(static pair => pair.Value.Priority)
-			.FirstOrDefault()
-			.Key;
+			.Select(static pair => (pair.Key, pair.Value.InstanceId))
+			.FirstOrDefault();
 
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
-		if (candidate is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate, CancellationToken.None)) {
+		if (candidate.Address is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate.Address, candidate.InstanceId, CancellationToken.None)) {
 			Logger.Information($"DPlane node '{candidate}' is appointed as leader for database '{databaseId}'");
-			_appointmentState[databaseId] = new(candidate, currentEpoch);
+			_appointmentState[databaseId] = new(candidate.Address, currentEpoch, candidate.InstanceId);
 			_state.NotifyDatabaseChanged(databaseId);
 		}
 	}
@@ -247,14 +248,15 @@ partial class RaftKontroller {
 			=> new(address, await dataPlane.FenceAsync(address, currentEpoch, token));
 	}
 
-	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch) {
+	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId) {
 		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment)
 		    || expectedAppointment.Epoch != epoch
+		    || !expectedAppointment.Address.Equals(leaderAddress)
+		    || expectedAppointment.InstanceId != instanceId
 		    || expectedAppointment.IsResigned)
 			return false;
 
 		var newAppointment = expectedAppointment with {
-			Address = leaderAddress,
 			Epoch = epoch,
 			RenewedAt = new(),
 		};
@@ -262,9 +264,9 @@ partial class RaftKontroller {
 	}
 
 	[StructLayout(LayoutKind.Auto)]
-	private readonly record struct LeaderAppointment(EndPoint Address, ulong Epoch, Timestamp RenewedAt) {
-		public LeaderAppointment(EndPoint address, ulong epoch)
-			: this(address, epoch, new()) {
+	private readonly record struct LeaderAppointment(EndPoint Address, ulong Epoch, Timestamp RenewedAt, Guid InstanceId) {
+		public LeaderAppointment(EndPoint address, ulong epoch, Guid instanceId)
+			: this(address, epoch, new(), instanceId) {
 		}
 
 		public bool IsResigned { get; init; }

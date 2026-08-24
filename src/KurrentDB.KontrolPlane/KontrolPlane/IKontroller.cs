@@ -13,7 +13,7 @@ public interface IKontroller {
 
 	ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default);
 
-	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, CancellationToken token = default);
+	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId, CancellationToken token = default);
 
 	ValueTask AddOrUpdateDatabaseAsync(Database database, CancellationToken token = default);
 

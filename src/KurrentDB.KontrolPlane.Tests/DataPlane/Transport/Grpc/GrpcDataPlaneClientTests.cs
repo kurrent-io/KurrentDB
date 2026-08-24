@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -17,7 +18,14 @@ public class GrpcDataPlaneClientTests {
 	public async Task GetReplicaStateAsync_returns_mapped_replica_state() {
 		await using var node = await DataPlaneNodeHost.StartAsync(new IPEndPoint(IPAddress.Loopback, 1112));
 
-		node.Service.Response = new() { Epoch = 5UL, WriterCheckpoint = 100L, ChaserCheckpoint = 99L, Priority = 2 };
+		var instanceId = Guid.NewGuid();
+		node.Service.Response = new() {
+			Epoch = 5UL,
+			WriterCheckpoint = 100L,
+			ChaserCheckpoint = 99L,
+			Priority = 2,
+			InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
+		};
 
 		await using var client = CreateClient(node);
 
@@ -27,6 +35,7 @@ public class GrpcDataPlaneClientTests {
 		Assert.Equal(100L, state.WriterCheckpoint);
 		Assert.Equal(99L, state.ChaserCheckpoint);
 		Assert.Equal(2, state.Priority);
+		Assert.Equal(instanceId, state.InstanceId);
 	}
 
 	[Fact]

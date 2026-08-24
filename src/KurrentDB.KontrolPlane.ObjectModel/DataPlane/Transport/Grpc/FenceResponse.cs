@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Google.Protobuf;
+
 namespace KurrentDB.DataPlane.Transport.Grpc;
 
 partial class FenceResponse {
@@ -9,6 +11,7 @@ partial class FenceResponse {
 		ChaserCheckpoint = state.ChaserCheckpoint;
 		WriterCheckpoint = state.WriterCheckpoint;
 		Priority = state.Priority;
+		InstanceId = ByteString.CopyFrom(state.InstanceId.ToByteArray());
 	}
 
 	public ReplicaState ToEntity() => new() {
@@ -16,5 +19,6 @@ partial class FenceResponse {
 		ChaserCheckpoint = ChaserCheckpoint,
 		WriterCheckpoint = WriterCheckpoint,
 		Priority = Priority,
+		InstanceId = InstanceId.Span is { Length: 16 } instanceId ? new(instanceId) : Guid.Empty,
 	};
 }

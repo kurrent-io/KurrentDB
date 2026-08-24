@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics;
-using System.Net;
 
 namespace KurrentDB.DataPlane;
 
@@ -34,17 +33,17 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		if (newVersion[currentNode.Address] is { } newCurrentNode) {
 			// update information about the current node if needed
 			if (currentNode != newCurrentNode)
-				DatabaseHandler.CurrentNode = newCurrentNode;
+				DatabaseHandler.CurrentNode = newCurrentNode with { InstanceId = currentNode.InstanceId };
 		} else if (_state is not FrozenState) {
 			// current node is removed from the cluster configuration, move to frozen state
 			await ChangeStateAsync(new FrozenState());
 			return;
 		}
 
-		await ChangeDatabaseLeaderAsync(baseline, newVersion, currentNode.Address);
+		await ChangeDatabaseLeaderAsync(baseline, newVersion, currentNode);
 	}
 
-	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion, EndPoint currentNode) {
+	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion, DatabaseNode currentNode) {
 		var oldLeader = baseline?.LeaderAddress;
 		var newLeader = newVersion.LeaderAddress;
 
@@ -52,8 +51,8 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		// re-appointed under a new epoch (KPlane can do this, e.g. right after its own failover,
 		// without ever reporting an intermediate LeaderAddress change).
 		DatabaseState newState;
-		switch (currentNode.Equals(oldLeader), currentNode.Equals(newLeader)) {
-			case (false, true):
+		switch (currentNode.Address.Equals(oldLeader), currentNode.Address.Equals(newLeader)) {
+			case (false, true) when currentNode.InstanceId == newVersion.LeaderNode?.InstanceId:
 				// local node becomes a database leader
 				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));
 				break;
@@ -63,7 +62,7 @@ partial class DatabaseManager : IDatabaseStateMachine {
 					? new FrozenState()
 					: new FollowerState(DatabaseHandler, newVersion));
 				break;
-			case (true, true) when baseline!.Epoch != newVersion.Epoch:
+			case (true, true) when baseline is not null && baseline.Epoch != newVersion.Epoch:
 				// still the leader, but re-appointed under a new epoch: restart the leadership session
 				// so the renewal loop is guaranteed to use the epoch this appointment actually belongs to.
 				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));

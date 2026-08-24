@@ -11,4 +11,8 @@ namespace KurrentDB.DataPlane;
 /// <param name="Epoch">The epoch of the database node.</param>
 /// <param name="WriterCheckpoint">The latest known offset of the uncommitted log record.</param>
 [StructLayout(LayoutKind.Auto)]
-public readonly record struct ReplicaState(ulong Epoch, long WriterCheckpoint, long ChaserCheckpoint, int Priority) : IModelEntity;
+public readonly record struct ReplicaState(ulong Epoch,
+	long WriterCheckpoint,
+	long ChaserCheckpoint,
+	int Priority,
+	Guid InstanceId) : IModelEntity;
