@@ -3,7 +3,7 @@
 
 using System.Collections.Frozen;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 public static partial class SpanFilter {
     /// <summary>

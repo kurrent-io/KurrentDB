@@ -42,7 +42,7 @@ public class KontextStorageConfig {
 }
 
 public enum EmbeddingsProvider {
-	Local, // In-process ONNX (all-MiniLM-L6-v2). 384-dim, CPU-only, no API key required.
+	Local, // In-process ONNX (paraphrase-multilingual-MiniLM-L12-v2). 384-dim, CPU-only, no API key required.
 	OpenAI,
 	Ollama,
 	GoogleVertexAI,

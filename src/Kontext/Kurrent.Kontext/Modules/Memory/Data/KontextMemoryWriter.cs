@@ -2,13 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Contracts.V3.Memory;
-using Kurrent.Kontext.Data;
 using Kurrent.Quack;
 using Kurrent.Surge;
 using Microsoft.Extensions.AI;
 using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
-namespace Kurrent.Kontext.Modules.Memory.Data;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// The memories read model's batch writer: applies one consumed batch of memory events as one
@@ -33,7 +32,6 @@ public sealed class KontextMemoryWriter(
         public long              RetainedAt   { get; private set; }
         public string?           SupersededBy { get; private set; }
         public long              SupersededAt { get; private set; }
-        public long?             RetractedAt  { get; private set; }
         public long?             RecalledAt   { get; private set; }
         public long              LogPosition  { get; private set; }
 
@@ -55,8 +53,6 @@ public sealed class KontextMemoryWriter(
             SupersededBy = supersededBy;
             SupersededAt = supersededAt;
         }
-
-        public void Retract(long retractedAt) => RetractedAt = retractedAt;
 
         public void Recall(long recalledAt) => RecalledAt = recalledAt;
 
@@ -81,7 +77,7 @@ public sealed class KontextMemoryWriter(
             switch (record.Value) {
                 case MemoriesRetained retained: {
                     // One event carries a whole retain call — one row per memory.
-                    var retainedAt = KontextDataStore.EncodeTimestamp(retained.RetainedAt);
+                    var retainedAt = KontextMemoryDataStore.EncodeTimestamp(retained.RetainedAt);
 
                     foreach (var entry in retained.Memories) {
                         Touch(entry.MemoryId, position).Retain(entry.Memory, retainedAt);
@@ -95,17 +91,9 @@ public sealed class KontextMemoryWriter(
                     break;
                 }
 
-                case MemoryRetracted retraction: {
-                    var retractedAt = KontextDataStore.EncodeTimestamp(retraction.RetractedAt);
-                    foreach (var memoryId in retraction.RetractedMemoryIds)
-                        Touch(memoryId, position).Retract(retractedAt);
-
-                    break;
-                }
-
                 case MemoriesRecalled recall: {
                     // Reconsolidation: a recall IS an access — the recency clock resets.
-                    var recalledAt = KontextDataStore.EncodeTimestamp(recall.RecalledAt);
+                    var recalledAt = KontextMemoryDataStore.EncodeTimestamp(recall.RecalledAt);
                     foreach (var scored in recall.Memories)
                         Touch(scored.MemoryId, position).Recall(recalledAt);
 
@@ -149,10 +137,10 @@ public sealed class KontextMemoryWriter(
     //   the batch retained the id (a full replay rewrites content and embeddings) and keeps the
     //   target's otherwise
     // - the fold facets own the lifecycle columns: flags OR in, timestamps coalesce in — a
-    //   replayed retain cannot resurrect a memory that later events retracted or superseded
+    //   replayed retain cannot resurrect a memory that later events superseded
     //
-    // The insert arm writes the terminal batch state directly: a memory retained and retracted
-    // in one batch is born retracted. last_accessed_at seeds to retained_at at birth unless the
+    // The insert arm writes the terminal batch state directly: a memory retained and superseded
+    // in one batch is born superseded. last_accessed_at seeds to retained_at at birth unless the
     // same batch already recalled it; on match a retain never touches the recency clock — only
     // recalls advance it. A fold-only source row that matches nothing does nothing: the
     // NOT MATCHED arm is guarded on the retain facet.
@@ -171,12 +159,11 @@ public sealed class KontextMemoryWriter(
                  unnest(CAST($evidence AS VARCHAR[][])) AS evidence,
                  unnest(CAST($cited_memory_ids AS VARCHAR[][])) AS cited_memory_ids,
                  unnest(CAST($supersedes AS VARCHAR[][])) AS supersedes,
-                 unnest(CAST($validity_starts AS BIGINT[])) AS validity_start,
-                 unnest(CAST($validity_ends AS BIGINT[])) AS validity_end,
+                 unnest(CAST($content_time_starts AS BIGINT[])) AS content_time_start,
+                 unnest(CAST($content_time_ends AS BIGINT[])) AS content_time_end,
                  unnest(CAST($retained_ats AS BIGINT[])) AS retained_at,
                  unnest(CAST($superseded_bys AS VARCHAR[])) AS superseded_by,
                  unnest(CAST($superseded_ats AS BIGINT[])) AS superseded_at,
-                 unnest(CAST($retracted_ats AS BIGINT[])) AS retracted_at,
                  unnest(CAST($recalled_ats AS BIGINT[])) AS recalled_at,
                  unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
@@ -184,15 +171,14 @@ public sealed class KontextMemoryWriter(
              WHEN NOT MATCHED AND s.retained THEN INSERT (
                  memory_id, memory_type, content, importance,
                  tags, reasoning, evidence, cited_memory_ids, supersedes,
-                 validity_start, validity_end, retained_at, last_accessed_at,
-                 is_retracted, retracted_at, is_superseded, superseded_at, superseded_by,
+                 content_time_start, content_time_end, retained_at, last_accessed_at,
+                 is_superseded, superseded_at, superseded_by,
                  log_position, embedding)
              VALUES (
                  s.memory_id, s.memory_type, s.content, s.importance,
                  s.tags, s.reasoning, s.evidence, s.cited_memory_ids, s.supersedes,
-                 s.validity_start, s.validity_end, s.retained_at,
+                 s.content_time_start, s.content_time_end, s.retained_at,
                  coalesce(s.recalled_at, s.retained_at),
-                 s.retracted_at IS NOT NULL, s.retracted_at,
                  s.superseded_by IS NOT NULL, s.superseded_at, coalesce(s.superseded_by, ''),
                  s.log_position,
                  CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) END)
@@ -205,13 +191,11 @@ public sealed class KontextMemoryWriter(
                , evidence         = CASE WHEN s.retained THEN s.evidence ELSE t.evidence END
                , cited_memory_ids = CASE WHEN s.retained THEN s.cited_memory_ids ELSE t.cited_memory_ids END
                , supersedes       = CASE WHEN s.retained THEN s.supersedes ELSE t.supersedes END
-               , validity_start   = CASE WHEN s.retained THEN s.validity_start ELSE t.validity_start END
-               , validity_end     = CASE WHEN s.retained THEN s.validity_end ELSE t.validity_end END
+               , content_time_start   = CASE WHEN s.retained THEN s.content_time_start ELSE t.content_time_start END
+               , content_time_end     = CASE WHEN s.retained THEN s.content_time_end ELSE t.content_time_end END
                , retained_at      = CASE WHEN s.retained THEN s.retained_at ELSE t.retained_at END
                , embedding        = CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) ELSE t.embedding END
                , last_accessed_at = coalesce(s.recalled_at, t.last_accessed_at)
-               , is_retracted     = t.is_retracted OR s.retracted_at IS NOT NULL
-               , retracted_at     = coalesce(s.retracted_at, t.retracted_at)
                , is_superseded    = t.is_superseded OR s.superseded_by IS NOT NULL
                , superseded_at    = coalesce(s.superseded_at, t.superseded_at)
                , superseded_by    = coalesce(s.superseded_by, t.superseded_by)
@@ -229,12 +213,11 @@ public sealed class KontextMemoryWriter(
         var evidence        = new List<List<string>>(count);
         var citedMemoryIds  = new List<List<string>>(count);
         var supersedes      = new List<List<string>>(count);
-        var validityStarts  = new List<long?>(count);
-        var validityEnds    = new List<long?>(count);
+        var contentTimeStarts  = new List<long?>(count);
+        var contentTimeEnds    = new List<long?>(count);
         var retainedAts     = new List<long?>(count);
         var supersededBys   = new List<string?>(count);
         var supersededAts   = new List<long?>(count);
-        var retractedAts    = new List<long?>(count);
         var recalledAts     = new List<long?>(count);
         var logPositions    = new List<long>(count);
         var batchEmbeddings = new List<float[]>(count);
@@ -250,17 +233,16 @@ public sealed class KontextMemoryWriter(
             memoryTypes.Add(memory is not null ? (int)memory.MemoryType : 0);
             contents.Add(memory?.Content);
             importances.Add(memory is not null ? (int)memory.Importance : 0);
-            tags.Add(memory?.Tags.Select(KontextDataStore.EncodeTag).ToList() ?? []);
+            tags.Add(memory?.Tags.Select(KontextMemoryDataStore.EncodeTag).ToList() ?? []);
             reasonings.Add(memory?.Reasoning);
-            evidence.Add(memory?.Evidence.Select(KontextDataStore.EncodeEvidence).ToList() ?? []);
-            citedMemoryIds.Add(memory is not null ? KontextDataStore.EncodeCitedMemoryIds(memory) : []);
+            evidence.Add(memory?.Evidence.Select(KontextMemoryDataStore.EncodeEvidence).ToList() ?? []);
+            citedMemoryIds.Add(memory is not null ? KontextMemoryDataStore.EncodeCitedMemoryIds(memory) : []);
             supersedes.Add(memory?.Supersedes.ToList() ?? []);
-            validityStarts.Add(memory?.Validity?.PerceivedStart is { } start ? KontextDataStore.EncodeTimestamp(start) : null);
-            validityEnds.Add(memory?.Validity?.PerceivedEnd is { } end ? KontextDataStore.EncodeTimestamp(end) : null);
+            contentTimeStarts.Add(memory?.ContentTime?.PerceivedStart is { } start ? KontextMemoryDataStore.EncodeTimestamp(start) : null);
+            contentTimeEnds.Add(memory?.ContentTime?.PerceivedEnd is { } end ? KontextMemoryDataStore.EncodeTimestamp(end) : null);
             retainedAts.Add(memory is not null ? pendingMemory.RetainedAt : null);
             supersededBys.Add(pendingMemory.SupersededBy);
             supersededAts.Add(pendingMemory.SupersededBy is not null ? pendingMemory.SupersededAt : null);
-            retractedAts.Add(pendingMemory.RetractedAt);
             recalledAts.Add(pendingMemory.RecalledAt);
             logPositions.Add(pendingMemory.LogPosition);
             batchEmbeddings.Add(pendingMemory.Embedding);
@@ -278,12 +260,11 @@ public sealed class KontextMemoryWriter(
         command.Parameters.Add(new("evidence", evidence));
         command.Parameters.Add(new("cited_memory_ids", citedMemoryIds));
         command.Parameters.Add(new("supersedes", supersedes));
-        command.Parameters.Add(new("validity_starts", validityStarts));
-        command.Parameters.Add(new("validity_ends", validityEnds));
+        command.Parameters.Add(new("content_time_starts", contentTimeStarts));
+        command.Parameters.Add(new("content_time_ends", contentTimeEnds));
         command.Parameters.Add(new("retained_ats", retainedAts));
         command.Parameters.Add(new("superseded_bys", supersededBys));
         command.Parameters.Add(new("superseded_ats", supersededAts));
-        command.Parameters.Add(new("retracted_ats", retractedAts));
         command.Parameters.Add(new("recalled_ats", recalledAts));
         command.Parameters.Add(new("log_positions", logPositions));
         command.Parameters.Add(new("embeddings", batchEmbeddings));

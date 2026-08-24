@@ -11,7 +11,7 @@ public sealed class KeywordSearch(IMemoryIndex index) : ISearch {
     public string Name => RetrievalSources.Keyword;
 
     public async ValueTask<CandidateSet> SearchAsync(PlannedQuery query, CancellationToken ct = default) {
-        var options = new FullTextSearchOptions { Limit = query.PoolSize, K = query.PoolSize };
+        var options = new FullTextSearchOptions { K = query.PoolSize };
 
         var candidates = new List<SearchCandidate>(query.PoolSize);
 

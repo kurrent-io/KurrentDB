@@ -7,7 +7,7 @@ using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
-namespace Kurrent.Kontext.Infrastructure.FluentValidation;
+namespace Kurrent.Kontext.Memory;
 
 public sealed class RetainRequestValidator : RequestValidator<MemoryContracts.RetainRequest> {
     public RetainRequestValidator() {
@@ -31,24 +31,6 @@ public sealed class RetainRequestValidator : RequestValidator<MemoryContracts.Re
             .Must(m => m.Evidence.Where(e => e.Git is not null).All(e => MemoryRequestRules.ValidGitExcerpt(e.Git)))
             .WithMessage($"A git citation's excerpt is optional but, when set, must be {MemoryRequestRules.MinExcerptLength}..{MemoryRequestRules.MaxExcerptLength} characters.");
 
-        // HEARSAY is the unverified claim — the residue with neither derivation nor verification. A
-        // memory citation would make it a derived inference; a source citation would mean you checked
-        // it, at which point it has become an OBSERVATION or a FACT. Enforced rather than merely
-        // documented, because this is the memory-hacking guard: a citation is exactly how a
-        // fabricated claim would dress itself up as trustworthy.
-        RuleForEach(x => x.Memories)
-            .Must(m => m.MemoryType != MemoryContracts.MemoryType.Hearsay || m.Evidence.Count == 0)
-            .WithMessage("A HEARSAY memory carries no evidence — verify the claim and retain a FACT that supersedes it.");
-    }
-}
-
-public sealed class RetractRequestValidator : RequestValidator<MemoryContracts.RetractRequest> {
-    public RetractRequestValidator() {
-        RuleFor(x => x.MemoryId)
-            .NotEmpty()
-            .WithMessage("memory_id is required.")
-            .Must(MemoryRequestRules.Guid)
-            .WithMessage("memory_id must be a valid UUID.");
     }
 }
 
@@ -113,18 +95,17 @@ static class MemoryRequestRules {
     public const int MaxExcerptLength = 1000;
     public const int MaxWebExcerpts   = 5;
 
-    public static bool Guid(string value) => global::System.Guid.TryParse(value, out _);
+    public static bool Guid(string value) => System.Guid.TryParse(value, out _);
 
-    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || global::System.Guid.TryParse(value, out _);
+    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _);
 
     public static bool ValidWebExcerpts(MemoryContracts.Evidence.Types.WebRef web) =>
-        web.Excerpts.Count > 0
-     && web.Excerpts.Count <= MaxWebExcerpts
+        web.Excerpts.Count is > 0 and <= MaxWebExcerpts
      && web.Excerpts.All(WithinExcerptBounds);
 
     public static bool ValidGitExcerpt(MemoryContracts.Evidence.Types.GitRef git) =>
         string.IsNullOrEmpty(git.Excerpt) || WithinExcerptBounds(git.Excerpt);
 
     static bool WithinExcerptBounds(string excerpt) =>
-        excerpt.Length >= MinExcerptLength && excerpt.Length <= MaxExcerptLength;
+        excerpt.Length is >= MinExcerptLength and <= MaxExcerptLength;
 }

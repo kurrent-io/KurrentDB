@@ -2,10 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.ClientModel;
+using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Embeddings;
 using Kurrent.Kontext.Embeddings.GlinerOnnx;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities.Data;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Surge;
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers.Configuration;
@@ -21,10 +24,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
-static class KontextEntityResolutionWireUp {
-    public static IServiceCollection AddKontextEntityResolution(this IServiceCollection services) {
+public static class KontextEntityResolutionWireUp {
+    public static IServiceCollection AddKontextEntities(this IServiceCollection services) =>
+        services.AddKontextEntityProjector().AddKontextEntityResolution();
+
+    static IServiceCollection AddKontextEntityResolution(this IServiceCollection services) {
         const string serviceName = "KontextEntityResolution";
 
         services.TryAddSingleton<IChatClient>(ctx => {

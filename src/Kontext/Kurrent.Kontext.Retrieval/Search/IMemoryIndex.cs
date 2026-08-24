@@ -9,7 +9,7 @@ namespace Kurrent.Kontext.Retrieval;
 /// The query surface retrieval needs from the memories read model: three ranked reads, one per
 /// search mode. Retrieval owns this port and the read model implements it, so an <see cref="ISearch"/>
 /// can live here without the pipeline taking a dependency on the storage engine.
-/// <para>Every mode hides retracted and superseded memories, and requires ALL of <c>tags</c> to be
+/// <para>Every mode hides superseded memories, and requires ALL of <c>tags</c> to be
 /// present on a row for it to surface.</para>
 /// <para>The knobs are Lance-shaped (<c>K</c>, <c>RefineFactor</c>, <c>Nprobs</c>, <c>Prefilter</c>).
 /// This is the port for THIS index, not a store-neutral abstraction.</para>

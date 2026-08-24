@@ -3,7 +3,7 @@
 
 using System.Collections.Frozen;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 /// <summary>
 /// The canonical entity-type vocabulary (POLE+O: person, organization, location, event, object)

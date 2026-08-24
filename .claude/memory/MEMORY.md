@@ -1,5 +1,6 @@
 # Memory Index
 
+- [Kontext is greenfield — edit schema in place](kontext-is-greenfield-edit-schema-in-place.md) — no new migrations, no backfills, no compat paths for Kontext data; edit the migration body and reset the store
 - [Sérgio's C# style law](sergio-csharp-style-law.md) — summary-only docs on non-public, junior-readable comments, local functions, modern C#14/net10 idioms, no NRT-dead guards
 - [Data store picks engine per operation](data-store-picks-engine-per-operation.md) — MEVD only for vector-shaped ops; relational reads are plain DuckDB SQL ("vector store obsession" correction)
 - [Batch statements into one command](batch-statements-into-one-command.md) — multiple SQL statements/queries = ONE command + NextResult(); separate commands only when batching genuinely fails
@@ -14,7 +15,8 @@
 - [Definition of done includes follow-through](definition-of-done-includes-followthrough.md) — update docs I maintain after a change; don't ask permission for the obvious
 - [Settings objects are classes](settings-objects-are-classes.md) — config-bound/settings types are mutable classes, not records (records' required/init break the config source generator)
 - [Kontext schema compat ruling](kontext-schema-compat-ruling.md) — SHIPPED: append-only MigrationStep stream + per-step history + self-authorizing ForceRebuild sweep; no modules, no drift probe (step authors own drift); don't reintroduce them
-- [Kontext v3 contract state](kontext-v3-contract-state.md) — settled shape of the memory protos (flat MemoryType, no metadata, scope-as-tags, retract-vs-supersede) + deferred items; read before resuming the contracts
+- [Kontext v3 contract state](kontext-v3-contract-state.md) — settled shape of the memory protos (flat MemoryType, no metadata, scope-as-tags, retract-vs-supersede) + deferred items; read before resuming the contracts. **Type/certainty half SUPERSEDED by [[kontext-trust-is-a-write-rule]]**
+- [Kontext trust is a write rule](kontext-trust-is-a-write-rule.md) — 3 types (FACT/PREFERENCE/OPEN_QUESTION), no confidence field, evidence never scores, validity→content_time; certainty machinery deleted 2026-08-20
 - [Kontext.Reloaded canonical model (Path B)](kontext-reloaded-canonical-model.md) — gRPC contract model IS the core (IKontextMemoryService); domain deleted; only the MCP edge maps (HTTP model→Contracts). Don't re-suggest decoupling
 - [Kontext MCP edge serialization constraints](kontext-mcp-edge-serialization-constraints.md) — tool schemas need STJ reflection fallback (AOT breaks them); no IAsyncEnumerable tool returns; RecalledMemory polymorphism drops the body over MCP
 - [Kontext↔KurrentDB integration exploration](kontext-kurrentdb-integration-exploration.md) — memories path is KontextMemoryProjector (IConsumer-direct, supervised); Surge DuckDBProjection subgraph DELETED 2026-08-11 by ruling; hosting SOLVED 2026-08-11 (two-line plugin, decomposed AddKontext chain); pool RETIRED 2026-08-13 — KontextDataSources is the ONE storage surface (Local + Shared kurrent.ddb READ_ONLY, USE ldb everywhere, no pooling with lance EVER, StoragePath gone, test seam MemorySeeding.NewDataSources); Lance write rules inside; quack appender-into-lance PROBED OK (USE redirection); LIST/ARRAY Row.Add SHIPPED alpha.217+ — gap closed, never reassert it
@@ -28,6 +30,7 @@
 - [DuckLance is ignored](ducklance-is-ignored.md) — never mention, run, fix, or propose work on DuckLance; only if Sérgio names it first
 - [Verify before asserting external facts](verify-before-asserting-external-facts.md) — third-party pricing/quotas/limits/policies get verified against current docs in-session, or labeled "unverified"; the 2026-08-07 LFS incident
 - [Kontext projection progress tracker](kontext-projection-progress-tracker.md) — lives in Kontext only; SecondaryIndexProgressTracker deliberately untouched, never propose unifying; Atomic<ProgressMark> pair shape settled 2026-08-10
+- [Records and memories are different workloads](kontext-records-and-memories-are-different-workloads.md) — never share index tuning between them; they currently DO share one VectorIndexOptions and nothing passes it
 - [Kontext lance FTS tokenizer contract](kontext-lance-fts-tokenizer-contract.md) — fork default = upstream minus stem; our WITH = full upstream defaults, parity digging exhausted; hybrid deterministic, two-leg RRF noisy ±0.05; three-way numbers 2026-08-15
 - [Diagrams always termaid](diagrams-always-termaid.md) — every diagram renders through the termaid skill; never hand-draw box art
 - [Linear commit refs close issues](linear-commit-refs-close-issues.md) — workspace automation completes ANY issue referenced from a pushed commit; reference only the issue the commit finishes

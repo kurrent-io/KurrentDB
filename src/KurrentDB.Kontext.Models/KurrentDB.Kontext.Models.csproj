@@ -10,6 +10,11 @@
          switch (they must move together - an EmbeddedResource pointing at a never-downloaded file
          fails the build). Flip the default to false when the prototype retires. -->
     <KontextIncludePrototypeModels Condition="'$(KontextIncludePrototypeModels)' == ''">true</KontextIncludePrototypeModels>
+    <!-- bge-m3 is the 1024-dim upgrade candidate under evaluation. Its INT8 export is ~570MB, so it
+         is opt-in (-p:KontextIncludeBgeM3=true) and, unlike the others, NOT embedded as an assembly
+         resource - consumers resolve it from this directory through OnnxModel.FromFiles. -->
+    <KontextIncludeBgeM3 Condition="'$(KontextIncludeBgeM3)' == ''">false</KontextIncludeBgeM3>
+    <KontextBgeM3Dir>$(KontextModelsDir)bgem3/</KontextBgeM3Dir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,6 +60,30 @@
       Condition="!Exists('$(KontextModelsDir)pmm12/sentencepiece.bpe.model')" />
 
     <Message Importance="high" Text="pmm12 ONNX model downloaded successfully." />
+  </Target>
+
+  <!-- Download the bge-m3 evaluation bundle before build if missing. The dense-only INT8 export
+       emits last_hidden_state as output 0, which is what the generator's Cls pooling reads; exports
+       that emit a pre-pooled dense_vecs instead are not interchangeable here. The tokenizer is the
+       same XLM-R sentencepiece.bpe.model pmm12 uses (verified byte-identical). -->
+  <Target Name="DownloadBgeM3IfMissing" BeforeTargets="PrepareForBuild"
+          Condition="'$(KontextIncludeBgeM3)' == 'true' And (!Exists('$(KontextBgeM3Dir)BAAI-bge-m3_quantized.onnx') Or !Exists('$(KontextBgeM3Dir)sentencepiece.bpe.model'))">
+
+    <Message Importance="high" Text="Downloading bge-m3 ONNX model (~570MB, first build only)..." />
+
+    <MakeDir Directories="$(KontextBgeM3Dir)" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/hotchpotch/vespa-onnx-BAAI-bge-m3-only-dense/resolve/main/BAAI-bge-m3_quantized.onnx"
+      DestinationFolder="$(KontextBgeM3Dir)"
+      Condition="!Exists('$(KontextBgeM3Dir)BAAI-bge-m3_quantized.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model"
+      DestinationFolder="$(KontextBgeM3Dir)"
+      Condition="!Exists('$(KontextBgeM3Dir)sentencepiece.bpe.model')" />
+
+    <Message Importance="high" Text="bge-m3 ONNX model downloaded successfully." />
   </Target>
 
   <!-- Download the prototype-only bundles before build if missing - gated with their embeds. -->

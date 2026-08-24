@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Kontext.Infrastructure.FluentValidation;
+using Kurrent.Kontext.Memory;
 using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
 namespace Kurrent.Kontext.Tests;
@@ -19,7 +19,7 @@ public class RetainRequestValidatorTests {
 		return request;
 	}
 
-	static MemoryContracts.Memory Memory(MemoryContracts.MemoryType type = MemoryContracts.MemoryType.Observation) =>
+	static MemoryContracts.Memory Memory(MemoryContracts.MemoryType type = MemoryContracts.MemoryType.Fact) =>
 		new() { MemoryType = type, Content = "a memory that stands on its own" };
 
 	static MemoryContracts.Evidence WebCitation(params string[] excerpts) {
@@ -38,7 +38,8 @@ public class RetainRequestValidatorTests {
 		// Act
 		var result = Validator.Validate(request);
 
-		// Assert — the common case: most memories cite nothing and that costs certainty, not validity.
+		// Assert — the common case: most memories cite nothing, because a check you ran yourself is not a
+		// citable source. Evidence buys auditability, never rank.
 		await Assert.That(result.IsValid).IsTrue();
 	}
 
@@ -53,53 +54,6 @@ public class RetainRequestValidatorTests {
 		// Assert
 		await Assert.That(result.IsValid).IsFalse();
 	}
-
-	#region ->> Hearsay carries no evidence <<-
-
-	[Test]
-	public async ValueTask rejects_hearsay_that_cites_a_source() {
-		// Arrange — a citation is exactly how a fabricated claim would dress itself up as trustworthy.
-		var memory = Memory(MemoryContracts.MemoryType.Hearsay);
-		memory.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = "cited-1" } });
-
-		var request = Request(memory);
-
-		// Act
-		var result = Validator.Validate(request);
-
-		// Assert
-		await Assert.That(result.IsValid).IsFalse();
-		await Assert.That(result.Errors[0].ErrorMessage).Contains("HEARSAY");
-	}
-
-	[Test]
-	public async ValueTask accepts_hearsay_with_no_evidence() {
-		// Arrange
-		var request = Request(Memory(MemoryContracts.MemoryType.Hearsay));
-
-		// Act
-		var result = Validator.Validate(request);
-
-		// Assert
-		await Assert.That(result.IsValid).IsTrue();
-	}
-
-	[Test]
-	public async ValueTask accepts_a_fact_that_cites_the_same_source() {
-		// Arrange — the promotion arc: verifying a claim licenses a FACT that supersedes the hearsay.
-		var memory = Memory(MemoryContracts.MemoryType.Fact);
-		memory.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = "cited-1" } });
-
-		var request = Request(memory);
-
-		// Act
-		var result = Validator.Validate(request);
-
-		// Assert — the rule is about HEARSAY specifically, not about citing memories.
-		await Assert.That(result.IsValid).IsTrue();
-	}
-
-	#endregion
 
 	#region ->> Web citation excerpts <<-
 

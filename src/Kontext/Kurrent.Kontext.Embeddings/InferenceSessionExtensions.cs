@@ -13,7 +13,7 @@ namespace Kurrent.Kontext.Embeddings;
 /// Each generator owns its session + tokenizer and calls <c>session.Embed(…)</c> to turn one text into a
 /// vector — the math is identical across generators; only the tokenizer differs.
 /// </summary>
-internal static class InferenceSessionExtensions {
+static class InferenceSessionExtensions {
 	extension(InferenceSession session) {
 		/// <summary>
 		/// Runs one tokenized text through the model and pools it into a single embedding. Used by every

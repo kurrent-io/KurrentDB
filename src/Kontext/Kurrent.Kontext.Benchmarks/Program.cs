@@ -1,11 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
+using Benchmarks;
 using Benchmarks.Entities;
 using Benchmarks.Retrieval;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings.GlinerOnnx;
-using Kurrent.Kontext.Modules.Entities;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
+using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,6 +19,9 @@ await (args switch {
 	["--determinism", ..]        => RunDeterminism(),
 	["--max-tokens-ab", ..]      => RunMaxTokensAb(),
 	["--main-ab", ..]            => RunMainAb(),
+	["--model", var model, ..]   => RunModelLeg(model),
+	["--chains", ..]             => RunChains(),
+	["--legs", ..]               => RunLegs(),
 	["--entities-ab", ..]        => RunEntitiesAb(),
 	["--entities-lab", ..]       => RunEntitiesLab(),
 	["--entities-quality", ..]   => RunEntitiesQuality(),
@@ -282,6 +289,119 @@ static async ValueTask RunEntitiesAb() {
 	}
 }
 
+// Isolates the raw retrieval signal: each leg is the search stage ALONE, with no reranker or
+// modulator on top, so the numbers answer "how much does each leg find" rather than "how well
+// does the shipped chain post-process it". Answers whether a vector-only records index suffices.
+static async ValueTask RunLegs() {
+	Log.Logger = new LoggerConfiguration().MinimumLevel.Warning().WriteTo.Console().CreateLogger();
+
+	try {
+		await using var corpus = new KontextCorpus();
+		await corpus.InitializeAsync();
+
+		var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+		var runs      = new List<QualityRun>();
+
+		runs.Add(await benchmark.Run("vector-only",  Leg(new VectorSearch(corpus.Store, corpus.EmbeddingGenerator))));
+		runs.Add(await benchmark.Run("keyword-only", Leg(new KeywordSearch(corpus.Store))));
+
+		foreach (var alpha in (double[])[0.3, 0.5, 0.7])
+			runs.Add(await benchmark.Run($"hybrid a={alpha:F1}", Leg(new HybridSearch(corpus.Store, corpus.EmbeddingGenerator, alpha, null))));
+
+		Console.WriteLine();
+		Console.WriteLine($"{"leg",-14} {"recall@1",9} {"recall@5",9} {"recall@10",10} {"mrr",8} {"ndcg@10",9} {"mean ms",9}");
+
+		foreach (var run in runs.OrderByDescending(run => run.RecallAt(5)).ThenByDescending(run => run.NdcgAt(10)))
+			Console.WriteLine($"{run.Name,-14} {run.RecallAt(1),9:F4} {run.RecallAt(5),9:F4} {run.RecallAt(10),10:F4} {run.Mrr,8:F4} {run.NdcgAt(10),9:F4} {run.MeanMs,9:F1}");
+
+		IKontextRetriever Leg(ISearch search) => KontextRetriever.New().AddSearch(search).Build();
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
+}
+
+// Every shipped composition on one corpus build, so the comparison is apples to apples: the
+// chains share the same embeddings and the same index layout, and only the pipeline differs.
+static async ValueTask RunChains() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Warning()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		await using var corpus = new KontextCorpus();
+		await corpus.InitializeAsync();
+
+		var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+		var runs      = new List<QualityRun>();
+
+		foreach (var (name, chain) in Chains())
+			runs.Add(await benchmark.Run(name, chain()));
+
+		// Legacy is the prototype the others replaced — it is the baseline every chain is judged against.
+		QualityReport.PrintMetrics(runs, baseline: runs[0]);
+
+		Console.WriteLine();
+		Console.WriteLine($"{"chain",-10} {"recall@1",9} {"recall@5",9} {"recall@10",10} {"mrr",8} {"ndcg@10",9}");
+
+		foreach (var run in runs.OrderByDescending(run => run.RecallAt(5)).ThenByDescending(run => run.NdcgAt(10)))
+			Console.WriteLine($"{run.Name,-10} {run.RecallAt(1),9:F4} {run.RecallAt(5),9:F4} {run.RecallAt(10),10:F4} {run.Mrr,8:F4} {run.NdcgAt(10),9:F4}");
+
+		IEnumerable<(string Name, Func<IKontextRetriever> Chain)> Chains() {
+			yield return ("legacy",  () => KontextRetriever.New().Legacy(corpus.Store, corpus.EmbeddingGenerator).Build());
+			yield return ("default", () => KontextRetriever.New().Default(corpus.Store, corpus.EmbeddingGenerator).Build());
+			yield return ("hybrid",  () => KontextRetriever.New().Hybrid(corpus.Store, corpus.EmbeddingGenerator).Build());
+			yield return ("focused", () => KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build());
+		}
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
+}
+
+// One leg of the pMM12 vs bge-m3 comparison on the shipped Focused chain. It is one model per
+// invocation, not an in-process A/B: the store's embedding column is FLOAT[KontextIndexConstants.VectorsDimension]
+// and that is a compile-time constant, so a 384-dim and a 1024-dim corpus cannot coexist in one build.
+static async ValueTask RunModelLeg(string model) {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		EmbeddingModelFactory factory = model switch {
+			"pmm12" => configure => new Pmm12EmbeddingGenerator(configure),
+			"bgem3" => configure => new BgeM3EmbeddingGenerator(configure),
+			_       => throw new ArgumentException($"Unknown model '{model}'. Use 'pmm12' or 'bgem3'.", nameof(model)),
+		};
+
+		await using var corpus = new KontextCorpus(null, factory);
+
+		var started = Stopwatch.GetTimestamp();
+		await corpus.InitializeAsync();
+		var build = Stopwatch.GetElapsedTime(started);
+
+		// Read the dimension off the model rather than the config, so a silent mismatch with the
+		// schema column shows up in the report instead of poisoning the vectors.
+		var dimension = (await corpus.EmbeddingGenerator.GenerateAsync(["probe"]))[0].Vector.Length;
+
+		var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+		var run = await benchmark.Run(
+			$"focused {model}",
+			KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build());
+
+		QualityReport.PrintMetrics([run], baseline: run);
+
+		Console.WriteLine();
+		Console.WriteLine($"model {model}  dim {dimension}  schema FLOAT[{KontextIndexConstants.VectorsDimension}]  corpus {corpus.MemoryCount} memories built in {build.TotalSeconds:F1}s");
+		Console.WriteLine($"recall@5 {run.RecallAt(5):F4}  mrr {run.Mrr:F4}  ndcg@10 {run.NdcgAt(10):F4}");
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
+}
+
 // pMM12 was trained at max_seq_length 128; the generator runs 512, riding position embeddings
 // the model never trained on past token 128. Which setting actually ranks better is an
 // empirical question — this mode answers it on the shipped chain.
@@ -344,7 +464,7 @@ static async ValueTask RunDeterminism() {
 			for (var attempt = 0; attempt < 3; attempt++) {
 				var hits = new List<string>();
 
-				await foreach (var hit in corpus.Store.SearchAsync(question.Question, [], new FullTextSearchOptions { Limit = 30, K = 30 }))
+				await foreach (var hit in corpus.Store.SearchAsync(question.Question, [], new FullTextSearchOptions { K = 30 }))
 					hits.Add($"{hit.Memory.MemoryId}:{hit.KeywordScore:F4}");
 
 				sequences.Add(string.Join(" ", hits));

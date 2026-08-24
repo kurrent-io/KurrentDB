@@ -3,7 +3,7 @@
 
 using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
-namespace Kurrent.Kontext;
+namespace Kurrent.Kontext.Memory;
 
 /// <summary>
 /// The memory service is the edge that allows agents to store, retrieve, and manage memories in the Kontext system.
@@ -12,8 +12,6 @@ namespace Kurrent.Kontext;
 /// </summary>
 public interface IKontextMemory {
 	ValueTask<MemoryContracts.RetainResponse> RetainAsync(MemoryContracts.RetainRequest request, CancellationToken ct = default);
-
-	ValueTask<MemoryContracts.RetractResponse> RetractAsync(MemoryContracts.RetractRequest request, CancellationToken ct = default);
 
 	ValueTask<MemoryContracts.RecallResponse> RecallAsync(MemoryContracts.RecallRequest request, CancellationToken ct = default);
 

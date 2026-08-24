@@ -4,7 +4,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 public static partial class EntityExtractor {
     /// <summary>

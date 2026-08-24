@@ -2,9 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
 
-namespace Kurrent.Kontext.Modules.Sessions;
+namespace Kurrent.Kontext.Sessions;
 
 /// <summary>
 /// Copies Claude Code agent session data into plain relational tables using the DuckDB
@@ -32,7 +31,7 @@ namespace Kurrent.Kontext.Modules.Sessions;
 /// is not unique (a real FK would need a separate sessions dimension table), and sessions made up
 /// ENTIRELY of unparseable lines exist — an enforced FK would reject exactly the rows we are keeping.
 ///
-/// DDL is a one-time <see cref="CreateAsync"/> bootstrap (mirroring <see cref="KontextSchemaTask"/>);
+/// DDL is a one-time <see cref="CreateAsync"/> bootstrap (mirroring <see cref="KontextMigrations"/>);
 /// the per-tick <see cref="ImportAsync"/> is DML-only and assumes the tables already exist.
 ///
 /// Going through the READ surface (<see cref="KontextDataSource.ExecuteAsync{T}"/>) is
@@ -112,7 +111,7 @@ public sealed class AgentSessionImporter(KontextDataSource connections, AgentSes
     /// <summary>
     /// Creates the two transcript tables (<c>transcripts</c> and <c>transcript_parse_errors</c>).
     /// Idempotent — safe to run on every host start (both use IF NOT EXISTS). Mirrors
-    /// <see cref="KontextSchemaTask"/>: the host gets ONE place to bootstrap this storage
+    /// <see cref="KontextMigrations"/>: the host gets ONE place to bootstrap this storage
     /// before any import tick touches the tables, keeping the per-tick batch DML-only.
     /// </summary>
     public ValueTask CreateAsync(CancellationToken ct = default) =>

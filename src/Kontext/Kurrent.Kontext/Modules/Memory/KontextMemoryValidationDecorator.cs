@@ -4,7 +4,7 @@
 using Kurrent.Kontext.Infrastructure.Validation;
 using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 
-namespace Kurrent.Kontext.Infrastructure.FluentValidation;
+namespace Kurrent.Kontext.Memory;
 
 /// <summary>
 /// Validates every request against its registered validator before delegating to the inner
@@ -17,11 +17,6 @@ public sealed class KontextMemoryValidationDecorator(IKontextMemory inner, Reque
     public ValueTask<MemoryContracts.RetainResponse> RetainAsync(MemoryContracts.RetainRequest request, CancellationToken ct = default) {
         validation.Validate(request);
         return inner.RetainAsync(request, ct);
-    }
-
-    public ValueTask<MemoryContracts.RetractResponse> RetractAsync(MemoryContracts.RetractRequest request, CancellationToken ct = default) {
-        validation.Validate(request);
-        return inner.RetractAsync(request, ct);
     }
 
     public ValueTask<MemoryContracts.RecallResponse> RecallAsync(MemoryContracts.RecallRequest request, CancellationToken ct = default) {

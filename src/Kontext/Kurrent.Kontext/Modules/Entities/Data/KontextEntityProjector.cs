@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Data.LanceDB;
 using Kurrent.Surge;
 using Kurrent.Surge.Client;
 using Kurrent.Surge.Consumers.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Entities.Data;
+namespace Kurrent.Kontext.Entities.Data;
 
 /// <summary>
 /// The entity catalog's read-model projector, the same loop as the memory projector but over the
@@ -25,6 +25,8 @@ public sealed class KontextEntityProjector(
 ) {
     // Changing the key orphans the stored checkpoint and replays the read model from the start.
     const string CheckpointKey = "KontextEntityProjection";
+
+    const string EntitiesTable = "ldb.main.entities";
 
     const int BatchSize = 500;
 
@@ -64,7 +66,7 @@ public sealed class KontextEntityProjector(
         var checkpoints = new KontextCheckpointStore(CheckpointKey);
         checkpoints.EnsureSchema(connection);
 
-        var writer = new KontextEntityWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
+        var writer = new KontextEntityWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
 
         var startPosition = checkpoints.Load(connection);
 
@@ -96,8 +98,12 @@ public sealed class KontextEntityProjector(
             if (aliasesWritten == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
                 continue;
 
-            dataSource.EnsureInvertedIndex("entities");
-            dataSource.EnsureVectorIndex("entities", "embedding");
+            connection.EnsureInvertedIndex(EntitiesTable, "alias");
+
+            connection.EnsureVectorIndex(EntitiesTable, "embedding", new LanceIvfPqIndexOptions {
+                NumSubVectors = KontextIndexConstants.VectorsDimension / 8,
+                NumPartitions = LancePartitions.For(connection.GetTableInfo(EntitiesTable)?.RowCount ?? 0),
+            });
 
             lastOptimize = TimeProvider.System.GetTimestamp();
         }

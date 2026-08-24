@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities.Extraction;
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
 using Contracts = Kurrent.Kontext.Contracts.V3.Entities;
 

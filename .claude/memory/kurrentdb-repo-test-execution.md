@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-13T13:23:17.379Z
+  modified: 2026-08-20T12:40:14.181Z
 ---
 
 Verified 2026-07-21: `scripts/testing/test-runner.cs` now EXISTS in the kurrentdb repo (Sérgio added
@@ -26,6 +26,11 @@ class (4 tests, 2026-08-01) ≈ 6 min wall — build-dominated; test time itself
 including the slnx build. Full `/*Kontext*/` scope (all 5 Kontext assemblies, 2026-08-13) ≈ 11s
 test time for Kurrent.Kontext.Tests (139 tests) + ≈ 60s for KurrentDB.Plugins.Kontext.Tests
 (41 tests, boots real nodes); ≈ 4-6 min wall including the warm slnx build.
+
+Observed 2026-08-20, scope `/(Kurrent.Kontext.Tests)|(Kurrent.Kontext.Retrieval.Tests)/*/*/*`:
+unit = 250 tests (52 Kontext + 198 Retrieval) ≈ 32s test time; `all` = 357 tests (159 + 198) ≈ 2.0m
+test time. Both ≈ 4-5 min wall including the warm slnx build. Two OR'd assemblies in one
+treenode-filter segment works: `/(A)|(B)/*/*/*`.
 
 Exit codes (fixed 2026-07-21, verified): runner computes its own exit from the parsed summary —
 0 all passed, 2 any failure, 8 filter matched nothing, else raw dotnet-test exit (crash/infra).
@@ -56,9 +61,13 @@ with xunit filters `--filter-namespace` / `--filter-class` / `--filter-method` /
 Full Connectors suite ≈52s / 150 tests; the `KurrentDB.Connectors.Tests.System` namespace (27 tests,
 leadership + node lifetime) ≈21s.
 
-`KurrentDB.Ammeter` unit-category tests fail en masse on macOS (223 failures, all 0ms) from a
-hardcoded Windows path in its config — `D:/Kurrent/cluster/certs/node3/node.key`. Pre-existing
-environment issue, unrelated to whatever you changed; its integration-category tests pass.
+`KurrentDB.Ammeter` runs an EMBEDDED SECURE node (its `appsettings.json` sets `Node:Insecure:false`),
+so it needs the repo-root `certs/` tree. Generate it once per machine with `docker compose run --rm
+cert-gen`; it is gitignored, and the csproj copies it into the test output beside the binaries.
+Without it every ammeter test dies at node startup. `KurrentDB.Api.V2.Tests` has NO `appsettings.json`,
+so `NodeShimOptions.Insecure` defaults to `true` — it needs no certs. FIXED 2026-08-17: the paths were
+hardcoded Windows absolutes (`D:/Kurrent/cluster/certs/...`) and had never run outside Windows since
+they landed in 9dcba92d8; they are now relative to the test output dir.
 
 Kontext tests (2026-07-21 evening): `Kurrent.Kontext.Tests` = 57, ALL integration (V1 unit tests
 + TestVectorStore deleted with the Experiments purge; KontextMemory now has 9 integration tests

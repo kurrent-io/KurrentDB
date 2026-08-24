@@ -21,12 +21,12 @@ public readonly record struct MemoryHit(MemoryContracts.StoredMemory Memory, dou
 /// cope with records.
 /// </summary>
 public sealed class VectorSearchOptions {
-    /// <summary>Rows returned after filtering and ordering.</summary>
-    public int Limit { get; set; } = 10;
-
     /// <summary>
-    /// Candidate pool for the search. Never effectively below <see cref="Limit"/>, and raised to
-    /// the table's row count when tag filters apply (containment is not pushed down).
+    /// The page size: the engine returns exactly this many rows.
+    /// <para>Tag filters do NOT inflate it: non-empty containment pushes down as a true prefilter,
+    /// so ranking only ever sees matching rows. Verified by TagPrefilterPushdownProbeTests — a
+    /// 10-row tagged minority buried under 990 better matches still returns a full page at the
+    /// default K, which is only possible if the filter ran before ranking.</para>
     /// </summary>
     public int K { get; set; } = 10;
 
@@ -55,12 +55,10 @@ public sealed class VectorSearchOptions {
 /// base. A mutable settings class by design — config binding does not cope with records.
 /// </summary>
 public sealed class FullTextSearchOptions {
-    /// <summary>Rows returned after filtering and ordering.</summary>
-    public int Limit { get; set; } = 10;
-
     /// <summary>
-    /// Candidate pool for the search. Never effectively below <see cref="Limit"/>, and raised to
-    /// the table's row count when tag filters apply (containment is not pushed down).
+    /// The page size: the engine returns exactly this many rows.
+    /// <para>Tag filters do NOT inflate it: non-empty containment pushes down as a true prefilter,
+    /// so ranking only ever sees matching rows. See TagPrefilterPushdownProbeTests.</para>
     /// </summary>
     public int K { get; set; } = 10;
 
@@ -74,12 +72,12 @@ public sealed class FullTextSearchOptions {
 /// cope with records.
 /// </summary>
 public sealed class HybridSearchOptions {
-    /// <summary>Rows returned after filtering and ordering.</summary>
-    public int Limit { get; set; } = 10;
-
     /// <summary>
-    /// Candidate pool per search leg. Never effectively below <see cref="Limit"/>, and raised to
-    /// the table's row count when tag filters apply (containment is not pushed down).
+    /// The page size per search leg: the engine returns exactly this many rows.
+    /// <para>Tag filters do NOT inflate it: non-empty containment pushes down as a true prefilter,
+    /// so ranking only ever sees matching rows — a tag-scoped search is measurably FASTER than an
+    /// unscoped one on the same corpus (5.0ms vs 6.5ms over 1000 rows), because the filter shrinks
+    /// the work rather than adding a pass. See TagPrefilterPushdownProbeTests.</para>
     /// </summary>
     public int K { get; set; } = 10;
 

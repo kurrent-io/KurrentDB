@@ -3,14 +3,14 @@
 
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Contracts.V3.Memory;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Configuration;
 
-using Candidate = (string MemoryId, System.Collections.Generic.IReadOnlyList<Kurrent.Kontext.Modules.Entities.Extraction.ExtractedEntity> Entities);
+using Candidate = (string MemoryId, System.Collections.Generic.IReadOnlyList<Kurrent.Kontext.Entities.Extraction.ExtractedEntity> Entities);
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
 using Contracts = Kurrent.Kontext.Contracts.V3.Entities;
 

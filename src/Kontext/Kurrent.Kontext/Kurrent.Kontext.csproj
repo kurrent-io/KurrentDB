@@ -54,8 +54,7 @@
   </ItemGroup>
     
   <ItemGroup>
-    <Folder Include=".scratch\" />
-    <Folder Include="Infrastructure\Data\Migrations\DuckDB\" />
+    <Folder Include="Documentation\" />
     <Folder Include="Modules\Entities\" />
   </ItemGroup>
 
@@ -79,5 +78,4 @@
           CopyToOutputDirectory="PreserveNewest"
           Visible="false" />
   </ItemGroup>
-
 </Project>

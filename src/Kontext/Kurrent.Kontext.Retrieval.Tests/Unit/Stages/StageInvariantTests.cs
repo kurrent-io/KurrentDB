@@ -22,9 +22,9 @@ public class StageInvariantTests {
 	};
 
 	static IReadOnlyList<ScoredMemory> Pool() => [
-		Fixtures.Scored("a", 0.9, "aardvarks burrow deep underground", MemoryContracts.MemoryType.Observation, MemoryContracts.MemoryImportance.High, TimeSpan.FromDays(1)),
+		Fixtures.Scored("a", 0.9, "aardvarks burrow deep underground", MemoryContracts.MemoryType.Fact, MemoryContracts.MemoryImportance.High, TimeSpan.FromDays(1)),
 		Fixtures.Scored("b", 0.6, "penguins waddle across antarctic ice", MemoryContracts.MemoryType.Fact, MemoryContracts.MemoryImportance.Normal, TimeSpan.FromDays(10)),
-		Fixtures.Scored("c", 0.3, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryType.Hearsay, MemoryContracts.MemoryImportance.Low, TimeSpan.FromDays(30)),
+		Fixtures.Scored("c", 0.3, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryType.Preference, MemoryContracts.MemoryImportance.Low, TimeSpan.FromDays(30)),
 	];
 
 	static IReadOnlyList<ScoredMemory> FusedPool() => [
@@ -155,7 +155,6 @@ public class StageInvariantTests {
 				RecencyNorm    = 0.55,
 				ImportanceRaw  = 0.66,
 				ImportanceNorm = 0.77,
-				Certainty      = 0.88,
 				BaseScore      = 0.99,
 				ReorderScore   = 1.11,
 			},

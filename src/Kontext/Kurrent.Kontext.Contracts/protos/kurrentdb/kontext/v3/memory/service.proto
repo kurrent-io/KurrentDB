@@ -31,9 +31,14 @@ service MemoryService {
   // Store something worth remembering. Reach for this the moment you learn something you'd want
   // back later: a decision and its reasoning, an error and its fix, a user preference, a durable
   // fact about the system, a question you could not answer. Write each memory so it stands on its
-  // own — a reader months from now, with no other context, should understand it. Set `memory_type`
-  // honestly: it is the trust axis (a firsthand OBSERVATION is trusted more than HEARSAY you have
-  // not verified), so don't dress an unchecked claim up as fact. Set `importance` by how much it
+  // own — a reader months from now, with no other context, should understand it.
+  //
+  // STORE THE CLAIM YOU CHECKED, not the claim you would like to be true. Before storing, name what
+  // would show you WRONG — and if you cannot name that check, the claim is too vague, so sharpen it
+  // until you can. Put attribution inside the content: "the docs state X" is a fact you verified by
+  // reading them; a bare "X" is not. An unchecked belief is not a weak fact, it is an OPEN_QUESTION.
+  //
+  // Set `importance` by how much it
   // matters (higher keeps it retrievable longer). Cite what the memory rests on in `evidence`, put
   // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
   // ones stay readable, marked superseded (there is no separate supersede call).
@@ -44,66 +49,36 @@ service MemoryService {
   // not exist yet. Retain the sources first, then retain the memory that cites them. If the second
   // call fails you are left with valid standalone memories, which is a harmless outcome.
   //
-  // EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always runs a hybrid search
-  // for each memory you store and hands back the closest LIVE memories in `related` (nearest first,
-  // capped by configuration). Live means the tip of a supersession chain — superseded and retracted
-  // memories never appear. The server does not adjudicate: it will not merge, block, or deduplicate
-  // anything. It reports; YOU DECIDE. Reading `related` is part of making this call, not a
-  // courtesy — ignore it and you leave near-duplicates for the scheduled "dream" pass to clean up.
+  // RETAIN DECIDES BEFORE IT WRITES. The server searches for what you are about to duplicate and
+  // acts on what it finds, so the same claim sent twice does not become two memories. Every result
+  // carries an `outcome` saying what happened:
+  //   - CREATED  → nothing close enough existed. A new memory, superseding nothing.
+  //   - MERGED   → a live memory said the same thing. A new memory superseding it, carrying the
+  //                union of both tag sets and both citation lists.
+  //   - NOOP     → an identical memory already exists under the same tags. Nothing was written and
+  //                `memory_id` is that existing memory.
+  //   - DEFERRED → too close to call. NOTHING WAS WRITTEN. `candidates` holds the live memories
+  //                that made it ambiguous, nearest first.
   //
-  // What to do when a neighbour matches what you just stored:
-  //   - You brought NEW SUPPORT (a second encounter, a different source) → `retain` a successor
-  //     with `supersedes: [neighbour_id]`, carrying the UNION of its citations and yours. This is
-  //     consolidation: re-encountering a belief is corroboration and should be recorded, not
-  //     discarded.
-  //   - You brought NOTHING NEW → `retract` the copy you just created, reason "duplicate of {id}".
-  // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
-  // to act on when you need its evidence to build the successor.
+  // DEFERRED is the only outcome that needs you. Read the candidates, decide, and send the memory
+  // again with `decided` set: `supersedes: [candidate_id]` to merge with one, or `supersedes`
+  // empty to create it as a distinct claim. Without `decided` the check runs again and defers
+  // again.
   //
-  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_OBSERVATION,
+  // The server cannot decide every case, and does not pretend to. A reworded duplicate that shares
+  // almost no vocabulary can fall outside the merge band, so duplicates still reach the store; the
+  // scheduled "dream" pass folds what the write path could not.
+  //
+  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_FACT,
   //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
   //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
   //
-  // Returns: one result per stored memory, in order, each with its server-assigned `memory_id` and
-  // its `related` neighbours.
+  // Returns: one result per input memory, in order, each with its `outcome`.
   //
-  // Safety: writing, additive — never overwrites or deletes, and always creates. Not idempotent:
-  // retaining the same content twice creates two memories, which is why you must act on `related`.
-  // Reporting neighbours does NOT touch their recency clocks (see THE ACCESS RULE).
+  // Safety: writing, additive — never overwrites or deletes. A MERGE marks its predecessor
+  // superseded; the predecessor stays readable. Reading candidates does NOT touch their recency
+  // clocks (see THE ACCESS RULE).
   rpc Retain(RetainRequest) returns (RetainResponse);
-
-  // TOOL — retract
-  //
-  // Take back a memory that should not exist at all — it was never true, or it must be forgotten.
-  //
-  // FIRST ASK: is there a corrected / newer memory to replace it with? If YES, do NOT retract —
-  // `retain` the corrected memory with `supersedes: [old_id]`. That is the common case ("I know
-  // better now"): supersede keeps the old one as readable history and the successor wins on recency.
-  // Retract is the NARROW escape hatch for the cases supersede cannot express:
-  //   - Wrong with NO replacement — the thing is simply false and there is nothing true to put in
-  //     its place (retracting avoids inventing an "it is NOT true that…" anti-fact).
-  //   - Forget it — a removal for privacy/PII, not a correction.
-  //   - Cascade — you need memories derived from this one to go with it (below).
-  //   - A duplicate you just created — after `retain` reported a neighbour you had nothing to add
-  //     to.
-  //
-  // In one line: supersede = "I know better now" (has a replacement, preserves history, no cascade);
-  // retract = "this shouldn't be here at all" (no replacement, HIDES it, and CASCADES to anything
-  // derived from it — a SUMMARY that cited it is retracted too, its evidence having vanished). It is
-  // the only "hide" primitive: retracted memories stop surfacing in `recall`.
-  //
-  // An OPEN_QUESTION that went moot needs no retraction — let it decay. Retract one only if you
-  // want it gone now.
-  //
-  // Example: retract { memory_id: "01J...", reason: "there was never a 3pm meeting" }
-  //
-  // Returns: `retracted_memory_ids` — this memory plus everything the cascade removed.
-  //
-  // Safety: DESTRUCTIVE (removes memories from the active set) and cascading. Idempotent:
-  // retracting an already-retracted memory changes nothing. Never physically deleted — the record
-  // stays on the stream, but retracted memories stop surfacing in `recall` and `recollect`; only
-  // `reclaim` by exact id still returns them.
-  rpc Retract(RetractRequest) returns (RetractResponse);
 
   // TOOL — recall — search by MEANING (input: a natural-language `query`).
   // Not `reclaim` (that's by id) · not `recollect` (that's by type/tag, no ranking).
@@ -118,9 +93,10 @@ service MemoryService {
   // the checkpoint format?") — not keywords. Add `tags` only when you already know the dimension to
   // scope to (a session, a repo, an environment); leave them empty to search everything.
   //
-  // Results come back ranked best-first: treat the order as the system's confidence, and each
-  // memory's `memory_type` as how far to trust it (a firsthand OBSERVATION outranks HEARSAY you
-  // have not verified). You only ever get what is currently true here — retracted and superseded
+  // Results come back ranked best-first on relevance, importance and recency. There is no trust
+  // score to read: everything stored was checked when it was written, so the type tells you what
+  // KIND of claim you are looking at, not how far to believe it. You only ever get what is
+  // currently true here — superseded
   // memories never surface. Want the full record (evidence, reasoning)? Set `include_full`, or
   // follow up with `reclaim` by id.
   //
@@ -152,9 +128,10 @@ service MemoryService {
   // Unlike `recall`, this is not a search and does not rank: you ask for exact ids and get exactly
   // those, whatever their status.
   //
-  // Example: reclaim { ids: ["01J...", "01K..."] }
+  // Example: reclaim { ids: ["0199c4e2-6f31-7a0c-9d84-1b6e5f2a7c30",
+  //          "0199c4e2-7b55-7e11-a2f0-4c8d9e1b3a67"] }
   //
-  // Returns: a stream of StoredMemory (the full folded records), including retracted or superseded
+  // Returns: a stream of StoredMemory (the full folded records), including superseded
   // ones — you asked for them by id, so they are not hidden here. Ids that don't exist are simply
   // absent from the stream (never an error); diff the returned ids against what you asked for to
   // see which missed.
@@ -176,9 +153,8 @@ service MemoryService {
   //          value: "kurrent--kurrentdb" }], limit: 50 }
   //
   // Returns: a stream of StoredMemory matching the filters — `types` is any-of (empty = any type),
-  // all supplied `tags` must be present. Retracted memories are never returned (they were mistakes;
-  // only `reclaim` by exact id still surfaces them). Ordered by `sort` (default: newest-retained
-  // first); reverse with `direction`.
+  // all supplied `tags` must be present. Ordered by `sort` (default: newest-retained first);
+  // reverse with `direction`.
   //
   // Safety: READ-ONLY, and deliberately so — an enumeration is not a use. It does NOT refresh the
   // recency clock of what it lists (see THE ACCESS RULE); reclaim what you actually act on.
@@ -187,17 +163,18 @@ service MemoryService {
   // TOOL — reflect
   //
   // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
-  // memories from what it finds — a FACT, USER_PROFILE, PREFERENCE, or SUMMARY that cites the
-  // memories it rests on — and may retract or supersede the ones the new insight subsumes.
-  // Reflection is the operation that produces derived memories; there is no "reflection" memory
-  // type. Reach for it periodically, when a pile of observations wants to become a durable
+  // memories from what it finds — a FACT or a PREFERENCE that cites the
+  // memories it rests on — and may supersede the ones the new insight subsumes. A consolidation is
+  // a FACT citing many memories; there is no separate summary type, because how a memory arose is
+  // visible in its `evidence`. Reflection never produces an OPEN_QUESTION: a question is asked, not
+  // concluded. Reach for it periodically, when a pile of memories wants to become a durable
   // conclusion — not on every turn.
   //
   // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
   //
-  // Returns: the ids it `synthesized`, `superseded`, and `retracted`.
+  // Returns: the ids it `synthesized` and `superseded`.
   //
-  // Safety: WRITES new memories and is DESTRUCTIVE (may retract/supersede). Long-running — it
+  // Safety: WRITES new memories and is DESTRUCTIVE (may supersede). Long-running — it
   // reasons over many memories; expect it to run asynchronously and report progress rather than
   // return instantly (completion is signalled by events.proto ReflectionCompleted). Not idempotent.
   rpc Reflect(ReflectRequest) returns (ReflectResponse);
@@ -211,6 +188,11 @@ message RetainRequest {
   // Required. One or more memories to store — see resources.proto Memory for the fields you set.
   // Results come back in this order, one per entry.
   repeated Memory memories = 1;
+
+  // Set this ONLY when re-sending memories the server returned as DEFERRED. It commits the call you
+  // made from the candidates: `supersedes` populated merges with those memories, `supersedes` empty
+  // creates a distinct claim. Without it the duplicate check runs again and defers again.
+  bool decided = 2;
 }
 
 message RetainResponse {
@@ -218,49 +200,57 @@ message RetainResponse {
   repeated RetainResult results = 1;
 
   message RetainResult {
-    // The id the server assigned to the memory you sent at this position. Always a NEW memory —
-    // retain always creates.
-    string memory_id = 1;
+    // What the server did with the memory you sent at this position.
+    RetainOutcome outcome = 1;
 
-    // Existing LIVE memories closest to the one just stored, nearest first, capped by server
-    // configuration. Live means the tip of a supersession chain. Advisory: the server does not act
-    // on these, you do — supersede when you brought new support, retract your copy when you did
-    // not. Populated on every retain; reading it is part of the call.
-    repeated RelatedMemory related = 2;
+    // The memory this result resolves to: the newly written one for CREATED and MERGED, the
+    // existing untouched one for NOOP. EMPTY for DEFERRED, where nothing was written.
+    string memory_id = 2;
+
+    // MERGED only: the live memories this one superseded. They stay readable, marked superseded.
+    // One entry when the server made the call; however many you listed when you supplied
+    // `supersedes` yourself.
+    repeated string superseded_memory_ids = 3;
+
+    // DEFERRED only: the live memories too close to call against, nearest first, capped by server
+    // configuration. Live means the tip of a supersession chain — superseded memories never appear.
+    // `reclaim` the one you intend to merge with when you need its evidence to build the successor.
+    repeated RelatedMemory candidates = 4;
   }
 
   message RelatedMemory {
-    // Hybrid retrieval score, higher = more alike. A CONTINUOUS, inferential signal: it can never
-    // tell you two records are the same, because different sentences embed alike and quantization
-    // rounds. Compare `memory.content` yourself when that is the question.
-    double similarity = 1;
+    // Raw vector distance, SMALLER = more alike. Squared L2 over unit-length embeddings, so it
+    // means the same thing in every query — unlike the engine's blended score, which is normalised
+    // across whatever that one search happened to return.
+    double distance = 1;
+
+    // True when the keyword leg matched this memory too. A keyword match at a low distance is a
+    // restatement in mostly the same words; a low distance alone is a reword.
+    bool keyword_match = 2;
 
     // The lean projection — enough to judge whether this duplicates, corroborates, or contradicts
-    // what you just stored, without a round trip. `reclaim` it when you need evidence/reasoning.
-    LeanMemory memory = 2;
+    // what you are storing, without a round trip. `reclaim` it when you need evidence/reasoning.
+    LeanMemory memory = 3;
   }
 }
 
-//===================================================================
-// Retract
-//===================================================================
+// What retain did with one memory. See the Retain rpc for how to answer a DEFERRED result.
+enum RetainOutcome {
+  RETAIN_OUTCOME_UNSPECIFIED = 0;
 
-// Retract invalidates a memory; memories derived from it (e.g. reflections that cite it)
-// are retracted in the same cascade.
-message RetractRequest {
-  // Required. The memory to take back.
-  string memory_id = 1;
+  // Nothing close enough existed. A new memory, superseding nothing.
+  RETAIN_OUTCOME_CREATED = 1;
 
-  // Why you're taking this back (e.g. "user corrected me", "verified false in commit abc",
-  // "duplicate of 01J..."). Encouraged: it's the only record of why the memory is gone, it stops
-  // you relitigating it later, and it explains the cascade when derived memories are retracted
-  // with it.
-  string reason = 2;
-}
+  // A live memory said the same thing. A new memory superseding it, carrying the union of both
+  // tag sets and both citation lists.
+  RETAIN_OUTCOME_MERGED = 2;
 
-message RetractResponse {
-  // The retracted memory and any derived memories retracted by the cascade
-  repeated string retracted_memory_ids = 1;
+  // An identical memory already exists under the same tags. Nothing was written.
+  RETAIN_OUTCOME_NOOP = 3;
+
+  // Too close to call. NOTHING WAS WRITTEN — read `candidates`, decide, and retain again with
+  // `decided` set.
+  RETAIN_OUTCOME_DEFERRED = 4;
 }
 
 //===================================================================
@@ -307,8 +297,8 @@ message RecallResponse {
   // complete folded record when the request set `include_full`. The ranking breakdown stays on the
   // MemoriesRecalled log, never here.
   message RecalledMemory {
-    // Final ranking score (base × certainty); higher = stronger match. Your weak-match signal — a
-    // low top score means nothing matched well.
+    // Final ranking score — the alpha-weighted sum of the normalized dimensions; higher = stronger
+    // match. Your weak-match signal: a low top score means nothing matched well.
     double score = 1;
 
     oneof body {
@@ -333,6 +323,7 @@ message ReclaimRequest {
 // Recollect
 //===================================================================
 
+
 // The dimension `recollect` orders its results by (there is no relevance here — that's `recall`).
 enum RecollectSort {
   // Defaults to RECOLLECT_SORT_RETAINED_AT.
@@ -349,7 +340,8 @@ enum RecollectSort {
   RECOLLECT_SORT_IMPORTANCE = 3;
 }
 
-// Sort direction for a `recollect` listing.
+// Sort direction for a listing. Top-level rather than nested: the data store's own listing surface
+// takes it too, so it is not a property of the recollect request.
 enum SortDirection {
   SORT_DIRECTION_UNSPECIFIED = 0;  // defaults to DESCENDING
   SORT_DIRECTION_DESCENDING  = 1;  // high → low: newest / most-important / most-recently-accessed first
@@ -366,14 +358,14 @@ message RecollectRequest {
   repeated Tag tags = 2;
 
   // Max memories to return. With a limit, `sort` decides which slice you get — see below.
-  int32 limit = 4;
+  int32 limit = 3;
 
   // How to order results. Default (unspecified): newest-retained first. Reach for IMPORTANCE when
   // you want the top-N significant memories rather than the most recent.
-  RecollectSort sort = 5;
+  RecollectSort sort = 4;
 
   // Sort direction. Default (unspecified): descending.
-  SortDirection direction = 6;
+  SortDirection direction = 5;
 }
 
 //===================================================================
@@ -402,7 +394,4 @@ message ReflectResponse {
 
   // ids of memories superseded
   repeated string superseded_memory_ids = 3;
-
-  // ids of memories retracted
-  repeated string retracted_memory_ids = 4;
 }

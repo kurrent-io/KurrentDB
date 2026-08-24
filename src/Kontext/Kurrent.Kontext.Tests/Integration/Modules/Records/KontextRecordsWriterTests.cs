@@ -4,8 +4,7 @@
 using System.Text;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Records;
-using Kurrent.Kontext.Modules.Records.Data;
+using Kurrent.Kontext.Records.Indexer;
 using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Surge;
@@ -24,31 +23,30 @@ public class KontextRecordsWriterTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
-		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
+		await KontextMigrations.CreateEngine(dataSources).EnsureAsync(cancellationToken);
 
 		await using var connection = dataSources.OpenLanceWriter();
 
 		using var writer = NewWriter(connection);
 
-		var content           = """{"total": 42}""";
+		var payload           = """{"total": 42}""";
+		var expectedContent   = "total: 42"; // the flattened form JsonNormalizerTests pins
 		var timestamp         = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
 		var expectedCreatedAt = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds();
-		var expectedEmbedding = FakeEmbeddingGenerator.Embed(content);
+		var expectedEmbedding = await KontextTestEmbeddings.Embed(expectedContent, cancellationToken);
 
-		var json    = CreateRecord(logPosition: 100, "orders-1", "OrderPlaced", content, SchemaDataFormat.Json, timestamp, schemaId: "urn:schemas:orders:OrderPlaced:1");
-		var bytes   = CreateRecord(logPosition: 101, "orders-1", "OrderSnapshot", "raw-bytes", SchemaDataFormat.Bytes, timestamp);
-		var control = CreateRecord(logPosition: 102, "orders-1", "$subscription-caughtUp", "{}", SchemaDataFormat.Json, timestamp);
+		var json = CreateRecord(logPosition: 100, "orders-1", "OrderPlaced", payload, SchemaDataFormat.Json, timestamp, schemaId: "urn:schemas:orders:OrderPlaced:1");
 
 		var baseline = CountManifests(dir.Path, "records.lance");
 
 		// Act
-		var written = await writer.ProjectAsync([json, bytes, control], cancellationToken);
+		var written = await writer.ProjectAsync([json], cancellationToken);
 
-		// Assert — the JSON record lands whole (every column, schema id from its header), the
-		// undecodable record and the control record never land, one flush = one lance commit.
+		// Assert — the record lands whole: every column, schema id from its header, the payload
+		// verbatim in data and flattened in content, one flush = one lance commit.
 		using var command = connection.CreateCommand();
 		command.CommandText =
-			$"""
+			$$"""
 			SELECT count(*) FROM ldb.main.records
 			WHERE log_position = 100
 			  AND octet_length(record_id) = 16
@@ -57,11 +55,13 @@ public class KontextRecordsWriterTests {
 			  AND schema_name = 'OrderPlaced'
 			  AND schema_id = 'urn:schemas:orders:OrderPlaced:1'
 			  AND schema_format = 'Json'
+			  AND data = $data
 			  AND content = $content
 			  AND created_at = $created_at
-			  AND embedding = CAST($embedding AS FLOAT[{KontextSchemaTask.Dimension}])
+			  AND embedding = CAST($embedding AS FLOAT[{{KontextIndexConstants.VectorsDimension}}])
 			""";
-		command.Parameters.Add(new("content", content));
+		command.Parameters.Add(new("data", payload));
+		command.Parameters.Add(new("content", expectedContent));
 		command.Parameters.Add(new("created_at", expectedCreatedAt));
 		command.Parameters.Add(new("embedding", expectedEmbedding));
 
@@ -78,7 +78,7 @@ public class KontextRecordsWriterTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
-		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
+		await KontextMigrations.CreateEngine(dataSources).EnsureAsync(cancellationToken);
 
 		await using var connection = dataSources.OpenLanceWriter();
 
@@ -113,38 +113,28 @@ public class KontextRecordsWriterTests {
 	}
 
 	[Test]
-	public async ValueTask extractor_failure_skips_the_record_and_keeps_indexing(CancellationToken cancellationToken) {
+	public async ValueTask empty_payload_is_skipped_and_indexing_continues(CancellationToken cancellationToken) {
 		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 
-		await new KontextSchemaTask().ExecuteAsync(dataSources, cancellationToken);
+		await KontextMigrations.CreateEngine(dataSources).EnsureAsync(cancellationToken);
 
 		await using var connection = dataSources.OpenLanceWriter();
 
-		using var writer = new KontextRecordsWriter(
-			connection,
-			PoisonExtractor,
-			new FakeEmbeddingGenerator(),
-			new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
-			NullLogger<KontextRecordsWriter>.Instance);
+		using var writer = NewWriter(connection);
 
 		var timestamp = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
-		var poison    = CreateRecord(logPosition: 100, "orders-1", "PoisonEvent", """{"bad": true}""", SchemaDataFormat.Json, timestamp);
+		var empty     = CreateRecord(logPosition: 100, "orders-1", "OrderVoided", "", SchemaDataFormat.Json, timestamp);
 		var good      = CreateRecord(logPosition: 101, "orders-1", "OrderPlaced", """{"n": 1}""", SchemaDataFormat.Json, timestamp);
 
 		// Act
-		var written = await writer.ProjectAsync([poison, good], cancellationToken);
+		var written = await writer.ProjectAsync([empty, good], cancellationToken);
 
-		// Assert — the poison record is counted and skipped, the good one lands, nothing stalls.
+		// Assert — the empty record is counted and skipped, the good one lands, nothing stalls.
 		await Assert.That(written).IsEqualTo(1);
 		await Assert.That(writer.SkippedRecords).IsEqualTo(1L);
 		await Assert.That(Scalar(connection, "SELECT count(*) FROM ldb.main.records WHERE log_position = 101")).IsEqualTo(1L);
-
-		static string? PoisonExtractor(SurgeRecord record) =>
-			record.SchemaInfo.SchemaName == "PoisonEvent"
-				? throw new InvalidOperationException("poison")
-				: KontextRecordsContent.Json(record);
 	}
 
 	// The same shape as the memories tests' CreateRecord: the writer reads Position, SchemaInfo,
@@ -173,9 +163,8 @@ public class KontextRecordsWriterTests {
 
 	static KontextRecordsWriter NewWriter(DuckDBAdvancedConnection connection) =>
 		new(connection,
-			KontextRecordsContent.Json,
-			new FakeEmbeddingGenerator(),
-			new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension },
+			KontextTestEmbeddings.Model,
+			KontextTestEmbeddings.Options,
 			NullLogger<KontextRecordsWriter>.Instance);
 
 	static long Scalar(DuckDBAdvancedConnection connection, string sql) {
@@ -188,26 +177,6 @@ public class KontextRecordsWriterTests {
 		Directory.GetFiles(Path.Combine(storagePath, dataset), "*.manifest", SearchOption.AllDirectories).Length;
 
 	static KontextDataSource NewDataSources(string dir) => MemorySeeding.NewDataSources(dir);
-
-	/// <summary>
-	/// Deterministic 4-dim embeddings: a unit vector on the axis picked by the content's length,
-	/// so a test can recompute the exact vector the writer wrote and compare it in SQL.
-	/// </summary>
-	sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
-		public static float[] Embed(string content) {
-			var vector = new float[KontextSchemaTask.Dimension];
-			vector[content.Length % 4] = 1f;
-			return vector;
-		}
-
-		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
-		) => Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(values.Select(value => new Embedding<float>(Embed(value))).ToList()));
-
-		public object? GetService(Type serviceType, object? serviceKey = null) => null;
-
-		public void Dispose() { }
-	}
 
 	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
 	sealed class TempDir : IDisposable {

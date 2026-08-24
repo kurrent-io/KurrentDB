@@ -5,6 +5,7 @@ using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Memory.Data;
 using Microsoft.Extensions.AI;
 using TUnit.Core.Interfaces;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
@@ -12,7 +13,14 @@ using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, M
 namespace Kurrent.Kontext.Testing;
 
 /// <summary>
-/// A REAL DuckDB + Lance store with the REAL pMM12 embedding model behind it: owns the temp directory,
+/// Builds the generator a fixture embeds with, applying the caller's option tweaks on top of the
+/// model's own defaults. Shaped to match the model-specific generators' constructors, so a factory
+/// passes as a lambda.
+/// </summary>
+public delegate SentencePieceOnnxEmbeddingGenerator EmbeddingModelFactory(Action<SentencePieceOnnxOptions>? configure);
+
+/// <summary>
+/// A REAL DuckDB + Lance store with a REAL embedding model behind it: owns the temp directory,
 /// the data sources, the schema and the generator, and is the one place that embeds content before
 /// seeding — every suite and benchmark that ranks on real vectors goes through it.
 /// </summary>
@@ -20,17 +28,23 @@ namespace Kurrent.Kontext.Testing;
 /// Inject with <c>[ClassDataSource&lt;KontextStoreFixture&gt;(Shared = SharedType.None)]</c> for a
 /// fresh store per test, or create and initialize directly outside a test host.
 /// </remarks>
-public sealed class KontextStoreFixture(Action<SentencePieceOnnxOptions>? embeddingOptions) : IAsyncInitializer, IAsyncDisposable {
+public sealed class KontextStoreFixture(
+	Action<SentencePieceOnnxOptions>? embeddingOptions,
+	EmbeddingModelFactory? embeddingModel = null
+) : IAsyncInitializer, IAsyncDisposable {
 	// ClassDataSource<T> requires a true parameterless constructor — an optional parameter
 	// does not satisfy the TUnit analyzer.
 	public KontextStoreFixture() : this(null) { }
 
-	readonly SentencePieceOnnxEmbeddingGenerator _embeddingGenerator = InterimPmm12.CreateEmbeddingGenerator(embeddingOptions);
+	readonly SentencePieceOnnxEmbeddingGenerator _embeddingGenerator =
+		embeddingModel is null
+			? new Pmm12EmbeddingGenerator(embeddingOptions)
+			: embeddingModel(embeddingOptions);
 
 	TempDir?            _dir;
 	KontextDataSource? _dataSources;
 
-	public KontextDataStore Store { get; private set; } = null!;
+	public KontextMemoryDataStore Store { get; private set; } = null!;
 
 	/// <summary>The engine door — benchmarks use it to reshape indexes between phases.</summary>
 	public KontextDataSource DataSources => _dataSources ?? throw new InvalidOperationException("The fixture is not initialized.");

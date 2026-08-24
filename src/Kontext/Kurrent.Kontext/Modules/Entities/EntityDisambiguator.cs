@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
 /// <summary>A catalog entity a cheaper tier surfaced but would not merge on its own.</summary>
 public sealed record EntityCandidate(string EntityId, string Alias, double Similarity);

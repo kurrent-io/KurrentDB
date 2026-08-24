@@ -1,9 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Sessions;
+using Kurrent.Kontext.Sessions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kurrent.Kontext.Tests.Data;
@@ -340,7 +341,7 @@ public class AgentSessionImporterTests {
 				reader.Read();
 
 				// TIMESTAMPTZ arrives as a DateTimeOffset, or on some driver paths a bare DateTime whose
-				// clock reading is UTC — the same wire shapes KontextDataStore reads.
+				// clock reading is UTC — the same wire shapes KontextMemoryDataStore reads.
 				var timestamp = reader.GetValue(4) switch {
 					DateTimeOffset instant => instant,
 					DateTime clockReading  => new DateTimeOffset(DateTime.SpecifyKind(clockReading, DateTimeKind.Unspecified), TimeSpan.Zero),

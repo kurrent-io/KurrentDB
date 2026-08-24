@@ -22,7 +22,6 @@ public sealed class HybridSearch(
         // Hybrid is asked for exactly the pool it should return — no oversampling at this
         // surface. How the engine staffs its internal legs is the engine's business.
         var options = new HybridSearchOptions {
-            Limit = query.PoolSize, // we can remove this cause no oversampling...
             K     = query.PoolSize,
             Alpha = alpha,
         };

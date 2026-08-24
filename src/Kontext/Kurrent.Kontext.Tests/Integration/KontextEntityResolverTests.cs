@@ -5,8 +5,8 @@ using DuckDB.NET.Data;
 using Kurrent.Kontext.Contracts.V3.Entities;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Entities;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
 
@@ -385,7 +385,7 @@ public class KontextEntityResolverTests {
 	/// nothing to any cosine, so every asserted score stays a figure a human can recompute.
 	/// </summary>
 	static float[] Embed(params float[] head) {
-		var padded = new float[KontextSchemaTask.Dimension];
+		var padded = new float[KontextIndexConstants.VectorsDimension];
 		head.CopyTo(padded, 0);
 		return padded;
 	}

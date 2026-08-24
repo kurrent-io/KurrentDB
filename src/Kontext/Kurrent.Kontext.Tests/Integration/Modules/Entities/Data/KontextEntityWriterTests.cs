@@ -6,8 +6,8 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Entities;
-using Kurrent.Kontext.Modules.Entities.Data;
+using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Data;
 using Kurrent.Quack;
 using Kurrent.Surge;
 using Kurrent.Surge.Schema;
@@ -262,7 +262,7 @@ public class KontextEntityWriterTests {
 
 
 	static KontextEntityWriter NewWriter(DuckDBAdvancedConnection connection) =>
-		new(connection, new FakeEmbeddings(), new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
+		new(connection, new FakeEmbeddings(), new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
 
 	static (string EntityType, long FirstSeenAt, bool EmbeddingMatches) ReadAlias(
 		KontextDataSource dataSource, string entityId, string alias
@@ -271,7 +271,7 @@ public class KontextEntityWriterTests {
 			using var command = connection.CreateCommand();
 			command.CommandText =
 				$"""
-				 SELECT entity_type, first_seen_at, embedding = CAST($expected AS FLOAT[{KontextSchemaTask.Dimension}])
+				 SELECT entity_type, first_seen_at, embedding = CAST($expected AS FLOAT[{KontextIndexConstants.VectorsDimension}])
 				 FROM ldb.main.entities
 				 WHERE entity_id = $entity_id AND alias = $alias
 				 """;
@@ -323,7 +323,7 @@ public class KontextEntityWriterTests {
 	/// </summary>
 	sealed class FakeEmbeddings : IEmbeddingGenerator<string, Embedding<float>> {
 		public static float[] Embed(string text) {
-			var vector = new float[KontextSchemaTask.Dimension];
+			var vector = new float[KontextIndexConstants.VectorsDimension];
 			vector[text.Length % 4] = 1f;
 			return vector;
 		}

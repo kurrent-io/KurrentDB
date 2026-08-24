@@ -10,6 +10,7 @@ using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Tests.Fixtures;
+using KurrentDB.Api.Tests.Infrastructure;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 using KurrentDB.Testing.Bogus;
@@ -222,6 +223,7 @@ public class StreamsServiceTests {
 
     [Test]
     [Repeat(50)]
+    [ParallelLimiter<AppendStampedeLimit>]
     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
         // Arrange
 

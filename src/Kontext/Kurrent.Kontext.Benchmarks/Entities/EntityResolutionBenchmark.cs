@@ -4,9 +4,9 @@
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Modules.Entities;
-using Kurrent.Kontext.Modules.Entities.Data;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Data;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Testing;
 using Kurrent.Surge;
 using Kurrent.Surge.Schema;
@@ -34,7 +34,7 @@ sealed class EntityResolutionBenchmark(EntitySurfaceForms labels) {
 
 		var writer = new KontextEntityWriter(
 			connection, store.EmbeddingGenerator,
-			new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
+			new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
 
 		var assignments = new Dictionary<(string Type, string Form), Assignment>();
 		var position    = 0UL;

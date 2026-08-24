@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Memory.Data;
 using DuckDB.NET.Data;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
@@ -11,7 +12,7 @@ using MemoryContracts = Kurrent.Kontext.Contracts.V3.Memory;
 namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
-/// Behavioural tests for the entity leg of <see cref="KontextDataStore"/> — the
+/// Behavioural tests for the entity leg of <see cref="KontextMemoryDataStore"/> — the
 /// <see cref="IEntityIndex"/> surface — against a REAL DuckDB + Lance engine. Each test seeds
 /// memories through <see cref="MemorySeeding"/> and the catalog tables directly with SQL, exactly
 /// how the projectors write them. The leg never reads embeddings, so aliases carry zero vectors.
@@ -28,8 +29,8 @@ public class KontextEntitySearchTests {
 
 		IEntityIndex index = await Seed(dataSources);
 
-		// Act — "Acme-Corp" collapses to the stored alias "Acme Corp"; m3 (retracted) and
-		// m4 (superseded) mention the same entity and must stay invisible.
+		// Act — "Acme-Corp" collapses to the stored alias "Acme Corp"; m3 and m4 (both
+		// superseded) mention the same entity and must stay invisible.
 		var hits = await index.SearchAsync("Who runs Acme-Corp?", []).ToListAsync();
 
 		// Assert — both active memories name acme and nothing else (df = N = 2, idf = ln 2), so
@@ -100,12 +101,12 @@ public class KontextEntitySearchTests {
 	/// The corpus every test reads:
 	/// - m1 (live, work:alpha + research) mentions acme at 0.9 and 0.5, zenith at 0.8
 	/// - m2 (live, research) mentions acme at 1.0 and art at 1.0
-	/// - m3 (retracted) and m4 (superseded) mention acme at 1.0 — the lifecycle guard
+	/// - m3 and m4 (superseded) mention acme at 1.0 — the lifecycle guard
 	/// </summary>
-	static async ValueTask<KontextDataStore> Seed(KontextDataSource dataSource) {
+	static async ValueTask<KontextMemoryDataStore> Seed(KontextDataSource dataSource) {
 		// The entity leg never reads embeddings; the schema-dimension zero vector just keeps the
 		// rows well-formed.
-		var embedding = new float[KontextSchemaTask.Dimension];
+		var embedding = new float[KontextIndexConstants.VectorsDimension];
 
 		var store = await MemorySeeding.Seed(dataSource,
 			new MemoryRow("m1", MemoryContracts.MemoryType.Fact, "the quarterly report", MemoryContracts.MemoryImportance.Normal, Base) {
@@ -114,8 +115,8 @@ public class KontextEntitySearchTests {
 			new MemoryRow("m2", MemoryContracts.MemoryType.Fact, "the hiring plan", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1)) {
 				Tags = ["research"], Embedding = embedding
 			},
-			new MemoryRow("m3", MemoryContracts.MemoryType.Fact, "a retracted note", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2)) {
-				IsRetracted = true, RetractedAt = Base.AddHours(3), Embedding = embedding
+			new MemoryRow("m3", MemoryContracts.MemoryType.Fact, "an old note", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2)) {
+				IsSuperseded = true, SupersededAt = Base.AddHours(3), SupersededBy = "m1", Embedding = embedding
 			},
 			new MemoryRow("m4", MemoryContracts.MemoryType.Fact, "an old summary", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2)) {
 				IsSuperseded = true, SupersededAt = Base.AddHours(3), SupersededBy = "m2", Embedding = embedding
@@ -152,7 +153,7 @@ public class KontextEntitySearchTests {
 				command.Parameters.Add(new DuckDBParameter(row.Id));
 				command.Parameters.Add(new DuckDBParameter(row.Type));
 				command.Parameters.Add(new DuckDBParameter(row.Alias));
-				command.Parameters.Add(new DuckDBParameter(new float[KontextSchemaTask.Dimension]));
+				command.Parameters.Add(new DuckDBParameter(new float[KontextIndexConstants.VectorsDimension]));
 			}
 
 			command.ExecuteNonQuery();

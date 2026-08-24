@@ -4,3 +4,5 @@ cross-encoder/*.onnx
 cross-encoder/vocab.txt
 pmm12/*.onnx
 pmm12/sentencepiece.bpe.model
+bgem3/*.onnx
+bgem3/sentencepiece.bpe.model

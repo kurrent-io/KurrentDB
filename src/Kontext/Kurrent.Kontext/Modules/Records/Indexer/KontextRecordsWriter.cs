@@ -1,25 +1,27 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
+using Kurrent.Kontext.Embeddings.Normalization;
 using Kurrent.Quack;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Records.Data;
+namespace Kurrent.Kontext.Records.Indexer;
 
 /// <summary>
 /// Turns batches of consumed records into rows of <c>ldb.main.records</c> through the quack
-/// <see cref="BufferedAppender"/>: extract, embed once per batch, append, flush. The caller
+/// <see cref="BufferedAppender"/>: flatten, embed once per batch, append, flush. The caller
 /// owns the lance-redirected connection and the transaction the flush rides — the flush and
 /// the checkpoint commit or revert together there.
 ///
 /// Not thread safe — one writer, the indexer's own loop.
 /// </summary>
 public sealed class KontextRecordsWriter : IDisposable {
-    readonly RecordContentExtractor _extractContent;
     readonly IEmbeddingGenerator<string, Embedding<float>> _embeddings;
     readonly EmbeddingGenerationOptions _embeddingOptions;
     readonly ILogger _log;
@@ -27,49 +29,36 @@ public sealed class KontextRecordsWriter : IDisposable {
 
     public KontextRecordsWriter(
         DuckDBAdvancedConnection connection,
-        RecordContentExtractor extractContent,
         IEmbeddingGenerator<string, Embedding<float>> embeddings,
         EmbeddingGenerationOptions embeddingOptions,
         ILogger<KontextRecordsWriter> log
     ) {
-        _extractContent   = extractContent;
         _embeddings       = embeddings;
         _embeddingOptions = embeddingOptions;
         _log              = log;
         _appender         = new(connection, "records\0"u8);
     }
 
-    /// <summary>Records the extractor refused or failed on — visible progress for the skip policy.</summary>
+    /// <summary>Records the table refused — an empty payload. Visible progress for the skip policy.</summary>
     public long SkippedRecords { get; private set; }
 
     /// <summary>
-    /// Applies one batch: rows land for every record the extractor accepts, then one flush
+    /// Applies one batch: a row lands for every JSON record carrying a payload, then one flush
     /// commits them. Returns the number of rows written.
     /// </summary>
     public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct) {
         var pendingRecords = new List<PendingRecord>(batch.Count);
 
         foreach (var record in batch) {
-            // Control records ($checkpoint-received, $subscription-caughtUp) are consumer
-            // plumbing riding the batch for their positions — never index them.
-            if (record.SchemaInfo.SchemaName.StartsWith('$'))
-                continue;
-
-            string? content;
-            try {
-                content = _extractContent(record);
-            } catch (Exception ex) {
-                // A deterministic extractor failure never resolves by retrying — skip the
-                // record and keep the index advancing. A stalled index is the worse outcome.
+            if (JsonNormalizer.Instance.Normalize(record.Data.Span) is not { } content) {
                 SkippedRecords++;
-                _log.LogWarning(ex, "Skipped record at {Position} ({SchemaName}): extractor failed", record.Position, record.SchemaInfo.SchemaName);
+                _log.LogTrace("Skipped record at {Position} ({SchemaName}): empty payload", record.Position, record.SchemaInfo.SchemaName);
                 continue;
             }
 
-            if (content is null)
-                continue;
+            var data = Encoding.UTF8.GetString(record.Data.Span);
 
-            string stream = record.Position.StreamId;
+            var stream = record.Position.StreamId;
 
             var pendingRecord = new PendingRecord(
                 LogPosition: (long)record.Position.LogPosition.CommitPosition!.Value,
@@ -77,11 +66,12 @@ public sealed class KontextRecordsWriter : IDisposable {
                 Stream: stream,
                 Category: GetStreamCategory(stream),
                 SchemaName: record.SchemaInfo.SchemaName,
-                SchemaId: record.Headers.TryGetValue(HeaderKeys.SchemaId, out var schemaId) ? schemaId : null,
                 SchemaFormat: record.SchemaInfo.SchemaDataFormat.ToString(),
-                Content: content,
-                CreatedAt: new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds());
-            
+                SchemaId: record.Headers.TryGetValue(HeaderKeys.SchemaId, out var schemaId) ? schemaId : null,
+                Data: data,
+                CreatedAt: new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds(),
+                Content: content);
+
             pendingRecords.Add(pendingRecord);
         }
 
@@ -101,14 +91,15 @@ public sealed class KontextRecordsWriter : IDisposable {
 
             try {
                 row.Add(pending.LogPosition);
-                row.Add(MemoryMarshal.AsBytes(new ReadOnlySpan<Guid>(in recordId)));
+                row.Add(recordId.AsBytes());
                 row.Add(pending.Stream);
                 row.Add(pending.Category);
                 row.Add(pending.SchemaName);
+                row.Add(pending.SchemaFormat);
                 row.Add(pending.SchemaId);
-                row.Add(pending.SchemaFormat); // always json
-                row.Add(pending.Content);
+                row.Add(pending.Data);
                 row.Add(pending.CreatedAt);
+                row.Add(pending.Content);
                 row.Add(embedding.Vector.Span, CollectionType.Array);
             } finally {
                 row.Dispose();
@@ -118,14 +109,14 @@ public sealed class KontextRecordsWriter : IDisposable {
         _appender.Flush();
 
         return pendingRecords.Count;
+        
+        static string GetStreamCategory(string streamName) {
+            var dashIndex = streamName.IndexOf('-');
+            return dashIndex == -1 ? streamName : streamName[..dashIndex];
+        }
     }
 
     public void Dispose() => _appender.Dispose();
-
-    static string GetStreamCategory(string streamName) {
-        var dashIndex = streamName.IndexOf('-');
-        return dashIndex == -1 ? streamName : streamName[..dashIndex];
-    }
 
     readonly record struct PendingRecord(
         long LogPosition,
@@ -133,9 +124,20 @@ public sealed class KontextRecordsWriter : IDisposable {
         string Stream,
         string Category,
         string SchemaName,
-        string? SchemaId,
         string SchemaFormat,
-        string Content,
-        long CreatedAt
+        string? SchemaId,
+        string Data,
+        long CreatedAt,
+        string Content
     );
+}
+
+static class GuidExtensions {
+    /// <summary>
+    /// Returns a ReadOnlySpan pointing directly to the Guid's memory. 
+    /// Zero allocation and zero copying.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<byte> AsBytes(ref readonly this Guid guid) =>
+        MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<Guid, byte>(ref Unsafe.AsRef(in guid)), 16);
 }

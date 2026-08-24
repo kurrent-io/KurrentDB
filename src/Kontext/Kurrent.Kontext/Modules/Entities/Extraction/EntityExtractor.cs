@@ -5,7 +5,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 public static partial class EntityExtractor {
     /// <summary>

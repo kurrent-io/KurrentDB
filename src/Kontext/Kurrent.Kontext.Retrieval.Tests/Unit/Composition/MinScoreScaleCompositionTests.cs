@@ -29,9 +29,9 @@ public class MinScoreScaleCompositionTests {
 		var result    = await modulated.RetrieveAsync(new() { Text = "query", AsOf = Fixtures.Now, MinScore = 0.1 });
 
 		// identical age and importance pin recency and importance at the neutral 0.5; relevance
-		// min-maxes to 1 and 0, certainty is Fact 0.9 — so even the loser clears 0.1 comfortably
+		// min-maxes to 1 and 0 — so even the loser clears 0.1 comfortably
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["a", "b"], CollectionOrdering.Matching);
-		await Assert.That(result[0].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0) * 0.9).Within(1e-12);
-		await Assert.That(result[1].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0) * 0.9).Within(1e-12);
+		await Assert.That(result[0].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0)).Within(1e-12);
+		await Assert.That(result[1].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0)).Within(1e-12);
 	}
 }

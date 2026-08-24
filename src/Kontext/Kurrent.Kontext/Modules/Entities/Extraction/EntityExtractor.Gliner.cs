@@ -3,7 +3,7 @@
 
 using Kurrent.Kontext.Embeddings.GlinerOnnx;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 public static partial class EntityExtractor {
     /// <summary>

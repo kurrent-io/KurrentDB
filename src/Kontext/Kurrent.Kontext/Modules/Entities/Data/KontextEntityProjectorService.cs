@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Surge.Consumers.Configuration;
 using KurrentDB.Core.Hosting;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Entities.Data;
+namespace Kurrent.Kontext.Entities.Data;
 
 /// <summary>
 /// Hosts the entity projector once the node reaches a serving state. Hosting only, the

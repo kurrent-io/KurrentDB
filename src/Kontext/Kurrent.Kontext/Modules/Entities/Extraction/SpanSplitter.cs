@@ -3,7 +3,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 /// <summary>
 /// Breaks a coordinated span into the entities it names ("counseling and support groups" → both),

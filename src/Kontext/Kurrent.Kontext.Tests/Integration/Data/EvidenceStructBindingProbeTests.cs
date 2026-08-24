@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DuckDB.NET.Data;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 
 namespace Kurrent.Kontext.Tests.Data;

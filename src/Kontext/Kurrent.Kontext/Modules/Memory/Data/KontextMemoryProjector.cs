@@ -2,15 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Data;
-using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Memory.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Client;
 using Kurrent.Surge.Consumers.Configuration;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Kontext.Modules.Memory;
+namespace Kurrent.Kontext.Memory.Data;
 
 /// <summary>
 /// The memories read-model projector: consumes the <c>$kontext/memories</c> stream directly
@@ -79,8 +77,8 @@ public sealed class KontextMemoryProjector(
         checkpoints.EnsureSchema(connection);
 
         // The dimension is the schema's — the FLOAT[N] column type and the writer's cast must
-        // agree, and both come from KontextSchemaTask.Dimension.
-        var writer = new KontextMemoryWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextSchemaTask.Dimension });
+        // agree, and both come from KontextIndexConstants.VectorsDimension.
+        var writer = new KontextMemoryWriter(connection, embeddings, new() { Dimensions = KontextIndexConstants.VectorsDimension });
 
         // Only used when no checkpoint exists yet — resumption always wins. Earliest, unlike the
         // schema registry's Latest: the read model is rebuildable, so a fresh node projects the

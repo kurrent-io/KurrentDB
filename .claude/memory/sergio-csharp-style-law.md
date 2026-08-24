@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: 5efcc2a3-5207-42e4-8b2d-4438c5af3a19
-  modified: 2026-08-15T15:31:27.711Z
+  modified: 2026-08-18T16:06:33.706Z
 ---
 
 Style rulings Sérgio issued while reformatting DuckLance; apply to all code I write in this repo.
@@ -14,11 +14,17 @@ Style rulings Sérgio issued while reformatting DuckLance; apply to all code I w
   concise `<summary>` (1–2 lines) or nothing. No `<param>`/`<returns>`/`<exception>`/`<remarks>`
   ceremony. Truly important knowledge moves INSIDE the member as `//` comments at the code it
   governs. Private fields use `//`, not `///`.
-- **Comments are written for a junior developer**: plain language, one idea per block,
-  cause-and-effect spelled out — "I know for you it's the same, but I am just a human."
-  NEVER dense run-on comment paragraphs with lines cut mid-thought (2026-07-20): prefer a short
-  lead sentence + bullets, one fact per bullet, blank comment lines between groups. Less text,
-  same info.
+- **Do not add comments. Default to zero** (2026-08-18, explicit and angry: "stop adding these
+  idiotic comments that nobody cares about — it's only for you and I don't care about comments
+  for you. If you want to know about something, create your own memories."). Explanatory comments
+  that record what I worked out — why a guard exists, what a column is for, how an API behaves —
+  belong in `.claude/memory/`, NOT in the source. This outranks any urge to leave reasoning behind
+  and applies even when the reasoning is genuinely non-obvious and correct. Do not restore or
+  expand existing comments during an edit either; leave what is already there alone.
+- **When a comment is explicitly requested**, write it for a junior developer: plain language,
+  one idea per block, cause-and-effect spelled out. NEVER dense run-on paragraphs with lines cut
+  mid-thought (2026-07-20): short lead sentence + bullets, one fact per bullet. Never cite
+  `file.cs:123` line numbers inside a comment — they rot on the next edit.
 - **Local functions whenever they fit** — and "fit" includes single-caller private helpers:
   a helper only one member calls belongs INSIDE that member as a local function, never as a
   sibling private method. VIOLATED 2026-08-13 (DuckDBDataSource.Mint: wrote MintCore +

@@ -4,11 +4,12 @@
 using System.Globalization;
 using DuckDB.NET.Data;
 using Kurrent.Kontext.Contracts.V3.Entities;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
-using Kurrent.Kontext.Modules.Entities.Extraction;
+using Kurrent.Kontext.Entities.Extraction;
 using Microsoft.Extensions.AI;
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
 /// <summary>Surface form the exact pass missed, plus its embedding for the vector search.</summary>
 public sealed record SemanticQuery(EntityKey Key, float[] Embedding);

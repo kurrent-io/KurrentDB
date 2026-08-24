@@ -24,22 +24,27 @@ public sealed class JsonNormalizer : IUtf8Normalizer {
     /// <summary>The shared instance — the normalizer is stateless.</summary>
     public static JsonNormalizer Instance { get; } = new();
 
-    public string Normalize(ReadOnlySpan<byte> utf8) {
+    public string? Normalize(ReadOnlySpan<byte> utf8) {
         // Cheap gate before parsing: JSON worth flattening starts as an object or array.
         var start = 0;
         while (start < utf8.Length && utf8[start] is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n')
             start++;
 
         if (start == utf8.Length || utf8[start] is not ((byte)'{' or (byte)'['))
-            return Encoding.UTF8.GetString(utf8).Trim();
+            return PassThrough(utf8);
 
         try {
             var reader = new Utf8JsonReader(utf8, ReaderOptions);
             var pairs  = WalkPairs(ref reader);
 
-            return pairs.Count > 0 ? string.Join(",\n", pairs) : Encoding.UTF8.GetString(utf8).Trim();
+            return pairs.Count > 0 ? string.Join(",\n", pairs) : PassThrough(utf8);
         } catch (JsonException) {
-            return Encoding.UTF8.GetString(utf8).Trim();
+            return PassThrough(utf8);
+        }
+
+        static string? PassThrough(ReadOnlySpan<byte> utf8) {
+            var text = Encoding.UTF8.GetString(utf8).Trim();
+            return text.Length > 0 ? text : null;
         }
     }
 
@@ -101,6 +106,7 @@ public sealed class JsonNormalizer : IUtf8Normalizer {
                     break;
                 }
 
+                // TODO SS: not sure if we want to skip booleans and nulls, but maybe the model is trained to ignore them...
                 case JsonTokenType.True:
                 case JsonTokenType.False:
                 case JsonTokenType.Null:

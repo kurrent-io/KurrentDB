@@ -33,9 +33,10 @@ public sealed record SentencePieceOnnxOptions {
 	public string TokenizerAsset { get; set; } = "sentencepiece.bpe.model";
 
 	/// <summary>
-	/// Which model to resolve from the <see cref="OnnxModelRegistry"/> (the registry constructor); defaults to
-	/// <c>multilingual-e5-small</c>. Ignored when an <see cref="OnnxModel"/> is supplied directly — that
-	/// model's <see cref="OnnxModel.Name"/> is used as the reported model id.
+	/// Which model to resolve from the <see cref="OnnxModelRegistry"/> (the registry constructor). Required on
+	/// that path — there is no default, because each model in this family needs its own pooling mode, window
+	/// and prefix. Ignored when an <see cref="OnnxModel"/> is supplied directly — that model's
+	/// <see cref="OnnxModel.Name"/> is used as the reported model id.
 	/// </summary>
 	public string? ModelId { get; set; }
 }

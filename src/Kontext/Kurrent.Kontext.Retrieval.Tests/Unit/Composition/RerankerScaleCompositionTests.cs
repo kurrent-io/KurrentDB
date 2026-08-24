@@ -50,9 +50,9 @@ public class RerankerScaleCompositionTests {
 		await Assert.That(byId["c"].Breakdown.RelevanceRaw!.Value).IsEqualTo(2.0 / 63).Within(1e-12);
 		await Assert.That(byId["c"].Breakdown.RelevanceNorm!.Value).IsEqualTo(0.0).Within(1e-12);
 
-		// identical age and importance pin those dimensions at the neutral 0.5; certainty is Fact 0.9
-		await Assert.That(byId["c"].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0) * 0.9).Within(1e-12);
-		await Assert.That(byId["b"].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0) * 0.9).Within(1e-12);
+		// identical age and importance pin those dimensions at the neutral 0.5
+		await Assert.That(byId["c"].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0)).Within(1e-12);
+		await Assert.That(byId["b"].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0)).Within(1e-12);
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["b", "a", "c"], CollectionOrdering.Matching);
 	}
 
@@ -83,8 +83,8 @@ public class RerankerScaleCompositionTests {
 
 		// and once a modulator reads that axis, the memory the model never saw takes first place
 		await Assert.That(Fixtures.Ids(result)).IsEquivalentTo(["c", "a", "b"], CollectionOrdering.Matching);
-		await Assert.That(result[0].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0) * 0.9).Within(1e-12);
-		await Assert.That(result[1].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * ((0.02 - 0.01) / (2.0 / 63 - 0.01))) * 0.9).Within(1e-12);
-		await Assert.That(result[2].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0) * 0.9).Within(1e-12);
+		await Assert.That(result[0].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 1.0)).Within(1e-12);
+		await Assert.That(result[1].Score).IsEqualTo(0.05 * 0.5 + 0.2 * 0.5 + 0.75 * ((0.02 - 0.01) / (2.0 / 63 - 0.01))).Within(1e-12);
+		await Assert.That(result[2].Score).IsEqualTo((0.05 * 0.5 + 0.2 * 0.5 + 0.75 * 0.0)).Within(1e-12);
 	}
 }

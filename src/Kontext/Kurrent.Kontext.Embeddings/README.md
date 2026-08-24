@@ -18,7 +18,7 @@ adapters are covered in [Remote / hosted providers](#remote--hosted-providers)):
 
 | Folder               | Model                                                 | Tokenizer                     | Dims                       | Provider id                  | Status                                                         |
 |----------------------|-------------------------------------------------------|-------------------------------|----------------------------|------------------------------|----------------------------------------------------------------|
-| `Prototype/`         | all-MiniLM-L6-v2                                      | hand-rolled WordPiece         | 384                        | `local`                      | **frozen default** — what existing indexes were built with     |
+| `Prototype/`         | all-MiniLM-L6-v2                                      | hand-rolled WordPiece         | 384                        | `local`                      | **superseded** — zero-config `Local` routes to pMM12           |
 | `PrototypeV2/`       | all-MiniLM-L6-v2                                      | hand-rolled WordPiece         | 384                        | `kontext-prototype-v2`       | clean re-implementation of Prototype, **byte-identical** to it |
 | `WordPieceOnnx/`     | all-MiniLM-L6-v2                                      | `BertTokenizer` (correct)     | 384                        | `kontext-wordpiece-onnx`     | opt-in — **accent bug fixed** (different vectors)              |
 | `SentencePieceOnnx/` | any XLM-R model (e5, paraphrase-multilingual, bge-m3) | SentencePiece + fairseq remap | model-dependent (384–1024) | `kontext-sentencepiece-onnx` | **multilingual**                                               |

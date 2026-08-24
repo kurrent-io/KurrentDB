@@ -3,7 +3,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace Kurrent.Kontext.Modules.Entities.Extraction;
+namespace Kurrent.Kontext.Entities.Extraction;
 
 /// <summary>
 /// The validity gate over merged spans: rejects stopwords, too-short text, purely numeric and

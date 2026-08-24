@@ -4,7 +4,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Kurrent.Kontext.Modules.Entities;
+namespace Kurrent.Kontext.Entities;
 
 /// <summary>
 /// Deterministic entity ids: the same (type, normalized name) always produces the same id, which

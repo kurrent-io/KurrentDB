@@ -50,43 +50,6 @@ public class KontextEmbeddingsWireUpTests {
 		await Assert.That(HasGenerator(services)).IsTrue();
 	}
 
-	[Test]
-	public async ValueTask dimension_probe_accepts_a_matching_generator(CancellationToken cancellationToken) {
-		// Arrange
-		var generator = new FixedDimensionGenerator(4);
-
-		// Act + Assert — same dimension: no throw.
-		await generator.EnsureDimensionAsync(4, cancellationToken);
-	}
-
-	[Test]
-	public async ValueTask dimension_probe_rejects_a_mismatched_generator(CancellationToken cancellationToken) {
-		// Arrange
-		var generator = new FixedDimensionGenerator(4);
-
-		// Act
-		InvalidOperationException? refusal = null;
-		try {
-			await generator.EnsureDimensionAsync(384, cancellationToken);
-		} catch (InvalidOperationException ex) {
-			refusal = ex;
-		}
-
-		// Assert — mismatch is a startup failure, never a poisoned vector store.
-		await Assert.That(refusal).IsNotNull();
-	}
-
 	static bool HasGenerator(ServiceCollection services) =>
 		services.Any(d => d.ServiceType == typeof(IEmbeddingGenerator<string, Embedding<float>>));
-
-	sealed class FixedDimensionGenerator(int dimension) : IEmbeddingGenerator<string, Embedding<float>> {
-		public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
-			IEnumerable<string> values, EmbeddingGenerationOptions? options = null, CancellationToken cancellationToken = default
-		) => Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(
-			values.Select(_ => new Embedding<float>(new float[dimension])).ToList()));
-
-		public object? GetService(Type serviceType, object? serviceKey = null) => null;
-
-		public void Dispose() { }
-	}
 }

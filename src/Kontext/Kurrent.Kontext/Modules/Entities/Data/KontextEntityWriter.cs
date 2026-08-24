@@ -4,12 +4,13 @@
 using DuckDB.NET.Data;
 using Kurrent.Kontext.Contracts.V3.Entities;
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Memory.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge;
 using Microsoft.Extensions.AI;
 
-namespace Kurrent.Kontext.Modules.Entities.Data;
+namespace Kurrent.Kontext.Entities.Data;
 
 /// <summary>
 /// Writes one consumed batch of entity events into the catalog tables, one statement per table.
@@ -58,7 +59,7 @@ public sealed class KontextEntityWriter(
             if (record.Value is not EntitiesMentioned resolved)
                 continue;
 
-            var resolvedAt = KontextDataStore.EncodeTimestamp(resolved.ResolvedAt);
+            var resolvedAt = KontextMemoryDataStore.EncodeTimestamp(resolved.ResolvedAt);
 
             for (var spanIndex = 0; spanIndex < resolved.Mentions.Count; spanIndex++) {
                 var mention = resolved.Mentions[spanIndex];

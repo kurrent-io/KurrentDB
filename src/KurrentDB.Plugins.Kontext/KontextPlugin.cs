@@ -2,9 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins;
-using Kurrent.Kontext.Modules.Memory;
+using Kurrent.Kontext;
 using KurrentDB.Common.Configuration;
-using KurrentDB.Core.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
