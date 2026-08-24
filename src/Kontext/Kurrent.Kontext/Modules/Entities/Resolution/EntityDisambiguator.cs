@@ -7,12 +7,6 @@ using Microsoft.Extensions.AI;
 
 namespace Kurrent.Kontext.Entities;
 
-/// <summary>A catalog entity a cheaper tier surfaced but would not merge on its own.</summary>
-public sealed record EntityCandidate(string EntityId, string Alias, double Similarity);
-
-/// <summary>One name the cheaper tiers left unresolved, with the entities they thought it might be.</summary>
-public sealed record Disambiguation(EntityKey Key, string Text, IReadOnlyList<EntityCandidate> Candidates);
-
 /// <summary>
 /// Decides, for a name no deterministic tier would merge, which candidate it actually is. The last
 /// tier before a name becomes a new entity, and the only one that can see past spelling: "film
