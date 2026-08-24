@@ -164,7 +164,7 @@ partial class RaftKontroller {
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
 		if (candidate.Address is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate.Address, candidate.InstanceId, CancellationToken.None)) {
-			Logger.Information($"DPlane node '{candidate}' is appointed as leader for database '{databaseId}'");
+			Logger.Information($"DPlane node '{candidate.Address}' with instance id '{candidate.InstanceId}' is appointed as leader for database '{databaseId}'");
 			_appointmentState[databaseId] = new(candidate.Address, currentEpoch, candidate.InstanceId);
 			_state.NotifyDatabaseChanged(databaseId);
 		}
