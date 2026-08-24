@@ -3,7 +3,6 @@
 
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
@@ -12,8 +11,6 @@ using Kurrent.Kontext.Entities;
 using Kurrent.Kontext.Entities.Data;
 using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Testing;
-using Kurrent.Surge;
-using Kurrent.Surge.Schema;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -80,7 +77,7 @@ static class EntityCorpusSeeder {
 					Mentions   = { extracted.Select(entity => entity.ToContract(resolutions[EntityKey.For(entity.EntityType, entity.Text)])) },
 				};
 
-				await writer.ProjectAsync([Record(mentioned, (ulong)index + 1)], ct);
+				await writer.ApplyAsync([mentioned], ct);
 			}
 
 			if ((index + 1) % 100 == 0)
@@ -89,23 +86,6 @@ static class EntityCorpusSeeder {
 
 		return Count(corpus);
 	}
-
-	// The same event the resolution module produces per memory.
-
-	// The writer switches on Value and never reads Data, so raw proto bytes and a cosmetic
-	// SchemaInfo are enough — the same shape the writer suites fabricate.
-	static SurgeRecord Record<T>(T message, ulong position) where T : IMessage<T> =>
-		new() {
-			Id         = Guid.NewGuid(),
-			Position   = RecordPosition.ForLog(position),
-			Timestamp  = DateTime.UtcNow,
-			SchemaInfo = new SchemaInfo($"$kontext-{typeof(T).Name.ToLowerInvariant()}", SchemaDataFormat.Json),
-			Data       = message.ToByteArray(),
-			Value      = message,
-			ValueType  = typeof(T),
-			SequenceId = position,
-			Headers    = new Headers(),
-		};
 
 	static SeededCatalog Count(KontextCorpus corpus) =>
 		corpus.DataSources.Execute(connection => {

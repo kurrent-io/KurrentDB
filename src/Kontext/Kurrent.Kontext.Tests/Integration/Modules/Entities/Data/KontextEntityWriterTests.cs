@@ -124,7 +124,7 @@ public class KontextEntityWriterTests {
 		var resolvedAt = Base.AddHours(1);
 
 		await Project(writer, CreateRecord(NewMentioned(
-			"m1", Base, Mention("Acme", "e-provisional", "organization", 0.6, EntityContracts.ResolutionMethod.FullText)), position: 100));
+			"m1", Base, Mention("Acme", "e-provisional", "organization", 0.6, EntityContracts.ResolutionMethod.Lexical)), position: 100));
 
 		// Act
 		await Project(writer, CreateRecord(NewMentioned(
@@ -195,7 +195,7 @@ public class KontextEntityWriterTests {
 		// Act — a spelling the catalog does not hold, and one it holds under a different case.
 		var written = await Project(writer, CreateRecord(NewMentioned(
 			"m2", Base.AddHours(1),
-			Mention("Mel", "e-melanie", "person", 0.90, EntityContracts.ResolutionMethod.FullText),
+			Mention("Mel", "e-melanie", "person", 0.90, EntityContracts.ResolutionMethod.Lexical),
 			Mention("MELANIE", "e-melanie", "person", 1.0, EntityContracts.ResolutionMethod.Exact)), position: 200));
 
 		// Assert — one thing under two spellings. "MELANIE" is the spelling the catalog already

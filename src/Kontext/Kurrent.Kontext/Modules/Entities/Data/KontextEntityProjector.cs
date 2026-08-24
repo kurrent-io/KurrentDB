@@ -13,9 +13,11 @@ namespace Kurrent.Kontext.Entities.Data;
 
 /// <summary>
 /// The entity catalog's read-model projector, the same loop as the memory projector but over the
-/// catalog tables. After a batch that wrote aliases, folds the alias search indexes (throttled).
-/// The FTS fold is correctness, over unfolded rows lance_fts returns the first k rows by scan
-/// arrival, not the top k by score. The vector fold is latency only.
+/// catalog tables. Ingestion applies its own events for read-your-writes, so in steady state this
+/// re-apply writes nothing — it exists to heal a crash between produce and apply, and to rebuild
+/// the catalog from the stream. It also folds the alias search indexes (throttled). The FTS fold
+/// is correctness, over unfolded rows lance_fts returns the first k rows by scan arrival, not the
+/// top k by score. The vector fold is latency only.
 /// </summary>
 public sealed class KontextEntityProjector(
     KontextDataSource dataSource,
@@ -61,14 +63,14 @@ public sealed class KontextEntityProjector(
     }
 
     async Task ProjectUntilStopped(CancellationToken ct) {
-        await using var connection = dataSource.OpenLanceWriter();
-
         var checkpoints = new KontextCheckpointStore(CheckpointKey);
-        checkpoints.EnsureSchema(connection);
 
-        var writer = new KontextEntityWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
+        RecordPosition startPosition;
 
-        var startPosition = checkpoints.Load(connection);
+        await using (var connection = dataSource.OpenLanceWriter()) {
+            checkpoints.EnsureSchema(connection);
+            startPosition = checkpoints.Load(connection);
+        }
 
         _log.LogInformation("Entity projector starting from {StartPosition}", startPosition);
 
@@ -85,17 +87,24 @@ public sealed class KontextEntityProjector(
         var lastOptimize = TimeProvider.System.GetTimestamp();
 
         await foreach (var batch in consumer.Records(ct).ReadBatches(BatchSize, BatchWindow, ct).ConfigureAwait(false)) {
-            var aliasesWritten = 0;
+            // A fresh connection per batch: an attached lance catalog serves a connection the
+            // dataset view it first scanned, and ingestion commits between batches — a held
+            // connection would keep re-inserting aliases ingestion already wrote.
+            await using var connection = dataSource.OpenLanceWriter();
+
+            var writer = new KontextEntityWriter(connection, embeddings, new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
 
             using (var tx = connection.BeginTransaction()) {
-                aliasesWritten = await writer.ProjectAsync(batch, ct).ConfigureAwait(false);
+                await writer.ProjectAsync(batch, ct).ConfigureAwait(false);
 
                 checkpoints.Store(connection, batch[^1].Position);
 
                 tx.CommitOnDispose();
             }
 
-            if (aliasesWritten == 0 || TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
+            // Time-based, not write-based: the aliases this batch carries were usually written by
+            // ingestion already, and those rows still need folding into the indexes.
+            if (TimeProvider.System.GetElapsedTime(lastOptimize) < IndexMaintenanceThrottle)
                 continue;
 
             connection.EnsureInvertedIndex(EntitiesTable, "alias");

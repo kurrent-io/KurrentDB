@@ -6,9 +6,11 @@ using Kurrent.Kontext.Contracts.V3.Entities;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Data;
 using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using Timestamp = Google.Protobuf.WellKnownTypes.Timestamp;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -227,12 +229,13 @@ public class KontextEntityResolverTests {
 	[Test]
 	public async ValueTask a_unique_prefix_still_merges_when_no_model_is_configured() {
 		// Arrange — "Mel" prefixes exactly one person in the catalog and nothing else claims it.
-		// With no disambiguator the resolver falls back to merging on that alone, so switching the
-		// model off costs recall on the hard names and never the nickname the tier used to handle.
+		// With no model the default decider merges on that alone, so switching the model off costs
+		// recall on the hard names and never the nickname. The embedding resembles nothing, so the
+		// semantic tier cannot be the one that merges it.
 		using var dir        = new TempDir();
 		using var dataSource = await Seed(dir.Path);
 
-		var embeddings = new MappedEmbeddings { ["Mel"] = Embed(0f, 0f, 0f, 1f) };
+		var embeddings = new MappedEmbeddings { ["Mel"] = Embed(0f, 0f, 1f, 0f) };
 		var resolver   = new KontextEntityResolver(dataSource, embeddings);
 
 		// Act
@@ -251,9 +254,11 @@ public class KontextEntityResolverTests {
 		using var dataSource = await Seed(dir.Path);
 
 		// The refused names embed onto an axis no same-type alias occupies, so nothing rescues them.
+		// "mel" is deferred to the decider rather than claimed outright, so it embeds too.
 		var embeddings = new MappedEmbeddings {
 			["acme"]               = Embed(0f, 0f, 1f, 0f),
 			["adoption interview"] = Embed(0f, 0f, 1f, 0f),
+			["mel"]                = Embed(0f, 0f, 1f, 0f),
 		};
 
 		var resolver = new KontextEntityResolver(dataSource, embeddings);
@@ -288,7 +293,7 @@ public class KontextEntityResolverTests {
 	}
 
 	[Test]
-	public async ValueTask created_entities_are_remembered_for_repeat_mentions() {
+	public async ValueTask created_entities_link_repeat_mentions_through_the_catalog() {
 		// Arrange
 		using var dir        = new TempDir();
 		using var dataSource = await Seed(dir.Path);
@@ -296,18 +301,33 @@ public class KontextEntityResolverTests {
 		var embeddings = new MappedEmbeddings { ["Wayne Industries"] = Embed(0f, 0f, 0f, 1f) };
 		var resolver   = new KontextEntityResolver(dataSource, embeddings);
 
-		var key = EntityKey.For("organization", "Wayne Industries");
+		var extracted = new ExtractedEntity("Wayne Industries", "organization", 0.9);
+		var key       = EntityKey.For("organization", "Wayne Industries");
 
-		// Act — the projector has not caught up (the catalog never sees the creation), yet the
-		// repeat mention must link to the created entity instead of re-creating it.
-		var first  = await resolver.ResolveAsync([new ExtractedEntity("Wayne Industries", "organization", 0.9)]);
+		// Act — ingestion applies each batch's events to the catalog before the next batch
+		// resolves, so the repeat mention links to the created entity instead of re-creating it.
+		var first = await resolver.ResolveAsync([extracted]);
+
+		await using (var connection = dataSource.OpenLanceWriter()) {
+			var writer = new KontextEntityWriter(
+				connection, embeddings,
+				new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
+
+			await writer.ApplyAsync([new EntitiesMentioned {
+				MemoryId   = "m1",
+				ResolvedAt = Timestamp.FromDateTimeOffset(DateTimeOffset.UnixEpoch),
+				Mentions   = { extracted.ToContract(first[key]) },
+			}]);
+		}
+
 		var second = await resolver.ResolveAsync([new ExtractedEntity("wayne INDUSTRIES", "organization", 0.9)]);
 
-		// Assert — same id, linked exactly, and the second pass never embedded.
+		// Assert — same id, linked exactly, and only the resolve and the alias write embedded: the
+		// repeat mention never did.
 		await Assert.That(first[key].Method).IsEqualTo(ResolutionMethod.Created);
 		await Assert.That(second[key].EntityId).IsEqualTo(first[key].EntityId);
 		await Assert.That(second[key].Method).IsEqualTo(ResolutionMethod.Exact);
-		await Assert.That(embeddings.Calls).IsEqualTo(1);
+		await Assert.That(embeddings.Calls).IsEqualTo(2);
 	}
 
 	#region ->> Test Infrastructure <<-
@@ -351,10 +371,10 @@ public class KontextEntityResolverTests {
 
 		public IReadOnlyList<string> Offered => _offered;
 
-		public ValueTask<IReadOnlyDictionary<EntityKey, string>> ResolveAsync(
+		public ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
 			IReadOnlyCollection<Disambiguation> pending, CancellationToken ct = default
 		) {
-			var chosen = new Dictionary<EntityKey, string>();
+			var chosen = new Dictionary<EntityKey, ResolvedEntity>();
 
 			foreach (var item in pending) {
 				_offered.AddRange(item.Candidates.Select(candidate => candidate.Alias));
@@ -363,10 +383,10 @@ public class KontextEntityResolverTests {
 					merges.Any(merge => merge.Text == item.Text && merge.Alias == candidate.Alias));
 
 				if (match is not null)
-					chosen[item.Key] = match.EntityId;
+					chosen[item.Key] = new ResolvedEntity(match.EntityId, 0.95, ResolutionMethod.Llm);
 			}
 
-			return ValueTask.FromResult<IReadOnlyDictionary<EntityKey, string>>(chosen);
+			return ValueTask.FromResult<IReadOnlyDictionary<EntityKey, ResolvedEntity>>(chosen);
 		}
 	}
 

@@ -22,13 +22,13 @@ public sealed partial class KontextEntityResolver {
     /// matching spelling lowering the bar. Near misses stay candidates for the disambiguation tier.
     /// </summary>
     async ValueTask ClaimSemanticAsync(ResolutionPass pass, CancellationToken ct) {
-        var misses = pass.Unresolved;
+        var misses = pass.Undecided;
 
         if (misses.Count == 0)
             return;
 
         var embedded = await embeddings
-            .GenerateAsync([.. misses.Select(miss => miss.Value)], cancellationToken: ct)
+            .GenerateAsync([.. misses.Select(miss => miss.Value.Text)], cancellationToken: ct)
             .ConfigureAwait(false);
 
         var neighbors = await ResolveSemanticAsync(
@@ -48,7 +48,7 @@ public sealed partial class KontextEntityResolver {
             }
 
             foreach (var candidate in nearest?.Candidates ?? [])
-                Remember(pass.Candidates, key, candidate);
+                pass.AddCandidate(key, candidate);
         }
     }
 
@@ -97,7 +97,7 @@ public sealed partial class KontextEntityResolver {
                         var fuzzy    = Convert.ToDouble(reader.GetValue(3), CultureInfo.InvariantCulture);
                         var score    = fuzzy >= FuzzyCorroborationFloor ? (semantic + fuzzy) / 2 : semantic;
 
-                        neighbours.Add(new EntityCandidate(entityId, alias, score));
+                        neighbours.Add(new EntityCandidate(entityId, alias, CandidateSource.Semantic));
 
                         if (score <= bestScore)
                             continue;

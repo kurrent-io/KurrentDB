@@ -1,15 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Entities;
 using Kurrent.Kontext.Entities.Data;
 using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Testing;
-using Kurrent.Surge;
-using Kurrent.Surge.Schema;
 using Microsoft.Extensions.AI;
 using Contracts = Kurrent.Kontext.Contracts.V3.Entities;
 
@@ -56,7 +53,9 @@ sealed class EntityResolutionBenchmark(EntitySurfaceForms labels) {
 				Mentions   = { extracted.ToContract(resolved) },
 			};
 
-			await writer.ProjectAsync([Record(mentioned, ++position)]);
+			++position;
+
+			await writer.ApplyAsync([mentioned]);
 		}
 
 		return Score(name, assignments);
@@ -84,22 +83,6 @@ sealed class EntityResolutionBenchmark(EntitySurfaceForms labels) {
 
 		return new(name, verdicts, assignments, fragmented);
 	}
-
-
-	// The writer switches on Value and never reads Data, so raw proto bytes and a cosmetic
-	// SchemaInfo are enough — the same shape the writer suites fabricate.
-	static SurgeRecord Record<T>(T message, ulong position) where T : IMessage<T> =>
-		new() {
-			Id         = Guid.NewGuid(),
-			Position   = RecordPosition.ForLog(position),
-			Timestamp  = DateTime.UnixEpoch,
-			SchemaInfo = new SchemaInfo($"$kontext-{typeof(T).Name.ToLowerInvariant()}", SchemaDataFormat.Json),
-			Data       = message.ToByteArray(),
-			Value      = message,
-			ValueType  = typeof(T),
-			SequenceId = position,
-			Headers    = new Headers(),
-		};
 }
 
 sealed record PairVerdict(

@@ -26,9 +26,6 @@ public sealed class EntityResolverOptions {
     /// <summary>Lets a matching spelling lower the semantic merge bar.</summary>
     public bool CorroboratedMerging { get; set; } = true;
 
-    /// <summary>Lets a model decide names no other tier would merge, skipped when no disambiguator is given.</summary>
-    public bool LlmTier { get; set; } = true;
-
     /// <summary>Similarity above which a semantic match merges.</summary>
     public double SemanticMergeThreshold { get; set; } = 0.97;
 

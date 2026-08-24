@@ -14,8 +14,6 @@ public sealed partial class KontextEntityResolver {
 
     const double StemMatchConfidence = 0.97;
 
-    const double NicknameMatchConfidence = 0.90;
-
     /// <summary>Names the lexical tier claims outright, plus prefix candidates for the rest.</summary>
     sealed record LexicalResolution(
         Dictionary<EntityKey, ResolvedEntity> Matches,
@@ -23,26 +21,21 @@ public sealed partial class KontextEntityResolver {
     );
 
     /// <summary>
-    /// Lexical tier: stem-identical and near-identical spellings merge outright. A unique person
-    /// prefix ("Mel" is "Melanie") merges only when no judge exists; otherwise it stays a candidate
-    /// for the disambiguation tier.
+    /// Lexical tier: stem-identical and near-identical spellings merge outright. A person prefix
+    /// ("Mel" is "Melanie") stays a candidate for the disambiguation tier to decide.
     /// </summary>
     async ValueTask ClaimLexicalAsync(ResolutionPass pass, CancellationToken ct) {
         if (!_options.LexicalTier)
             return;
 
-        var lexical = await ResolveLexicalAsync([.. pass.Unresolved.Select(entry => entry.Key)], ct).ConfigureAwait(false);
+        var lexical = await ResolveLexicalAsync([.. pass.Undecided.Select(entry => entry.Key)], ct).ConfigureAwait(false);
 
         foreach (var (key, match) in lexical.Matches)
             pass.Claim(key, match);
 
-        // Without a judge, a unique prefix merges on its own.
-        if (!pass.Judged)
-            foreach (var (key, only) in lexical.Prefixes.Where(entry => entry.Value.Count == 1))
-                pass.Claim(key, new ResolvedEntity(only[0].EntityId, NicknameMatchConfidence, ResolutionMethod.FullText));
-
         foreach (var (key, prefixes) in lexical.Prefixes)
-            pass.Candidates[key] = prefixes;
+            foreach (var candidate in prefixes)
+                pass.AddCandidate(key, candidate);
     }
 
     /// <summary>Spelling matches in three strengths: stem, near-identical, unique prefix.</summary>
@@ -134,16 +127,18 @@ public sealed partial class KontextEntityResolver {
                             if (jw >= LexicalMergeThreshold && (!fuzzy.TryGetValue(key, out var best) || jw > best.Score))
                                 fuzzy[key] = (entityId, jw);
 
-                            if (reader.GetBoolean(5))
-                                Remember(prefixes, key, new EntityCandidate(entityId, alias, jw));
+                            if (reader.GetBoolean(5)) {
+                                var forKey = prefixes.TryGetValue(key, out var existing) ? existing : prefixes[key] = [];
+                                forKey.Add(new EntityCandidate(entityId, alias, CandidateSource.Prefix));
+                            }
                         }
 
                     // Stem and near-identical merge outright while a prefix stays a candidate.
                     foreach (var key in group) {
                         if (stems.TryGetValue(key, out var stemId))
-                            resolved[key] = new ResolvedEntity(stemId, StemMatchConfidence, ResolutionMethod.FullText);
+                            resolved[key] = new ResolvedEntity(stemId, StemMatchConfidence, ResolutionMethod.Lexical);
                         else if (fuzzy.TryGetValue(key, out var near))
-                            resolved[key] = new ResolvedEntity(near.EntityId, near.Score, ResolutionMethod.FullText);
+                            resolved[key] = new ResolvedEntity(near.EntityId, near.Score, ResolutionMethod.Lexical);
                         else if (prefixes.TryGetValue(key, out var candidates))
                             prefixed[key] = candidates;
                     }
@@ -154,31 +149,4 @@ public sealed partial class KontextEntityResolver {
         ).ConfigureAwait(false);
     }
 
-    /// <summary>The folded shape of each text, one call for the batch.</summary>
-    async ValueTask<IReadOnlyDictionary<string, string>> FoldAsync(List<string> texts, CancellationToken ct) {
-        if (texts.Count == 0)
-            return new Dictionary<string, string>();
-
-        return await dts.ExecuteAsync<IReadOnlyDictionary<string, string>>(
-            connection => {
-                using var command = connection.CreateCommand();
-
-                command.CommandText =
-                    """
-                    SELECT text, fold(text)
-                    FROM (SELECT DISTINCT unnest(CAST($texts AS VARCHAR[])) AS text)
-                    """;
-
-                command.Parameters.Add(new DuckDBParameter("texts", texts));
-
-                var folded = new Dictionary<string, string>();
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                    folded[reader.GetString(0)] = reader.GetString(1);
-
-                return folded;
-            }, ct
-        ).ConfigureAwait(false);
-    }
 }

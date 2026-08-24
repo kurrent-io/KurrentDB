@@ -46,8 +46,8 @@ enum ResolutionMethod {
   // Exact hit on an alias.
   RESOLUTION_METHOD_EXACT = 1;
 
-  // A full-text candidate won the ranking.
-  RESOLUTION_METHOD_FULL_TEXT = 2;
+  // A lexical match won: stem-identical, near-identical spelling, or a nickname prefix.
+  RESOLUTION_METHOD_LEXICAL = 2;
 
   // A vector-similarity candidate won the ranking.
   RESOLUTION_METHOD_SEMANTIC = 3;

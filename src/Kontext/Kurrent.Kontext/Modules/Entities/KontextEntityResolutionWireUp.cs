@@ -76,7 +76,9 @@ public static class KontextEntityResolutionWireUp {
         services.AddSingleton(ctx => new KontextEntityResolution(
             ctx.GetRequiredService<KontextEntityResolver>(),
             ctx.GetRequiredService<IEntityExtractor>(),
-            ctx.GetRequiredService<IProducerBuilder>()));
+            ctx.GetRequiredService<IProducerBuilder>(),
+            ctx.GetRequiredService<KontextDataSource>(),
+            ctx.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()));
 
         return services.AddSingleton<IHostedService, KontextEntityResolutionService>(ctx => {
             return new KontextEntityResolutionService(() => {

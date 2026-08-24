@@ -3,10 +3,14 @@
 
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Contracts.V3.Memory;
+using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Entities.Data;
 using Kurrent.Kontext.Entities.Extraction;
+using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Configuration;
+using Microsoft.Extensions.AI;
 
 using Candidate = (string MemoryId, System.Collections.Generic.IReadOnlyList<Kurrent.Kontext.Entities.Extraction.ExtractedEntity> Entities);
 
@@ -16,10 +20,18 @@ using Contracts = Kurrent.Kontext.Contracts.V3.Entities;
 
 /// <summary>
 /// Reads each new memory and has the resolver decide every name's fate. Each decision lands as
-/// an event where the mention links to its entity or carries the one it created.
+/// an event where the mention links to its entity or carries the one it created — and then in the
+/// catalog itself, so the next batch resolves against every entity this one created instead of
+/// waiting on the projector.
 /// </summary>
 public sealed class KontextEntityResolution : ProcessingModule {
-    public KontextEntityResolution(KontextEntityResolver resolver, IEntityExtractor extractor, IProducerBuilder producerBuilder) {
+    public KontextEntityResolution(
+        KontextEntityResolver resolver,
+        IEntityExtractor extractor,
+        IProducerBuilder producerBuilder,
+        KontextDataSource dataSource,
+        IEmbeddingGenerator<string, Embedding<float>> embeddings
+    ) {
         var producer = producerBuilder.ProducerId("KontextEntityResolutionProducer").Create();
 
         Process<MemoriesRetained>(async (retained, ctx) => {
@@ -53,7 +65,20 @@ public sealed class KontextEntityResolution : ProcessingModule {
                 .Create();
 
             await producer.Produce(request, throwOnError: true).ConfigureAwait(false);
+
+            // Read-your-writes: the events are durable, so put them in the catalog now rather than
+            // waiting on the projector — a crash here only costs the projector re-applying them.
+            await using var connection = dataSource.OpenLanceWriter();
+
+            var writer = new KontextEntityWriter(
+                connection, embeddings,
+                new EmbeddingGenerationOptions { Dimensions = KontextIndexConstants.VectorsDimension });
+
+            using var tx = connection.BeginTransaction();
+
+            await writer.ApplyAsync(events, ctx.CancellationToken).ConfigureAwait(false);
+
+            tx.CommitOnDispose();
         });
     }
-
 }

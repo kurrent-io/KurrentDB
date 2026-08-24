@@ -3,6 +3,7 @@
 
 using System.Text;
 using System.Text.Json;
+using Kurrent.Kontext.Contracts.V3.Entities;
 using Microsoft.Extensions.AI;
 
 namespace Kurrent.Kontext.Entities;
@@ -18,9 +19,37 @@ namespace Kurrent.Kontext.Entities;
 /// apart. Callers treat "not in the result" exactly as they treat "no candidate matched".
 /// </remarks>
 public interface IEntityDisambiguator {
-    ValueTask<IReadOnlyDictionary<EntityKey, string>> ResolveAsync(
+    ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
         IReadOnlyCollection<Disambiguation> pending, CancellationToken ct = default
     );
+}
+
+/// <summary>
+/// The decider used when no model is configured: a name whose only prefix candidate is a single
+/// catalog entity merges into it, everything else abstains. Approximates the nickname call a model
+/// would make ("Mel" is "Melanie"), so running without one costs recall only on the hard names.
+/// </summary>
+public sealed class UniquePrefixDisambiguator : IEntityDisambiguator {
+    const double NicknameMatchConfidence = 0.90;
+
+    public static readonly UniquePrefixDisambiguator Instance = new();
+
+    UniquePrefixDisambiguator() { }
+
+    public ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
+        IReadOnlyCollection<Disambiguation> pending, CancellationToken ct = default
+    ) {
+        var chosen = new Dictionary<EntityKey, ResolvedEntity>();
+
+        foreach (var item in pending) {
+            var prefixes = item.Candidates.Where(candidate => candidate.Source is CandidateSource.Prefix).ToList();
+
+            if (prefixes.Count == 1)
+                chosen[item.Key] = new ResolvedEntity(prefixes[0].EntityId, NicknameMatchConfidence, ResolutionMethod.Lexical);
+        }
+
+        return ValueTask.FromResult<IReadOnlyDictionary<EntityKey, ResolvedEntity>>(chosen);
+    }
 }
 
 /// <summary>
@@ -30,6 +59,8 @@ public interface IEntityDisambiguator {
 /// must cost recall and never correctness.
 /// </summary>
 public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IEntityDisambiguator {
+    const double LlmMatchConfidence = 0.95;
+
     static readonly JsonSerializerOptions PayloadJson = new(JsonSerializerDefaults.Web);
 
     readonly IChatClient _chat = options.Chat
@@ -45,11 +76,11 @@ public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IE
         return Create(options);
     }
 
-    public async ValueTask<IReadOnlyDictionary<EntityKey, string>> ResolveAsync(
+    public async ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
         IReadOnlyCollection<Disambiguation> pending, CancellationToken ct = default
     ) {
         if (pending.Count == 0)
-            return new Dictionary<EntityKey, string>();
+            return new Dictionary<EntityKey, ResolvedEntity>();
 
         // Positional ids, so the model never has to echo an entity id back and cannot invent one:
         // it answers with a number, and the number indexes a candidate this method already holds.
@@ -70,7 +101,7 @@ public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IE
         } catch (OperationCanceledException) {
             throw;
         } catch (Exception) {
-            return new Dictionary<EntityKey, string>();
+            return new Dictionary<EntityKey, ResolvedEntity>();
         }
 
         return Choose(numbered, Parse(response.Text));
@@ -85,7 +116,10 @@ public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IE
 
             for (var candidate = 0; candidate < item.Candidates.Count; candidate++)
                 text.Append("  candidate ").Append(candidate).Append(": \"")
-                    .Append(item.Candidates[candidate].Alias).AppendLine("\"");
+                    .Append(item.Candidates[candidate].Alias).Append('"')
+                    .AppendLine(item.Candidates[candidate].Source is CandidateSource.Prefix
+                        ? " (one name is a prefix of the other)"
+                        : "");
         }
 
         return text.ToString();
@@ -94,11 +128,11 @@ public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IE
     // Only a choice that indexes a candidate the caller offered survives: a hallucinated index, a
     // name index that was never asked about, and the explicit -1 abstention all fall through to
     // absence, which the resolver reads as "no match".
-    static Dictionary<EntityKey, string> Choose(
+    static Dictionary<EntityKey, ResolvedEntity> Choose(
         List<(int Index, Disambiguation Item)> numbered, List<ChoicePayload> choices
     ) {
         var byIndex  = numbered.ToDictionary(entry => entry.Index, entry => entry.Item);
-        var resolved = new Dictionary<EntityKey, string>();
+        var resolved = new Dictionary<EntityKey, ResolvedEntity>();
 
         foreach (var choice in choices) {
             if (choice.Name is not { } name || choice.Candidate is not { } candidate)
@@ -107,7 +141,8 @@ public sealed class EntityDisambiguator(EntityDisambiguatorOptions options) : IE
             if (!byIndex.TryGetValue(name, out var item) || candidate < 0 || candidate >= item.Candidates.Count)
                 continue;
 
-            resolved[item.Key] = item.Candidates[candidate].EntityId;
+            resolved[item.Key] = new ResolvedEntity(
+                item.Candidates[candidate].EntityId, LlmMatchConfidence, ResolutionMethod.Llm);
         }
 
         return resolved;

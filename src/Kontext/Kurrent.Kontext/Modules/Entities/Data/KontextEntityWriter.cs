@@ -45,20 +45,21 @@ public sealed class KontextEntityWriter(
         long   LinkedAt
     );
 
+    /// <summary>Applies one consumed batch of records, ignoring anything that is not an entity event.</summary>
+    public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct = default) =>
+        await ApplyAsync([.. batch.Select(record => record.Value).OfType<EntitiesMentioned>()], ct).ConfigureAwait(false);
+
     /// <summary>
-    /// Applies one consumed batch: collapse the events into one pending state per key, then write
-    /// the spellings and the mentions. Safe to replay: a crash before the checkpoint only costs
-    /// re-running the batch, never wrong rows. Returns how many alias rows were inserted, so the
-    /// projector knows when to rebuild the alias search indexes.
+    /// Applies entity events: collapse them into one pending state per key, then write the
+    /// spellings and the mentions. Safe to replay: re-applying the same events writes nothing new,
+    /// which is what lets ingestion apply them for read-your-writes before the projector consumes
+    /// them again. Returns how many alias rows were inserted.
     /// </summary>
-    public async ValueTask<int> ProjectAsync(IReadOnlyList<SurgeRecord> batch, CancellationToken ct = default) {
+    public async ValueTask<int> ApplyAsync(IReadOnlyCollection<EntitiesMentioned> events, CancellationToken ct = default) {
         var aliases  = new Dictionary<(string EntityId, string Alias), PendingAlias>();
         var mentions = new Dictionary<(string MemoryId, int SpanIndex), PendingMention>();
 
-        foreach (var record in batch) {
-            if (record.Value is not EntitiesMentioned resolved)
-                continue;
-
+        foreach (var resolved in events) {
             var resolvedAt = KontextMemoryDataStore.EncodeTimestamp(resolved.ResolvedAt);
 
             for (var spanIndex = 0; spanIndex < resolved.Mentions.Count; spanIndex++) {

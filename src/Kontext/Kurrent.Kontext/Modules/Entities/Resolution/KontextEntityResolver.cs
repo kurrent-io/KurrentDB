@@ -11,7 +11,8 @@ namespace Kurrent.Kontext.Entities;
 /// <summary>
 /// Resolves names in text to catalog entities through a cascade of tiers, cheapest first. Each
 /// tier claims the names it is confident about and passes the rest down; whatever survives every
-/// tier becomes a new entity. One tier per partial file.
+/// tier becomes a new entity. One tier per partial file. Stateless: repeat mentions link through
+/// the catalog, which ingestion writes before the next batch resolves.
 /// </summary>
 public sealed partial class KontextEntityResolver(
     KontextDataSource dts,
@@ -21,89 +22,77 @@ public sealed partial class KontextEntityResolver(
 ) {
 	readonly EntityResolverOptions _options = options ?? new EntityResolverOptions();
 
-	/// <summary>Names created here, so later mentions link instead of re-creating.</summary>
-    readonly Dictionary<EntityKey, string> _created = [];
-
-    /// <summary>Created names by folded shape, so "pottery classes" links to "pottery class".</summary>
-    readonly Dictionary<EntityKey, string> _createdFolded = [];
+	/// <summary>Decides names with candidates no tier would merge; the unique-prefix rule when no model is given.</summary>
+	readonly IEntityDisambiguator _disambiguator = disambiguator ?? UniquePrefixDisambiguator.Instance;
 
     public async ValueTask<IReadOnlyDictionary<EntityKey, ResolvedEntity>> ResolveAsync(
         IEnumerable<ExtractedEntity> entities, CancellationToken ct = default
     ) {
-        var batch = entities as IReadOnlyCollection<ExtractedEntity> ?? [.. entities];
-        var pass  = await BeginPassAsync(batch, ct).ConfigureAwait(false);
+        var pass = BeginPass(entities);
 
         await ClaimExactAsync(pass, ct).ConfigureAwait(false);
         await ClaimLexicalAsync(pass, ct).ConfigureAwait(false);
         await ClaimSemanticAsync(pass, ct).ConfigureAwait(false);
         await ClaimDisambiguatedAsync(pass, ct).ConfigureAwait(false);
 
-        CreateUnresolved(pass);
+        CreateNewEntities(pass);
 
         return pass.Resolutions;
     }
 
-    /// <summary>Folds the batch once and claims names this resolver already created.</summary>
-    async ValueTask<ResolutionPass> BeginPassAsync(IReadOnlyCollection<ExtractedEntity> batch, CancellationToken ct) {
-        var folded = _options.LexicalTier
-            ? await FoldAsync([.. batch.Select(entity => entity.Text)], ct).ConfigureAwait(false)
-            : new Dictionary<string, string>();
+    /// <summary>Enters every name undecided, duplicates collapsing onto one entry.</summary>
+    static ResolutionPass BeginPass(IEnumerable<ExtractedEntity> batch) {
+        var pass = new ResolutionPass();
 
-        var pass = new ResolutionPass(folded, Judged: disambiguator is not null && _options.LlmTier);
-
-        foreach (var entity in batch) {
-            var key = EntityKey.For(entity.EntityType, entity.Text);
-
-            if (_created.TryGetValue(key, out var createdId))
-                pass.Resolutions.TryAdd(key, new ResolvedEntity(createdId, 1.0, ResolutionMethod.Exact));
-            else if (_options.LexicalTier && _createdFolded.TryGetValue(FoldedKey(key, folded[entity.Text]), out var foldedId))
-                pass.Resolutions.TryAdd(key, new ResolvedEntity(foldedId, StemMatchConfidence, ResolutionMethod.FullText));
-            else
-                pass.Pending.TryAdd(key, entity.Text);
-        }
+        foreach (var entity in batch)
+            pass.Enter(EntityKey.For(entity.EntityType, entity.Text), entity.Text);
 
         return pass;
     }
 
     /// <summary>Turns every name no tier claimed into a new entity with a deterministic id.</summary>
-    void CreateUnresolved(ResolutionPass pass) {
-        foreach (var (key, text) in pass.Unresolved) {
-            var created = EntityId.For(key.EntityType, text);
-
-            _created[key] = created;
-
-            if (_options.LexicalTier)
-                _createdFolded.TryAdd(FoldedKey(key, pass.Folded[text]), created);
-
-            pass.Claim(key, new ResolvedEntity(created, 1.0, ResolutionMethod.Created));
-        }
+    static void CreateNewEntities(ResolutionPass pass) {
+        foreach (var (key, name) in pass.Undecided)
+            pass.Claim(key, new ResolvedEntity(EntityId.For(key.EntityType, name.Text), 1.0, ResolutionMethod.Created));
     }
 
-    static EntityKey FoldedKey(EntityKey key, string foldedText) => new(key.EntityType, foldedText);
-
-    static void Remember(
-        Dictionary<EntityKey, List<EntityCandidate>> candidates, EntityKey key, EntityCandidate candidate
-    ) {
-        var forKey = candidates.TryGetValue(key, out var existing) ? existing : candidates[key] = [];
-
-        if (forKey.All(known => known.EntityId != candidate.EntityId))
-            forKey.Add(candidate);
+    /// <summary>A name's journey through the pass: undecided until a tier claims it.</summary>
+    sealed class NameResolution(string text) {
+        public string Text { get; } = text;
+        public List<EntityCandidate> Candidates { get; } = [];
+        public ResolvedEntity? Resolution { get; set; }
     }
 
     /// <summary>
-    /// One batch moving through the cascade. Names start in <see cref="Pending"/>, tiers claim
-    /// them into <see cref="Resolutions"/>, and <see cref="Candidates"/> collects the entities a
-    /// tier surfaced but refused to merge, for the disambiguation tier to choose from.
+    /// One batch moving through the cascade. Every name enters undecided; a tier either claims it
+    /// or surfaces the candidates it refused to merge, for the disambiguation tier to choose from.
     /// </summary>
-    sealed record ResolutionPass(IReadOnlyDictionary<string, string> Folded, bool Judged) {
-        public Dictionary<EntityKey, ResolvedEntity> Resolutions { get; } = [];
-        public Dictionary<EntityKey, string> Pending { get; } = [];
-        public Dictionary<EntityKey, List<EntityCandidate>> Candidates { get; } = [];
+    sealed class ResolutionPass {
+        readonly Dictionary<EntityKey, NameResolution> _names = [];
 
-        /// <summary>Pending names no tier has claimed yet, in batch order.</summary>
-        public List<KeyValuePair<EntityKey, string>> Unresolved =>
-            [.. Pending.Where(entry => !Resolutions.ContainsKey(entry.Key))];
+        public void Enter(EntityKey key, string text) => _names.TryAdd(key, new NameResolution(text));
 
-        public void Claim(EntityKey key, ResolvedEntity resolution) => Resolutions[key] = resolution;
+        /// <summary>Names no tier has claimed yet, in batch order.</summary>
+        public List<KeyValuePair<EntityKey, NameResolution>> Undecided =>
+            [.. _names.Where(entry => entry.Value.Resolution is null)];
+
+        public void Claim(EntityKey key, ResolvedEntity resolution) {
+            var name = _names[key];
+
+            if (name.Resolution is not null)
+                throw new InvalidOperationException($"'{name.Text}' was already claimed by an earlier tier.");
+
+            name.Resolution = resolution;
+        }
+
+        public void AddCandidate(EntityKey key, EntityCandidate candidate) {
+            var candidates = _names[key].Candidates;
+
+            if (candidates.All(known => known.EntityId != candidate.EntityId))
+                candidates.Add(candidate);
+        }
+
+        public IReadOnlyDictionary<EntityKey, ResolvedEntity> Resolutions =>
+            _names.ToDictionary(entry => entry.Key, entry => entry.Value.Resolution!);
     }
 }
