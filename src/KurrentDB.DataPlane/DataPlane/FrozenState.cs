@@ -4,6 +4,13 @@
 
 namespace KurrentDB.DataPlane;
 
-internal sealed class FrozenState : DatabaseState {
+using KontrolPlane;
+
+internal class FrozenState : DatabaseState {
 	protected override Task RunAsync() => Task.CompletedTask;
+}
+
+internal sealed class ResigningState(IKontrolPlane kontrolPlane, string databaseId, ulong currentEpoch) : FrozenState {
+	protected override Task RunAsync()
+		=> kontrolPlane.ResignLeaderAsync(databaseId, currentEpoch, Token);
 }

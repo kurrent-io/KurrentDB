@@ -88,6 +88,26 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		return Interlocked.Exchange(ref _state, newState).DisposeAsync();
 	}
 
+	private async void MoveToFrozenState(TransitionToResigningState transition) {
+		var lockTaken = false;
+		try {
+			await _stateLock.AcquireAsync(_lifecycleToken);
+			lockTaken = true;
+
+			if (transition.IsValid(_state)) {
+				await ChangeStateAsync(new ResigningState(KontrolPlane, transition.DatabaseId, transition.CurrentEpoch));
+			}
+		} catch {
+			// we can't throw here, it's async void method
+		} finally {
+			if (lockTaken)
+				_stateLock.Release();
+		}
+	}
+
+	void IDatabaseStateMachine.MoveToFrozenState(WeakReference<DatabaseState> callerState, string databaseId, ulong currentEpoch)
+		=> ThreadPool.UnsafeQueueUserWorkItem(MoveToFrozenState, new TransitionToResigningState(callerState, databaseId, currentEpoch), preferLocal: false);
+
 	private async void MoveToFrozenState(WeakReference<DatabaseState> callerState) {
 		var lockTaken = false;
 		try {
@@ -109,4 +129,13 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		=> ThreadPool.UnsafeQueueUserWorkItem(MoveToFrozenState, callerState, preferLocal: false);
 
 	IAsyncEnumerable<DatabaseCluster> IDatabaseStateMachine.DatabaseChanges => this;
+
+	private sealed class TransitionToResigningState(WeakReference<DatabaseState> callerState, string databaseId, ulong currentEpoch) {
+		public bool IsValid(DatabaseState currentState)
+			=> callerState.TryGetTarget(out var strongRef) && ReferenceEquals(strongRef, currentState);
+
+		public string DatabaseId => databaseId;
+
+		public ulong CurrentEpoch => currentEpoch;
+	}
 }

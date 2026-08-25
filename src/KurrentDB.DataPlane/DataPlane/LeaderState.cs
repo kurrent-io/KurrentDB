@@ -49,12 +49,11 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 		await heartbeatTask.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
 		                                   | ConfigureAwaitOptions.SuppressThrowing);
 
+		var callerState = new WeakReference<DatabaseState>(this);
 		if (resignRequired) {
-			await stateMachine.KontrolPlane.ResignLeaderAsync(cluster.Id, cluster.Epoch, Token);
-		}
-
-		if (!Token.IsCancellationRequested) {
-			stateMachine.MoveToFrozenState(new(this));
+			stateMachine.MoveToFrozenState(callerState, cluster.Id, cluster.Epoch);
+		} else {
+			stateMachine.MoveToFrozenState(callerState);
 		}
 	}
 }
