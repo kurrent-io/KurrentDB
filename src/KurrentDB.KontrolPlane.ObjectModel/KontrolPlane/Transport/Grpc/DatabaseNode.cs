@@ -14,6 +14,8 @@ partial class DatabaseNode {
 		ReplicationAddress = node.ReplicationProtocolAddress.ToByteString();
 		Role = Convert(node.Role);
 		NodeAddress = node.Address.ToByteString();
+		ClientTcpApiPort = node.ClientTcpApiPort;
+		ClientTcpApiIsSecure = node.ClientTcpApiIsSecure;
 	}
 
 	public KontrolPlane.DatabaseNode ToEntity() => new() {
@@ -24,6 +26,8 @@ partial class DatabaseNode {
 		InstanceId = new(InstanceId.Span),
 		Role = Convert(Role),
 		Version = Version,
+		ClientTcpApiPort = ClientTcpApiPort,
+		ClientTcpApiIsSecure = ClientTcpApiIsSecure,
 	};
 
 	private static KontrolPlane.DatabaseNodeRole Convert(DatabaseNodeRole role) => role switch {

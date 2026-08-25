@@ -26,6 +26,8 @@ message AddOrUpdateDatabaseNode
   bytes replicationProtocolAddress = 5;
   bytes clientApiAddress = 6;
   bytes instanceId = 7;
+  int32 clientTcpApiPort = 8;
+  bool clientTcpApiIsSecure = 9;
 }
 
 message AddOrIgnoreDatabaseNode
@@ -37,6 +39,8 @@ message AddOrIgnoreDatabaseNode
   bytes replicationProtocolAddress = 5;
   bytes clientApiAddress = 6;
   bytes instanceId = 7;
+  int32 clientTcpApiPort = 8;
+  bool clientTcpApiIsSecure = 9;
 }
 
 message RemoveDatabaseNode

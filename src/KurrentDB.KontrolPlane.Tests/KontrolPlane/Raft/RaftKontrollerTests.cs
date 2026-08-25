@@ -72,6 +72,8 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			Role = DatabaseNodeRole.ReadOnlyReplica,
 			InstanceId = Guid.NewGuid(),
 			Version = "1.0",
+			ClientTcpApiPort = 9262,
+			ClientTcpApiIsSecure = true,
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
@@ -97,6 +99,8 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
 			DatabaseId = Database.MainDatabaseId,
 			Role = DatabaseNodeRole.ReadOnlyReplica,
+			ClientTcpApiPort = 3262,
+			ClientTcpApiIsSecure = true,
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
@@ -108,7 +112,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		var actualNode = Assert.Single(database.Nodes);
 		Assert.Equal(expectedNode.Role, actualNode.Role);
 
-		expectedNode = expectedNode with { Role = DatabaseNodeRole.Regular };
+		expectedNode = expectedNode with { Role = DatabaseNodeRole.Regular, ClientTcpApiIsSecure = false };
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
 
 		database = await Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
@@ -117,6 +121,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 
 		actualNode = Assert.Single(database.Nodes);
 		Assert.Equal(expectedNode.Role, actualNode.Role);
+		Assert.Equal(expectedNode.ClientTcpApiIsSecure, actualNode.ClientTcpApiIsSecure);
 	}
 
 	[Fact]

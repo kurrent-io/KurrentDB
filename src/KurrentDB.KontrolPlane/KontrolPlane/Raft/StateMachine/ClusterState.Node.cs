@@ -41,19 +41,28 @@ partial class ClusterState {
 	}
 }
 
+file readonly record struct UpdateDatabaseArgs(
+	string DatabaseId,
+	ReadOnlyMemory<byte> Address,
+	int Role,
+	string Version,
+	ReadOnlyMemory<byte> ClientApiAddr,
+	ReadOnlyMemory<byte> ReplicationAddr,
+	Guid InstanceId,
+	int ClientTcpApiPort,
+	bool ClientTcpApiIsSecure);
+
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AddOrIgnoreDatabaseNodeStmt(AddOrIgnoreDatabaseNode command)
-	: IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
-			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId)>,
+	: IPreparedStatement<UpdateDatabaseArgs>,
 		ISupplier<DuckDBAdvancedConnection, bool> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT OR IGNORE INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id)
-	                                                VALUES ($1, $2, $3, $4, $5, $6, $7)
+	                                                INSERT OR IGNORE INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id, client_tcp_port, client_tcp_is_secure)
+	                                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	                                                """u8;
 
 	public static StatementBindingResult Bind(
-		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
-			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId) args,
+		in UpdateDatabaseArgs args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
 		args.Address.Span,
@@ -62,11 +71,13 @@ file readonly struct AddOrIgnoreDatabaseNodeStmt(AddOrIgnoreDatabaseNode command
 		args.ClientApiAddr.Span,
 		args.ReplicationAddr.Span,
 		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
+		args.ClientTcpApiPort,
+		args.ClientTcpApiIsSecure
 	};
 
 	public bool Invoke(DuckDBAdvancedConnection connection)
 		=> connection
-			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, Guid),
+			.ExecuteNonQuery<UpdateDatabaseArgs,
 				AddOrIgnoreDatabaseNodeStmt>(
 				new(command.DatabaseId,
 					command.Address.Memory,
@@ -74,24 +85,25 @@ file readonly struct AddOrIgnoreDatabaseNodeStmt(AddOrIgnoreDatabaseNode command
 					command.Version,
 					command.ClientApiAddress.Memory,
 					command.ReplicationProtocolAddress.Memory,
-					new Guid(command.InstanceId.Span))) > 0L;
+					new Guid(command.InstanceId.Span),
+					command.ClientTcpApiPort,
+					command.ClientTcpApiIsSecure)) > 0L;
 }
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command) :
-	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId)>,
+	IPreparedStatement<UpdateDatabaseArgs>,
 	IConsumer<DuckDBAdvancedConnection> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id)
-	                                                VALUES ($1, $2, $3, $4, $5, $6, $7)
+	                                                INSERT INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id, client_tcp_port, client_tcp_is_secure)
+	                                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	                                                ON CONFLICT (database_id, address) DO UPDATE
-	                                                SET role=$3, version=$4, client_api_addr=$5, replication_addr=$6, instance_id=$7
+	                                                SET role=$3, version=$4, client_api_addr=$5, replication_addr=$6, instance_id=$7, client_tcp_port=$8, client_tcp_is_secure=$9
 	                                                WHERE node.database_id=$1 AND node.address=$2;
 	                                                """u8;
 
 	public static StatementBindingResult Bind(
-		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
-			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId) args,
+		in UpdateDatabaseArgs args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
 		args.Address.Span,
@@ -100,11 +112,13 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 		args.ClientApiAddr.Span,
 		args.ReplicationAddr.Span,
 		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
+		args.ClientTcpApiPort,
+		args.ClientTcpApiIsSecure,
 	};
 
 	public void Invoke(DuckDBAdvancedConnection connection)
 		=> connection
-			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, Guid),
+			.ExecuteNonQuery<UpdateDatabaseArgs,
 				AddOrUpdateDatabaseNodeStmt>(
 				new(command.DatabaseId,
 					command.Address.Memory,
@@ -112,7 +126,9 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 					command.Version,
 					command.ClientApiAddress.Memory,
 					command.ReplicationProtocolAddress.Memory,
-					new Guid(command.InstanceId.Span)));
+					new Guid(command.InstanceId.Span),
+					command.ClientTcpApiPort,
+					command.ClientTcpApiIsSecure));
 }
 
 [StructLayout(LayoutKind.Auto)]

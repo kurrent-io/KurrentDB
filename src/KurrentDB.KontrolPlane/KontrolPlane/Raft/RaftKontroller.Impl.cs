@@ -62,14 +62,7 @@ partial class RaftKontroller : IKontroller {
 
 	public async ValueTask AddOrUpdateDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
 		try {
-			await _raft.AddOrUpdateDatabaseNodeAsync(node.DatabaseId,
-				node.Address,
-				node.Role,
-				node.ClientApiAddress,
-				node.ReplicationProtocolAddress,
-				node.Version,
-				node.InstanceId,
-				token);
+			await _raft.AddOrUpdateDatabaseNodeAsync(node, token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		}
@@ -77,14 +70,7 @@ partial class RaftKontroller : IKontroller {
 
 	public async ValueTask<bool> TryAddDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
 		try {
-			return await _raft.TryAddDatabaseNodeAsync(node.DatabaseId,
-				node.Address,
-				node.Role,
-				node.ClientApiAddress,
-				node.ReplicationProtocolAddress,
-				node.Version,
-				node.InstanceId,
-				token);
+			return await _raft.TryAddDatabaseNodeAsync(node, token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		}
@@ -175,15 +161,7 @@ partial class RaftKontroller : IKontroller {
 			leader = null;
 
 			foreach (var node in connection.GetDatabaseNodes(databaseId)) {
-				nodes.Add(new() {
-					Address = node.Address,
-					DatabaseId = databaseId,
-					Role = node.Role,
-					ClientApiAddress = node.ClientApi,
-					ReplicationProtocolAddress = node.Replication,
-					Version = node.Version,
-					InstanceId = node.InstanceId,
-				});
+				nodes.Add(node.ToEntity(databaseId));
 
 				if (node.IsLeader)
 					leader = node.Address;

@@ -27,7 +27,9 @@ partial class ClusterState {
 	                                                        role INTEGER NOT NULL,
 	                                                        is_leader BOOL NOT NULL DEFAULT FALSE,
 	                                                        version VARCHAR NOT NULL DEFAULT '',
-	                                                        client_api_addr BLOB NOT NULL DEFAULT ''::BLOB,
+	                                                        client_api_addr BLOB NOT NULL DEFAULT '',
+	                                                        client_tcp_port INTEGER NOT NULL DEFAULT 0,
+	                                                        client_tcp_is_secure BOOL NOT NULL DEFAULT FALSE,
 	                                                        replication_addr BLOB NOT NULL,
 	                                                        instance_id UHUGEINT NOT NULL DEFAULT 0,
 	                                                        FOREIGN KEY (database_id) REFERENCES database (id)

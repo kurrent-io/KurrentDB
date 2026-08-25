@@ -43,6 +43,25 @@ public sealed record DatabaseNode : IModelEntity {
 	}
 
 	/// <summary>
+	/// Gets or sets old client TCP-based protocol port.
+	/// </summary>
+	/// <remarks>
+	/// The address is the same as <see cref="ClientApiAddress"/>.
+	/// </remarks>
+	public int ClientTcpApiPort {
+		get;
+		init;
+	}
+
+	/// <summary>
+	/// Gets or sets a value indicating that old client TCP-based protocol requires TLS.
+	/// </summary>
+	public bool ClientTcpApiIsSecure {
+		get;
+		init;
+	}
+
+	/// <summary>
 	/// The address of the replication endpoint.
 	/// </summary>
 	public required EndPoint ReplicationProtocolAddress {

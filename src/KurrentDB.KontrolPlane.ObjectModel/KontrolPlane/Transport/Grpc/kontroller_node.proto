@@ -45,6 +45,8 @@ message DatabaseNode
   bytes replicationAddress = 5;
   string version = 6;
   bytes instanceId = 7;
+  int32 clientTcpApiPort = 8;
+  bool clientTcpApiIsSecure = 9;
 }
 
 message DatabaseCluster
