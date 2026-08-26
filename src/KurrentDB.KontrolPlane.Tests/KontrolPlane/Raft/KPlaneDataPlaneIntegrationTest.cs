@@ -152,7 +152,10 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				var addedNode = CreateDatabaseNode(CreateEndPoint(23324));
 				await AddDatabaseNodeAsync(kplane, addedNode, TestToken);
 
-				Assert.True(await enumerator.MoveNextAsync());
+				while (enumerator.Current.Nodes.Count <= dbNodeAddresses.Length) {
+					Assert.True(await enumerator.MoveNextAsync());
+				}
+
 				Assert.Contains(addedNode, enumerator.Current.Nodes);
 			} finally {
 				await enumerator.DisposeAsync();
