@@ -99,6 +99,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 
 	public async Task StopAsync(CancellationToken token) {
 		await _raft.StopAsync(token);
+		await _wal.FlushAsync(token);
 		await CancelAsync();
 		await _leadershipTask.ConfigureAwait(false);
 	}
