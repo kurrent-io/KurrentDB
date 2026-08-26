@@ -86,6 +86,7 @@ public static class MemorySeeding {
 		("content_time_end",     row => row.ContentTimeEnd?.ToUnixTimeMilliseconds()),
 		("retained_at",      row => row.RetainedAt.ToUnixTimeMilliseconds()),
 		("last_accessed_at", row => (row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds()),
+		("access_count",     _   => 0L),
 		("is_superseded",    row => row.IsSuperseded),
 		("superseded_at",    row => row.SupersededAt?.ToUnixTimeMilliseconds()),
 		("superseded_by",    row => row.SupersededBy),

@@ -7,6 +7,7 @@ package kurrent.kontext;
 
 option csharp_namespace = "Kurrent.Kontext.Contracts";
 
+import "google/protobuf/timestamp.proto";
 import "kurrentdb/kontext/v3/memory/resources.proto";
 
 // THE ACCESS RULE — which operations move a memory's recency clock.
@@ -38,6 +39,13 @@ service MemoryService {
   // matters (higher keeps it retrievable longer). Cite what the memory rests on in `evidence`, put
   // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
   // ones stay readable, marked superseded (there is no separate supersede call).
+  //
+  // SUPERSEDE ONLY A LIVE TIP. Every id in `supersedes` must exist and must not itself be
+  // superseded already, and no id may appear twice across the whole request — a memory carries one
+  // successor, so two claims on the same target cannot both hold. Break either rule and the WHOLE
+  // call is rejected; nothing is written. A rejection naming an already-superseded target hands
+  // back the id that superseded it, which is the tip to supersede instead: someone corrected that
+  // memory while you were working, so read the newer one before you replace it.
   //
   // YOU DO NOT SUPPLY IDS. The server mints every memory_id and returns them positionally:
   // results[i] is the memory you sent at memories[i], always, same length, same order. A
@@ -95,7 +103,7 @@ service MemoryService {
   // recency clock), so the things you actually use stay near the top over time. Recall freely.
   //
   // Siblings: `retain` (store a memory) · `reclaim` (fetch specific memories by id) · `recollect`
-  // (list/inspect by type or tag) · `reflect` (synthesize higher-level memories from what's there).
+  // (list/inspect by type or tag).
   //
   // Example: recall { query: "what did we decide about the checkpoint format?", limit: 5 }
   //
@@ -113,7 +121,7 @@ service MemoryService {
   // Not `recall` (that's by meaning) · not `recollect` (that's by type/tag).
   //
   // Pull specific, already-known memories back into context by id. Use it for progressive
-  // disclosure — when an earlier result (a reflection, a recall, a `related` neighbour) handed you
+  // disclosure — when an earlier result (a recall, a `related` neighbour) handed you
   // a lean record and you now want the full one: its `evidence` and `reasoning`. You need this
   // before superseding a memory, because the successor must carry the union of its citations.
   // Unlike `recall`, this is not a search and does not rank: you ask for exact ids and get exactly
@@ -151,24 +159,35 @@ service MemoryService {
   // recency clock of what it lists (see THE ACCESS RULE); reclaim what you actually act on.
   rpc Recollect(RecollectRequest) returns (stream StoredMemory);
 
-  // TOOL — reflect
+  // TOOL — reinforce — say which memories you ACTUALLY USED (input: the ids you acted on).
   //
-  // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
-  // memories from what it finds — a FACT or a PREFERENCE that cites the
-  // memories it rests on — and may supersede the ones the new insight subsumes. A consolidation is
-  // a FACT citing many memories; there is no separate summary type, because how a memory arose is
-  // visible in its `evidence`. Reflection never produces an OPEN_QUESTION: a question is asked, not
-  // concluded. Reach for it periodically, when a pile of memories wants to become a durable
-  // conclusion — not on every turn.
+  // Retrieval is not use. `recall` hands you a page and refreshes every memory on it, because the
+  // server cannot see which one you acted on — it is a guess, and it is generous. This is how you
+  // correct it: after a memory genuinely informed what you did, name it here.
   //
-  // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
+  // Reach for it when a memory changed your answer — it settled a question, saved you a
+  // re-derivation, or stopped you contradicting a past decision. Not for everything a recall
+  // returned, and not for something you merely read. Naming everything says nothing.
   //
-  // Returns: the ids it `synthesized` and `superseded`.
+  // REINFORCING CHANGES HOW EASILY A MEMORY IS FOUND, NEVER HOW TRUE IT IS. It is not a vote of
+  // confidence and it does not make a claim stronger — memories carry no trust score, and a
+  // reinforced OPEN_QUESTION is still an open question. To assert something is wrong or better
+  // known now, retain a correction with `supersedes`.
   //
-  // Safety: WRITES new memories and is DESTRUCTIVE (may supersede). Long-running — it
-  // reasons over many memories; expect it to run asynchronously and report progress rather than
-  // return instantly (completion is signalled by events.proto ReflectionCompleted). Not idempotent.
-  rpc Reflect(ReflectRequest) returns (ReflectResponse);
+  // EVERY ID MUST NAME A LIVE TIP, and the WHOLE call is rejected if one does not. An id that
+  // names nothing is a bug in the caller — you got these from a recall or a reclaim. An id that
+  // names a SUPERSEDED memory is worse: recall never surfaces one, so its recency clock feeds no
+  // ranking and accepting it would report success for a write nothing can ever read. It also means
+  // you acted on a claim that has since been corrected, so the rejection hands back the id that
+  // superseded it — read that one, and reinforce it instead if it is what you should have used.
+  //
+  // Example: reinforce { ids: ["0199c4e2-6f31-7a0c-9d84-1b6e5f2a7c30"] }
+  //
+  // Returns: `accessed_at` — the instant the clocks were set to.
+  //
+  // Safety: WRITES, but only to the recency clock — no memory's content, type, tags or
+  // supersession is touched, and nothing is created or destroyed. Idempotent within an instant.
+  rpc Reinforce(ReinforceRequest) returns (ReinforceResponse);
 }
 
 //===================================================================
@@ -301,6 +320,23 @@ message ReclaimRequest {
 }
 
 //===================================================================
+// Reinforce
+//===================================================================
+
+// Input for the `reinforce` tool (see MemoryService.Reinforce). Field comments are the parameter
+// instructions the calling agent reads.
+message ReinforceRequest {
+  // Required. The memories that actually informed what you did — not everything a recall returned.
+  // Every id must name a live memory; one that is missing or superseded rejects the whole call.
+  repeated string ids = 1;
+}
+
+message ReinforceResponse {
+  // The instant every named memory's recency clock was set to.
+  google.protobuf.Timestamp accessed_at = 1;
+}
+
+//===================================================================
 // Recollect
 //===================================================================
 
@@ -349,30 +385,3 @@ message RecollectRequest {
   SortDirection direction = 5;
 }
 
-//===================================================================
-// Reflect
-//===================================================================
-
-// Input for the `reflect` tool (see MemoryService.Reflect). Reflection is long-running and is
-// expected to complete asynchronously; when it finishes it emits events.proto ReflectionCompleted.
-message ReflectRequest {
-  // Optional. Correlation id for this reflection; leave empty and the server assigns one.
-  string query_id = 1;
-
-  // Required. What to reflect on, in natural language — the theme to synthesize over.
-  string query = 2;
-
-  // Optional. Scope the reflection to memories carrying these tags; leave empty to range over all.
-  repeated Tag tags = 3;
-}
-
-message ReflectResponse {
-  // correlates to the ReflectRequest
-  string query_id = 1;
-
-  // ids of memories synthesized
-  repeated string synthesized_memory_ids = 2;
-
-  // ids of memories superseded
-  repeated string superseded_memory_ids = 3;
-}

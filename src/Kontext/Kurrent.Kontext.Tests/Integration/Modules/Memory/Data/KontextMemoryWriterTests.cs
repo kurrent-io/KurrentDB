@@ -235,6 +235,69 @@ public class KontextMemoryWriterTests {
 	}
 
 	[Test]
+	public async ValueTask a_later_supersession_never_repoints_an_already_superseded_memory(CancellationToken cancellationToken) {
+		// Arrange — m1 superseded by m2, then m3 arrives in a LATER batch claiming m1 as well.
+		// Retain rejects that call, so this is the second line of defence: a memory carries ONE
+		// successor, and letting m3 take it would leave m2 listing a target it no longer owns.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+
+		using var connection = dataSources.OpenLanceWriter();
+
+		var writer = NewWriter(connection);
+		var store  = new KontextMemoryDataStore(dataSources);
+
+		var firstAt  = Base.AddHours(2);
+		var secondAt = Base.AddHours(4);
+
+		await Project(writer, CreateRecord(NewRetained("m1", "old belief", Base), position: 100));
+		await Project(writer, CreateRecord(NewRetained("m2", "new belief", firstAt, supersedes: "m1"), position: 200));
+
+		// Act
+		await Project(writer, CreateRecord(NewRetained("m3", "newer belief", secondAt, supersedes: "m1"), position: 300));
+
+		// Assert — first writer wins on both lifecycle columns.
+		var old = await store.GetAsync("m1");
+
+		await Assert.That(old!.SupersededBy).IsEqualTo("m2");
+		await Assert.That(old.SupersededAt.ToDateTimeOffset()).IsEqualTo(firstAt);
+	}
+
+	[Test]
+	public async ValueTask two_supersessions_of_one_memory_in_a_batch_keep_the_first(CancellationToken cancellationToken) {
+		// Arrange — the same conflict inside ONE consumed batch, where the MERGE cannot see it: the
+		// batch folds to one row state per id before the statement runs, so the guard has to hold in
+		// the fold as well.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+
+		using var connection = dataSources.OpenLanceWriter();
+
+		var writer = NewWriter(connection);
+		var store  = new KontextMemoryDataStore(dataSources);
+
+		var firstAt  = Base.AddHours(2);
+		var secondAt = Base.AddHours(4);
+
+		await Project(writer, CreateRecord(NewRetained("m1", "old belief", Base), position: 100));
+
+		// Act — both successors claim m1, in log order.
+		await Project(writer,
+			CreateRecord(NewRetained("m2", "new belief", firstAt, supersedes: "m1"), position: 200),
+			CreateRecord(NewRetained("m3", "newer belief", secondAt, supersedes: "m1"), position: 300));
+
+		// Assert — events fold in log order, so the first supersession seen is the one that won.
+		var old = await store.GetAsync("m1");
+
+		await Assert.That(old!.SupersededBy).IsEqualTo("m2");
+		await Assert.That(old.SupersededAt.ToDateTimeOffset()).IsEqualTo(firstAt);
+	}
+
+	[Test]
 	public async ValueTask recall_resets_the_recency_clock_and_the_latest_recall_wins(CancellationToken cancellationToken) {
 		// Arrange — a memory whose recency clock starts at its retention instant.
 		using var dir         = new TempDir();
@@ -264,6 +327,43 @@ public class KontextMemoryWriterTests {
 		await Assert.That(stored!.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(lastRecallAt);
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
 		await Assert.That(ReadLogPosition(dataSources, "m1")).IsEqualTo(300UL);
+	}
+
+	[Test]
+	public async ValueTask reinforce_resets_the_recency_clock_of_every_memory_it_names(CancellationToken cancellationToken) {
+		// Arrange — two memories retained at the same instant, only one of which gets reinforced.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		await MemorySeeding.CreateSchema(dataSources);
+
+		using var connection = dataSources.OpenLanceWriter();
+
+		var writer = NewWriter(connection);
+		var store  = new KontextMemoryDataStore(dataSources);
+
+		var usedAt = Base.AddHours(9);
+
+		await Project(writer,
+			CreateRecord(NewRetained("m1", "the belief that helped", Base), position: 100),
+			CreateRecord(NewRetained("m2", "the belief that did not", Base), position: 110));
+
+		// Act — MemoriesReinforced is what `reinforce` appends. Without a projector case for it the
+		// event would land in the log and move nothing. Twice, in separate batches: the clock is
+		// terminal (latest wins) while the count accumulates.
+		await Project(writer, CreateRecord(NewReinforced(Base.AddHours(3), "m1"), position: 200));
+		await Project(writer, CreateRecord(NewReinforced(usedAt, "m1"), position: 300));
+
+		// Assert — only the named memory moves; the other keeps the clock it was retained with.
+		var reinforced = await store.GetAsync("m1");
+		var untouched  = await store.GetAsync("m2");
+
+		await Assert.That(reinforced!.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(usedAt);
+		await Assert.That(reinforced.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base);
+		await Assert.That(ReadAccessCount(dataSources, "m1")).IsEqualTo(2L);
+
+		await Assert.That(untouched!.LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base);
+		await Assert.That(ReadAccessCount(dataSources, "m2")).IsEqualTo(0L);
 	}
 
 	[Test]
@@ -388,6 +488,12 @@ public class KontextMemoryWriterTests {
 		};
 	}
 
+	static Contracts.MemoriesReinforced NewReinforced(DateTimeOffset reinforcedAt, params string[] memoryIds) {
+		var reinforced = new Contracts.MemoriesReinforced { ReinforcedAt = Timestamp.FromDateTimeOffset(reinforcedAt) };
+		reinforced.MemoryIds.AddRange(memoryIds);
+		return reinforced;
+	}
+
 	static Contracts.MemoriesRecalled NewRecalled(string memoryId, DateTimeOffset recalledAt) => new() {
 		QueryId    = Guid.NewGuid().ToString(),
 		Query      = "query",
@@ -447,6 +553,14 @@ public class KontextMemoryWriterTests {
 			command.CommandText = "SELECT count(*) FROM ldb.main.memories WHERE memory_id = $memory_id";
 			command.Parameters.Add(new("memory_id", memoryId));
 			return (long)command.ExecuteScalar()!;
+		});
+
+	static long ReadAccessCount(KontextDataSource dataSource, string memoryId) =>
+		dataSource.Execute(connection => {
+			using var command = connection.CreateCommand();
+			command.CommandText = "SELECT access_count FROM ldb.main.memories WHERE memory_id = $memory_id";
+			command.Parameters.Add(new("memory_id", memoryId));
+			return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
 		});
 
 	static ulong ReadLogPosition(KontextDataSource dataSource, string memoryId) =>

@@ -33,6 +33,8 @@
 		<ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
 		<ProjectReference Include="..\Kurrent.Kontext.Testing\Kurrent.Kontext.Testing.csproj" />
 		<ProjectReference Include="..\..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+		<!-- Brings NodeShim, and with it the whole host: the query engine only exists on a real node. -->
+		<ProjectReference Include="..\..\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
 	</ItemGroup>
   
 </Project>

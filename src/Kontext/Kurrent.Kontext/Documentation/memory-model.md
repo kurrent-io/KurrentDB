@@ -156,13 +156,25 @@ Four citation kinds exist. Each has an anchor that survives when the target move
 
 | Kind        | Anchor                         | Note                                                                                      |
 |-------------|--------------------------------|-------------------------------------------------------------------------------------------|
-| `MemoryRef` | the memory id                  | the id alone — the server looks up that memory's log position when it needs one           |
+| `MemoryRef` | the memory id                  | must exist, but need not be live — see below                                              |
 | `RecordRef` | the record id and log position | a KurrentDB record                                                                        |
 | `GitRef`    | **the commit**                 | prefer `symbol` over line numbers — a symbol survives a refactor                          |
 | `WebRef`    | **the excerpts**               | 1–5 passages, 20–1000 chars each. Without one it is a bookmark, and the server rejects it |
 
 The anchors matter because URLs rot and line numbers drift within days. A `GitRef` without a commit points at whatever
 the file says today, which may be nothing.
+
+A `MemoryRef` carries the id and nothing else — the server looks up that memory's log position when it needs one.
+Retain rejects the call if the id names no memory, because a citation nothing resolves breaks both the audit trail
+and the cascade. It does **not** have to be a live tip, and this is the opposite of the `supersedes` rule:
+
+```
+supersedes:  must be LIVE   — you are replacing the current claim
+MemoryRef:   may be ANY     — you are recording what this rested on at the time
+```
+
+Evidence is frozen at retain. A memory superseded a year later was still the thing you read, and the cascade job
+exists precisely to find what rests on a memory that turned out wrong.
 
 ### importance
 
@@ -214,6 +226,24 @@ retain {
 
 The old memory stays readable and gets marked superseded. Recall returns only the tip of a chain; `reclaim` by
 id still returns any link.
+
+#### You may only supersede a live tip
+
+`superseded_by` holds **one** successor, so a memory is a chain and a chain only ever grows at its tip. Retain
+enforces that, and rejects the whole call otherwise:
+
+| The id you named            | Result                                                      |
+|-----------------------------|-------------------------------------------------------------|
+| does not exist              | rejected — a wrong or invented id                           |
+| already superseded          | rejected, and the response names the tip to supersede instead |
+| repeated across the request | rejected — two claims on one target cannot both hold        |
+
+The second row is the useful one. Someone corrected that memory while you were working, so the rejection is
+telling you to read the newer claim before you replace it — a lost race made visible instead of a chain
+silently repointed at whichever write landed last.
+
+Note the interaction with eventual consistency: a target retained moments ago may not have been projected
+yet, and reads as missing until it lands. Retain the sources first, then the memory that replaces them.
 
 ---
 
@@ -381,13 +411,21 @@ Changing the code kills the claim and both reasons together. There is nothing to
 
 There are two outcomes, and only one of them is a decision:
 
-| Outcome   | What happened                                                                       | Written? |
-|-----------|--------------------------------------------------------------------------------------|----------|
-| `CREATED` | the memory was stored                                                                | yes      |
-| `NOOP`    | a live memory is already byte-for-byte this one — same content, tags and evidence     | no       |
+| Outcome   | What happened                                                                                | Written? |
+|-----------|-----------------------------------------------------------------------------------------------|----------|
+| `CREATED` | the memory was stored                                                                         | yes      |
+| `NOOP`    | a live memory is already byte-for-byte this one — same content, tags, evidence and supersedes  | no       |
 
 `NOOP` is an idempotency guard against a resend, not deduplication. Anything less than identical is stored, including
 the same content under different tags.
+
+`supersedes` is part of that comparison because a fold is exactly the case that would otherwise be lost: curation
+retains the surviving claim again with the loser attached, and that memory matches the survivor in every other
+field.
+
+The one thing retain refuses outright is an unresolvable supersession — see [You may only supersede a live
+tip](#you-may-only-supersede-a-live-tip). That rejects the whole call, so it is not an outcome; nothing is written
+and there are no results to read.
 
 Set `neighbours` on the request and each stored memory comes back with that many existing memories nearest it, each
 carrying its raw `distance` and whether the keyword leg matched. They are reported after the write and change nothing.

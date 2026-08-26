@@ -4,7 +4,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using Kurrent.Kontext.Embeddings.Normalization;
+using Kurrent.Kontext.Records.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge;
@@ -70,7 +72,8 @@ public sealed class KontextRecordsWriter : IDisposable {
                 SchemaId: record.Headers.TryGetValue(HeaderKeys.SchemaId, out var schemaId) ? schemaId : null,
                 Data: data,
                 CreatedAt: new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds(),
-                Content: content);
+                Content: content,
+                Properties: JsonSerializer.Serialize(record.Headers, RecordsJsonContext.Default.IDictionaryStringString));
 
             pendingRecords.Add(pendingRecord);
         }
@@ -100,6 +103,7 @@ public sealed class KontextRecordsWriter : IDisposable {
                 row.Add(pending.Data);
                 row.Add(pending.CreatedAt);
                 row.Add(pending.Content);
+                row.Add(pending.Properties);
                 row.Add(embedding.Vector.Span, CollectionType.Array);
             } finally {
                 row.Dispose();
@@ -128,7 +132,8 @@ public sealed class KontextRecordsWriter : IDisposable {
         string? SchemaId,
         string Data,
         long CreatedAt,
-        string Content
+        string Content,
+        string Properties
     );
 }
 

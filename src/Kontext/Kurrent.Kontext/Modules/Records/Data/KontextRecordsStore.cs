@@ -31,12 +31,16 @@ public sealed class KontextRecordsStore(KontextDataSource connections) {
         HybridOptions options,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
-        var args = new HybridSearchArgs(options.QueryEmbedding, options.Query, options.K, options.Alpha);
+        var predicate = HybridSearchPredicate.Build(options);
+        var args      = new HybridSearchArgs(options);
 
         var hits = await connections
-            .ExecuteAsync(connection => connection
-                .ExecuteQuery<HybridSearchArgs, RecordHit, HybridSearchQuery>(in args)
-                .ToList(), ct)
+            .ExecuteAsync(connection => {
+                var query = new HybridSearchQuery(predicate);
+                return connection
+                    .ExecuteQuery<HybridSearchArgs, RecordHit, HybridSearchQuery>(ref query, in args)
+                    .ToList();
+            }, ct)
             .ConfigureAwait(false);
 
         foreach (var hit in hits)
@@ -118,7 +122,7 @@ readonly record struct ListRecordsArgs(ListOptions Options);
 file readonly record struct ListRecordsQuery(string Predicate) : IDynamicQuery<ListRecordsArgs, StoredRecord> {
     public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
         """
-        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at
+        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, properties
         FROM ldb.main.records
         WHERE {0}
         ORDER BY log_position
@@ -165,28 +169,64 @@ file readonly record struct ListRecordsQuery(string Predicate) : IDynamicQuery<L
     public static StoredRecord Parse(ref DataChunk.Row row) => RecordReader.Read(ref row);
 }
 
-readonly record struct HybridSearchArgs(float[] QueryEmbedding, string Query, long K, double Alpha);
+// The predicate text and the bind order are one contract: every clause added here contributes its
+// placeholder in this exact sequence, and HybridSearchQuery.Bind walks them in the same one, after
+// the four the table function itself takes.
+static class HybridSearchPredicate {
+    public static string Build(HybridOptions options) {
+        var clauses = new List<string>(2);
 
-file struct HybridSearchQuery : IQuery<HybridSearchArgs, RecordHit> {
-    public static StatementBindingResult Bind(in HybridSearchArgs args, PreparedStatement statement) {
-        var index = 1;
-        statement.Bind(index++, args.QueryEmbedding.AsSpan(), CollectionType.List);
-        statement.Bind(index++, args.Query);
-        statement.Bind(index++, args.K);
-        statement.Bind(index, args.Alpha);
+        // The scope and schema dimensions are each a oneof in the contract, so the store never sees two
+        // of a group set and needs no rule of its own.
+        if (options.Stream is not null) clauses.Add("stream = ?");
+        if (options.Category is not null) clauses.Add("category = ?");
+        if (options.SchemaName is not null) clauses.Add("schema_name = ?");
+        if (options.SchemaId is not null) clauses.Add("schema_id = ?");
+        if (options.SchemaFormat is not null) clauses.Add("schema_format = ?");
 
-        return new(statement, completed: true);
+        return clauses.Count == 0 ? "" : $"WHERE {string.Join("\n  AND ", clauses)}";
     }
+}
 
-    public static ReadOnlySpan<byte> CommandText =>
+readonly record struct HybridSearchArgs(HybridOptions Options);
+
+// The WHERE looks like a post-filter and is not one. lance_hybrid_search takes no `filter :=` argument
+// (lance_vector_search and lance_fts do), but the table function opts into DuckDB filter pushdown, so
+// the predicate is evaluated inside candidate selection: a scoped page comes back FULL, drawn from the
+// matching rows, never trimmed out of a top-k the filter never saw.
+// Measured in RecordsFilterPushdownProbeTests; the memories side measured the same in
+// .claude/context/docs/research/2026-08-21-0017-lance-hybrid-search-semantics/.
+file readonly record struct HybridSearchQuery(string Predicate) : IDynamicQuery<HybridSearchArgs, RecordHit> {
+    public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
         """
-        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, _hybrid_score
+        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, properties, _hybrid_score
         FROM lance_hybrid_search('ldb.main.records', 'embedding', CAST(? AS FLOAT[]),
                                  'content', ?,
                                  k := ?, alpha := ?,
                                  prefilter := true, refine_factor := 4, oversample_factor := 4)
+        {0}
         ORDER BY _hybrid_score DESC
-        """u8;
+        """);
+
+    public void FormatCommandTemplate(Span<object?> args) => args[0] = Predicate;
+
+    public static StatementBindingResult Bind(in HybridSearchArgs args, PreparedStatement statement) {
+        var options = args.Options;
+        var index   = 1;
+
+        statement.Bind(index++, options.QueryEmbedding.AsSpan(), CollectionType.List);
+        statement.Bind(index++, options.Query);
+        statement.Bind(index++, (long)options.K);
+        statement.Bind(index++, options.Alpha);
+
+        if (options.Stream is { } stream) statement.Bind(index++, stream);
+        if (options.Category is { } category) statement.Bind(index++, category);
+        if (options.SchemaName is { } schemaName) statement.Bind(index++, schemaName);
+        if (options.SchemaId is { } schemaId) statement.Bind(index++, schemaId);
+        if (options.SchemaFormat is { } schemaFormat) statement.Bind(index, schemaFormat);
+
+        return new(statement, completed: true);
+    }
 
     public static RecordHit Parse(ref DataChunk.Row row) =>
         new(RecordReader.Read(ref row), row.ReadFloat());
@@ -203,7 +243,7 @@ file struct SearchRecordsQuery : IQuery<SearchRecordsArgs, RecordHit> {
 
     public static ReadOnlySpan<byte> CommandText =>
         """
-        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, _score
+        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, properties, _score
         FROM lance_fts('ldb.main.records', 'data', ?, k := ?, prefilter := true)
         ORDER BY _score DESC
         """u8;
@@ -224,7 +264,7 @@ file struct GetRecordQuery : IQuery<GetRecordArgs, StoredRecord> {
 
     public static ReadOnlySpan<byte> CommandText =>
         """
-        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at
+        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, properties
         FROM ldb.main.records
         WHERE record_id = ?
         LIMIT 1
@@ -241,7 +281,7 @@ file struct GetRecordAtQuery : IQuery<GetRecordAtArgs, StoredRecord> {
 
     public static ReadOnlySpan<byte> CommandText =>
         """
-        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at
+        SELECT log_position, record_id, stream, category, schema_name, schema_id, schema_format, data, created_at, properties
         FROM ldb.main.records
         WHERE log_position = ?
         LIMIT 1
@@ -261,5 +301,6 @@ static class RecordReader {
             SchemaId: row.TryReadString(),
             SchemaFormat: row.ReadString(),
             Data: row.TryReadString(),
-            CreatedAt: DateTimeOffset.FromUnixTimeMilliseconds(row.ReadInt64()));
+            CreatedAt: DateTimeOffset.FromUnixTimeMilliseconds(row.ReadInt64()),
+            Properties: row.TryReadString());
 }

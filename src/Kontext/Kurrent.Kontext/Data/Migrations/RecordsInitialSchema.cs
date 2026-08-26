@@ -17,6 +17,8 @@ public sealed class RecordsInitialSchema : DuckLanceMigrationScript {
                 data          VARCHAR,
                 created_at    BIGINT,
                 content       VARCHAR,
+                -- The record's properties, as a JSON object. Returned, never searched.
+                properties    VARCHAR,
                 embedding     FLOAT[{KontextIndexConstants.VectorsDimension}]
             );
 

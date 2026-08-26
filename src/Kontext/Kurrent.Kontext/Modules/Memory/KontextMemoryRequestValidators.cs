@@ -30,6 +30,21 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
             .Must(m => m.Evidence.Where(e => e.Git is not null).All(e => MemoryRequestRules.ValidGitExcerpt(e.Git)))
             .WithMessage($"A git citation's excerpt is optional but, when set, must be {MemoryRequestRules.MinExcerptLength}..{MemoryRequestRules.MaxExcerptLength} characters.");
 
+        RuleForEach(x => x.Memories)
+            .Must(m => m.Evidence.Where(e => e.Memory is not null).All(e => MemoryRequestRules.Guid(e.Memory.Id)))
+            .WithMessage("A memory citation must carry a valid UUID.");
+
+        RuleForEach(x => x.Memories)
+            .Must(m => m.Supersedes.All(MemoryRequestRules.Guid))
+            .WithMessage("supersedes must contain valid UUIDs.");
+
+        // A memory carries ONE successor, so two entries naming the same target cannot both take
+        // effect. Flattening across the request catches both scopes: repeated within one memory's
+        // list, and repeated across two memories in the same batch.
+        RuleFor(x => x.Memories)
+            .Must(memories => MemoryRequestRules.RepeatedSupersedes(memories).Count == 0)
+            .WithMessage(request =>
+                $"A memory can be superseded only once per request; repeated: {string.Join(", ", MemoryRequestRules.RepeatedSupersedes(request.Memories))}");
     }
 }
 
@@ -73,15 +88,15 @@ public sealed class RecollectRequestValidator : RequestValidator<Contracts.Recol
     }
 }
 
-public sealed class ReflectRequestValidator : RequestValidator<Contracts.ReflectRequest> {
-    public ReflectRequestValidator() {
-        RuleFor(x => x.Query)
+public sealed class ReinforceRequestValidator : RequestValidator<Contracts.ReinforceRequest> {
+    public ReinforceRequestValidator() {
+        RuleFor(x => x.Ids)
             .NotEmpty()
-            .WithMessage("query is required.");
+            .WithMessage("At least one id is required.");
 
-        RuleFor(x => x.QueryId)
-            .Must(MemoryRequestRules.EmptyOrGuid)
-            .WithMessage("query_id must be empty or a valid UUID.");
+        RuleForEach(x => x.Ids)
+            .Must(MemoryRequestRules.Guid)
+            .WithMessage("ids must be valid UUIDs.");
     }
 }
 
@@ -95,6 +110,17 @@ static class MemoryRequestRules {
     public const int MaxWebExcerpts   = 5;
 
     public static bool Guid(string value) => System.Guid.TryParse(value, out _);
+
+    /// <summary>The supersession targets named more than once across a whole retain request.</summary>
+    public static IReadOnlyList<string> RepeatedSupersedes(IEnumerable<Contracts.Memory> memories) {
+        var seen = new HashSet<string>();
+
+        return memories
+            .SelectMany(memory => memory.Supersedes)
+            .Where(id => !seen.Add(id))
+            .Distinct()
+            .ToList();
+    }
 
     public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _);
 

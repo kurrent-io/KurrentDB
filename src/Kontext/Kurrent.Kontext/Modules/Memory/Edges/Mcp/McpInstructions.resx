@@ -18,7 +18,17 @@
 - Recall (search by meaning)
 - Reclaim (fetch by id)
 - Recollect (browse by type/tag)
-- Reflect (synthesize higher-level memories from what's there)
+- Reinforce (say which memories you actually used)
+
+It also indexes the database's own log, reachable two ways:
+- Search (find recorded events by meaning)
+- Query (read the log with SQL — filter, group, count)
+
+The three answer different questions. Recall returns CLAIMS YOU WROTE — decisions, facts, open questions.
+Search returns RECORDS THE DATABASE HOLDS, ranked by meaning, payload included. Query answers precisely
+what ranking cannot: how many, since when, grouped by what. Reach for recall when you want what you
+concluded, search when you want the evidence underneath it, and query when the answer is a number or a list
+you could name in SQL.
 
 Recall before you guess — re-deriving something you already learned is the expensive path.
 Retain the moment you learn something durable, written to stand on its own.
@@ -26,7 +36,10 @@ STORE THE CLAIM YOU CHECKED: name what would show you wrong before storing, and 
 that check, sharpen the claim until you can. Put attribution in the content — "the docs state X" is
 a fact you verified, a bare "X" is not. An unchecked belief is an OpenQuestion, not a weak fact.
 To correct a memory, retain the correction with supersedes.
-Reflect periodically, when memories pile up — not on every turn.</value>
+Reinforce what actually helped — recall refreshes everything it returns, so without you the store
+cannot tell a memory you used from one it merely offered.
+Periodically, recall broadly and retain what the pile adds up to, citing what it rests on — the
+synthesis is yours to do, not a tool you call.</value>
   </data>
   <data name="tool.recall" xml:space="preserve">
     <value>Search your memory by MEANING — not reclaim (that's by id), not recollect (that's by type/tag, no ranking). Reach for
@@ -47,7 +60,7 @@ salient (refreshes its recency clock), so the things you actually use stay near 
   </data>
   <data name="tool.reclaim" xml:space="preserve">
     <value>Fetch exact memories by id — not recall (that's by meaning), not recollect (that's by type/tag). Use it for
-progressive disclosure: when an earlier result (a recall hit, a reflection) handed you only ids and you now want the
+progressive disclosure: when an earlier result (a recall hit, a neighbour) handed you only ids and you now want the
 complete folded records, provenance (evidence, reasoning) included. Not a search and no ranking — you get exactly the
 ids you asked for, including superseded records (you asked by id, so they are not hidden here). Ids that
 don't exist are simply absent from the result, never an error — diff the returned ids against what you asked for to
@@ -61,17 +74,32 @@ is the canonical use: it is your work queue, and because recollect does not rank
 The types filter is any-of (empty = any type); all supplied tags must be present. Ordered by sort
 (default: newest-retained first); reverse with direction. Read-only.</value>
   </data>
-  <data name="tool.reflect" xml:space="preserve">
-    <value>Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED memories from what it
-finds — a Fact or a Preference that cites the memories it rests on — and may supersede the ones the new insight
-subsumes. A consolidation is a Fact citing many memories; there is no separate summary type, because how a memory
-arose is visible in its evidence. Reflection never produces an OpenQuestion: a question is asked, not concluded.
-Reach for it periodically, when a pile of memories wants to become a durable conclusion — not on every turn. Writes
-new memories and is destructive (may supersede); long-running — expect it to complete asynchronously rather than
-return instantly. Not idempotent. Returns the ids it synthesized, and superseded.</value>
+  <data name="tool.reinforce" xml:space="preserve">
+    <value>Say which memories you ACTUALLY USED. Retrieval is not use: recall hands you a page and refreshes every memory on
+it, because the server cannot see which one you acted on — that guess is generous, and this is how you correct it.
+Reach for it when a memory changed your answer: it settled a question, saved you a re-derivation, or stopped you
+contradicting a past decision. Not for everything a recall returned, and not for something you merely read — naming
+everything says nothing.
+
+REINFORCING CHANGES HOW EASILY A MEMORY IS FOUND, NEVER HOW TRUE IT IS. It is not a vote of confidence and it does
+not make a claim stronger; memories carry no trust score, and a reinforced OpenQuestion is still an open question. To
+assert something is wrong or better known now, retain a correction with supersedes.
+
+EVERY ID MUST NAME A LIVE MEMORY, and the whole call is rejected if one does not. An id that names nothing is a bug
+in the caller — you got these from a recall or a reclaim. A SUPERSEDED id is worse: recall never surfaces one, so its
+recency clock feeds no ranking and accepting it would report success for a write nothing can ever read. It also means
+you acted on a claim that has since been corrected, so the rejection hands back the id that superseded it — read that
+one, and reinforce it instead if it is what you should have used. Writes only the recency clock; nothing is created
+or destroyed.</value>
   </data>
-  <data name="tool.reflect.param.options" xml:space="preserve">
-    <value>Optional correlation id and tag scoping. Null ⇒ the server assigns an id and reflects over everything.</value>
+  <data name="tool.reinforce.param.ids" xml:space="preserve">
+    <value>The memories that actually informed what you did — one or more ids, not everything a recall returned.</value>
+  </data>
+  <data name="type.ReinforceResult" xml:space="preserve">
+    <value>What a reinforce call recorded.</value>
+  </data>
+  <data name="type.ReinforceResult.accessedAt" xml:space="preserve">
+    <value>The instant every named memory's recency clock was set to.</value>
   </data>
   <data name="tool.retain" xml:space="preserve">
     <value>Store something worth remembering — a decision and its reasoning, an error and its fix, a user preference, a durable
@@ -120,9 +148,6 @@ in order.</value>
   </data>
   <data name="tool.recollect.param.options" xml:space="preserve">
     <value>The filters and ordering — types (any-of), tags (all-of), limit, sort, direction.</value>
-  </data>
-  <data name="tool.reflect.param.query" xml:space="preserve">
-    <value>What to reflect on, in natural language — the theme to synthesize over.</value>
   </data>
   <data name="type.Evidence" xml:space="preserve">
     <value>One cited source. Exactly one arm is set: a memory, a KurrentDB log record, a location in git, or text on the web.
@@ -413,27 +438,6 @@ rather than arbitrary ones.</value>
   <data name="type.RecordRef.position" xml:space="preserve">
     <value>Its position in the log (exact, replayable).</value>
   </data>
-  <data name="type.ReflectOptions" xml:space="preserve">
-    <value>The optional knobs for a reflect pass — the theme (query) is a direct parameter.</value>
-  </data>
-  <data name="type.ReflectOptions.queryId" xml:space="preserve">
-    <value>Optional correlation id for this reflection; null ⇒ the server assigns one.</value>
-  </data>
-  <data name="type.ReflectOptions.tags" xml:space="preserve">
-    <value>Scope the reflection to memories carrying these tags; empty ⇒ range over all.</value>
-  </data>
-  <data name="type.ReflectResult" xml:space="preserve">
-    <value>Result of a reflect pass: the ids it synthesized, and superseded.</value>
-  </data>
-  <data name="type.ReflectResult.queryId" xml:space="preserve">
-    <value>Correlates to the reflect call — supplied on the request, or server-assigned.</value>
-  </data>
-  <data name="type.ReflectResult.supersededMemoryIds" xml:space="preserve">
-    <value>Ids of memories superseded.</value>
-  </data>
-  <data name="type.ReflectResult.synthesizedMemoryIds" xml:space="preserve">
-    <value>Ids of memories synthesized.</value>
-  </data>
   <data name="type.Neighbour" xml:space="preserve">
     <value>An existing memory near one you just stored. Advisory — it was reported after the write and you owe no answer.</value>
   </data>
@@ -552,5 +556,142 @@ open-ended asserts the present and can; closed in the future can (a scheduled de
   </data>
   <data name="type.TemporalContext.to" xml:space="preserve">
     <value>End of the interval; null ⇒ ongoing / open-ended.</value>
+  </data>
+  <data name="tool.search" xml:space="preserve">
+    <value>Search the database's LOG RECORDS by meaning — not recall (that searches your own memories, which are claims you
+wrote). Records are the events themselves, so reach for this when you need the evidence rather than the conclusion:
+what a stream actually contains, when something happened, which payload carried a value, whether an event of some
+shape was ever written. Matching runs over a flattened projection of the payload, so field names and values both
+count. Narrow with the filters whenever you can, schemaName first — "every OrderCancelled" is the question people
+actually ask of a log. Filtering is free and never costs you part of the page: the engine applies it while selecting
+candidates, so a scoped search returns a full limit drawn from the matching records even when they are a handful
+among millions. Pick one per group: stream or category, and one of schemaName / schemaId / schemaFormat. Only JSON
+records are indexed: a non-JSON or empty payload cannot be found here. Read-only and side-effect-free — unlike
+recall, it records no access.</value>
+  </data>
+  <data name="tool.query" xml:space="preserve">
+    <value>Read the database's log with SQL — not search (that ranks by meaning), this one filters, groups and counts
+EXACTLY. Reach for it when the question has a precise answer ranking cannot give: how many, since when, which
+streams, grouped by what. One table is visible, kdb.records, holding every record the database has; naming any
+other table is rejected, and so are table functions.
+
+Columns: record_id, log_position, stream, stream_revision, category, schema_name, schema_id, schema_format,
+created_at (epoch ms), expires_at, deleted, data, metadata.
+
+data holds the payload, and JSON records carry their JSON verbatim — so json_extract_string(data, '$.orderId')
+works directly. Non-JSON payloads arrive base64 encoded, so filter on schema_format = 'Json' before touching
+data. Ask for the columns you want: SELECT * pulls every payload in the result into your context. Read-only.</value>
+  </data>
+  <data name="tool.query.param.sql" xml:space="preserve">
+    <value>A DuckDB SELECT over kdb.records, e.g. "SELECT stream, count(*) AS n FROM kdb.records WHERE schema_name =
+'OrderCancelled' GROUP BY stream ORDER BY n DESC".</value>
+  </data>
+  <data name="tool.query.param.limit" xml:space="preserve">
+    <value>Max rows to return, capped by the server. 0 ⇒ server default. Prefer aggregating in SQL over pulling rows back
+and counting them yourself.</value>
+  </data>
+  <data name="type.QueryResult" xml:space="preserve">
+    <value>The rows one query returned.</value>
+  </data>
+  <data name="type.QueryResult.rows" xml:space="preserve">
+    <value>One object per row, keyed by the column names your SELECT produced.</value>
+  </data>
+  <data name="type.QueryResult.truncated" xml:space="preserve">
+    <value>True when the row cap cut the result short — the answer is INCOMPLETE, so narrow the query or aggregate in SQL
+rather than trusting what came back.</value>
+  </data>
+  <data name="tool.search.param.query" xml:space="preserve">
+    <value>What you are looking for, in natural language — describe the event ("a payment failed with an expired card"),
+not keywords.</value>
+  </data>
+  <data name="tool.search.param.options" xml:space="preserve">
+    <value>Optional knobs — limit, minimum score, and the scope/schema filters. Null ⇒ server defaults, searching the whole
+log.</value>
+  </data>
+  <data name="type.SearchOptions" xml:space="preserve">
+    <value>Optional knobs for a records search. Two groups are ALTERNATIVES, not combinations: stream/category, and
+schemaName/schemaId/schemaFormat. Setting more than one of a group is rejected.</value>
+  </data>
+  <data name="type.SearchOptions.limit" xml:space="preserve">
+    <value>How many records to return. A handful (5–10) is usually right; a filter never costs you part of the page, so there
+is no need to oversample. 0 ⇒ server default.</value>
+  </data>
+  <data name="type.SearchOptions.schemaName" xml:space="preserve">
+    <value>Only records of this type ("OrderCancelled", "CustomerRegistered"), across every version of it. The sharpest
+filter the log has, and usually the one you want. Alternative to schemaId and schemaFormat.</value>
+  </data>
+  <data name="type.SearchOptions.minScore" xml:space="preserve">
+    <value>Drop anything scored below this cutoff. Raise it when you only want strong matches; 0 ⇒ everything that ranked.</value>
+  </data>
+  <data name="type.SearchOptions.stream" xml:space="preserve">
+    <value>Look only in this stream, named exactly ("order-8fc1a2"). Alternative to category.</value>
+  </data>
+  <data name="type.SearchOptions.category" xml:space="preserve">
+    <value>Look only in streams sharing this prefix — the text before the first '-' in the stream name ("order" covers
+"order-8fc1a2" and "order-3b90ff"). Alternative to stream, because a category IS a set of streams.</value>
+  </data>
+  <data name="type.SearchOptions.schemaId" xml:space="preserve">
+    <value>Only records written against this exact registered schema version. Alternative to schemaName and schemaFormat,
+both of which it already implies.</value>
+  </data>
+  <data name="type.SearchOptions.schemaFormat" xml:space="preserve">
+    <value>Only records in this payload encoding, as the record carries it ("Json"). The coarsest of the three; alternative
+to schemaName and schemaId.</value>
+  </data>
+  <data name="type.SearchResult" xml:space="preserve">
+    <value>The hits for one search, ranked best-first.</value>
+  </data>
+  <data name="type.SearchResult.hits" xml:space="preserve">
+    <value>The matching records, strongest first.</value>
+  </data>
+  <data name="type.RecordHit" xml:space="preserve">
+    <value>One search hit: the record and how strongly it matched.</value>
+  </data>
+  <data name="type.RecordHit.score" xml:space="preserve">
+    <value>Blended relevance across the meaning and keyword legs; higher = stronger. Your weak-match signal: a low top score
+means nothing matched well.</value>
+  </data>
+  <data name="type.RecordHit.record" xml:space="preserve">
+    <value>The record as the index holds it, payload included.</value>
+  </data>
+  <data name="type.Record" xml:space="preserve">
+    <value>One record the database wrote, as the index holds it.</value>
+  </data>
+  <data name="type.Record.recordId" xml:space="preserve">
+    <value>The record's unique identifier.</value>
+  </data>
+  <data name="type.Record.stream" xml:space="preserve">
+    <value>The stream the record belongs to.</value>
+  </data>
+  <data name="type.Record.category" xml:space="preserve">
+    <value>The set of streams this one belongs to: the text before the first '-' in the stream name.</value>
+  </data>
+  <data name="type.Record.logPosition" xml:space="preserve">
+    <value>The record's position in the global log — a stable cursor, since the log only grows.</value>
+  </data>
+  <data name="type.Record.schema" xml:space="preserve">
+    <value>What shape the payload is in.</value>
+  </data>
+  <data name="type.Record.properties" xml:space="preserve">
+    <value>The properties the record carries — user-defined keys, and system keys prefixed with "$" ($correlationId,
+$causationId). Present exactly as written.</value>
+  </data>
+  <data name="type.Record.data" xml:space="preserve">
+    <value>The record payload, as written.</value>
+  </data>
+  <data name="type.Record.createdAt" xml:space="preserve">
+    <value>When the record was written.</value>
+  </data>
+  <data name="type.SchemaInfo" xml:space="preserve">
+    <value>What the record's payload conforms to.</value>
+  </data>
+  <data name="type.SchemaInfo.format" xml:space="preserve">
+    <value>Payload encoding, as the indexer read it off the record ("Json").</value>
+  </data>
+  <data name="type.SchemaInfo.name" xml:space="preserve">
+    <value>The record type ("order-placed", "customer-registered").</value>
+  </data>
+  <data name="type.SchemaInfo.id" xml:space="preserve">
+    <value>The registered schema version the record conforms to; empty when the record carried no schema id.</value>
   </data>
 </root>

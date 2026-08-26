@@ -1,14 +1,17 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text;
 using DuckDB.NET.Data;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
+using Kurrent.Quack;
 
 namespace Kurrent.Kontext.Memory.Data;
 
@@ -25,6 +28,7 @@ namespace Kurrent.Kontext.Memory.Data;
 /// - search, three modes picked by what the caller supplies: vector (embedding only),
 ///   full-text (keywords only), hybrid (both, blended) — each with its own Lance knobs
 /// - get by id(s)
+/// - supersession status: where a set of ids stands in its chains, without reading the bodies
 /// - lineage: the whole supersession family of a memory, chronological
 /// - list by tags and types with limit and sort
 ///
@@ -412,6 +416,29 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             yield return memory;
     }
 
+    /// <summary>
+    /// Where each of the given ids stands in its supersession chain. An id that does not exist is
+    /// absent from the result, so one lookup separates "no such memory" from "not the live tip".
+    /// </summary>
+    public async ValueTask<IReadOnlyDictionary<string, MemoryTip>> GetSupersessionStatusAsync(
+        IReadOnlyCollection<string> memoryIds, CancellationToken ct = default
+    ) {
+        if (memoryIds.Count == 0)
+            return ReadOnlyDictionary<string, MemoryTip>.Empty;
+
+        var args = new SupersessionStatusArgs(memoryIds.ToArray());
+
+        return await connections.ExecuteAsync(
+                connection => {
+                    var query = new SupersessionStatusQuery(args.MemoryIds.Length);
+
+                    return (IReadOnlyDictionary<string, MemoryTip>)connection
+                        .ExecuteQuery<SupersessionStatusArgs, SupersessionRow, SupersessionStatusQuery>(ref query, in args)
+                        .ToDictionary(row => row.MemoryId, row => new MemoryTip { SupersededBy = row.SupersededBy });
+                }, ct)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>The live memory whose content is exactly this, or null. Superseded memories never appear.</summary>
     /// <remarks>
     /// Deliberately unscoped by tags. The caller compares tag sets itself, and a filter here would
@@ -693,7 +720,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             Reasoning      = reader.GetString(5),
             RetainedAt     = DecodeTimestamp(reader, 10),
             LastAccessedAt = DecodeTimestamp(reader, 11),
-            SupersededBy   = reader.GetString(13),
         };
 
         stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(4)).Select(DecodeTag));
@@ -713,6 +739,45 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
         if (!reader.IsDBNull(12))
             stored.SupersededAt = DecodeTimestamp(reader, 12);
 
+        if (!reader.IsDBNull(13))
+            stored.SupersededBy = reader.GetString(13);
+
         return stored;
+    }
+}
+
+readonly record struct SupersessionStatusArgs(string[] MemoryIds);
+
+readonly record struct SupersessionRow(string MemoryId, string? SupersededBy);
+
+/// <summary>
+/// Dynamic on the id COUNT: the IN list needs one placeholder per id, and Quack binds strings
+/// individually.
+/// </summary>
+file readonly record struct SupersessionStatusQuery(int Count) : IDynamicQuery<SupersessionStatusArgs, SupersessionRow> {
+    public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+        """
+        SELECT memory_id, superseded_by
+        FROM ldb.main.memories
+        WHERE memory_id IN ({0})
+        """);
+
+    public void FormatCommandTemplate(Span<object?> args) =>
+        args[0] = string.Join(", ", Enumerable.Repeat("?", Count));
+
+    public static StatementBindingResult Bind(in SupersessionStatusArgs args, PreparedStatement statement) {
+        var index = 1;
+
+        foreach (var memoryId in args.MemoryIds)
+            statement.Bind(index++, memoryId);
+
+        return new(statement, completed: true);
+    }
+
+    public static SupersessionRow Parse(ref DataChunk.Row row) {
+        var memoryId     = row.ReadString();
+        var supersededBy = row.TryReadString();
+
+        return new(memoryId, supersededBy);
     }
 }

@@ -6,8 +6,7 @@ using static Kurrent.Kontext.Memory.Mcp.McpMappers;
 using RecallOptions = Kurrent.Kontext.Memory.Mcp.Model.RecallOptions;
 using RecallResult = Kurrent.Kontext.Memory.Mcp.Model.RecallResult;
 using RecollectOptions = Kurrent.Kontext.Memory.Mcp.Model.RecollectOptions;
-using ReflectOptions = Kurrent.Kontext.Memory.Mcp.Model.ReflectOptions;
-using ReflectResult = Kurrent.Kontext.Memory.Mcp.Model.ReflectResult;
+using ReinforceResult = Kurrent.Kontext.Memory.Mcp.Model.ReinforceResult;
 using RetainResult = Kurrent.Kontext.Memory.Mcp.Model.RetainResult;
 using StoredMemory = Kurrent.Kontext.Memory.Mcp.Model.StoredMemory;
 
@@ -28,11 +27,7 @@ namespace Kurrent.Kontext.Memory.Mcp;
 /// </summary>
 [McpServerToolType]
 public sealed class McpMemoryService(IKontextMemory service) {
-    [McpServerTool(
-        Name = "retain",
-        UseStructuredContent = true,
-        Destructive = false,
-        OpenWorld = false)]
+    [McpServerTool(Name = "retain", UseStructuredContent = true, Destructive = false, OpenWorld = false)]
     public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Model.Memory> memories, int neighbours = 0, CancellationToken ct = default) {
         var request = new Contracts.RetainRequest {
             Memories   = { memories.Select(ToContract) },
@@ -49,9 +44,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
     // Declared read-only even though recall refreshes the recency clock of every memory it returns
     // (reconsolidation): that is the store's internal bookkeeping, not caller-visible state, and agents
     // must be able to recall freely without clients gating it behind a confirmation. See memory.proto.
-    [McpServerTool(
-        Name = "recall", UseStructuredContent = true, ReadOnly = true,
-        OpenWorld = false)]
+    [McpServerTool(Name = "recall", UseStructuredContent = true, ReadOnly = true, OpenWorld = false)]
     public async ValueTask<RecallResult> RecallAsync(
         string query,
         RecallOptions? options = null,
@@ -73,9 +66,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         return ToModel(response);
     }
 
-    [McpServerTool(
-        Name = "reclaim", UseStructuredContent = true, ReadOnly = true,
-        OpenWorld = false)]
+    [McpServerTool(Name = "reclaim", UseStructuredContent = true, ReadOnly = true, OpenWorld = false)]
     public async ValueTask<IReadOnlyList<StoredMemory>> ReclaimAsync(
         IReadOnlyList<string> ids,
         CancellationToken ct = default
@@ -90,9 +81,7 @@ public sealed class McpMemoryService(IKontextMemory service) {
         return memories;
     }
 
-    [McpServerTool(
-        Name = "recollect", UseStructuredContent = true, ReadOnly = true,
-        OpenWorld = false)]
+    [McpServerTool(Name = "recollect", UseStructuredContent = true, ReadOnly = true, OpenWorld = false)]
     public async ValueTask<IReadOnlyList<StoredMemory>> RecollectAsync(
         RecollectOptions options,
         CancellationToken ct = default
@@ -113,23 +102,17 @@ public sealed class McpMemoryService(IKontextMemory service) {
         return memories;
     }
 
-    [McpServerTool(
-        Name = "reflect", UseStructuredContent = true, Destructive = true,
-        OpenWorld = false)]
-    public async ValueTask<ReflectResult> ReflectAsync(
-        string query,
-        ReflectOptions? options = null,
+    // Not read-only: unlike recall's incidental refresh, this exists to write. It is not destructive
+    // either — the only thing it can change is a recency clock.
+    [McpServerTool(Name = "reinforce", UseStructuredContent = true, Destructive = false, OpenWorld = false)]
+    public async ValueTask<ReinforceResult> ReinforceAsync(
+        IReadOnlyList<string> ids,
         CancellationToken ct = default
     ) {
-        options ??= new();
+        var request = new Contracts.ReinforceRequest { Ids = { ids } };
 
-        var request = new Contracts.ReflectRequest {
-            Query   = query,
-            QueryId = options.QueryId ?? "",
-            Tags    = { options.Tags.Select(ToContract) }
-        };
+        var response = await service.ReinforceAsync(request, ct).ConfigureAwait(false);
 
-        var response = await service.ReflectAsync(request, ct).ConfigureAwait(false);
         return ToModel(response);
     }
 }

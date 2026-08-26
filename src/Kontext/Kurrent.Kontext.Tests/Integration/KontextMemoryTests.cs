@@ -2,10 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DuckDB.NET.Data;
+using FluentValidation;
 using Google.Protobuf;
+using Microsoft.Extensions.DependencyInjection;
 using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Memory;
 using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
@@ -24,7 +27,7 @@ namespace Kurrent.Kontext.Tests;
 /// here, so each test seeds the memories table directly with SQL — exactly how the projector writes
 /// it — and exercises the surface the service exposes:
 /// - retain decides each memory against the store, then appends one MemoriesRetained event for
-///   whatever it wrote; reflect still throws
+///   whatever it wrote
 /// - recall is keyword-only BM25 search, lean by default, and never surfaces hidden memories
 /// - reclaim is an exact-id passthrough that skips ids it does not hold
 /// - recollect lists by type/tag with a sort
@@ -322,14 +325,14 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("outdated", Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
 		var appended = new List<Contracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
 		var request  = new Contracts.RetainRequest();
 
 		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
-		incoming.Supersedes.Add("outdated");
+		incoming.Supersedes.Add(OutdatedId);
 		request.Memories.Add(incoming);
 
 		// Act
@@ -339,7 +342,189 @@ public class KontextMemoryTests {
 		// through untouched. This is the whole correction mechanism: there is no update and no
 		// delete, so a `supersedes` the server dropped would silently lose the correction.
 		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
-		await Assert.That(appended[0].Memories[0].Memory.Supersedes).IsEquivalentTo(["outdated"]);
+		await Assert.That(appended[0].Memories[0].Memory.Supersedes).IsEquivalentTo([OutdatedId]);
+	}
+
+	[Test]
+	public async ValueTask retain_rejects_a_supersedes_that_names_no_memory() {
+		// Arrange
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("live", Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
+		incoming.Supersedes.Add("no-such-memory");
+		request.Memories.Add(incoming);
+
+		// Act / Assert — a well-formed id the store has never seen is the model inventing one, and a
+		// supersession the projector would silently drop is worse than a rejected call.
+		await Assert.That(async () => await memory.RetainAsync(request)).Throws<RequestValidationException>();
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask retain_rejects_superseding_a_memory_that_is_already_superseded() {
+		// Arrange — "outdated" has already lost its place to "current".
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+				IsSuperseded = true,
+				SupersededAt = Base.AddHours(1),
+				SupersededBy = CurrentId,
+			},
+			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Supersedes = [OutdatedId],
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is chairman" };
+		incoming.Supersedes.Add(OutdatedId);
+		request.Memories.Add(incoming);
+
+		// Act
+		var failure = await Assert.That(async () => await memory.RetainAsync(request)).Throws<RequestValidationException>();
+
+		// Assert — a memory carries ONE successor, so accepting this would repoint the chain at the
+		// newer claim and leave "current" listing a target it no longer owns. The rejection hands
+		// back the tip, which is what the caller must read and supersede instead.
+		await Assert.That(failure!.Message).Contains(CurrentId);
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask retain_stores_the_same_content_again_when_the_supersedes_differ() {
+		// Arrange — the store already holds this exact claim, citing nothing and replacing nothing.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		const string content = "Sergio is CTO";
+
+		var store = await Seed(dataSources,
+			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		incoming.Supersedes.Add(OutdatedId);
+		request.Memories.Add(incoming);
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — this is the shape a fold takes: the surviving claim retained again with the loser
+		// attached. It matches "existing" in every other field, so leaving supersedes out of the
+		// identity check would NOOP the fold and leave the duplicate live.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].MemoryId).IsNotEqualTo("existing");
+		await Assert.That(appended[0].Memories[0].Memory.Supersedes).IsEquivalentTo([OutdatedId]);
+	}
+
+	[Test]
+	public async ValueTask retain_noops_a_resend_whose_supersession_already_landed() {
+		// Arrange — the first call already succeeded: "successor" replaced "outdated".
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		const string content = "Sergio is CTO";
+
+		var store = await Seed(dataSources,
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+				IsSuperseded = true,
+				SupersededAt = Base.AddHours(1),
+				SupersededBy = SuccessorId,
+			},
+			new Row(SuccessorId, Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Supersedes = [OutdatedId],
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		incoming.Supersedes.Add(OutdatedId);
+		request.Memories.Add(incoming);
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — the retry the idempotency guard exists to absorb. Its target is superseded BY the
+		// memory this resend duplicates, so validating the request rather than what would actually be
+		// WRITTEN would reject exactly the call that must be safe to repeat.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].MemoryId).IsEqualTo(SuccessorId);
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask retain_rejects_a_memory_citation_that_names_no_memory() {
+		// Arrange
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row("live", Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
+		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = "no-such-memory" } });
+		request.Memories.Add(incoming);
+
+		// Act / Assert — a citation nothing resolves breaks both jobs it exists for: a reader cannot
+		// audit the claim, and the cascade cannot find what rests on a memory that turns out wrong.
+		await Assert.That(async () => await memory.RetainAsync(request)).Throws<RequestValidationException>();
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask retain_accepts_a_memory_citation_of_a_superseded_memory() {
+		// Arrange — "outdated" lost its place to "current", and is cited anyway.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+
+		var store = await Seed(dataSources,
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+				IsSuperseded = true,
+				SupersededAt = Base.AddHours(1),
+				SupersededBy = CurrentId,
+			},
+			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Supersedes = [OutdatedId],
+			});
+
+		var appended = new List<Contracts.MemoriesRetained>();
+		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
+		var request  = new Contracts.RetainRequest();
+
+		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio's title changed during 2026" };
+		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = OutdatedId } });
+		request.Memories.Add(incoming);
+
+		// Act
+		var response = await memory.RetainAsync(request);
+
+		// Assert — the opposite rule to `supersedes`, and deliberately so. Evidence is frozen at
+		// retain, so a superseded memory was still the thing this claim rested on; requiring a live
+		// tip here would forbid the normal case and gut the cascade.
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(appended[0].Memories[0].Memory.Evidence[0].Memory.Id).IsEqualTo(OutdatedId);
 	}
 
 	[Test]
@@ -355,7 +540,9 @@ public class KontextMemoryTests {
 			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Tags     = [KontextMemoryDataStore.EncodeTag(repo)],
 				Evidence = SeedEvidenceBlobs(),
-			});
+			},
+			// The incoming citation has to resolve: retain rejects a MemoryRef naming no memory.
+			new Row(CitedAltId, Contracts.MemoryType.Fact, "the runner builds once, then tests with --no-build", Contracts.MemoryImportance.Normal, Base, MemorySeeding.Vector(1f)));
 
 		var appended = new List<Contracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
@@ -364,7 +551,7 @@ public class KontextMemoryTests {
 		// Same content, same tags, DIFFERENT citation — new support for a claim already held.
 		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
 		incoming.Tags.Add(repo);
-		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = "cited-2" } });
+		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = CitedAltId } });
 		request.Memories.Add(incoming);
 
 		// Act
@@ -461,15 +648,56 @@ public class KontextMemoryTests {
 	}
 
 	[Test]
-	public async ValueTask reflect_throws_not_implemented() {
+	public async ValueTask recall_appends_the_event_that_advances_the_recency_clock() {
+		// Arrange — only a1 carries the keyword, so exactly one memory is accessed.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
+			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+
+		var appended = new List<Contracts.MemoriesRecalled>();
+		var clock    = new FakeTimeProvider(Base.AddDays(1));
+		var memory   = NewMemory(store, CaptureRecalled(appended), clock);
+
+		var request = new Contracts.RecallRequest { Query = "aardvark", Limit = 5 };
+
+		// Act
+		var response = await memory.RecallAsync(request);
+
+		// Assert — retrieval IS an access: without this event recency could only ever fall, and the
+		// store would decay precisely what it uses most.
+		await Assert.That(appended.Count).IsEqualTo(1);
+
+		var recalled = appended[0];
+
+		await Assert.That(recalled.QueryId).IsEqualTo(response.QueryId);
+		await Assert.That(recalled.Query).IsEqualTo("aardvark");
+		await Assert.That(recalled.Limit).IsEqualTo(5);
+		await Assert.That(recalled.RecalledAt.ToDateTimeOffset()).IsEqualTo(Base.AddDays(1));
+		await Assert.That(recalled.Memories.Count).IsEqualTo(1);
+		await Assert.That(recalled.Memories[0].MemoryId).IsEqualTo("a1");
+		await Assert.That(recalled.Memories[0].Score).IsGreaterThan(0);
+		await Assert.That(recalled.Memories[0].LastAccessedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(1));
+	}
+
+	[Test]
+	public async ValueTask recall_appends_nothing_when_it_matched_nothing() {
 		// Arrange
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
-		var       store       = new KontextMemoryDataStore(dataSources);
-		var       memory      = NewMemory(store, NoOp, TimeProvider.System);
+		var       store       = await Seed(dataSources,
+			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		// Act + Assert
-		await Assert.That(async () => await memory.ReflectAsync(new())).Throws<NotImplementedException>();
+		var appended = new List<Contracts.MemoriesRecalled>();
+		var memory   = NewMemory(store, CaptureRecalled(appended), TimeProvider.System);
+
+		// Act
+		var response = await memory.RecallAsync(new() { Query = "quetzalcoatlus" });
+
+		// Assert — a recall that matched nothing accessed nothing, so it costs no log write.
+		await Assert.That(response.Memories).IsEmpty();
+		await Assert.That(appended).IsEmpty();
 	}
 
 	[Test]
@@ -598,13 +826,13 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("e1", Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("e2", Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(SecondId, Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
 		var request = new Contracts.ReclaimRequest();
-		request.Ids.AddRange(["e1", "e2", "no-such-memory"]);
-		var expectedReturned = new List<string> { "e1", "e2" };
+		request.Ids.AddRange([FirstId, SecondId, MissingId]);
+		var expectedReturned = new List<string> { FirstId, SecondId };
 
 		// Act
 		var memories = await memory.ReclaimAsync(request).ToListAsync();
@@ -613,6 +841,88 @@ public class KontextMemoryTests {
 		var ids = memories.Select(m => m.MemoryId).Order().ToList();
 
 		await Assert.That(ids).IsEquivalentTo(expectedReturned, CollectionOrdering.Matching);
+	}
+
+	[Test]
+	public async ValueTask reinforce_appends_one_access_event_for_the_ids_it_was_given() {
+		// Arrange
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
+			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(SecondId, Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+
+		var appended = new List<Contracts.MemoriesReinforced>();
+		var clock    = new FakeTimeProvider(Base);
+		var memory   = NewMemory(store, CaptureReinforced(appended), clock);
+
+		var request = new Contracts.ReinforceRequest();
+		request.Ids.AddRange([FirstId, SecondId]);
+
+		var expectedIds = new List<string> { FirstId, SecondId };
+
+		// Act
+		var response = await memory.ReinforceAsync(request);
+
+		// Assert — one event carries the whole call, and the instant it reports is the one it wrote.
+		await Assert.That(appended.Count).IsEqualTo(1);
+		await Assert.That(appended[0].MemoryIds.Order().ToList()).IsEquivalentTo(expectedIds, CollectionOrdering.Matching);
+		await Assert.That(appended[0].ReinforcedAt.ToDateTimeOffset()).IsEqualTo(Base);
+		await Assert.That(response.AccessedAt.ToDateTimeOffset()).IsEqualTo(Base);
+	}
+
+	[Test]
+	public async ValueTask reinforce_rejects_the_whole_call_when_an_id_names_no_memory() {
+		// Arrange — one real id and one that was never stored.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
+			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+
+		var appended = new List<Contracts.MemoriesReinforced>();
+		var memory   = NewMemory(store, CaptureReinforced(appended), TimeProvider.System);
+
+		var request = new Contracts.ReinforceRequest();
+		request.Ids.AddRange([FirstId, MissingId]);
+
+		// Act
+		var failure = await Assert.That(async () => await memory.ReinforceAsync(request)).Throws<RequestValidationException>();
+
+		// Assert — the caller got these ids from a recall or a reclaim, so an unresolvable one is its
+		// bug. Recording the rest would refresh a clock while hiding the mistake that produced the id.
+		await Assert.That(failure!.Message).Contains(MissingId);
+		await Assert.That(appended).IsEmpty();
+	}
+
+	[Test]
+	public async ValueTask reinforce_rejects_a_superseded_memory_and_names_the_tip() {
+		// Arrange — "outdated" lost its place to "current", and the caller reinforces it anyway.
+		using var dir         = new TempDir();
+		using var dataSources = NewDataSources(dir.Path);
+		var       store       = await Seed(dataSources,
+			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+				IsSuperseded = true,
+				SupersededAt = Base.AddHours(1),
+				SupersededBy = CurrentId,
+			},
+			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+				Supersedes = [OutdatedId],
+			});
+
+		var appended = new List<Contracts.MemoriesReinforced>();
+		var memory   = NewMemory(store, CaptureReinforced(appended), TimeProvider.System);
+
+		var request = new Contracts.ReinforceRequest();
+		request.Ids.Add(OutdatedId);
+
+		// Act
+		var failure = await Assert.That(async () => await memory.ReinforceAsync(request)).Throws<RequestValidationException>();
+
+		// Assert — recall never surfaces a superseded memory, so its recency clock feeds no ranking:
+		// accepting this would report success for a write nothing can ever read. The caller also acted
+		// on a corrected claim, which is what the tip in the message tells it.
+		await Assert.That(failure!.Message).Contains(CurrentId);
+		await Assert.That(appended).IsEmpty();
 	}
 
 	[Test]
@@ -646,6 +956,18 @@ public class KontextMemoryTests {
 
 	#region ->> Test Infrastructure <<-
 
+	// Fixture ids that cross into a REQUEST, which retain and reclaim validate as UUIDs. Fixed rather
+	// than generated, so a failure names the same id on every run. Ids that only ever get seeded stay
+	// readable ("existing", "a1") — nothing checks their shape.
+	const string OutdatedId  = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0001";
+	const string CurrentId   = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0002";
+	const string SuccessorId = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0003";
+	const string CitedId     = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0004";
+	const string CitedAltId  = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0005";
+	const string FirstId     = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0006";
+	const string SecondId    = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0007";
+	const string MissingId   = "0199c4e2-6f31-7a0c-9d84-1b6e5f2a0008";
+
 	static KontextMemory NewMemory(
 		KontextMemoryDataStore store,
 		AppendEvent append,
@@ -653,7 +975,17 @@ public class KontextMemoryTests {
 		EmbeddingGenerator? embeddings = null,
 		KontextMemoryOptions? options = null
 	) =>
-		new(store, KeywordRetriever(store), append, clock, embeddings ?? new StubEmbeddings(), options ?? new KontextMemoryOptions());
+		new(store, KeywordRetriever(store), append, clock, embeddings ?? new StubEmbeddings(), options ?? new KontextMemoryOptions(), Validation);
+
+	/// <summary>The same validators the host registers, so these suites hit the real request rules.</summary>
+	static readonly RequestValidationService Validation = new(
+		new ServiceCollection()
+			.AddSingleton<IValidator<Contracts.RetainRequest>, RetainRequestValidator>()
+			.AddSingleton<IValidator<Contracts.RecallRequest>, RecallRequestValidator>()
+			.AddSingleton<IValidator<Contracts.ReclaimRequest>, ReclaimRequestValidator>()
+			.AddSingleton<IValidator<Contracts.RecollectRequest>, RecollectRequestValidator>()
+			.AddSingleton<IValidator<Contracts.ReinforceRequest>, ReinforceRequestValidator>()
+			.BuildServiceProvider());
 
 	/// <summary>
 	/// Rebuilds the FTS index over the seeded rows. The schema creates it on the empty table, so
@@ -675,6 +1007,18 @@ public class KontextMemoryTests {
 	static AppendEvent Capture(List<Contracts.MemoriesRetained> appended) =>
 		(evt, _) => {
 			appended.Add((Contracts.MemoriesRetained)evt);
+			return Task.CompletedTask;
+		};
+
+	static AppendEvent CaptureRecalled(List<Contracts.MemoriesRecalled> appended) =>
+		(evt, _) => {
+			appended.Add((Contracts.MemoriesRecalled)evt);
+			return Task.CompletedTask;
+		};
+
+	static AppendEvent CaptureReinforced(List<Contracts.MemoriesReinforced> appended) =>
+		(evt, _) => {
+			appended.Add((Contracts.MemoriesReinforced)evt);
 			return Task.CompletedTask;
 		};
 
@@ -740,7 +1084,7 @@ public class KontextMemoryTests {
 	static IKontextRetriever KeywordRetriever(KontextMemoryDataStore store) =>
 		KontextRetriever.New().AddSearch(new KeywordSearch(store)).Build();
 
-	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
+	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = CitedId } };
 
 	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
 	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
@@ -792,8 +1136,7 @@ public class KontextMemoryTests {
 		return new(dataSource);
 	}
 
-	// Binds one VALUES tuple, in the INSERT's column order; null binds as NULL. Supersedes is
-	// neutral here — these tests never read it.
+	// Binds one VALUES tuple, in the INSERT's column order; null binds as NULL.
 	static void AddRow(DuckDBCommand command, Row row) {
 		// Timestamps bind as Unix epoch milliseconds — the schema's BIGINT columns.
 		object?[] values = [
@@ -804,7 +1147,7 @@ public class KontextMemoryTests {
 			row.Tags,
 			row.Reasoning,
 			row.Evidence,
-			new List<string>(),                  // supersedes
+			row.Supersedes,
 			row.ContentTimeStart?.ToUnixTimeMilliseconds(),
 			row.ContentTimeEnd?.ToUnixTimeMilliseconds(),
 			row.RetainedAt.ToUnixTimeMilliseconds(),
@@ -831,10 +1174,11 @@ public class KontextMemoryTests {
 		public List<string>    Tags           { get; init; } = [];
 		public string          Reasoning      { get; init; } = "";
 		public List<string>    Evidence       { get; init; } = [];
+		public List<string>    Supersedes     { get; init; } = [];
 		public DateTimeOffset? LastAccessedAt { get; init; }
 		public bool            IsSuperseded   { get; init; }
 		public DateTimeOffset? SupersededAt   { get; init; }
-		public string          SupersededBy   { get; init; } = "";
+		public string?         SupersededBy   { get; init; }
 		public DateTimeOffset? ContentTimeStart  { get; init; }
 		public DateTimeOffset? ContentTimeEnd    { get; init; }
 	}

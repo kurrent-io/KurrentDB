@@ -155,6 +155,36 @@ public class RetainRequestValidatorTests {
 	}
 
 	[Test]
+	public async ValueTask rejects_a_memory_citation_that_is_not_a_uuid() {
+		// Arrange — the server mints every id as a UUID, so anything else was invented by the caller.
+		var memory = Memory();
+		memory.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = "the-devex-lead-memory" } });
+
+		var request = Request(memory);
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert
+		await Assert.That(result.IsValid).IsFalse();
+	}
+
+	[Test]
+	public async ValueTask accepts_a_memory_citation_carrying_a_uuid() {
+		// Arrange
+		var memory = Memory();
+		memory.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = Guid.NewGuid().ToString() } });
+
+		var request = Request(memory);
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert
+		await Assert.That(result.IsValid).IsTrue();
+	}
+
+	[Test]
 	public async ValueTask rejects_a_git_excerpt_below_the_floor() {
 		// Arrange
 		var memory = Memory(Contracts.MemoryType.Fact);
@@ -168,6 +198,67 @@ public class RetainRequestValidatorTests {
 		var result = Validator.Validate(request);
 
 		// Assert
+		await Assert.That(result.IsValid).IsFalse();
+	}
+
+	#endregion
+
+	#region ->> Supersedes <<-
+
+	static Contracts.Memory Superseding(params string[] ids) {
+		var memory = Memory();
+		memory.Supersedes.AddRange(ids);
+		return memory;
+	}
+
+	[Test]
+	public async ValueTask accepts_a_memory_that_supersedes_one_id() {
+		// Arrange
+		var request = Request(Superseding(Guid.NewGuid().ToString()));
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert
+		await Assert.That(result.IsValid).IsTrue();
+	}
+
+	[Test]
+	public async ValueTask rejects_a_supersedes_that_is_not_a_uuid() {
+		// Arrange — the server mints every id as a UUID, so anything else was invented by the caller.
+		var request = Request(Superseding("the-devex-lead-memory"));
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert
+		await Assert.That(result.IsValid).IsFalse();
+	}
+
+	[Test]
+	public async ValueTask rejects_the_same_target_named_twice_by_one_memory() {
+		// Arrange
+		var target  = Guid.NewGuid().ToString();
+		var request = Request(Superseding(target, target));
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert — superseded_by holds ONE successor, so a target can be claimed only once.
+		await Assert.That(result.IsValid).IsFalse();
+	}
+
+	[Test]
+	public async ValueTask rejects_the_same_target_claimed_by_two_memories_in_one_batch() {
+		// Arrange — the scope the store cannot see: the batch's own effects are not in it yet.
+		var target  = Guid.NewGuid().ToString();
+		var request = Request(Superseding(target), Superseding(target));
+
+		// Act
+		var result = Validator.Validate(request);
+
+		// Assert — unchecked, the writer folds both into one row state and the last one silently
+		// wins, picking a successor nobody chose.
 		await Assert.That(result.IsValid).IsFalse();
 	}
 

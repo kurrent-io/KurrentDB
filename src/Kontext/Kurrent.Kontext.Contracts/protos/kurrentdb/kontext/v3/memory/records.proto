@@ -7,379 +7,208 @@ package kurrent.kontext;
 
 option csharp_namespace = "Kurrent.Kontext.Contracts";
 
-import "kurrentdb/kontext/v3/memory/resources.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
-// THE ACCESS RULE — which operations move a memory's recency clock.
-//
-//   The clock advances when the AGENT'S INTENT selected the memory, never when the SYSTEM offered
-//   it.
-//
-// `last_accessed_at` exists to measure "this memory was useful", not "this memory was transmitted".
-//   recall     — the agent asked a question and this answered it        → REFRESHES
-//   reclaim    — the agent named the id                                 → REFRESHES
-//   recollect  — an enumeration by filter, mostly discarded             → does not
-//   related    — surfaced by the server, unbidden, on retain            → does not
-// Refreshing on the last two would record accesses that never happened and inflate the salience of
-// memories nobody used.
-service MemoryService {
-  // TOOL — retain
+service RecordsService {
+  // TOOL — search — find LOG RECORDS by meaning (input: a natural-language `query`).
+  // Not `recall` (that searches your own memories, which are claims you wrote).
   //
-  // Store something worth remembering. Reach for this the moment you learn something you'd want
-  // back later: a decision and its reasoning, an error and its fix, a user preference, a durable
-  // fact about the system, a question you could not answer. Write each memory so it stands on its
-  // own — a reader months from now, with no other context, should understand it.
+  // Search what the database actually recorded. Records are the events themselves — every JSON
+  // payload the node has seen — so reach for this when you need the evidence rather than the
+  // conclusion: what a stream actually contains, when something happened, which payload carried a
+  // value, whether an event of some shape was ever written.
   //
-  // STORE THE CLAIM YOU CHECKED, not the claim you would like to be true. Before storing, name what
-  // would show you WRONG — and if you cannot name that check, the claim is too vague, so sharpen it
-  // until you can. Put attribution inside the content: "the docs state X" is a fact you verified by
-  // reading them; a bare "X" is not. An unchecked belief is not a weak fact, it is an OPEN_QUESTION.
+  // Phrase `query` in natural language, describing the event you are looking for ("the order was
+  // cancelled because the payment expired"), not keywords. Matching runs over a normalised,
+  // flattened projection of the payload, so field names and values both count.
   //
-  // Set `importance` by how much it
-  // matters (higher keeps it retrievable longer). Cite what the memory rests on in `evidence`, put
-  // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
-  // ones stay readable, marked superseded (there is no separate supersede call).
+  // NARROW WITH THE FILTERS WHEN YOU CAN, and `schema_name` first — "every OrderCancelled" is the
+  // question people actually ask of a log. The index spans everything the node has seen, so an
+  // unfiltered search ranks across all of it.
   //
-  // SUPERSEDE ONLY A LIVE TIP. Every id in `supersedes` must exist and must not itself be
-  // superseded already, and no id may appear twice across the whole request — a memory carries one
-  // successor, so two claims on the same target cannot both hold. Break either rule and the WHOLE
-  // call is rejected; nothing is written. A rejection naming an already-superseded target hands
-  // back the id that superseded it, which is the tip to supersede instead: someone corrected that
-  // memory while you were working, so read the newer one before you replace it.
+  // Filtering is FREE and the page never comes back short: the engine evaluates the predicate while
+  // it selects candidates, not after ranking, so a scoped search returns a full `limit` drawn from
+  // the matching records — even when they are a handful among millions. There is no need to
+  // oversample. Pick ONE per group: `stream` or `category` (a category IS a set of streams), and one
+  // of `schema_name` / `schema_id` / `schema_format` (an id pins an exact version of a name, and a
+  // name already implies its format).
   //
-  // YOU DO NOT SUPPLY IDS. The server mints every memory_id and returns them positionally:
-  // results[i] is the memory you sent at memories[i], always, same length, same order. A
-  // consequence: you cannot cite a memory you are sending in this same request, because its id does
-  // not exist yet. Retain the sources first, then retain the memory that cites them. If the second
-  // call fails you are left with valid standalone memories, which is a harmless outcome.
+  // Only JSON records are indexed. A record with a non-JSON payload, or an empty one, was never
+  // added and cannot be found here.
   //
-  // RETAIN ALWAYS STORES. It does not merge, block, refuse, or deduplicate — the only thing it
-  // will not do is write a memory byte-for-byte identical to one already live (same content, same
-  // tags, same evidence), which comes back NOOP with that memory's id. That is an idempotency
-  // guard against a resend, not deduplication: anything less than identical is stored.
+  // Example: search { query: "a payment failed with an expired card", category: "order",
+  //          limit: 10 }
   //
-  // Duplicates are therefore YOUR call and the curation pass's, never the server's. Deciding from
-  // a similarity score at write time means guessing which tags and which citations you meant to
-  // keep, and a memory the server rewrote is one you did not author. Search first with `recall`
-  // when it matters, and correct with `supersedes` when you find you already knew something.
+  // Returns: `hits`, ranked best-first — each carrying its `score` (higher = stronger; a low top
+  // score means nothing matched well) and the full `Record`, payload included.
   //
-  // Set `neighbours` and each stored memory comes back with that many existing memories nearest
-  // it, so "what am I storing next to?" costs no extra round trip. They are reported AFTER the
-  // write and change nothing — you owe no answer, and ignoring them loses nothing but a duplicate
-  // the curation pass will fold.
-  //
-  // Example: retain { neighbours: 3, memories: [{ memory_type: MEMORY_TYPE_FACT,
-  //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
-  //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
-  //
-  // Returns: one result per input memory, in order, each with its `outcome` and `memory_id`.
-  //
-  // Safety: writing, additive — never overwrites or deletes. Supersession is expressed by YOU
-  // through `supersedes`, and the superseded memory stays readable. Reporting neighbours does NOT
-  // touch their recency clocks (see THE ACCESS RULE).
-  rpc Retain(RetainRequest) returns (RetainResponse);
+  // Safety: READ-ONLY and side-effect-free. It touches no memory, writes nothing, and records no
+  // access — unlike `recall`, which refreshes a recency clock.
+  rpc Search(SearchRequest) returns (SearchResponse);
 
-  // TOOL — recall — search by MEANING (input: a natural-language `query`).
-  // Not `reclaim` (that's by id) · not `recollect` (that's by type/tag, no ranking).
+  // TOOL — query — read the log with SQL (input: a DuckDB `sql` statement).
+  // Not `search` (that ranks by meaning) — this one filters, groups and counts EXACTLY.
   //
-  // Search your own memory for what matters to what you're doing RIGHT NOW. Reach for this before
-  // you act on something you might already know: at the start of a task, when a name, decision,
-  // error, file, or preference comes up that you may have seen before, or any time you'd otherwise
-  // guess. Recalling is cheap; re-deriving something you already learned — or silently
-  // contradicting a past decision — is not.
+  // Reach for this when the question has a precise answer that ranking cannot give: how many, since
+  // when, which streams, grouped by what. "How many OrderCancelled events last week", "every stream
+  // in the payments category that has a Refund", "the 20 most recent records for this schema". Use
+  // `search` when you are looking for something by meaning and cannot name the shape.
   //
-  // Phrase `query` in natural language, like a question to a colleague ("what did we decide about
-  // the checkpoint format?") — not keywords. Add `tags` only when you already know the dimension to
-  // scope to (a session, a repo, an environment); leave them empty to search everything.
+  // ONE TABLE IS VISIBLE: `kdb.records`, every record the database holds. Naming anything else is
+  // rejected, and so are table functions.
   //
-  // Results come back ranked best-first on relevance, importance and recency. There is no trust
-  // score to read: everything stored was checked when it was written, so the type tells you what
-  // KIND of claim you are looking at, not how far to believe it. You only ever get what is
-  // currently true here — superseded
-  // memories never surface. Want the full record (evidence, reasoning)? Set `include_full`, or
-  // follow up with `reclaim` by id.
+  //   record_id       the record's id            log_position    its position in the global log
+  //   stream          the stream it belongs to   stream_revision its revision within that stream
+  //   category        the stream prefix          schema_name     the record type
+  //   schema_id       the registered version     schema_format   the payload encoding
+  //   created_at      epoch milliseconds         expires_at      epoch milliseconds, or null
+  //   deleted         soft-delete flag           data            the payload
+  //   metadata        the record metadata
   //
-  // Side effect worth knowing: recalling a memory keeps it salient (it refreshes that memory's
-  // recency clock), so the things you actually use stay near the top over time. Recall freely.
+  // `data` holds the payload. JSON records carry their JSON verbatim, so DuckDB's JSON functions
+  // apply directly: `json_extract_string(data, '$.orderId')`. A non-JSON payload arrives base64
+  // encoded, which is why filtering on `schema_format = 'Json'` is usually what you want before
+  // touching it.
   //
-  // Siblings: `retain` (store a memory) · `reclaim` (fetch specific memories by id) · `recollect`
-  // (list/inspect by type or tag) · `reflect` (synthesize higher-level memories from what's there).
+  // Example: query { sql: "SELECT stream, count(*) AS n FROM kdb.records
+  //          WHERE schema_name = 'OrderCancelled' GROUP BY stream ORDER BY n DESC", limit: 20 }
   //
-  // Example: recall { query: "what did we decide about the checkpoint format?", limit: 5 }
+  // Returns: `rows`, each one object keyed by your SELECT's column names. Ask for the columns you
+  // want — `SELECT *` pulls every payload in the result and fills your context with them.
   //
-  // Returns: `memories`, ranked best-first — each with its `score` (higher = stronger; a low top
-  // score means nothing matched well) and, by default, a LeanMemory body (id, type, content, tags,
-  // importance, age). Set `include_full` for the complete folded record per hit. The score
-  // breakdown is intentionally withheld.
-  //
-  // Safety: reading, but NOT side-effect-free — a recall refreshes the recency clock of every
-  // memory it returns (reconsolidation; see THE ACCESS RULE). Idempotent in what it returns; not in
-  // what it writes.
-  rpc Recall(RecallRequest) returns (RecallResponse);
-
-  // TOOL — reclaim — fetch exact memories by `id` (input: the ids you already hold).
-  // Not `recall` (that's by meaning) · not `recollect` (that's by type/tag).
-  //
-  // Pull specific, already-known memories back into context by id. Use it for progressive
-  // disclosure — when an earlier result (a reflection, a recall, a `related` neighbour) handed you
-  // a lean record and you now want the full one: its `evidence` and `reasoning`. You need this
-  // before superseding a memory, because the successor must carry the union of its citations.
-  // Unlike `recall`, this is not a search and does not rank: you ask for exact ids and get exactly
-  // those, whatever their status.
-  //
-  // Example: reclaim { ids: ["0199c4e2-6f31-7a0c-9d84-1b6e5f2a7c30",
-  //          "0199c4e2-7b55-7e11-a2f0-4c8d9e1b3a67"] }
-  //
-  // Returns: a stream of StoredMemory (the full folded records), including superseded
-  // ones — you asked for them by id, so they are not hidden here. Ids that don't exist are simply
-  // absent from the stream (never an error); diff the returned ids against what you asked for to
-  // see which missed.
-  //
-  // Safety: reading, but NOT side-effect-free — you named these ids, so this REFRESHES their
-  // recency clocks (see THE ACCESS RULE) and records events.proto MemoriesAccessed.
-  rpc Reclaim(ReclaimRequest) returns (stream StoredMemory);
-
-  // TOOL — recollect — list a slice by `type`/`tags` (input: filters, no question).
-  // Not `recall` (that ranks by relevance to a query) · not `reclaim` (that's by id).
-  //
-  // Browse your memories by structure, not by relevance. Use it to enumerate or gather a set —
-  // "all my FACTs tagged project:engram", "every OPEN_QUESTION in this repo" — where you want a
-  // filtered list, not a ranked answer to a question. Enumerating OPEN_QUESTIONs at the start of a
-  // task is the canonical use: it is a work queue, and because recollect does not rank, temporal
-  // decay never hides one from it.
-  //
-  // Example: recollect { types: [MEMORY_TYPE_OPEN_QUESTION], tags: [{ scope: "repo",
-  //          value: "kurrent--kurrentdb" }], limit: 50 }
-  //
-  // Returns: a stream of StoredMemory matching the filters — `types` is any-of (empty = any type),
-  // all supplied `tags` must be present. Ordered by `sort` (default: newest-retained first);
-  // reverse with `direction`.
-  //
-  // Safety: READ-ONLY, and deliberately so — an enumeration is not a use. It does NOT refresh the
-  // recency clock of what it lists (see THE ACCESS RULE); reclaim what you actually act on.
-  rpc Recollect(RecollectRequest) returns (stream StoredMemory);
-
-  // TOOL — reflect
-  //
-  // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
-  // memories from what it finds — a FACT or a PREFERENCE that cites the
-  // memories it rests on — and may supersede the ones the new insight subsumes. A consolidation is
-  // a FACT citing many memories; there is no separate summary type, because how a memory arose is
-  // visible in its `evidence`. Reflection never produces an OPEN_QUESTION: a question is asked, not
-  // concluded. Reach for it periodically, when a pile of memories wants to become a durable
-  // conclusion — not on every turn.
-  //
-  // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
-  //
-  // Returns: the ids it `synthesized` and `superseded`.
-  //
-  // Safety: WRITES new memories and is DESTRUCTIVE (may supersede). Long-running — it
-  // reasons over many memories; expect it to run asynchronously and report progress rather than
-  // return instantly (completion is signalled by events.proto ReflectionCompleted). Not idempotent.
-  rpc Reflect(ReflectRequest) returns (ReflectResponse);
+  // Safety: READ-ONLY. It cannot write, and the server rejects anything that is not a query.
+  rpc Query(QueryRequest) returns (QueryResponse);
 }
 
 //===================================================================
-// Retain
+// Search
 //===================================================================
 
-message RetainRequest {
-  // Required. One or more memories to store — see resources.proto Memory for the fields you set.
-  // Results come back in this order, one per entry.
-  repeated Memory memories = 1;
-
-  // How many existing memories nearest each stored one to report back, capped by server
-  // configuration. Leave it at 0 and the server does no search at all, which is the cheap path:
-  // the embedding and the vector search exist ONLY to answer this. Ask for a few (2-3) when you
-  // want to know what you are storing next to.
-  int32 neighbours = 2;
-}
-
-message RetainResponse {
-  // One result per input memory, in the same order. Always the same length as the request.
-  repeated RetainResult results = 1;
-
-  message RetainResult {
-    // What the server did with the memory you sent at this position.
-    RetainOutcome outcome = 1;
-
-    // The newly written memory for CREATED; the existing, untouched one for NOOP.
-    string memory_id = 2;
-
-    // The live memories nearest this one, nearest first — present only when you asked for them and
-    // the memory was CREATED. Live means the tip of a supersession chain, so superseded memories
-    // never appear. ADVISORY: they were reported after the write, nothing was blocked or changed,
-    // and you owe no response. `reclaim` one when you need its evidence or reasoning.
-    repeated Neighbour neighbours = 3;
-  }
-
-  message Neighbour {
-    // Raw vector distance, SMALLER = more alike. Squared L2 over unit-length embeddings, so it
-    // means the same thing in every query — unlike a blended search score, which is normalised
-    // across whatever that one search happened to return.
-    double distance = 1;
-
-    // True when the keyword leg matched this memory too. A keyword match at a low distance is a
-    // restatement in mostly the same words; a low distance alone is a reword.
-    bool keyword_match = 2;
-
-    // The lean projection — enough to judge whether this duplicates, corroborates, or contradicts
-    // what you just stored, without a round trip.
-    LeanMemory memory = 3;
-  }
-}
-
-// What retain did with one memory.
-enum RetainOutcome {
-  RETAIN_OUTCOME_UNSPECIFIED = 0;
-
-  // The memory was stored.
-  RETAIN_OUTCOME_CREATED = 1;
-
-  // A live memory is already byte-for-byte this one — same content, same tags, same evidence — so
-  // nothing was written and `memory_id` is that memory. An idempotency guard, not deduplication:
-  // anything less than identical is stored.
-  RETAIN_OUTCOME_NOOP = 2;
-}
-
-//===================================================================
-// Recall
-//===================================================================
-
-// Input for the `recall` tool (see MemoryService.Recall). Field comments are the parameter
+// Input for the `search` tool (see RecordsService.Search). Field comments are the parameter
 // instructions the calling agent reads.
-message RecallRequest {
-  // Optional. Correlation id for this recall; leave empty and the server assigns one. Keep it if
-  // you want to tie later feedback or inspection back to this exact query.
-  string query_id = 1;
+message SearchRequest {
+  // Required. What you are looking for, in natural language — describe the event, not keywords.
+  string query = 1;
 
-  // Required. What you are trying to remember, in natural language — phrase it as a question, not
-  // as keywords.
-  string query = 2;
-
-  // How many memories to return after ranking. Ask for a handful (say 5–10); asking for many more
-  // mostly dilutes the top results.
-  int32 limit = 3;
+  // How many records to return. Ask for a handful (say 5–10) — this is the page, and a filter never
+  // costs you part of it.
+  int32 limit = 2;
 
   // Optional. Drop anything the server scores below this cutoff — raise it when you only want
   // strong matches, leave it at 0 to see everything that ranked.
-  double min_score = 4;
+  double min_score = 3;
 
-  // Optional pre-filter: only memories carrying these tags are considered. Use it only when you
-  // already know the dimension to narrow to; leave empty to search across everything.
-  repeated Tag tags = 5;
+  // Optional. Where to look. A category IS the set of streams sharing its prefix, so naming both
+  // would be either redundant or contradictory — pick the one you actually know.
+  oneof scope {
+    // A single stream, exactly as written ("order-8fc1a2").
+    string stream = 4;
 
-  // Optional. When true, each hit carries the complete folded record (StoredMemory) instead of the
-  // lean projection — use it when you'll act on the evidence/reasoning right away and want to skip
-  // a follow-up reclaim. Default false: lean hits, easier on your context.
-  bool include_full = 6;
+    // Every stream sharing this prefix — the text before the first '-' in the stream name
+    // ("order" covers "order-8fc1a2" and "order-3b90ff").
+    string category = 5;
+  }
+
+  // Optional. Which schema the record conforms to, at one of three widths. They are alternatives,
+  // not a combination: an id pins an exact version of a name, and a name already implies its format.
+  // `schema_name` is the one you usually want.
+  oneof schema {
+    // The record type ("OrderCancelled", "CustomerRegistered") — every version of it. This is the
+    // sharpest filter the log has, and it is indexed.
+    string schema_name = 8;
+
+    // The exact registered schema version the record was written against.
+    string schema_id = 6;
+
+    // The coarse payload encoding, as the record carries it ("Json").
+    string schema_format = 7;
+  }
 }
 
-message RecallResponse {
-  // echoes RecallRequest.query_id (assigned by the server if you left it empty)
-  string query_id = 1;
+message SearchResponse {
+  // Ranked best-first.
+  repeated RecordHit hits = 1;
 
-  // ranked best-first
-  repeated RecalledMemory memories = 2;
-
-  // One recall hit. `score` is always present; the body is the lean projection by default, or the
-  // complete folded record when the request set `include_full`. The ranking breakdown stays on the
-  // MemoriesRecalled log, never here.
-  message RecalledMemory {
-    // Final ranking score — the alpha-weighted sum of the normalized dimensions; higher = stronger
-    // match. Your weak-match signal: a low top score means nothing matched well.
+  // One search hit: the record and how strongly it matched.
+  message RecordHit {
+    // Blended relevance across the meaning and keyword legs; higher = stronger match. Your
+    // weak-match signal: a low top score means nothing matched well. The breakdown is withheld.
     double score = 1;
 
-    oneof body {
-      LeanMemory   lean = 2;  // default — enough to use and trust a hit
-      StoredMemory full = 3;  // when include_full was set — the same complete record `reclaim` gives
-    }
+    // The record as the index holds it.
+    Record record = 2;
   }
 }
 
 //===================================================================
-// Reclaim
+// Query
 //===================================================================
 
-// Directly read specific, known memory fragments back into context.
-// It allows progressive disclosure for when certain operations return only a lean record.
-message ReclaimRequest {
-  // Required. The exact memory ids to fetch back.
-  repeated string ids = 1;
-}
-
-//===================================================================
-// Recollect
-//===================================================================
-
-
-// The dimension `recollect` orders its results by (there is no relevance here — that's `recall`).
-enum RecollectSort {
-  // Defaults to RECOLLECT_SORT_RETAINED_AT.
-  RECOLLECT_SORT_UNSPECIFIED = 0;
-
-  // When the memory was recorded — chronological. The default.
-  RECOLLECT_SORT_RETAINED_AT = 1;
-
-  // The recency clock — surfaces what has been salient (recalled) lately.
-  RECOLLECT_SORT_LAST_ACCESSED_AT = 2;
-
-  // The agent's salience rating — surfaces the significant ones. Pairs well with `limit`:
-  // "the 20 most important FACTs" rather than 20 arbitrary ones.
-  RECOLLECT_SORT_IMPORTANCE = 3;
-}
-
-// Sort direction for a listing. Top-level rather than nested: the data store's own listing surface
-// takes it too, so it is not a property of the recollect request.
-enum SortDirection {
-  SORT_DIRECTION_UNSPECIFIED = 0;  // defaults to DESCENDING
-  SORT_DIRECTION_DESCENDING  = 1;  // high → low: newest / most-important / most-recently-accessed first
-  SORT_DIRECTION_ASCENDING   = 2;  // low → high: oldest / least first
-}
-
-// Input for the `recollect` tool (see MemoryService.Recollect). Field comments are the parameter
+// Input for the `query` tool (see RecordsService.Query). Field comments are the parameter
 // instructions the calling agent reads.
-message RecollectRequest {
-  // Optional filter: any-of these types (empty = any type).
-  repeated MemoryType types = 1;
+message QueryRequest {
+  // Required. A DuckDB SELECT over `kdb.records`. Anything that is not a query, and any other
+  // table, is rejected before it runs.
+  string sql = 1;
 
-  // Optional filter: only memories carrying ALL of these tags (empty = no tag filter).
-  repeated Tag tags = 2;
-
-  // Max memories to return. With a limit, `sort` decides which slice you get — see below.
-  int32 limit = 3;
-
-  // How to order results. Default (unspecified): newest-retained first. Reach for IMPORTANCE when
-  // you want the top-N significant memories rather than the most recent.
-  RecollectSort sort = 4;
-
-  // Sort direction. Default (unspecified): descending.
-  SortDirection direction = 5;
+  // Max rows to return, capped by the server. Prefer aggregating in SQL over pulling rows back and
+  // counting them yourself.
+  int32 limit = 2;
 }
 
-//===================================================================
-// Reflect
-//===================================================================
+message QueryResponse {
+  // One object per row, keyed by the column names your SELECT produced.
+  repeated google.protobuf.Struct rows = 1;
 
-// Input for the `reflect` tool (see MemoryService.Reflect). Reflection is long-running and is
-// expected to complete asynchronously; when it finishes it emits events.proto ReflectionCompleted.
-message ReflectRequest {
-  // Optional. Correlation id for this reflection; leave empty and the server assigns one.
-  string query_id = 1;
-
-  // Required. What to reflect on, in natural language — the theme to synthesize over.
-  string query = 2;
-
-  // Optional. Scope the reflection to memories carrying these tags; leave empty to range over all.
-  repeated Tag tags = 3;
+  // True when the row cap cut the result short — the answer is incomplete, so narrow the query.
+  bool truncated = 2;
 }
 
-message ReflectResponse {
-  // correlates to the ReflectRequest
-  string query_id = 1;
+// A record the index holds, modelled on the streams API's AppendRecord — the same fields, under
+// the same numbers, plus what only a STORED record has (its position in the log and when it
+// landed). Two deliberate divergences from AppendRecord, both because this is the read side of
+// an index rather than the write side of an append:
+//   - `data` is text, not bytes. Only JSON records are indexed, so the payload is already a
+//     string in the index and re-encoding it to bytes would buy nothing.
+//   - `SchemaInfo.format` is a string, not the SchemaFormat enum. The indexer stores the format
+//     as the name it read off the record.
+message Record {
+  // The record's unique identifier.
+  string record_id = 1;
 
-  // ids of memories synthesized
-  repeated string synthesized_memory_ids = 2;
+  // The properties the record carries — user-defined keys, and system keys prefixed with "$"
+  // ("$correlationId", "$causationId", "$schemaId"). Present exactly as written.
+  map<string, google.protobuf.Value> properties = 2;
 
-  // ids of memories superseded
-  repeated string superseded_memory_ids = 3;
+  // Schema information for this record.
+  SchemaInfo schema = 3;
+
+  // The record payload, as written.
+  string data = 4;
+
+  // The stream the record belongs to.
+  string stream = 5;
+
+  // The record's position in the global log — a stable cursor, since the log only grows.
+  int64 log_position = 6;
+
+  // The set of streams this one belongs to: the text before the first '-' in `stream`.
+  string category = 7;
+
+  // When the record was written.
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// Schema information for a record — the read-side twin of the streams API's SchemaInfo.
+message SchemaInfo {
+  // Format of the record data, as the indexer read it off the record ("Json").
+  string format = 1;
+
+  // Schema name identifying the record type (e.g., "order-placed", "customer-registered").
+  string name = 2;
+
+  // Version identifier of the schema that the record conforms to. Empty when the record carried
+  // no schema id header.
+  string id = 3;
 }

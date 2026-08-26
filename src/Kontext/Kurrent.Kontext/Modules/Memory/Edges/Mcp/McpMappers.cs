@@ -14,7 +14,7 @@ using RecalledMemory = Kurrent.Kontext.Memory.Mcp.Model.RecalledMemory;
 using RecallResult = Kurrent.Kontext.Memory.Mcp.Model.RecallResult;
 using RecollectSort = Kurrent.Kontext.Memory.Mcp.Model.RecollectSort;
 using RecordRef = Kurrent.Kontext.Memory.Mcp.Model.RecordRef;
-using ReflectResult = Kurrent.Kontext.Memory.Mcp.Model.ReflectResult;
+using ReinforceResult = Kurrent.Kontext.Memory.Mcp.Model.ReinforceResult;
 using RetainedMemory = Kurrent.Kontext.Memory.Mcp.Model.RetainedMemory;
 using RetainResult = Kurrent.Kontext.Memory.Mcp.Model.RetainResult;
 using SortDirection = Kurrent.Kontext.Memory.Mcp.Model.SortDirection;
@@ -172,7 +172,7 @@ static class McpMappers {
 		RetainedAt = m.RetainedAt?.ToDateTimeOffset() ?? default,
 		LastAccessedAt = m.LastAccessedAt?.ToDateTimeOffset(),
 		SupersededAt = m.SupersededAt?.ToDateTimeOffset(),
-		SupersededBy = string.IsNullOrEmpty(m.SupersededBy) ? null : m.SupersededBy,
+		SupersededBy = m.HasSupersededBy ? m.SupersededBy : null,
 	};
 
 	public static LeanMemory ToModel(Contracts.LeanMemory m) => new() {
@@ -215,10 +215,8 @@ static class McpMappers {
 		Memories = r.Memories.Select(ToModel).ToList(),
 	};
 
-	public static ReflectResult ToModel(Contracts.ReflectResponse r) => new() {
-		QueryId = r.QueryId,
-		SynthesizedMemoryIds = r.SynthesizedMemoryIds.ToList(),
-		SupersededMemoryIds = r.SupersededMemoryIds.ToList(),
+	public static ReinforceResult ToModel(Contracts.ReinforceResponse r) => new() {
+		AccessedAt = r.AccessedAt.ToDateTimeOffset(),
 	};
 
 	#endregion

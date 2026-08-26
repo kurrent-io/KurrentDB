@@ -1,13 +1,17 @@
 using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
+using Kurrent.Kontext.Mcp;
 using Kurrent.Kontext.Memory;
+using Kurrent.Kontext.Memory.Mcp;
 using Kurrent.Kontext.Records;
+using Kurrent.Kontext.Records.Mcp;
 using KurrentDB.Core;
 using KurrentDB.Core.Hosting;
 using KurrentDB.Core.Hosting.Experimental;
 using KurrentDB.Core.Settings;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -26,7 +30,27 @@ public static class KontextWireUp {
                 .AddKontextStorage()
                 .AddKontextEmbeddings(options.Embeddings)
                 .AddKontextMemory()
-                .AddKontextRecords();
+                .AddKontextRecords()
+                .AddKontextMcp();
+        }
+
+        /// <summary>
+        /// The one MCP server, carrying every module's tools. It lives here rather than in a module
+        /// because <c>AddMcpServer</c> registers the server itself and returns the builder the tools
+        /// attach to — so one call has to cover all of them.
+        /// </summary>
+        IServiceCollection AddKontextMcp() {
+            services.AddHttpContextAccessor();
+            services.TryAddSingleton<McpMemoryService>();
+            services.TryAddSingleton<McpRecordsService>();
+
+            services
+                .AddMcpServer(opts => opts.ServerInstructions = McpInstructions.Server)
+                .WithToolsFromResources<McpMemoryService>()
+                .WithToolsFromResources<McpRecordsService>()
+                .WithHttpTransport();
+
+            return services;
         }
 
         KontextOptions AddKontextOptions(IConfiguration configuration) {
@@ -91,7 +115,23 @@ public static class KontextWireUp {
     }
 
     extension(IApplicationBuilder app) {
-        public IApplicationBuilder UseKontext() =>
-            app.UseKontextMemory();
+        public IApplicationBuilder UseKontext() {
+            const string mcpBasePath = "/kontext/mcp";
+
+            app.Use(async (context, next) => {
+                if (context.Request.Path.StartsWithSegments(mcpBasePath) && context.User.Identity?.IsAuthenticated != true) {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return;
+                }
+
+                await next();
+            });
+
+            return app
+                .UseRouting()
+                .UseEndpoints(ep => ep.MapMcp(mcpBasePath))
+                .UseKontextMemory()
+                .UseKontextRecords();
+        }
     }
 }

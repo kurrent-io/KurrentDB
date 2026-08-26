@@ -13,7 +13,10 @@ public readonly record struct StoredRecord(
     string?        SchemaId,
     string         SchemaFormat,
     string?        Data,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    // The record's properties as the JSON object the indexer wrote. Carried as text end to end; only
+    // the contract mapper parses it.
+    string?        Properties
 );
 
 public readonly record struct RecordHit(StoredRecord Record, double Score);
@@ -29,6 +32,18 @@ public sealed class HybridOptions {
 
     // The measured optimum the shipped Focused chain uses; keyword-leaning beats vector-leaning.
     public double Alpha { get; set; } = 0.45;
+
+    // Filters are FREE: the engine pushes an equality predicate into candidate selection, so a scoped
+    // search never oversamples and never comes back short. Measured in RecordsFilterPushdownProbeTests.
+    public string? Stream { get; set; }
+
+    public string? Category { get; set; }
+
+    public string? SchemaName { get; set; }
+
+    public string? SchemaId { get; set; }
+
+    public string? SchemaFormat { get; set; }
 }
 
 public sealed class SearchOptions {

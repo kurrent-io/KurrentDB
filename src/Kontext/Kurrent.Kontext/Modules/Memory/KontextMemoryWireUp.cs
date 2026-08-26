@@ -1,9 +1,7 @@
 using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
-using Kurrent.Kontext.Mcp;
 using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Memory.Grpc;
-using Kurrent.Kontext.Memory.Mcp;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
@@ -11,7 +9,6 @@ using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Schema;
 using KurrentDB.Core.Hosting;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
@@ -27,17 +24,15 @@ public static class KontextMemoryWireUp {
             // TryAdd so a host that already registered a clock keeps it.
             services.TryAddSingleton(TimeProvider.System);
 
-            services.TryAddSingleton<KontextMemoryDataStore>();                                 // TODO SS: Rename to KontextMemoryStore
-            services.TryAddSingleton<KontextMemory>();                                    // TODO SS: Rename to KontextMemoryService
-            services.TryAddSingleton<IKontextMemory, KontextMemoryValidationDecorator>(); // TODO SS: Rename to KontextMemoryValidationService
+            services.TryAddSingleton<KontextMemoryDataStore>();       // TODO SS: Rename to KontextMemoryStore
+            services.TryAddSingleton<IKontextMemory, KontextMemory>(); // TODO SS: Rename to KontextMemoryService
 
             services.AddMessageRegistration();
             services.AddMemoryWritePath();
 
             services
                 .AddRequestValidation()
-                .AddGrpcEdge()
-                .AddMcpEdge();
+                .AddGrpcEdge();
 
             services.AddKontextRetrieval();
             
@@ -52,25 +47,13 @@ public static class KontextMemoryWireUp {
             services.TryAddSingleton<IValidator<Contracts.RecallRequest>, RecallRequestValidator>();
             services.TryAddSingleton<IValidator<Contracts.ReclaimRequest>, ReclaimRequestValidator>();
             services.TryAddSingleton<IValidator<Contracts.RecollectRequest>, RecollectRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.ReflectRequest>, ReflectRequestValidator>();
+            services.TryAddSingleton<IValidator<Contracts.ReinforceRequest>, ReinforceRequestValidator>();
             return services;
         }
 
         IServiceCollection AddGrpcEdge() {
             services.AddGrpc();
             services.TryAddSingleton<GrpcMemoryService>();
-            return services;
-        }
-
-        IServiceCollection AddMcpEdge() {
-            services.AddHttpContextAccessor();
-            services.TryAddSingleton<McpMemoryService>();
-
-            services
-                .AddMcpServer(opts => opts.ServerInstructions = McpInstructions.Server)
-                .WithToolsFromResources<McpMemoryService>()
-                .WithHttpTransport();
-
             return services;
         }
 
@@ -127,8 +110,7 @@ public static class KontextMemoryWireUp {
                 Task[] tasks = [
                     KontextConventions.RegisterMessages<Contracts.MemoriesRetained>(registry, ct),
                     KontextConventions.RegisterMessages<Contracts.MemoriesRecalled>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.MemoriesAccessed>(registry, ct),
-                    KontextConventions.RegisterMessages<Contracts.ReflectionCompleted>(registry, ct),
+                    KontextConventions.RegisterMessages<Contracts.MemoriesReinforced>(registry, ct),
                 ];
 
                 await Task.WhenAll(tasks);
@@ -155,22 +137,7 @@ public static class KontextMemoryWireUp {
     }
     
     extension(IApplicationBuilder app) {
-        public IApplicationBuilder UseKontextMemory() {
-            const string mcpBasePath = "/kontext/mcp";
-            
-            app.Use(async (context, next) => {
-                if (context.Request.Path.StartsWithSegments(mcpBasePath) && context.User.Identity?.IsAuthenticated != true) {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return;
-                }
-
-                await next();
-            });
-
-            return app
-                .UseRouting()
-                .UseEndpoints(ep => ep.MapMcp(mcpBasePath))
-                .UseEndpoints(ep => ep.MapGrpcService<GrpcMemoryService>());
-        }
+        public IApplicationBuilder UseKontextMemory() =>
+            app.UseEndpoints(ep => ep.MapGrpcService<GrpcMemoryService>());
     }
 }

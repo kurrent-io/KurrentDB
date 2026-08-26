@@ -32,6 +32,7 @@ public sealed class KontextMemoryWriter(
         public string?           SupersededBy { get; private set; }
         public long              SupersededAt { get; private set; }
         public long?             RecalledAt   { get; private set; }
+        public long              AccessCount  { get; private set; }
         public long              LogPosition  { get; private set; }
 
         // The batch-computed embedding for a retained body; fold-only entries keep the empty
@@ -48,12 +49,23 @@ public sealed class KontextMemoryWriter(
             RetainedAt = retainedAt;
         }
 
+        // First-writer-wins, matching the MERGE. The batch collapses to one row state per id before
+        // the statement runs, so overwriting here would defeat the guard in SQL.
         public void Supersede(string supersededBy, long supersededAt) {
+            if (SupersededBy is not null)
+                return;
+
             SupersededBy = supersededBy;
             SupersededAt = supersededAt;
         }
 
-        public void Recall(long recalledAt) => RecalledAt = recalledAt;
+        // Both `recall` and `reinforce` land here: the clock is terminal (latest wins) while the
+        // count accumulates within the batch. Safe as an accumulator only because a batch and its
+        // checkpoint commit or revert together, so a batch is never applied twice.
+        public void Access(long accessedAt) {
+            RecalledAt = accessedAt;
+            AccessCount++;
+        }
 
         public void Embed(float[] embedding) => Embedding = embedding;
     }
@@ -94,7 +106,18 @@ public sealed class KontextMemoryWriter(
                     // Reconsolidation: a recall IS an access — the recency clock resets.
                     var recalledAt = KontextMemoryDataStore.EncodeTimestamp(recall.RecalledAt);
                     foreach (var scored in recall.Memories)
-                        Touch(scored.MemoryId, position).Recall(recalledAt);
+                        Touch(scored.MemoryId, position).Access(recalledAt);
+
+                    break;
+                }
+
+                case MemoriesReinforced reinforced: {
+                    // The agent named these itself, which is a stronger claim of use than a recall's
+                    // page. Same clock and counter either way — which of the two moved it lives in
+                    // the log, not the row.
+                    var accessedAt = KontextMemoryDataStore.EncodeTimestamp(reinforced.ReinforcedAt);
+                    foreach (var memoryId in reinforced.MemoryIds)
+                        Touch(memoryId, position).Access(accessedAt);
 
                     break;
                 }
@@ -138,6 +161,10 @@ public sealed class KontextMemoryWriter(
     // - the fold facets own the lifecycle columns: flags OR in, timestamps coalesce in — a
     //   replayed retain cannot resurrect a memory that later events superseded
     //
+    // Supersession is FIRST-WRITER-WINS: a memory carries ONE successor, so a later claim on the
+    // same target would repoint the chain and leave the earlier successor listing a target it no
+    // longer owns.
+    //
     // The insert arm writes the terminal batch state directly: a memory retained and superseded
     // in one batch is born superseded. last_accessed_at seeds to retained_at at birth unless the
     // same batch already recalled it; on match a retain never touches the recency clock — only
@@ -164,21 +191,22 @@ public sealed class KontextMemoryWriter(
                  unnest(CAST($superseded_bys AS VARCHAR[])) AS superseded_by,
                  unnest(CAST($superseded_ats AS BIGINT[])) AS superseded_at,
                  unnest(CAST($recalled_ats AS BIGINT[])) AS recalled_at,
+                 unnest(CAST($access_deltas AS BIGINT[])) AS access_delta,
                  unnest(CAST($log_positions AS BIGINT[])) AS log_position,
                  unnest(CAST($embeddings AS FLOAT[][])) AS embedding_raw) AS s
              ON t.memory_id = s.memory_id
              WHEN NOT MATCHED AND s.retained THEN INSERT (
                  memory_id, memory_type, content, importance,
                  tags, reasoning, evidence, cited_memory_ids, supersedes,
-                 content_time_start, content_time_end, retained_at, last_accessed_at,
+                 content_time_start, content_time_end, retained_at, last_accessed_at, access_count,
                  is_superseded, superseded_at, superseded_by,
                  log_position, embedding)
              VALUES (
                  s.memory_id, s.memory_type, s.content, s.importance,
                  s.tags, s.reasoning, s.evidence, s.cited_memory_ids, s.supersedes,
                  s.content_time_start, s.content_time_end, s.retained_at,
-                 coalesce(s.recalled_at, s.retained_at),
-                 s.superseded_by IS NOT NULL, s.superseded_at, coalesce(s.superseded_by, ''),
+                 coalesce(s.recalled_at, s.retained_at), s.access_delta,
+                 s.superseded_by IS NOT NULL, s.superseded_at, s.superseded_by,
                  s.log_position,
                  CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) END)
              WHEN MATCHED THEN UPDATE SET
@@ -195,9 +223,10 @@ public sealed class KontextMemoryWriter(
                , retained_at      = CASE WHEN s.retained THEN s.retained_at ELSE t.retained_at END
                , embedding        = CASE WHEN s.retained THEN CAST(s.embedding_raw AS FLOAT[{options.Dimensions}]) ELSE t.embedding END
                , last_accessed_at = coalesce(s.recalled_at, t.last_accessed_at)
+               , access_count     = t.access_count + s.access_delta
                , is_superseded    = t.is_superseded OR s.superseded_by IS NOT NULL
-               , superseded_at    = coalesce(s.superseded_at, t.superseded_at)
-               , superseded_by    = coalesce(s.superseded_by, t.superseded_by)
+               , superseded_at    = CASE WHEN t.is_superseded THEN t.superseded_at ELSE coalesce(s.superseded_at, t.superseded_at) END
+               , superseded_by    = CASE WHEN t.is_superseded THEN t.superseded_by ELSE coalesce(s.superseded_by, t.superseded_by) END
                , log_position     = s.log_position
              """;
 
@@ -218,6 +247,7 @@ public sealed class KontextMemoryWriter(
         var supersededBys   = new List<string?>(count);
         var supersededAts   = new List<long?>(count);
         var recalledAts     = new List<long?>(count);
+        var accessDeltas    = new List<long>(count);
         var logPositions    = new List<long>(count);
         var batchEmbeddings = new List<float[]>(count);
 
@@ -243,6 +273,7 @@ public sealed class KontextMemoryWriter(
             supersededBys.Add(pendingMemory.SupersededBy);
             supersededAts.Add(pendingMemory.SupersededBy is not null ? pendingMemory.SupersededAt : null);
             recalledAts.Add(pendingMemory.RecalledAt);
+            accessDeltas.Add(pendingMemory.AccessCount);
             logPositions.Add(pendingMemory.LogPosition);
             batchEmbeddings.Add(pendingMemory.Embedding);
         }
@@ -265,6 +296,7 @@ public sealed class KontextMemoryWriter(
         command.Parameters.Add(new("superseded_bys", supersededBys));
         command.Parameters.Add(new("superseded_ats", supersededAts));
         command.Parameters.Add(new("recalled_ats", recalledAts));
+        command.Parameters.Add(new("access_deltas", accessDeltas));
         command.Parameters.Add(new("log_positions", logPositions));
         command.Parameters.Add(new("embeddings", batchEmbeddings));
         command.ExecuteNonQuery();

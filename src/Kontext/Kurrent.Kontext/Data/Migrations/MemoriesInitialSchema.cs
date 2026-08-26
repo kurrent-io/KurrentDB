@@ -23,6 +23,10 @@ public sealed class MemoriesInitialSchema : DuckLanceMigrationScript {
               content_time_end     BIGINT,
               retained_at      BIGINT,
               last_accessed_at BIGINT,
+              -- Recall and reinforce both land here. An accumulator rather than a terminal value,
+              -- which is safe only because a batch and its checkpoint commit or revert together —
+              -- see batch_and_checkpoint_commit_and_revert_together.
+              access_count     BIGINT,
               is_superseded    BOOLEAN,
               superseded_at    BIGINT,
               superseded_by    VARCHAR,

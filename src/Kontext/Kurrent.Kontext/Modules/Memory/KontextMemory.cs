@@ -1,11 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Runtime.CompilerServices;
+using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Infrastructure.Validation;
 using Microsoft.Extensions.AI;
 using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
@@ -27,10 +28,8 @@ public delegate Task AppendEvent(object evt, CancellationToken ct = default);
 /// - Recall runs whatever <see cref="IKontextRetriever"/> pipeline the host wired — by default
 ///   vector+keyword RRF, modulated by the cognitive model, MMR-polished — so <c>min_score</c> cuts
 ///   on the pipeline's final score scale, not on raw BM25.
-/// - No reconsolidation: recall and reclaim do not refresh <c>last_accessed_at</c> — that is a
-///   write, and writes belong to the log.
-/// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
-///   outside the data-store surface.
+/// - Reclaim does not refresh <c>last_accessed_at</c>: the ACCESS RULE says it should, but the write
+///   is not wired. Recall and reinforce both do.
 /// </summary>
 public sealed class KontextMemory(
 	KontextMemoryDataStore store,
@@ -38,7 +37,8 @@ public sealed class KontextMemory(
 	AppendEvent appendEvent,
 	TimeProvider time,
 	EmbeddingGenerator embeddings,
-	KontextMemoryOptions options
+	KontextMemoryOptions options,
+	RequestValidationService validation
 ) : IKontextMemory {
 	const int DefaultRecallLimit    = 10;
 	const int DefaultRecollectLimit = 100;
@@ -50,8 +50,13 @@ public sealed class KontextMemory(
 	/// for what it wrote. A written memory becomes recallable when the projector applies that
 	/// event, so this stays eventually consistent: retain-then-recall in the same breath finds
 	/// nothing.
+	/// <para>All-or-nothing on the ids it references: a target that does not resolve rejects the
+	/// whole call. One retained moments ago may not be projected yet, and reads as missing until it
+	/// lands.</para>
 	/// </summary>
 	public async ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default) {
+		validation.Validate(request);
+
 		var response = new Contracts.RetainResponse();
 
 		var retained = new Contracts.MemoriesRetained {
@@ -86,6 +91,11 @@ public sealed class KontextMemory(
 			});
 		}
 
+		// Validated over what will actually be WRITTEN, never over the request. A NOOP is a resend
+		// of a retain that already succeeded, and its target is by now superseded BY IT — checking
+		// it would reject exactly the retry the idempotency guard exists to absorb.
+		await EnsureReferencedMemoriesResolveAsync(retained, ct).ConfigureAwait(false);
+
 		await ReportNeighboursAsync(request, response, ct).ConfigureAwait(false);
 
 		// ONE event per call, never one per memory: the batch is the unit of the operation, so a
@@ -97,7 +107,11 @@ public sealed class KontextMemory(
 		return response;
 	}
 
-	/// <summary>The live memory already holding exactly this content, tags and evidence, or null.</summary>
+	/// <summary>
+	/// The live memory already holding exactly this content, tags, evidence and supersessions, or
+	/// null. <c>supersedes</c> counts: a fold retains the surviving claim again with the loser
+	/// attached, which matches the survivor in every other field.
+	/// </summary>
 	async ValueTask<Contracts.StoredMemory?> FindIdenticalAsync(Contracts.Memory memory, CancellationToken ct) {
 		if (await store.FindLiveByContentAsync(memory.Content, ct).ConfigureAwait(false) is not { } existing)
 			return null;
@@ -106,8 +120,48 @@ public sealed class KontextMemory(
 
 		return tags.SetEquals(memory.Tags.Select(KontextMemoryDataStore.EncodeTag))
 		    && existing.Evidence.ToHashSet().SetEquals(memory.Evidence)
+		    && existing.Supersedes.ToHashSet().SetEquals(memory.Supersedes)
 			? existing
 			: null;
+	}
+
+	/// <summary>
+	/// Rejects a retain pointing at a memory the store cannot resolve. Both id-carrying fields are
+	/// checked, under DIFFERENT rules: <c>supersedes</c> must name a LIVE TIP, while a
+	/// <c>MemoryRef</c> citation need only EXIST — evidence is frozen at retain, so citing a memory
+	/// superseded later records what the claim actually rested on.
+	/// </summary>
+	async ValueTask EnsureReferencedMemoriesResolveAsync(Contracts.MemoriesRetained retained, CancellationToken ct) {
+		var superseded = retained.Memories.SelectMany(entry => entry.Memory.Supersedes).ToHashSet();
+		var cited      = retained.Memories.SelectMany(entry => KontextMemoryDataStore.EncodeCitedMemoryIds(entry.Memory)).ToHashSet();
+
+		if (superseded.Count == 0 && cited.Count == 0)
+			return;
+
+		var tips = await store.GetSupersessionStatusAsync([..superseded, ..cited], ct).ConfigureAwait(false);
+
+		var failures = new List<ValidationFailure>();
+
+		if (superseded.Where(id => !tips.ContainsKey(id)).ToList() is { Count: > 0 } missingTargets)
+			failures.Add(new ValidationFailure(
+				nameof(Contracts.Memory.Supersedes),
+				$"No such memory: {string.Join(", ", missingTargets)}."
+			));
+
+		if (superseded.Where(id => tips.TryGetValue(id, out var tip) && !tip.IsLive).ToList() is { Count: > 0 } staleTargets)
+			failures.Add(new ValidationFailure(
+				nameof(Contracts.Memory.Supersedes),
+				$"Already superseded — supersede the live tip instead: {string.Join(", ", staleTargets.Select(id => $"{id} -> {tips[id].SupersededBy}"))}."
+			));
+
+		if (cited.Where(id => !tips.ContainsKey(id)).ToList() is { Count: > 0 } missingCitations)
+			failures.Add(new ValidationFailure(
+				nameof(Contracts.Memory.Evidence),
+				$"A memory citation names no such memory: {string.Join(", ", missingCitations)}."
+			));
+
+		if (failures.Count > 0)
+			throw new RequestValidationException(failures);
 	}
 
 	/// <summary>
@@ -155,6 +209,8 @@ public sealed class KontextMemory(
 	}
 
 	public async ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
+		validation.Validate(request);
+
 		var response = new Contracts.RecallResponse {
 			QueryId = request.QueryId.Length > 0 ? request.QueryId : Guid.CreateVersion7().ToString(),
 		};
@@ -179,7 +235,54 @@ public sealed class KontextMemory(
 			response.Memories.Add(memory);
 		}
 
+		await RecordRecallAsync(request, response.QueryId, ranked, ct).ConfigureAwait(false);
+
 		return response;
+	}
+
+	/// <summary>
+	/// Appends the recall that just happened, which is what advances every returned memory's recency
+	/// clock — retrieval IS an access, so without this event recency could only ever fall and the
+	/// store would decay precisely what it uses most.
+	/// <para>A failure here fails the recall, deliberately. Kontext runs inside the database it appends
+	/// to, so an append that cannot land means the node is already broken — there is no degraded mode
+	/// to preserve, and a recall that silently stopped advancing the clock would hide that.</para>
+	/// </summary>
+	async ValueTask RecordRecallAsync(
+		Contracts.RecallRequest request, string queryId, IReadOnlyList<Retrieval.ScoredMemory> ranked, CancellationToken ct
+	) {
+		// A recall that matched nothing accessed nothing.
+		if (ranked.Count == 0)
+			return;
+
+		var recalled = new Contracts.MemoriesRecalled {
+			QueryId    = queryId,
+			Query      = request.Query,
+			Limit      = request.Limit,
+			MinScore   = request.MinScore,
+			Tags       = { request.Tags },
+			RecalledAt = Timestamp.FromDateTimeOffset(time.GetUtcNow()),
+		};
+
+		// `config` is left unset: the scoring weights live inside the retrieval pipeline and it does
+		// not surface them. The decay mechanism does not need them — only replaying a past ranking
+		// would, and nothing does that yet.
+		foreach (var scored in ranked)
+			recalled.Memories.Add(new Contracts.ScoredMemory {
+				MemoryId       = scored.Memory.MemoryId,
+				LastAccessedAt = scored.Memory.LastAccessedAt,
+				Score          = scored.Score,
+				// Nullable on the retrieval side: a stage that never ran contributes nothing rather
+				// than a fabricated number, and lands here as the proto's default.
+				RecencyRaw     = scored.Breakdown.RecencyRaw     ?? 0,
+				ImportanceRaw  = scored.Breakdown.ImportanceRaw  ?? 0,
+				RelevanceRaw   = scored.Breakdown.RelevanceRaw   ?? 0,
+				RecencyNorm    = scored.Breakdown.RecencyNorm    ?? 0,
+				ImportanceNorm = scored.Breakdown.ImportanceNorm ?? 0,
+				RelevanceNorm  = scored.Breakdown.RelevanceNorm  ?? 0,
+			});
+
+		await appendEvent(recalled, ct).ConfigureAwait(false);
 	}
 
 	/// <summary>The lean projection both recall hits and retain's candidates are reported as.</summary>
@@ -196,16 +299,62 @@ public sealed class KontextMemory(
 		return lean;
 	}
 
-	public IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default) =>
-		store.GetAsync([.. request.Ids], ct);
+	// Not async iterators: an invalid request must be rejected on the call, not on first enumeration.
+	public IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default) {
+		validation.Validate(request);
 
-	public async IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
-		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
-
-		await foreach (var memory in store.ListAsync(request.Tags, request.Types_, request.Sort, request.Direction, top, ct).ConfigureAwait(false))
-			yield return memory;
+		return store.GetAsync([.. request.Ids], ct);
 	}
 
-	public ValueTask<Contracts.ReflectResponse> ReflectAsync(Contracts.ReflectRequest request, CancellationToken ct = default) =>
-		throw new NotImplementedException("Reflect synthesizes derived memories with a language model — not part of the data-store surface.");
+	public IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, CancellationToken ct = default) {
+		validation.Validate(request);
+
+		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
+
+		return store.ListAsync(request.Tags, request.Types_, request.Sort, request.Direction, top, ct);
+	}
+
+	/// <summary>
+	/// Records that the named memories were actually used, advancing their recency clocks.
+	/// <para>All-or-nothing, and every id must name a LIVE TIP. Missing is a caller bug — these ids came
+	/// from a recall or a reclaim. Superseded is worse than a bug: recall never surfaces a superseded
+	/// memory, so its recency clock feeds no ranking, and accepting one would report success for a write
+	/// nothing can ever read. It also means the caller acted on a claim that has since been corrected,
+	/// which is the one thing worth telling it — so the rejection hands back the tip, exactly as retain
+	/// does for a stale supersession target.</para>
+	/// </summary>
+	public async ValueTask<Contracts.ReinforceResponse> ReinforceAsync(Contracts.ReinforceRequest request, CancellationToken ct = default) {
+		validation.Validate(request);
+
+		var ids   = request.Ids.ToHashSet();
+		var known = await store.GetSupersessionStatusAsync(ids, ct).ConfigureAwait(false);
+
+		var failures = new List<ValidationFailure>();
+
+		if (ids.Where(id => !known.ContainsKey(id)).ToList() is { Count: > 0 } missing)
+			failures.Add(new ValidationFailure(
+				nameof(Contracts.ReinforceRequest.Ids),
+				$"No such memory: {string.Join(", ", missing)}."
+			));
+
+		if (ids.Where(id => known.TryGetValue(id, out var tip) && !tip.IsLive).ToList() is { Count: > 0 } superseded)
+			failures.Add(new ValidationFailure(
+				nameof(Contracts.ReinforceRequest.Ids),
+				$"Superseded — you acted on a memory that has been corrected; reinforce the tip instead: {string.Join(", ", superseded.Select(id => $"{id} -> {known[id].SupersededBy}"))}."
+			));
+
+		if (failures.Count > 0)
+			throw new RequestValidationException(failures);
+
+		var accessedAt = time.GetUtcNow();
+
+		// ONE event for the whole call, like retain: the batch is the unit of the operation, and the
+		// projector folds a batch to one row state per id regardless.
+		var reinforced = new Contracts.MemoriesReinforced { ReinforcedAt = Timestamp.FromDateTimeOffset(accessedAt) };
+		reinforced.MemoryIds.AddRange(ids);
+
+		await appendEvent(reinforced, ct).ConfigureAwait(false);
+
+		return new() { AccessedAt = Timestamp.FromDateTimeOffset(accessedAt) };
+	}
 }

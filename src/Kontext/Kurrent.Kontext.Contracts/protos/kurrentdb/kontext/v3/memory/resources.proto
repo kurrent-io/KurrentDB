@@ -64,6 +64,12 @@ message Memory {
 
   // memory_ids this memory supersedes (replaces). The superseded ones stay readable, marked
   // superseded_by this memory. Set at Retain — there is no separate supersede operation.
+  //
+  // EVERY ID MUST NAME A LIVE TIP. It must exist, and nothing may have superseded it yet; no id
+  // may repeat across the request either. `superseded_by` holds ONE successor, so a second claim
+  // on the same target would repoint the chain at the newer memory and leave the earlier successor
+  // still listing a target it no longer owns. Retain rejects the whole call rather than pick a
+  // winner, and reports the current tip so you can read it and supersede that instead.
   repeated string supersedes = 8;
 }
 
@@ -172,6 +178,11 @@ message Evidence {
   //
   // Contrast RecordRef, which DOES carry a position: there the caller is holding the log record and
   // genuinely knows it.
+  // THE ID MUST EXIST, and retain rejects the whole call when it does not — a citation nothing
+  // resolves breaks both the audit trail and the cascade. Unlike `supersedes`, it need NOT be a
+  // live tip: evidence is frozen at retain, so citing a memory that was later superseded records
+  // what the claim actually rested on, and finding those citations is exactly what the cascade is
+  // for.
   message MemoryRef {
     string id = 1;  // the cited memory_id
   }

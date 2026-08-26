@@ -17,5 +17,5 @@ public interface IKontextMemory {
 
 	IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, CancellationToken ct = default);
 
-	ValueTask<Contracts.ReflectResponse> ReflectAsync(Contracts.ReflectRequest request, CancellationToken ct = default);
+	ValueTask<Contracts.ReinforceResponse> ReinforceAsync(Contracts.ReinforceRequest request, CancellationToken ct = default);
 }
