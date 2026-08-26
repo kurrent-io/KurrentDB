@@ -35,3 +35,5 @@
 - [Diagrams always termaid](diagrams-always-termaid.md) — every diagram renders through the termaid skill; never hand-draw box art
 - [Linear commit refs close issues](linear-commit-refs-close-issues.md) — workspace automation completes ANY issue referenced from a pushed commit; reference only the issue the commit finishes
 - [Benchmark tables ordered with trophy](benchmark-tables-ordered-with-trophy.md) — comparison tables sort most→least effective, winner row gets 🏆; overrides the no-emoji default
+- [Kontext ScoringConfig not logged](kontext-scoring-config-not-logged.md) — MemoriesRecalled.config unset on purpose; needs an IKontextRetriever return-shape change, agreed follow-up
+- [Kontext validation decorator defect](kontext-validation-decorator-defect.md) — circular DI registration, MUST FIX; decorator-vs-inline undecided, don't implement either side unprompted
