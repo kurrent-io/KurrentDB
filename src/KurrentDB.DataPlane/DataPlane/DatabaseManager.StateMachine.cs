@@ -32,8 +32,9 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		var currentNode = DatabaseHandler.CurrentNode;
 		if (newVersion[currentNode.Address] is { } newCurrentNode) {
 			// update information about the current node if needed
+			newCurrentNode = newCurrentNode with { InstanceId = currentNode.InstanceId };
 			if (currentNode != newCurrentNode)
-				DatabaseHandler.CurrentNode = newCurrentNode with { InstanceId = currentNode.InstanceId };
+				DatabaseHandler.CurrentNode = newCurrentNode;
 		} else if (_state is not FrozenState) {
 			// current node is removed from the cluster configuration, move to frozen state
 			await ChangeStateAsync(new FrozenState());
