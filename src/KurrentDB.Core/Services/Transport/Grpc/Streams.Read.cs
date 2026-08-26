@@ -370,6 +370,8 @@ static class ResponseConverter {
 				throw RpcExceptions.InvalidPositionException();
 			case ReadResponseException.IndexNotFound indexNotFound:
 				throw RpcExceptions.IndexNotFound(indexNotFound.IndexName);
+			case ReadResponseException.InvalidIndexQuery invalidIndexQuery:
+				throw RpcExceptions.InvalidArgument(invalidIndexQuery.ErrorMessage);
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:

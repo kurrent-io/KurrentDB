@@ -8,115 +8,120 @@ namespace KurrentDB.Connectors.Tests.Planes.Control;
 
 [Trait("Category", "ControlPlane")]
 public class ConnectorsActivatorTests {
+	const int Revision = 1;
+
+	static (ConnectorsActivator Sut, ConnectorId ConnectorId) CreateSut(TestConnector connector) =>
+		(new ConnectorsActivator((_, _) => connector), ConnectorId.From(Guid.NewGuid()));
+
+	static ValueTask<ActivateResult> Activate(ConnectorsActivator sut, ConnectorId connectorId) =>
+		sut.Activate(connectorId, NoSettings, Revision);
+
+	static readonly Dictionary<string, string?> NoSettings = [];
+
 	[Fact]
 	public async Task connector_activates() {
-		// Arrange
-		var connectorId = ConnectorId.From(Guid.NewGuid());
-		var settings = new Dictionary<string, string?>();
-		var revision = 1;
+		var connector = new TestConnector();
+		var (sut, connectorId) = CreateSut(connector);
 
-		var testConnector = new TestConnector(failOnConnect: false);
+		var result = await Activate(sut, connectorId);
 
-		var sut = new ConnectorsActivator(CreateConnector);
-
-		// Act
-		var result = await sut.Activate(connectorId, settings, revision);
-
-		// Assert
 		result.Success.Should().BeTrue();
 		result.Type.Should().Be(ActivateResultType.Activated);
-		testConnector.IsDisposed.Should().BeFalse();
-		testConnector.ConnectionAttempt.Should().Be(1);
-		return;
-
-		IConnector CreateConnector(ConnectorId connectorId1, IDictionary<string, string?> dictionary) => testConnector;
+		connector.DisposeCount.Should().Be(0);
+		connector.ConnectionAttempt.Should().Be(1);
 	}
 
 	[Fact]
 	public async Task connector_disposed_when_connect_throws_exception() {
-		// Arrange
-		var connectorId = ConnectorId.From(Guid.NewGuid());
-		var settings = new Dictionary<string, string?>();
-		var revision = 1;
 		var exception = new InvalidOperationException("Connection failed");
+		var connector = new TestConnector(failOnConnect: true, exception);
+		var (sut, connectorId) = CreateSut(connector);
 
-		var testConnector = new TestConnector(failOnConnect: true, exception);
+		var result = await Activate(sut, connectorId);
 
-		var sut = new ConnectorsActivator(CreateConnector);
-
-		// Act
-		var result = await sut.Activate(connectorId, settings, revision);
-
-		// Assert
 		result.Failure.Should().BeTrue();
 		result.Type.Should().Be(ActivateResultType.Unknown);
 		result.Error.Should().Be(exception);
-		testConnector.IsDisposed.Should().BeTrue();
-		testConnector.ConnectionAttempt.Should().Be(1);
-		return;
-
-		IConnector CreateConnector(ConnectorId connectorId1, IDictionary<string, string?> dictionary) => testConnector;
+		connector.DisposeCount.Should().Be(1);
+		connector.ConnectionAttempt.Should().Be(1);
+		connector.Stopped.Status.Should().Be(TaskStatus.RanToCompletion);
 	}
 
 	[Fact]
 	public async Task connector_disposed_when_connect_throws_validation_exception() {
-		// Arrange
-		var connectorId = ConnectorId.From(Guid.NewGuid());
-		var settings = new Dictionary<string, string?>();
-		var revision = 1;
 		var validationException = new FluentValidation.ValidationException("Invalid configuration");
+		var connector = new TestConnector(failOnConnect: true, validationException);
+		var (sut, connectorId) = CreateSut(connector);
 
-		var testConnector = new TestConnector(failOnConnect: true, validationException);
+		var result = await Activate(sut, connectorId);
 
-		var sut = new ConnectorsActivator(CreateConnector);
-
-		// Act
-		var result = await sut.Activate(connectorId, settings, revision);
-
-		// Assert
 		result.Failure.Should().BeTrue();
 		result.Type.Should().Be(ActivateResultType.InvalidConfiguration);
 		result.Error.Should().Be(validationException);
-		testConnector.IsDisposed.Should().BeTrue();
-		testConnector.ConnectionAttempt.Should().Be(1);
-		return;
-
-		IConnector CreateConnector(ConnectorId connectorId1, IDictionary<string, string?> dictionary) => testConnector;
+		connector.DisposeCount.Should().Be(1);
+		connector.ConnectionAttempt.Should().Be(1);
 	}
 
 	[Fact]
-	public async Task connector_stopped_task_completes_on_connect_failure() {
-		// Arrange
-		var connectorId = ConnectorId.From(Guid.NewGuid());
-		var settings = new Dictionary<string, string?>();
-		var revision = 1;
-		var exception = new InvalidOperationException("Connection failed");
+	public async Task deactivates_once() {
+		var connector = new TestConnector();
+		var (sut, connectorId) = CreateSut(connector);
 
-		var testConnector = new TestConnector(failOnConnect: true, exception);
+		await Activate(sut, connectorId);
 
-		var sut = new ConnectorsActivator(CreateConnector);
+		var result = await sut.Deactivate(connectorId);
 
-		// Act
-		var result = await sut.Activate(connectorId, settings, revision);
+		result.Type.Should().Be(DeactivateResultType.Deactivated);
+		connector.DisposeCount.Should().Be(1);
 
-		// Assert
-		result.Failure.Should().BeTrue();
-		testConnector.Stopped.IsCompleted.Should().BeTrue();
-		testConnector.Stopped.Status.Should().Be(TaskStatus.RanToCompletion);
-		return;
+		var repeated = await sut.Deactivate(connectorId);
 
-		IConnector CreateConnector(ConnectorId connectorId1, IDictionary<string, string?> dictionary) => testConnector;
+		repeated.Type.Should().Be(DeactivateResultType.ConnectorNotFound);
+		connector.DisposeCount.Should().Be(1);
+	}
+
+	[Fact]
+	public async Task deactivates_self_stopped_connector() {
+		var connector = new TestConnector();
+		var (sut, connectorId) = CreateSut(connector);
+
+		await Activate(sut, connectorId);
+
+		// a sink failing against an unreachable broker
+		connector.SimulateSelfTermination(new InvalidOperationException("simulated connector crash"));
+
+		var result = await sut.Deactivate(connectorId);
+
+		result.Type.Should().Be(DeactivateResultType.Deactivated);
+		connector.DisposeCount.Should().Be(1);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task waits_for_deactivation(bool faulted) {
+		var connector = new TestConnector();
+		var (sut, connectorId) = CreateSut(connector);
+
+		await Activate(sut, connectorId);
+
+		var waiting = sut.WaitForDeactivation(connectorId);
+		connector.SimulateSelfTermination(faulted ? new InvalidOperationException("simulated connector crash") : null);
+		var result = await waiting;
+
+		result.Type.Should().Be(DeactivateResultType.Deactivated);
+		connector.DisposeCount.Should().Be(1);
 	}
 }
 
 internal class TestConnector(bool failOnConnect = false, Exception? exception = null) : IConnector {
-	readonly TaskCompletionSource _stoppedTcs = new();
+	readonly TaskCompletionSource _stoppedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	public ConnectorId ConnectorId => ConnectorId.From(Guid.NewGuid());
 	public ConnectorState State { get; private set; } = ConnectorState.Unspecified;
 	public Task Stopped => _stoppedTcs.Task;
 
-	public bool IsDisposed { get; private set; }
+	public int DisposeCount      { get; private set; }
 	public int ConnectionAttempt { get; private set; }
 
 	public Task Connect(CancellationToken stoppingToken) {
@@ -131,8 +136,17 @@ internal class TestConnector(bool failOnConnect = false, Exception? exception = 
 		return Task.CompletedTask;
 	}
 
+	public void SimulateSelfTermination(Exception? error = null) {
+		State = ConnectorState.Stopped;
+
+		if (error is null)
+			_stoppedTcs.TrySetResult();
+		else
+			_stoppedTcs.TrySetException(error);
+	}
+
 	public ValueTask DisposeAsync() {
-		IsDisposed = true;
+		DisposeCount++;
 		State = ConnectorState.Stopped;
 
 		_stoppedTcs.TrySetResult();

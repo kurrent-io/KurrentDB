@@ -96,6 +96,7 @@ partial class Enumerator {
 				if (ex is not (
 				    OperationCanceledException or
 				    ReadResponseException.InvalidPosition or
+				    ReadResponseException.InvalidIndexQuery or
 				    ReadResponseException.IndexNotFound)) {
 					Log.Error(ex, "Subscription {SubscriptionId} to {IndexName} experienced an error.", _subscriptionId, _indexName);
 				}
@@ -241,6 +242,8 @@ partial class Enumerator {
 							return;
 						case ReadIndexResult.InvalidPosition:
 							throw new ReadResponseException.InvalidPosition();
+						case ReadIndexResult.InvalidArgument:
+							throw new ReadResponseException.InvalidIndexQuery(completed.Error);
 						default:
 							throw ReadResponseException.UnknownError.Create(completed.Result, completed.Error);
 					}
@@ -284,6 +287,8 @@ partial class Enumerator {
 									return;
 								case SubscriptionDropReason.NotFound:
 									throw new ReadResponseException.IndexNotFound(_indexName);
+								case SubscriptionDropReason.InvalidArgument:
+									throw new ReadResponseException.InvalidIndexQuery($"Invalid field constraints for index '{_indexName}'");
 								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);

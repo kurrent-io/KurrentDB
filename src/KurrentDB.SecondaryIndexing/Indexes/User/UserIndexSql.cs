@@ -8,15 +8,46 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal abstract partial class UserIndexSql(string indexName, string fieldName) {
+/// A single equality constraint supplied by a query: this field must equal this (raw) value.
+internal readonly record struct FieldConstraint(IField Field, string Value);
+
+internal sealed partial class UserIndexSql {
 	private const string TableNamePrefix = "idx_user__";
 
 	// we validate the table/column names for safety reasons, although DuckDB allows a large set of characters when using quoted identifiers
 	private static readonly Regex IdentifierRegex = ValidationRegex();
 
-	public string TableName { get; } = GetTableNameFor(indexName);
-	public string FieldColumnName { get; } = GetColumnNameFor(fieldName);
-	public string ViewName { get; } = GetViewNameFor(indexName);
+	private readonly IReadOnlyList<IField> _fields;
+
+	public string TableName { get; }
+	public string ViewName { get; }
+
+	public UserIndexSql(string indexName, IReadOnlyList<IField> fields) {
+		_fields = fields;
+		TableName = GetTableNameFor(indexName);
+		ViewName = GetViewNameFor(indexName);
+	}
+
+	public void CreateUserIndex(DuckDBAdvancedConnection connection) {
+		// A single-field index keeps its column NOT NULL for backwards compatibility with existing tables
+		// (the write path never indexes a null value for it). Multi-field indexes allow nulls per field.
+		var nullable = _fields.Count != 1;
+
+		var createStatements = new StringBuilder();
+		foreach (var field in _fields)
+			createStatements.Append(field.GetCreateStatement(nullable));
+
+		var createTable = new CreateUserIndexNonQuery(TableName, createStatements.ToString());
+		connection.ExecuteNonQuery(ref createTable);
+
+		foreach (var field in _fields) {
+			if (!field.OptimizeLookups)
+				continue;
+
+			var createIndex = new CreateFieldIndexNonQuery(GetFieldIndexNameFor(TableName, field.ColumnName), TableName, field.ColumnName);
+			connection.ExecuteNonQuery(ref createIndex);
+		}
+	}
 
 	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, in GetCheckpointQueryArgs args)
 		=> connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(in args).ValueOrDefault;
@@ -32,7 +63,7 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 	public void ReadUserIndexForwardsQuery(DuckDBAdvancedConnection connection,
 		in ReadUserIndexQueryArgs args,
 		ICollection<IndexQueryRecord> records) {
-		var query = new ReadUserIndexForwardsQuery(ViewName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
+		var query = new ReadUserIndexForwardsQuery(ViewName, args.ExcludeFirst, BuildPredicate(args.Constraints));
 		connection
 			.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexForwardsQuery>(ref query, in args)
 			.CopyTo(records);
@@ -41,10 +72,21 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 	public void ReadUserIndexBackwardsQuery(DuckDBAdvancedConnection connection,
 		in ReadUserIndexQueryArgs args,
 		ICollection<IndexQueryRecord> records) {
-		var query = new ReadUserIndexBackwardsQuery(ViewName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
+		var query = new ReadUserIndexBackwardsQuery(ViewName, args.ExcludeFirst, BuildPredicate(args.Constraints));
 		connection
 			.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexBackwardsQuery>(ref query, in args)
 			.CopyTo(records);
+	}
+
+	// ANDs one equality per supplied field
+	private static string BuildPredicate(IReadOnlyList<FieldConstraint> constraints) {
+		if (constraints.Count == 0)
+			return string.Empty;
+
+		var predicate = new StringBuilder();
+		foreach (var constraint in constraints)
+			predicate.Append(constraint.Field.GetEqualityPredicate());
+		return predicate.ToString();
 	}
 
 	public static bool IsUserIndexTable(ReadOnlySpan<char> tableName) => tableName.StartsWith(TableNamePrefix);
@@ -65,15 +107,20 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 			: throw new($"Invalid view name: {viewName}");
 	}
 
-	private static string GetColumnNameFor(string fieldName) {
-		if (fieldName is "")
-			return "";
-
+	internal static string GetColumnNameFor(string fieldName) {
 		var columnName = $"field_{fieldName}";
 
 		return IdentifierRegex.IsMatch(columnName)
 			? columnName
 			: throw new($"Invalid column name: {columnName}");
+	}
+
+	private static string GetFieldIndexNameFor(string tableName, string columnName) {
+		var indexName = $"{tableName}__{columnName}_idx";
+
+		return IdentifierRegex.IsMatch(indexName)
+			? indexName
+			: throw new($"Invalid index name: {indexName}");
 	}
 
 	public static void DeleteUserIndex(DuckDBAdvancedConnection connection, string indexName) {
@@ -88,16 +135,7 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 	private static partial Regex ValidationRegex();
 }
 
-internal sealed class UserIndexSql<TField>(string indexName, string fieldName) : UserIndexSql(indexName, fieldName)
-	where TField : IField {
-
-	public void CreateUserIndex(DuckDBAdvancedConnection connection) {
-		var query = new CreateUserIndexNonQuery(TableName, TField.GetCreateStatement(FieldColumnName));
-		connection.ExecuteNonQuery(ref query);
-	}
-}
-
-file readonly record struct CreateUserIndexNonQuery(string TableName, string CreateFieldStatement) : IDynamicParameterlessStatement {
+file readonly record struct CreateUserIndexNonQuery(string TableName, string CreateFieldStatements) : IDynamicParameterlessStatement {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
 		create table if not exists "{0}"
@@ -114,7 +152,20 @@ file readonly record struct CreateUserIndexNonQuery(string TableName, string Cre
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
-		args[1] = CreateFieldStatement;
+		args[1] = CreateFieldStatements;
+	}
+}
+
+file readonly record struct CreateFieldIndexNonQuery(string IndexName, string TableName, string ColumnName) : IDynamicParameterlessStatement {
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+		"""
+		create index if not exists "{0}" on "{1}" ("{2}")
+		""");
+
+	public void FormatCommandTemplate(Span<object?> args) {
+		args[0] = IndexName;
+		args[1] = TableName;
+		args[2] = ColumnName;
 	}
 }
 
@@ -128,9 +179,9 @@ file readonly record struct DeleteUserIndexNonQuery(string TableName) : IDynamic
 		args[0] = TableName;
 }
 
-internal record struct ReadUserIndexQueryArgs(long StartPosition, bool ExcludeFirst, int Count, IField Field);
+internal record struct ReadUserIndexQueryArgs(long StartPosition, bool ExcludeFirst, int Count, IReadOnlyList<FieldConstraint> Constraints);
 
-file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery)
+file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldsPredicate)
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
@@ -143,13 +194,14 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
 		args[1] = ExcludeFirst ? string.Empty : "=";
-		args[2] = FieldQuery;
+		args[2] = FieldsPredicate;
 	}
 
 	public static StatementBindingResult Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
-		args.Field.BindTo(statement, ref index);
+		foreach (var constraint in args.Constraints)
+			constraint.Field.BindEquality(statement, ref index, constraint.Value);
 		statement.Bind(index, args.Count);
 
 		return new(statement, completed: true);
@@ -161,7 +213,7 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 			row.ReadInt64());
 }
 
-file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery)
+file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldsPredicate)
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
@@ -175,13 +227,14 @@ file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool E
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
 		args[1] = ExcludeFirst ? string.Empty : "=";
-		args[2] = FieldQuery;
+		args[2] = FieldsPredicate;
 	}
 
 	public static StatementBindingResult Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
-		args.Field.BindTo(statement, ref index);
+		foreach (var constraint in args.Constraints)
+			constraint.Field.BindEquality(statement, ref index, constraint.Value);
 		statement.Bind(index, args.Count);
 
 		return new(statement, completed: true);

@@ -48,6 +48,7 @@ partial class StorageReaderWorker<TStreamId> :
 				or ReadIndexResult.NotModified
 				or ReadIndexResult.Error
 				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.InvalidArgument
 				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
@@ -91,6 +92,7 @@ partial class StorageReaderWorker<TStreamId> :
 				or ReadIndexResult.NotModified
 				or ReadIndexResult.Error
 				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.InvalidArgument
 				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;

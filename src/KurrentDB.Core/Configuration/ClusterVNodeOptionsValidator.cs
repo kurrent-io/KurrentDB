@@ -4,6 +4,7 @@
 // ReSharper disable CheckNamespace
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Core.Services;
@@ -46,6 +47,12 @@ public static class ClusterVNodeOptionsValidator {
 				$"{nameof(options.Database.InitializationThreads)} must be greater than 0.");
 		}
 
+		if (options.Database.SqlEngineTempDirectorySizeLimit < 0) {
+			throw new ArgumentOutOfRangeException(nameof(options.Database.SqlEngineTempDirectorySizeLimit),
+				options.Database.SqlEngineTempDirectorySizeLimit,
+				$"{nameof(options.Database.SqlEngineTempDirectorySizeLimit)} must be greater than or equal to 0.");
+		}
+
 		if (options.Grpc.KeepAliveTimeout < 0) {
 			throw new ArgumentOutOfRangeException(
 				$"Invalid {nameof(options.Grpc.KeepAliveTimeout)} {options.Grpc.KeepAliveTimeout}. Please provide a positive integer.");
@@ -84,14 +91,15 @@ public static class ClusterVNodeOptionsValidator {
 				"The given database path starts with a '~'. KurrentDB does not expand '~'.");
 		}
 
-		if (options.Database is { Index: not null, Db: not null }) {
-			var absolutePathIndex = Path.GetFullPath(options.Database.Index);
-			var absolutePathDb = Path.GetFullPath(options.Database.Db);
-			if (absolutePathDb.Equals(absolutePathIndex)) {
-				throw new ApplicationInitializationException(
-					$"The given database ({absolutePathDb}) and index ({absolutePathIndex}) paths cannot point to the same directory.");
-			}
+		if (options.Database.SqlEngineTempDirectory.StartsWith('~')) {
+			throw new ApplicationInitializationException(
+				$"The given {nameof(options.Database.SqlEngineTempDirectory)} starts with a '~'. KurrentDB does not expand '~'.");
 		}
+
+		ValidateDistinctDirectories(
+			("database", options.Database.Db),
+			(nameof(options.Database.Index), options.Database.Index),
+			(nameof(options.Database.SqlEngineTempDirectory), options.Database.SqlEngineTempDirectory));
 
 		if (options.Cluster.GossipSeed.Length > 1 && options.Cluster.ClusterSize == 1) {
 			throw new ApplicationInitializationException(
@@ -125,6 +133,22 @@ public static class ClusterVNodeOptionsValidator {
 				"A {clusterSecret} has been configured but will have no effect. It is only used for inter-node " +
 				"authentication when running with --disable-tls and authentication enabled.",
 				nameof(options.Cluster.ClusterSecret));
+		}
+
+		return;
+
+		static void ValidateDistinctDirectories(params ReadOnlySpan<(string Name, string Path)> directories) {
+			var names = new Dictionary<string, string>(directories.Length, StringComparer.Ordinal);
+			foreach (var (name, path) in directories) {
+				if (path is not { Length: > 0 })
+					continue;
+
+				var absolutePath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+				if (!names.TryAdd(absolutePath, name)) {
+					throw new ApplicationInitializationException(
+						$"The given {names[absolutePath]} and {name} paths cannot point to the same directory ({absolutePath}).");
+				}
+			}
 		}
 	}
 

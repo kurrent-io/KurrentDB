@@ -136,6 +136,28 @@ The minimum flush delay in milliseconds.
 
 **Default**: `2` (ms)
 
+### SQL engine temporary files
+
+Queries served by the embedded SQL engine (DuckDB), for example [secondary indexes](../features/indexes/secondary.md) and user defined queries, spill intermediate results to disk when they don't fit in memory. These settings control where those temporary files are written and how much space they may use.
+
+The temporary directory must not be shared with anything else: any `*.tmp` file left behind by a previous run is deleted when the node starts. It also cannot be the same directory as `Db` or `Index`, and the node will not start if it is.
+
+| Format               | Syntax                                    |
+|:---------------------|:------------------------------------------|
+| Command line         | `--sql-engine-temp-directory`             |
+| YAML                 | `SqlEngineTempDirectory`                  |
+| Environment variable | `KURRENTDB_SQL_ENGINE_TEMP_DIRECTORY`     |
+
+**Default**: `kurrent.ddb.tmp`, inside the database directory. A relative path is resolved against the working directory of the server process.
+
+| Format               | Syntax                                          |
+|:---------------------|:------------------------------------------------|
+| Command line         | `--sql-engine-temp-directory-size-limit`        |
+| YAML                 | `SqlEngineTempDirectorySizeLimit`               |
+| Environment variable | `KURRENTDB_SQL_ENGINE_TEMP_DIRECTORY_SIZE_LIMIT`|
+
+**Default**: `0`, meaning 90% of the available disk space on the volume holding the temporary directory. Set a value in bytes to limit it further. Queries that would exceed the limit fail rather than filling the disk.
+
 ## Threading
 
 Settings described below are related to the threading model used by KurrentDB.

@@ -2,7 +2,11 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<IsKurrentXUnit>true</IsKurrentXUnit>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Mono.Posix.NETStandard" />
+	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />

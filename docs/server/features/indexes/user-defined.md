@@ -13,7 +13,7 @@ You can read from and subscribe to user defined indexes using the existing gRPC 
 A user defined index can include:
 
 - **A filter** - A JavaScript function that determines which records are added to the index. Only records where the filter returns `true` are indexed.
-- **A field selector** *(optional)* - A JavaScript function that extracts a value from each matching record to store in the index entry. You can then use these field values to filter reads, subscriptions, and queries.
+- **Fields** *(optional)* - One or more fields, each with a JavaScript `selector` that extracts a value from each matching record. Each field is stored in its own column, so you can filter reads, subscriptions, and queries on any subset of the fields.
 
 ## Managing
 
@@ -34,11 +34,18 @@ Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 
 {
   "filter": "rec => rec.schema.name == 'OrderCreated'",
-  "fields": [{
-    "name": "country",
+  "fields": [
+    {
+      "name": "country",
       "selector": "rec => rec.value.country",
       "type": "INDEX_FIELD_TYPE_STRING"
-    }]
+    },
+    {
+      "name": "total",
+      "selector": "rec => rec.value.total",
+      "type": "INDEX_FIELD_TYPE_DOUBLE"
+    }
+  ]
 }
 ```
 
@@ -49,11 +56,13 @@ Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 - If the `filter` does not return a boolean value, the record will be excluded from the index and an error logged.
 
 `Fields`:
-- Currently there can be at most 1 `field`. Future versions will allow multiple fields.
-- The field `name` determines how the field will be read/subscribed/queried.
+- An index can have any number of fields, including none (an index with only a filter indexes every matching record).
+- Field `name`s must be unique within the index. The `name` determines how the field is read/subscribed/queried.
 - The `selector` must be deterministic based on the content of the record.
 - The `selector` can return `skip` to exclude the record from the index. This is an alternative filtering mechanism to the `filter` function. They can both be used.
-- The `selector` must return a value compatible with the field `type` (or return `skip`). Otherwise the record will be excluded from the index and an error logged.
+- The `selector` must return a value compatible with the field `type`, `null`/`undefined`, or `skip`. Returning any other value excludes the record and logs an error.
+- A record is only dropped when *all* of its fields are `null`/`undefined` (or a selector returns `skip`). Otherwise it is indexed, with `NULL` stored for any field whose selector returned `null`/`undefined`. A query constraint on a `NULL` field won't match that record, while constraints on its populated fields still do.
+- Set `"optimize_lookups": true` on a field to build a DuckDB ART index on its column for fast equality lookups. It is off by default (non-optimized fields are still queryable via a scan) and adds write and storage cost, so enable it only for selective fields on indexes that stay bounded in size.
 
 The available field types are:
 
@@ -162,9 +171,12 @@ Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 
 User defined indexes can be read and subscribed to via the filtered $all API very similarly to the built in [secondary indexes](./secondary.md#using-secondary-indexes).
 
-The whole index can be consumed by using the stream prefix filter `$idx-user-<index-name>` e.g. `"$idx-user-orders-by-country"`
+The whole index can be consumed by using the stream prefix filter `$idx-user-<index-name>` e.g. `"$idx-user-orders-by-country"`.
 
-A particular field value can be selected by using the stream prefix filter `$idx-user-<index-name>:<field-value>` e.g. `"$idx-user-orders-by-country:Mauritius"`.
+To filter by field values, append `:` followed by `field=value` pairs separated by `;`, e.g. `"$idx-user-orders-by-country:country=\"Mauritius\";total=149.99"`. You can supply any subset of the index's fields, in any order; the result is the records matching all of the supplied equalities.
+
+- String values are quoted; numeric values are bare. Inside a quoted string, `\"` and `\\` are escapes, and `;`, `=` and `:` are literal.
+- For an index with a single field, the legacy bare form `$idx-user-<index-name>:<field-value>` (no `field=`) is also supported, e.g. `"$idx-user-orders-by-country:Mauritius"`.
 
 ## Querying
 
@@ -172,8 +184,10 @@ User defined indexes can be queried in the Query UI (e.g. `https://localhost:211
 
 e.g.
 ```sql
-select * from 'usr.orders-by-country' where field_country='Mauritius' limit 10
+select * from 'usr.orders-by-country' where field_country = 'Mauritius' and field_total = 149.99 limit 10
 ```
+
+Each field is a `field_<name>` column, so a multi-field index can be filtered on any combination of its fields.
 
 ## Monitoring
 
@@ -196,6 +210,5 @@ Note that on a large database the secondary indexes may take a while to build.
 
 The following are improvements we are considering for future versions:
 
-- Multiple fields per index
 - Updating an index definition
 - Other filter/selector types e.g. json path.

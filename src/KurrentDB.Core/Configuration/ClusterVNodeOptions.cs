@@ -482,6 +482,15 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The number of stream hashes to remember when checking for collisions.")]
 		public int ScavengeHashUsersCacheCapacity { get; init; } = Opts.ScavengeHashUsersCacheCapacityDefault;
+
+		[Description($"The amount of disk space in bytes that can be allocated by embedded DuckDB for temporary files. " +
+					 $"Defaults to 90% of the available disk space on the {nameof(SqlEngineTempDirectory)} volume.")]
+		public long SqlEngineTempDirectorySizeLimit { get; init; }
+
+		[Description("Directory for embedded DuckDB to write temp files. " +
+					 "Must not be used for other files, *.tmp files will automatically be removed. " +
+					 "Defaults to <DB Directory>/kurrent.ddb.tmp/")]
+		public string SqlEngineTempDirectory { get; init; } = "";
 	}
 
 	[Description("gRPC Options")]
