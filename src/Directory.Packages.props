@@ -222,6 +222,7 @@
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.28.0" />
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.78.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.78.0" />
     <PackageVersion Include="Microsoft.Extensions.DataIngestion" Version="10.9.0-preview.1.26411.16" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.78.0-alpha" />
     <PackageVersion Include="ModelContextProtocol" Version="2.1.0" />

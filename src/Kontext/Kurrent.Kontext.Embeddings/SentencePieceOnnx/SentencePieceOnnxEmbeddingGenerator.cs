@@ -141,6 +141,10 @@ public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 		// its answer and the model's disagree and text goes missing without an error.
 		if (serviceType == typeof(Tokenizer) || serviceType == typeof(SentencePieceTokenizer))
 			return _sp;
+		// The options carry the model's window, which a chunker has to match exactly. Reading it here
+		// rather than configuring it twice means a model swap moves the window with it.
+		if (serviceType == typeof(SentencePieceOnnxOptions))
+			return _options;
 		return serviceType.IsInstanceOfType(this) ? this : null;
 	}
 

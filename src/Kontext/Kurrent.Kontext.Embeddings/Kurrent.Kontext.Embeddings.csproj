@@ -18,6 +18,7 @@
     <PackageReference Include="OllamaSharp" />
     <PackageReference Include="OpenAI" />
     <PackageReference Include="Microsoft.ML.Tokenizers" />
+    <PackageReference Include="Microsoft.SemanticKernel.Core" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
