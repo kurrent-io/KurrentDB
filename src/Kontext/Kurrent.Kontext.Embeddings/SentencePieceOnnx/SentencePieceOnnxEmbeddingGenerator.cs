@@ -68,7 +68,10 @@ public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
         _feedTokenTypeIds = _session.InputMetadata.ContainsKey("token_type_ids");
 
 		// Warm-up run so the embedding dimension is read from the actual ONNX output rather than guessed.
-		var probe = _session.Embed(Encode("probe"), _feedTokenTypeIds, _options.PoolingMode, _options.NormalizeEmbeddings);
+		// The prefix is irrelevant to the output width, so this probes the default (document) side.
+		var probe = _session.Embed(
+			Encode("probe", _options.DocumentPrefix ?? _options.InputPrefix),
+			_feedTokenTypeIds, _options.PoolingMode, _options.NormalizeEmbeddings);
 		
         _metadata = new EmbeddingGeneratorMetadata(
 			providerName: ProviderName,
@@ -80,20 +83,35 @@ public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 		IEnumerable<string> values,
 		EmbeddingGenerationOptions? options = null,
 		CancellationToken cancellationToken = default) {
+		var prefix  = PrefixFor(options);
 		var results = new GeneratedEmbeddings<Embedding<float>>();
 		foreach (var text in values) {
 			cancellationToken.ThrowIfCancellationRequested();
-			var vector = _session.Embed(Encode(text), _feedTokenTypeIds, _options.PoolingMode, _options.NormalizeEmbeddings);
+			var vector = _session.Embed(Encode(text, prefix), _feedTokenTypeIds, _options.PoolingMode, _options.NormalizeEmbeddings);
 			results.Add(new Embedding<float>(vector));
 		}
 		return Task.FromResult(results);
 	}
 
+	// Asymmetric models (the e5 family, and anything else trained with distinct query/document
+	// instructions) encode the two sides differently, and embedding a stored memory as if it were a
+	// query costs real recall. No purpose means document: storing is the common path, and only the
+	// search side has to say what it is.
+	string? PrefixFor(EmbeddingGenerationOptions? options) {
+		var purpose = options?.AdditionalProperties?.TryGetValue(EmbeddingPurpose.Key, out var value) == true
+			? value as string
+			: null;
+
+		return purpose == EmbeddingPurpose.Query
+			? _options.QueryPrefix ?? _options.InputPrefix
+			: _options.DocumentPrefix ?? _options.InputPrefix;
+	}
+
 	// Applies the fairseq id remap XLM-R ONNX models expect: every raw SentencePiece id shifts by +1, the
 	// unknown id maps to fairseq <unk> = 3, and the sequence is wrapped <s> (0) … </s> (2). Single-segment
 	// input, so no token type ids. Verified bit-exact against transformers.js for multilingual-e5-small.
-	EncodedInput Encode(string text) {
-		var input = _options.InputPrefix is null ? text : _options.InputPrefix + text;
+	EncodedInput Encode(string text, string? prefix) {
+		var input = prefix is null ? text : prefix + text;
 		var raw = _sp.EncodeToIds(input, addBeginningOfSentence: false, addEndOfSentence: false);
 
 		// Reserve two slots for <s> … </s> and truncate the body to fit MaxTokens.
@@ -118,6 +136,11 @@ public class SentencePieceOnnxEmbeddingGenerator : EmbeddingGenerator {
 			return null;
 		if (serviceType == typeof(EmbeddingGeneratorMetadata))
 			return _metadata;
+		// The tokenizer this generator embeds with. A caller that has to decide "will this text fit"
+		// — a chunker, a truncation guard — must ask the same tokenizer, not an equivalent one, or
+		// its answer and the model's disagree and text goes missing without an error.
+		if (serviceType == typeof(Tokenizer) || serviceType == typeof(SentencePieceTokenizer))
+			return _sp;
 		return serviceType.IsInstanceOfType(this) ? this : null;
 	}
 

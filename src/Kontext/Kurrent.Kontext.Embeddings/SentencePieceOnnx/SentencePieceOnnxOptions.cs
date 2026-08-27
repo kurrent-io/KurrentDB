@@ -20,11 +20,25 @@ public sealed record SentencePieceOnnxOptions {
 	public int MaxTokens { get; set; } = 512;
 
 	/// <summary>
-	/// Optional text prepended to every input before tokenization. multilingual-e5 requires
-	/// <c>"query: "</c> (or <c>"passage: "</c>); paraphrase-multilingual and bge-m3 use none — leave
-	/// <see langword="null"/>.
+	/// Optional text prepended to every input before tokenization, whatever it is being embedded for.
+	/// paraphrase-multilingual and bge-m3 use none — leave <see langword="null"/>. Asymmetric models
+	/// set <see cref="QueryPrefix"/> and <see cref="DocumentPrefix"/> instead.
 	/// </summary>
 	public string? InputPrefix { get; set; }
+
+	/// <summary>
+	/// Prefix for text being embedded as a search query, overriding <see cref="InputPrefix"/>. The
+	/// caller signals this through <see cref="EmbeddingPurpose"/>; the retrieval side already does.
+	/// multilingual-e5 wants <c>"query: "</c> here.
+	/// </summary>
+	public string? QueryPrefix { get; set; }
+
+	/// <summary>
+	/// Prefix for text being embedded for storage, overriding <see cref="InputPrefix"/>. This is the
+	/// default purpose, so it applies unless a caller says otherwise. multilingual-e5 wants
+	/// <c>"passage: "</c> here — embedding a stored memory as a query costs recall.
+	/// </summary>
+	public string? DocumentPrefix { get; set; }
 
 	/// <summary>
 	/// The <see cref="OnnxModel"/> asset name for the XLM-R <c>sentencepiece.bpe.model</c> — read via
