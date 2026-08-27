@@ -1,6 +1,7 @@
 using Kurrent.Kontext.Configuration;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Embeddings;
+using Kurrent.Kontext.Entities;
 using Kurrent.Kontext.Mcp;
 using Kurrent.Kontext.Memory;
 using Kurrent.Kontext.Memory.Mcp;
@@ -30,6 +31,7 @@ public static class KontextWireUp {
                 .AddKontextStorage()
                 .AddKontextEmbeddings(options.Embeddings)
                 .AddKontextMemory()
+                .AddKontextEntities()
                 .AddKontextRecords()
                 .AddKontextMcp();
         }
