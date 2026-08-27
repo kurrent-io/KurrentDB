@@ -21,6 +21,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 			MainDatabaseClusterSize = 3,
+			ApiPort = 3262,
 		}) {
 			DataPlaneClientFactory = CreateDataPlane,
 		};
@@ -66,6 +67,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
 			MainDatabaseClusterSize = 3,
+			ApiPort = 3262,
 		}) {
 			DataPlaneClientFactory = Func<IDataPlane>.Constant(replicaSet),
 		};

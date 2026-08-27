@@ -115,10 +115,6 @@ partial class KPlaneDataPlaneIntegrationTest {
 			=> CreateHttp2Channel(address, out invoker);
 	}
 
-	private sealed class TestGrpcKontrollerServer(IKontroller kontroller) : GrpcKontrollerServer(kontroller) {
-		protected override EndPoint GetApiEndPoint(EndPoint nodeEndPoint) => ToGrpcEndPoint(nodeEndPoint);
-	}
-
 	// A single Kontrol Plane node: a real RaftKontroller (Raft consensus over real TCP) plus a real
 	// Kestrel-hosted gRPC KontrollerServer, so the Data Plane side talks to it exactly as it would in production.
 	private sealed class KPlaneNode : IAsyncDisposable {
@@ -142,6 +138,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 				ConnectionPoolCapacity = 10,
 				PersistentStateRoot = stateRoot,
 				Nodes = raftSeed,
+				ApiPort = ToGrpcEndPoint(raftAddress).Port,
 				// DotNext's default (150-300ms) is tuned for a healthy LAN; it's too tight when several real
 				// 3-node Raft clusters compete for CPU in the same test process, which can livelock elections.
 				LowerElectionTimeout = 300,
@@ -161,7 +158,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 			builder.Services.AddGrpc();
 
 			var app = builder.Build();
-			app.MapGrpcService<TestGrpcKontrollerServer>();
+			app.MapGrpcService<GrpcKontrollerServer>();
 			await app.StartAsync(token);
 
 			return new() {

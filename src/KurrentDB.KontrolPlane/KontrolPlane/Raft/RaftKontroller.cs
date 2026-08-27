@@ -7,6 +7,7 @@ using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 using Serilog;
 using Serilog.Extensions.Logging;
+using static System.Globalization.CultureInfo;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
@@ -17,6 +18,7 @@ using StateMachine;
 /// Represents Raft-based implementation of <see cref="IKontroller"/> interface.
 /// </summary>
 public partial class RaftKontroller : IAsyncDisposable {
+	private const string ApiPortMetadataKey = "api.port";
 	private static readonly ILogger Logger = Log.ForContext<RaftKontroller>();
 
 	private readonly WriteAheadLog _wal;
@@ -50,6 +52,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			LoggerFactory = new SerilogLoggerFactory(Logger),
 		};
 
+		config.Metadata[ApiPortMetadataKey] = options.ApiPort.ToString(InvariantCulture);
 		_raft = new(config) {
 			AuditTrail = _wal
 		};

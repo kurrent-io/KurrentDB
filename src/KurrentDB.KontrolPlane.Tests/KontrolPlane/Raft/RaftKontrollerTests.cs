@@ -16,6 +16,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			HeartbeatTimeout = TimeSpan.FromDays(1), // elect leader just once
 			ConnectionPoolCapacity = 10,
 			PersistentStateRoot = Directory,
+			ApiPort = 3262,
 		}) {
 			DataPlaneClientFactory = static () => new TestDataPlane(),
 		};

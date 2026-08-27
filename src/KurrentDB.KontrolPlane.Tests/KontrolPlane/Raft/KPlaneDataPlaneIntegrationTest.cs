@@ -105,10 +105,10 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
 
 				// stop the current KPlane (Raft) leader
-				var raftLeaderAddress = await kplane[0].Kontroller.WaitForLeaderAsync(TestToken);
-				var raftLeaderIndex = Array.FindIndex(kplane, n => Equals(n.RaftAddress, raftLeaderAddress));
-				Assert.True(raftLeaderIndex >= 0);
-				await kplane[raftLeaderIndex].DisposeAsync();
+				var leaderAddress = await kplane[0].Kontroller.WaitForLeaderAsync(TestToken);
+				var leaderIndex = Array.FindIndex(kplane, n => Equals(n.GrpcAddress, leaderAddress));
+				Assert.True(leaderIndex >= 0);
+				await kplane[leaderIndex].DisposeAsync();
 
 				// the new KPlane leader's appointment cache starts empty, so it re-appoints under a fresh
 				// epoch as soon as it takes over - even if the winning candidate ends up being the same DP

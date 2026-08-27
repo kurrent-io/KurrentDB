@@ -20,6 +20,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,
+			             ApiPort = 3262,
 		             }) {
 			             DataPlaneClientFactory = static () => new TestDataPlane(),
 		             }) {
@@ -41,6 +42,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             ConnectionPoolCapacity = 10,
 			             PersistentStateRoot = Directory,
 			             SnapshotDepth = SnapshotDepth,
+			             ApiPort = 3262,
 		             }) {
 			             DataPlaneClientFactory = static () => new TestDataPlane(),
 		             }) {

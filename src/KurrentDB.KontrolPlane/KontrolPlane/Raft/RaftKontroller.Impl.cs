@@ -13,8 +13,8 @@ using StateMachine;
 using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
-partial class RaftKontroller : IKontroller {
-	public IEnumerable<EndPoint> Nodes => _raft.Members.Select(static member => member.EndPoint);
+partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
+	IAsyncEnumerable<EndPoint> IKontroller.Nodes => this;
 
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
 		var result = new HashSet<string>();
@@ -173,6 +173,50 @@ partial class RaftKontroller : IKontroller {
 
 	public CancellationToken LeadershipToken => _raft.LeadershipToken;
 
-	public async ValueTask<EndPoint> WaitForLeaderAsync(CancellationToken token = default)
-		=> (await _raft.WaitForLeaderAsync(InfiniteTimeSpan, token)).EndPoint;
+	public async ValueTask<EndPoint> WaitForLeaderAsync(CancellationToken token = default) {
+		for (;; token.ThrowIfCancellationRequested()) {
+			IRaftClusterMember leader = await _raft.WaitForLeaderAsync(InfiniteTimeSpan, token);
+			IReadOnlyDictionary<string, string> metadata;
+
+			try {
+				metadata = await leader.GetMetadataAsync(refresh: false, token);
+			} catch {
+				continue;
+			}
+
+			return GetApiEndPoint(leader.EndPoint, CreateMetadata(metadata).ApiPort);
+		}
+	}
+
+	async IAsyncEnumerator<EndPoint> IAsyncEnumerable<EndPoint>.GetAsyncEnumerator(CancellationToken token) {
+		foreach (IRaftClusterMember member in _raft.Members) {
+			var address = member.EndPoint;
+			IReadOnlyDictionary<string, string> metadata;
+			try {
+				metadata = await member.GetMetadataAsync(refresh: false, token);
+			} catch {
+				continue;
+			}
+
+			yield return GetApiEndPoint(address, CreateMetadata(metadata).ApiPort);
+		}
+	}
+
+	private static KontrollerMetadata CreateMetadata(IReadOnlyDictionary<string, string> metadata) {
+		if (!metadata.TryGetValue(ApiPortMetadataKey, out var apiPortStringValue))
+			apiPortStringValue = string.Empty;
+
+		if (!int.TryParse(apiPortStringValue, out var apiPort))
+			apiPort = 0;
+
+		return new() { ApiPort = apiPort };
+	}
+
+	private static EndPoint GetApiEndPoint(EndPoint kontrollerNode, int apiPort) {
+		return kontrollerNode switch {
+			DnsEndPoint dns => new DnsEndPoint(dns.Host, apiPort),
+			IPEndPoint ip => new IPEndPoint(ip.Address, apiPort),
+			_ => kontrollerNode
+		};
+	}
 }

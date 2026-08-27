@@ -87,6 +87,14 @@ partial class RaftKontroller {
 		}
 
 		/// <summary>
+		/// Gets or sets Kontroller API port.
+		/// </summary>
+		public required int ApiPort {
+			get;
+			init;
+		}
+
+		/// <summary>
 		/// Gets or sets the expected number of nodes for the main database.
 		/// </summary>
 		/// <remarks>

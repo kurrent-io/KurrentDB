@@ -12,16 +12,8 @@ namespace KurrentDB.KontrolPlane.Transport.Grpc;
 /// Represents server-side of the Kontroller.
 /// </summary>
 /// <param name="kontroller">The Kontroller instance.</param>
-public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
-	/// <summary>
-	/// Converts KPlane node address to the address that can be used to access KPlane
-	/// node via gRPC.
-	/// </summary>
-	/// <param name="nodeEndPoint">The node address.</param>
-	/// <returns>gRPC endpoint address that can be used to access the KPlane node.</returns>
-	protected abstract EndPoint GetApiEndPoint(EndPoint nodeEndPoint);
-
-	public sealed override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
+public sealed class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
+	public override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
 		var response = new RenewLeaderAppointmentResponse();
 		try {
 			response.Success = await kontroller.RenewLeaderAppointmentAsync(request.DatabaseId,
@@ -31,14 +23,14 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 				context.CancellationToken);
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
-			response.KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
+			response.KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
 			response.Success = false;
 		}
 
 		return response;
 	}
 
-	public sealed override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
+	public override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
 		// announcement
 		AnnouncementResponse response;
 		try {
@@ -46,11 +38,11 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
 			response = new() {
-				KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
+				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			};
 
-			response.KontrollerNodes.Add(KontrollerNodes);
+			await response.PopulateKontrollerNodesAsync(kontroller.Nodes, context.CancellationToken);
 			await responseStream.WriteAsync(response);
 			return;
 		}
@@ -69,17 +61,17 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 					KontrollerLeader = ByteString.Empty,
 				};
 
-				response.KontrollerNodes.Add(KontrollerNodes);
+				await response.PopulateKontrollerNodesAsync(kontroller.Nodes, context.CancellationToken);
 				await responseStream.WriteAsync(response);
 			}
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, leadershipToken)) {
 			// the current node is not a leader
 			response = new AnnouncementResponse {
-				KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
+				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			};
 
-			response.KontrollerNodes.Add(KontrollerNodes);
+			await response.PopulateKontrollerNodesAsync(kontroller.Nodes, context.CancellationToken);
 			await responseStream.WriteAsync(response);
 		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
 			// restore canceled token
@@ -90,7 +82,7 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 		}
 	}
 
-	public sealed override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
+	public override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
 		var response = new ResignResponse();
 		try {
 			response.Successful = await kontroller.ResignDatabaseLeaderAsync(request.DatabaseId,
@@ -100,12 +92,19 @@ public abstract class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
 			response.Successful = false;
-			response.KontrollerLeader = GetApiEndPoint(await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
+			response.KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
 		}
 
 		return response;
 	}
+}
 
-	private IEnumerable<ByteString> KontrollerNodes
-		=> kontroller.Nodes.Select(GetApiEndPoint).Select(EndPointExtensions.ToByteString);
+file static class ByteStringExtensions {
+	public static async ValueTask PopulateKontrollerNodesAsync(this AnnouncementResponse response,
+		IAsyncEnumerable<EndPoint> kontrollerNodes,
+		CancellationToken token) {
+		await foreach (var nodeAddress in kontrollerNodes.WithCancellation(token)) {
+			response.KontrollerNodes.Add(nodeAddress.ToByteString());
+		}
+	}
 }

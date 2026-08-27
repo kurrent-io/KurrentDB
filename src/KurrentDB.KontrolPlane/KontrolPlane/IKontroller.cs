@@ -30,7 +30,7 @@ public interface IKontroller {
 	/// <summary>
 	/// Gets known Kontroller nodes.
 	/// </summary>
-	IEnumerable<EndPoint> Nodes { get; }
+	IAsyncEnumerable<EndPoint> Nodes { get; }
 
 	/// <summary>
 	/// Listens for database changes.
