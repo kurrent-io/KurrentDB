@@ -16,10 +16,10 @@ namespace EventStore.Core.TransactionLog.Chunks;
 public class TFChunkManager {
 	private static readonly ILogger Log = Serilog.Log.ForContext<TFChunkManager>();
 
-	// MaxChunksCount is currently capped at 400,000 since:
+	// MaxChunksCount is currently capped at 600,000 since:
 	// - the chunk file naming strategy supports only up to 6 digits for the chunk number.
 	// - this class uses a fixed size array to keep the chunk list
-	public const int MaxChunksCount = 400_000;
+	public const int MaxChunksCount = 600_000;
 
 	public int ChunksCount {
 		get { return _chunksCount; }
