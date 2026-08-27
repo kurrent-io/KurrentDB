@@ -4,9 +4,5 @@ cross-encoder/*.onnx
 cross-encoder/vocab.txt
 pmm12/*.onnx
 pmm12/sentencepiece.bpe.model
-bgem3/*.onnx
-bgem3/sentencepiece.bpe.model
 gliner-small-v2.1/onnx/*.onnx
 gliner-small-v2.1/spm.model
-e5-small/*.onnx
-e5-small/sentencepiece.bpe.model

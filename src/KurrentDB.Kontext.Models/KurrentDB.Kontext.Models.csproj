@@ -10,25 +10,18 @@
          switch (they must move together - an EmbeddedResource pointing at a never-downloaded file
          fails the build). Flip the default to false when the prototype retires. -->
     <KontextIncludePrototypeModels Condition="'$(KontextIncludePrototypeModels)' == ''">true</KontextIncludePrototypeModels>
-    <!-- bge-m3 is the 1024-dim upgrade candidate under evaluation. Its INT8 export is ~570MB, so it
-         is opt-in (-p:KontextIncludeBgeM3=true) and, unlike the others, NOT embedded as an assembly
-         resource - consumers resolve it from this directory through OnnxModel.FromFiles. -->
-    <KontextIncludeBgeM3 Condition="'$(KontextIncludeBgeM3)' == ''">false</KontextIncludeBgeM3>
-    <KontextBgeM3Dir>$(KontextModelsDir)bgem3/</KontextBgeM3Dir>
-    <!-- gliner_small-v2.1 int8 is the zero-shot NER model behind entity extraction. ~177MB, so it is
-         downloaded rather than embedded (same treatment as bge-m3) and consumers resolve it from
-         this directory through OnnxModelRegistry. On by default because the entity integration tests
-         cannot pass without it; -p:KontextIncludeGliner=false skips it. The layout below is the one
-         OnnxModelRegistry expects: <key>/onnx/<model> and <key>/<asset>, keyed by
-         GlinerOnnxEntityRecognizer.DefaultModelId. -->
+    <!-- gliner_small-v2.1 int8 is the zero-shot NER model behind entity extraction, loaded by
+         AddKontextEntities. Downloaded AND embedded, like pmm12: the download only puts the file
+         where the embed can reach it. -p:KontextIncludeGliner=false skips both together (an
+         EmbeddedResource pointing at a never-downloaded file fails the build). The on-disk layout
+         is the one OnnxModelRegistry expects — <key>/onnx/<model> and <key>/<asset>, keyed by
+         GlinerOnnxEntityRecognizer.DefaultModelId — so a registry can still be pointed here.
+
+         This project carries what Kontext needs to RUN, and nothing else. Models used only by a
+         test or a benchmark are downloaded by that project when it runs, so a build never pays
+         for a comparison nobody asked for. -->
     <KontextIncludeGliner Condition="'$(KontextIncludeGliner)' == ''">true</KontextIncludeGliner>
     <KontextGlinerDir>$(KontextModelsDir)gliner-small-v2.1/</KontextGlinerDir>
-    <!-- multilingual-e5-small fp32 is the SentencePiece generator's reference model. The fp32 export
-         (~448MB) is the one the transformers.js ground-truth vectors were produced from, so the
-         quantized variant cannot stand in for it. Downloaded, not embedded; on by default because
-         the SentencePiece integration tests cannot pass without it. -p:KontextIncludeE5=false skips it. -->
-    <KontextIncludeE5 Condition="'$(KontextIncludeE5)' == ''">true</KontextIncludeE5>
-    <KontextE5Dir>$(KontextModelsDir)e5-small/</KontextE5Dir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,6 +45,10 @@
     <EmbeddedResource Include="pmm12/sentencepiece.bpe.model" LogicalName="KurrentDB.Kontext.Models.pmm12.sentencepiece.bpe.model" />
   </ItemGroup>
 
+  <!-- The models directory is this directory. The download targets below fill it and nothing copies
+       out of it: a Content item would ride every ProjectReference in the graph and land a 175MB file
+       in the output of every project that transitively sees this one. Consumers read it through
+       OnnxModelRegistry, which resolves <key>/onnx/<model> and <key>/<asset> under the path below. -->
   <!-- Download the go-live bundle before build if missing.
        paraphrase-multilingual-MiniLM-L12-v2: quantized ONNX + the shared XLM-R SentencePiece tokenizer
        (the same sentencepiece.bpe.model published under intfloat/multilingual-e5-small). Interim only,
@@ -76,29 +73,6 @@
     <Message Importance="high" Text="pmm12 ONNX model downloaded successfully." />
   </Target>
 
-  <!-- Download the bge-m3 evaluation bundle before build if missing. The dense-only INT8 export
-       emits last_hidden_state as output 0, which is what the generator's Cls pooling reads; exports
-       that emit a pre-pooled dense_vecs instead are not interchangeable here. The tokenizer is the
-       same XLM-R sentencepiece.bpe.model pmm12 uses (verified byte-identical). -->
-  <Target Name="DownloadBgeM3IfMissing" BeforeTargets="PrepareForBuild"
-          Condition="'$(KontextIncludeBgeM3)' == 'true' And (!Exists('$(KontextBgeM3Dir)BAAI-bge-m3_quantized.onnx') Or !Exists('$(KontextBgeM3Dir)sentencepiece.bpe.model'))">
-
-    <Message Importance="high" Text="Downloading bge-m3 ONNX model (~570MB, first build only)..." />
-
-    <MakeDir Directories="$(KontextBgeM3Dir)" />
-
-    <DownloadFile
-      SourceUrl="https://huggingface.co/hotchpotch/vespa-onnx-BAAI-bge-m3-only-dense/resolve/main/BAAI-bge-m3_quantized.onnx"
-      DestinationFolder="$(KontextBgeM3Dir)"
-      Condition="!Exists('$(KontextBgeM3Dir)BAAI-bge-m3_quantized.onnx')" />
-
-    <DownloadFile
-      SourceUrl="https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model"
-      DestinationFolder="$(KontextBgeM3Dir)"
-      Condition="!Exists('$(KontextBgeM3Dir)sentencepiece.bpe.model')" />
-
-    <Message Importance="high" Text="bge-m3 ONNX model downloaded successfully." />
-  </Target>
 
   <!-- Download the GLiNER zero-shot NER bundle before build if missing. -->
   <Target Name="DownloadGlinerIfMissing" BeforeTargets="PrepareForBuild"
@@ -121,28 +95,6 @@
     <Message Importance="high" Text="gliner_small-v2.1 ONNX model downloaded successfully." />
   </Target>
 
-  <!-- Download the multilingual-e5-small fp32 bundle before build if missing. Its tokenizer is the
-       shared XLM-R sentencepiece.bpe.model; each model directory keeps its own copy so it stays
-       self-contained, the same way bgem3 does. -->
-  <Target Name="DownloadE5IfMissing" BeforeTargets="PrepareForBuild"
-          Condition="'$(KontextIncludeE5)' == 'true' And (!Exists('$(KontextE5Dir)model.onnx') Or !Exists('$(KontextE5Dir)sentencepiece.bpe.model'))">
-
-    <Message Importance="high" Text="Downloading multilingual-e5-small fp32 ONNX model (~448MB, first build only)..." />
-
-    <MakeDir Directories="$(KontextE5Dir)" />
-
-    <DownloadFile
-      SourceUrl="https://huggingface.co/Xenova/multilingual-e5-small/resolve/main/onnx/model.onnx"
-      DestinationFolder="$(KontextE5Dir)"
-      Condition="!Exists('$(KontextE5Dir)model.onnx')" />
-
-    <DownloadFile
-      SourceUrl="https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model"
-      DestinationFolder="$(KontextE5Dir)"
-      Condition="!Exists('$(KontextE5Dir)sentencepiece.bpe.model')" />
-
-    <Message Importance="high" Text="multilingual-e5-small ONNX model downloaded successfully." />
-  </Target>
 
   <!-- Download the prototype-only bundles before build if missing - gated with their embeds. -->
   <Target Name="DownloadPrototypeModelsIfMissing" BeforeTargets="PrepareForBuild"

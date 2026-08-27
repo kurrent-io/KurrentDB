@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
+using Kurrent.Kontext.Testing;
 
 namespace Kurrent.Kontext.Embeddings.Tests;
 
@@ -24,19 +25,26 @@ static class EmbeddingsTestSupport {
 	/// <summary>L2 norm of a vector (≈ 1.0 for a normalized embedding).</summary>
 	public static double L2Norm(float[] v) => Math.Sqrt(v.Sum(x => (double)x * x));
 
-	// The ONNX assets are large and not committed; KurrentDB.Kontext.Models downloads them on build
-	// into its own (gitignored) per-model directories. [CallerFilePath] resolves this test project's
-	// directory at compile time so the path holds wherever the repo lives.
+	// The ONNX assets are large and not committed. [CallerFilePath] resolves this test project's
+	// directory at compile time so the paths hold wherever the repo lives.
 	static string TestsDir([CallerFilePath] string path = "") => Path.GetDirectoryName(path)!;
 	static string ModelsDir => Path.Combine(TestsDir(), "..", "..", "KurrentDB.Kontext.Models");
 
-	// DownloadE5IfMissing.
-	static string E5Dir => Path.Combine(ModelsDir, "e5-small");
+	// e5 is a test fixture and nothing else: no Kontext code path loads it. It is downloaded here,
+	// when the class that needs it runs, rather than by KurrentDB.Kontext.Models on every build.
+	static string E5Dir => Path.Combine(TestsDir(), ".models", "e5-small");
 	public static string E5ModelPath => Path.Combine(E5Dir, "model.onnx");
 	public static string E5SentencePiecePath => Path.Combine(E5Dir, "sentencepiece.bpe.model");
 
-	// The GLiNER assets follow the OnnxModelRegistry layout (<key>/onnx/<model>, <key>/<asset>).
-	// DownloadGlinerIfMissing.
+	/// <summary>Fetches the e5 fixture if this machine does not have it yet.</summary>
+	public static void EnsureE5() =>
+		ModelCache.Ensure(E5Dir, [
+			("https://huggingface.co/Xenova/multilingual-e5-small/resolve/main/onnx/model.onnx", "model.onnx"),
+			("https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model", "sentencepiece.bpe.model"),
+		]);
+
+	// GLiNER is a model Kontext RUNS on, so it comes from KurrentDB.Kontext.Models with the rest of
+	// the shipped set. Layout is the one OnnxModelRegistry expects: <key>/onnx/<model>, <key>/<asset>.
 	static string GlinerDir => Path.Combine(ModelsDir, "gliner-small-v2.1");
 	public static string GlinerModelPath => Path.Combine(GlinerDir, "onnx", "model_quantized.onnx");
 	public static string GlinerSentencePiecePath => Path.Combine(GlinerDir, "spm.model");

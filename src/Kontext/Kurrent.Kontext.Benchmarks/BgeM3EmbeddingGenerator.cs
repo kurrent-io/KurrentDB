@@ -3,13 +3,14 @@
 
 using Kurrent.Kontext.Embeddings;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
+using Kurrent.Kontext.Testing;
 
 namespace Benchmarks;
 
 /// <summary>
-/// The bge-m3 upgrade candidate through the SentencePiece / XLM-R generator. The INT8 export is
-/// ~570MB, so <c>KurrentDB.Kontext.Models</c> downloads it under <c>-p:KontextIncludeBgeM3=true</c>
-/// rather than embedding it, and this project copies it to the build output.
+/// The bge-m3 upgrade candidate through the SentencePiece / XLM-R generator. Nothing in Kontext
+/// runs on it, so its ~570MB INT8 export is fetched here the first time this benchmark runs rather
+/// than on every build.
 /// </summary>
 public sealed class BgeM3EmbeddingGenerator : SentencePieceOnnxEmbeddingGenerator {
 	const string Name          = "bge-m3";
@@ -35,11 +36,10 @@ public sealed class BgeM3EmbeddingGenerator : SentencePieceOnnxEmbeddingGenerato
 	}
 
 	static OnnxModel Model() {
-		var directory = Path.Combine(AppContext.BaseDirectory, "Models", "bgem3");
-
-		if (!File.Exists(Path.Combine(directory, ModelFile)))
-			throw new InvalidOperationException(
-				$"{ModelFile} is not in the build output. Build with -p:KontextIncludeBgeM3=true to download it.");
+		var directory = ModelCache.Ensure(BenchmarkModels.Directory("bgem3"), [
+			($"https://huggingface.co/hotchpotch/vespa-onnx-BAAI-bge-m3-only-dense/resolve/main/{ModelFile}", ModelFile),
+			($"https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/{TokenizerFile}", TokenizerFile),
+		]);
 
 		// This export emits last_hidden_state [batch, tokens, 1024] as output 0 — the shape the
 		// Cls path pools. Exports that emit a pre-pooled dense_vecs [batch, 1024] instead

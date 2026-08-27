@@ -24,7 +24,6 @@
     <!-- bge-m3 is too large to embed, so BgeM3 opens it from disk. The glob is empty until the
          model is downloaded with -p:KontextIncludeBgeM3=true, which keeps the benchmark buildable
          without it. -->
-    <None Include="..\..\KurrentDB.Kontext.Models\bgem3\*" LinkBase="Models\bgem3" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

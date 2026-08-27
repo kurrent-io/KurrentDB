@@ -17,17 +17,14 @@ public class SentencePieceOnnxEmbeddingGeneratorTests {
 
 	[Before(Class)]
 	public static Task Setup(ClassHookContext context) {
-		if (!File.Exists(EmbeddingsTestSupport.E5ModelPath))
-			throw new FileNotFoundException(
-				$"e5 model not found at {EmbeddingsTestSupport.E5ModelPath}. Build KurrentDB.Kontext.Models " +
-				"to download it, or pass -p:KontextIncludeE5=true if the download was disabled.",
-				EmbeddingsTestSupport.E5ModelPath);
+		EmbeddingsTestSupport.EnsureE5();
 
 		// e5 requires the "query: " prefix (matches how the reference vectors were produced).
 		_generator = new SentencePieceOnnxEmbeddingGenerator(
 			OnnxModel.FromFiles("multilingual-e5-small", EmbeddingsTestSupport.E5ModelPath,
 			new Dictionary<string, string> { ["sentencepiece.bpe.model"] = EmbeddingsTestSupport.E5SentencePiecePath }),
 			new SentencePieceOnnxOptions { InputPrefix = "query: " });
+
 		return Task.CompletedTask;
 	}
 

@@ -129,8 +129,32 @@ static class EntityCorpusSeeder {
 			return new SeededCatalog(entities, aliases, mentions, topEntities);
 		});
 
-	// KurrentDB.Kontext.Models' (gitignored) download cache — the same copy the GLiNER integration tests use.
+	const string GlinerFp32ModelId = "gliner-small-fp32";
+	const string GlinerRepoUrl     = "https://huggingface.co/onnx-community/gliner_small-v2.1";
+
+	/// <summary>
+	/// The registry a GLiNER leg reads from. The int8 model is one Kontext runs on, so it comes from
+	/// KurrentDB.Kontext.Models with the rest of the shipped set — the same copy the integration
+	/// tests use. The fp32 export is a benchmark comparison and nothing else loads it, so it is
+	/// fetched here when a leg asks for it.
+	/// </summary>
 	internal static OnnxModelRegistry GlinerRegistry(string modelId) {
+		if (modelId == GlinerFp32ModelId) {
+			ModelCache.Ensure(BenchmarkModels.Directory(GlinerFp32ModelId), [
+				($"{GlinerRepoUrl}/resolve/main/onnx/model.onnx", Path.Combine("onnx", "model.onnx")),
+				($"{GlinerRepoUrl}/resolve/main/spm.model", "spm.model"),
+			]);
+
+			return new OnnxModelRegistry(BenchmarkModels.Root, [
+				new OnnxModelManifest {
+					Key     = GlinerFp32ModelId,
+					Model   = "model.onnx",
+					RepoUrl = GlinerRepoUrl,
+					Assets  = ["spm.model"],
+				},
+			]);
+		}
+
 		var modelsDir = Path.GetFullPath(Path.Combine(BenchmarksDir(), "..", "..", "KurrentDB.Kontext.Models"));
 		var modelPath = Path.Combine(modelsDir, modelId, "onnx", "model_quantized.onnx");
 
@@ -143,7 +167,7 @@ static class EntityCorpusSeeder {
 			new OnnxModelManifest {
 				Key     = modelId,
 				Model   = "model_quantized.onnx",
-				RepoUrl = $"https://huggingface.co/onnx-community/{modelId}",
+				RepoUrl = GlinerRepoUrl,
 				Assets  = ["spm.model"],
 			},
 		]);
