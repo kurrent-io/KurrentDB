@@ -17,9 +17,9 @@ public class GlinerOnnxEntityRecognizerTests {
 	public static Task Setup(ClassHookContext context) {
 		if (!File.Exists(EmbeddingsTestSupport.GlinerModelPath))
 			throw new FileNotFoundException(
-				$"GLiNER model not found at {EmbeddingsTestSupport.GlinerModelPath}. Download onnx/model_quantized.onnx " +
-				"and spm.model from https://huggingface.co/onnx-community/gliner_small-v2.1 into that layout — " +
-				"these tests point at the playground's models/ cache.", EmbeddingsTestSupport.GlinerModelPath);
+				$"GLiNER model not found at {EmbeddingsTestSupport.GlinerModelPath}. Build KurrentDB.Kontext.Models " +
+				"to download it, or pass -p:KontextIncludeGliner=true if the download was disabled.",
+				EmbeddingsTestSupport.GlinerModelPath);
 
 		_recognizer = new GlinerOnnxEntityRecognizer(
 			OnnxModel.FromFiles("gliner-small-v2.1", EmbeddingsTestSupport.GlinerModelPath,

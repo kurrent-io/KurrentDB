@@ -129,15 +129,15 @@ static class EntityCorpusSeeder {
 			return new SeededCatalog(entities, aliases, mentions, topEntities);
 		});
 
-	// The playground's (gitignored) models cache — the same copy the GLiNER integration tests use.
+	// KurrentDB.Kontext.Models' (gitignored) download cache — the same copy the GLiNER integration tests use.
 	internal static OnnxModelRegistry GlinerRegistry(string modelId) {
-		var modelsDir = Path.GetFullPath(Path.Combine(BenchmarksDir(), "..", "Kurrent.Kontext.Embeddings.Playground", "models"));
+		var modelsDir = Path.GetFullPath(Path.Combine(BenchmarksDir(), "..", "..", "KurrentDB.Kontext.Models"));
 		var modelPath = Path.Combine(modelsDir, modelId, "onnx", "model_quantized.onnx");
 
 		if (!File.Exists(modelPath))
 			throw new FileNotFoundException(
-				$"GLiNER model not found at {modelPath}. Download onnx/model_quantized.onnx and spm.model " +
-				$"from https://huggingface.co/onnx-community into the {modelId} layout.", modelPath);
+				$"GLiNER model not found at {modelPath}. Build KurrentDB.Kontext.Models to download it, " +
+				"or pass -p:KontextIncludeGliner=true if the download was disabled.", modelPath);
 
 		return new OnnxModelRegistry(modelsDir, [
 			new OnnxModelManifest {

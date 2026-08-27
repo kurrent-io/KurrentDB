@@ -24,18 +24,20 @@ static class EmbeddingsTestSupport {
 	/// <summary>L2 norm of a vector (≈ 1.0 for a normalized embedding).</summary>
 	public static double L2Norm(float[] v) => Math.Sqrt(v.Sum(x => (double)x * x));
 
-	// The e5 assets are large and not committed; as agreed, the C tests point at the copy the
-	// Embeddings Playground already downloaded into its (gitignored) models/ cache. [CallerFilePath]
-	// resolves this test project's directory at compile time so the path holds wherever the repo lives.
+	// The ONNX assets are large and not committed; KurrentDB.Kontext.Models downloads them on build
+	// into its own (gitignored) per-model directories. [CallerFilePath] resolves this test project's
+	// directory at compile time so the path holds wherever the repo lives.
 	static string TestsDir([CallerFilePath] string path = "") => Path.GetDirectoryName(path)!;
-	static string PlaygroundModelsDir => Path.Combine(TestsDir(), "..", "Kurrent.Kontext.Embeddings.Playground", "models");
-	public static string E5ModelPath => Path.Combine(PlaygroundModelsDir, "model.onnx");
-	public static string E5SentencePiecePath => Path.Combine(PlaygroundModelsDir, "sentencepiece.bpe.model");
+	static string ModelsDir => Path.Combine(TestsDir(), "..", "..", "KurrentDB.Kontext.Models");
 
-	// The GLiNER assets follow the OnnxModelRegistry layout (<key>/onnx/<model>, <key>/<asset>) inside the
-	// same playground cache. The playground does not download them; fetch from
-	// https://huggingface.co/onnx-community/gliner_small-v2.1 (onnx/model_quantized.onnx + spm.model).
-	static string GlinerDir => Path.Combine(PlaygroundModelsDir, "gliner-small-v2.1");
+	// DownloadE5IfMissing.
+	static string E5Dir => Path.Combine(ModelsDir, "e5-small");
+	public static string E5ModelPath => Path.Combine(E5Dir, "model.onnx");
+	public static string E5SentencePiecePath => Path.Combine(E5Dir, "sentencepiece.bpe.model");
+
+	// The GLiNER assets follow the OnnxModelRegistry layout (<key>/onnx/<model>, <key>/<asset>).
+	// DownloadGlinerIfMissing.
+	static string GlinerDir => Path.Combine(ModelsDir, "gliner-small-v2.1");
 	public static string GlinerModelPath => Path.Combine(GlinerDir, "onnx", "model_quantized.onnx");
 	public static string GlinerSentencePiecePath => Path.Combine(GlinerDir, "spm.model");
 }

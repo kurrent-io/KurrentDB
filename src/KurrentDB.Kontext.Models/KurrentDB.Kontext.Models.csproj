@@ -15,6 +15,20 @@
          resource - consumers resolve it from this directory through OnnxModel.FromFiles. -->
     <KontextIncludeBgeM3 Condition="'$(KontextIncludeBgeM3)' == ''">false</KontextIncludeBgeM3>
     <KontextBgeM3Dir>$(KontextModelsDir)bgem3/</KontextBgeM3Dir>
+    <!-- gliner_small-v2.1 int8 is the zero-shot NER model behind entity extraction. ~177MB, so it is
+         downloaded rather than embedded (same treatment as bge-m3) and consumers resolve it from
+         this directory through OnnxModelRegistry. On by default because the entity integration tests
+         cannot pass without it; -p:KontextIncludeGliner=false skips it. The layout below is the one
+         OnnxModelRegistry expects: <key>/onnx/<model> and <key>/<asset>, keyed by
+         GlinerOnnxEntityRecognizer.DefaultModelId. -->
+    <KontextIncludeGliner Condition="'$(KontextIncludeGliner)' == ''">true</KontextIncludeGliner>
+    <KontextGlinerDir>$(KontextModelsDir)gliner-small-v2.1/</KontextGlinerDir>
+    <!-- multilingual-e5-small fp32 is the SentencePiece generator's reference model. The fp32 export
+         (~448MB) is the one the transformers.js ground-truth vectors were produced from, so the
+         quantized variant cannot stand in for it. Downloaded, not embedded; on by default because
+         the SentencePiece integration tests cannot pass without it. -p:KontextIncludeE5=false skips it. -->
+    <KontextIncludeE5 Condition="'$(KontextIncludeE5)' == ''">true</KontextIncludeE5>
+    <KontextE5Dir>$(KontextModelsDir)e5-small/</KontextE5Dir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -84,6 +98,50 @@
       Condition="!Exists('$(KontextBgeM3Dir)sentencepiece.bpe.model')" />
 
     <Message Importance="high" Text="bge-m3 ONNX model downloaded successfully." />
+  </Target>
+
+  <!-- Download the GLiNER zero-shot NER bundle before build if missing. -->
+  <Target Name="DownloadGlinerIfMissing" BeforeTargets="PrepareForBuild"
+          Condition="'$(KontextIncludeGliner)' == 'true' And (!Exists('$(KontextGlinerDir)onnx/model_quantized.onnx') Or !Exists('$(KontextGlinerDir)spm.model'))">
+
+    <Message Importance="high" Text="Downloading gliner_small-v2.1 ONNX model (~177MB, first build only)..." />
+
+    <MakeDir Directories="$(KontextGlinerDir)onnx" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/onnx-community/gliner_small-v2.1/resolve/main/onnx/model_quantized.onnx"
+      DestinationFolder="$(KontextGlinerDir)onnx"
+      Condition="!Exists('$(KontextGlinerDir)onnx/model_quantized.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/onnx-community/gliner_small-v2.1/resolve/main/spm.model"
+      DestinationFolder="$(KontextGlinerDir)"
+      Condition="!Exists('$(KontextGlinerDir)spm.model')" />
+
+    <Message Importance="high" Text="gliner_small-v2.1 ONNX model downloaded successfully." />
+  </Target>
+
+  <!-- Download the multilingual-e5-small fp32 bundle before build if missing. Its tokenizer is the
+       shared XLM-R sentencepiece.bpe.model; each model directory keeps its own copy so it stays
+       self-contained, the same way bgem3 does. -->
+  <Target Name="DownloadE5IfMissing" BeforeTargets="PrepareForBuild"
+          Condition="'$(KontextIncludeE5)' == 'true' And (!Exists('$(KontextE5Dir)model.onnx') Or !Exists('$(KontextE5Dir)sentencepiece.bpe.model'))">
+
+    <Message Importance="high" Text="Downloading multilingual-e5-small fp32 ONNX model (~448MB, first build only)..." />
+
+    <MakeDir Directories="$(KontextE5Dir)" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/Xenova/multilingual-e5-small/resolve/main/onnx/model.onnx"
+      DestinationFolder="$(KontextE5Dir)"
+      Condition="!Exists('$(KontextE5Dir)model.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model"
+      DestinationFolder="$(KontextE5Dir)"
+      Condition="!Exists('$(KontextE5Dir)sentencepiece.bpe.model')" />
+
+    <Message Importance="high" Text="multilingual-e5-small ONNX model downloaded successfully." />
   </Target>
 
   <!-- Download the prototype-only bundles before build if missing - gated with their embeds. -->

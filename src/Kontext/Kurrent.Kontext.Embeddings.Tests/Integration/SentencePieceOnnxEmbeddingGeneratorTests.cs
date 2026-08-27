@@ -7,9 +7,9 @@ using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, M
 namespace Kurrent.Kontext.Embeddings.Tests;
 
 /// <summary>
-/// C = multilingual-e5-small (XLM-R SentencePiece + fairseq remap), the multilingual showcase. Uses the
-/// e5 model the Embeddings Playground already downloaded. Its distinguishing capability is CROSS-LINGUAL
-/// alignment — the same concept across languages/scripts embeds close together — which neither A nor B can do.
+/// C = multilingual-e5-small (XLM-R SentencePiece + fairseq remap), the multilingual showcase. Its
+/// distinguishing capability is CROSS-LINGUAL alignment — the same concept across languages/scripts
+/// embeds close together — which neither A nor B can do.
 /// </summary>
 [Category("Integration")]
 public class SentencePieceOnnxEmbeddingGeneratorTests {
@@ -19,8 +19,9 @@ public class SentencePieceOnnxEmbeddingGeneratorTests {
 	public static Task Setup(ClassHookContext context) {
 		if (!File.Exists(EmbeddingsTestSupport.E5ModelPath))
 			throw new FileNotFoundException(
-				$"e5 model not found at {EmbeddingsTestSupport.E5ModelPath}. Run the Embeddings Playground " +
-				"once to download it into its models/ cache — these tests point at that copy.", EmbeddingsTestSupport.E5ModelPath);
+				$"e5 model not found at {EmbeddingsTestSupport.E5ModelPath}. Build KurrentDB.Kontext.Models " +
+				"to download it, or pass -p:KontextIncludeE5=true if the download was disabled.",
+				EmbeddingsTestSupport.E5ModelPath);
 
 		// e5 requires the "query: " prefix (matches how the reference vectors were produced).
 		_generator = new SentencePieceOnnxEmbeddingGenerator(
