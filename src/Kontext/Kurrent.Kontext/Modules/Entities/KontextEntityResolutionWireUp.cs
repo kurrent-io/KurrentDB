@@ -50,8 +50,12 @@ public static class KontextEntityResolutionWireUp {
         });
 
         services.TryAddSingleton<IEntityExtractor>(ctx => {
+            // Kontext:Embeddings:Local:ModelsDirectory wins when set, so an operator can point at
+            // their own GLiNER export. Unset, the models sit beside the binaries: KurrentDB.Kontext
+            // .Models downloads them and copies them to the output directory in the registry's own
+            // layout, which is also where a published image carries them.
             var registry = ctx.GetService<OnnxModelRegistry>()
-                ?? throw new InvalidOperationException("Kontext:Embeddings:Local:ModelsDirectory is required.");
+                ?? new OnnxModelRegistry(AppContext.BaseDirectory, []);
 
             if (!registry.Contains(GlinerOnnxEntityRecognizer.DefaultModelId))
                 registry.Add(DefaultGlinerManifest);

@@ -74,6 +74,16 @@ const string SpmModelUrl = "https://huggingface.co/intfloat/multilingual-e5-smal
 	("paraphrase-mMiniLM-L12", "pMM12",
 		"https://huggingface.co/Xenova/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model_quantized.onnx",
 		EmbeddingPoolingMode.Mean, null, "paraphrase-multilingual-MiniLM-L12-v2"),
+	// The SAME weights as pMM12 above at three export precisions, so the columns isolate quantization
+	// error from model choice: int8 above (what the node ships), fp32 here as the no-loss ceiling, and
+	// 4-bit as the floor. 82% of this model is its 250k-token embedding table, which is why the 4-bit
+	// export is LARGER than the int8 one — it compresses the encoder and leaves the table alone.
+	("pmm12-fp32", "pMM12/32",
+		"https://huggingface.co/Xenova/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model.onnx",
+		EmbeddingPoolingMode.Mean, null, "pmm12-fp32"),
+	("pmm12-q4", "pMM12/q4",
+		"https://huggingface.co/Xenova/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model_q4.onnx",
+		EmbeddingPoolingMode.Mean, null, "pmm12-q4"),
 	("e5-base", "e5-base",
 		"https://huggingface.co/Xenova/multilingual-e5-base/resolve/main/onnx/model_quantized.onnx",
 		EmbeddingPoolingMode.Mean, "query: ", "multilingual-e5-base"),

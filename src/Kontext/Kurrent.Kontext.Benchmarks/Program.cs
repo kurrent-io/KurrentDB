@@ -360,9 +360,12 @@ static async ValueTask RunChains() {
 	}
 }
 
-// One leg of the pMM12 vs bge-m3 comparison on the shipped Focused chain. It is one model per
-// invocation, not an in-process A/B: the store's embedding column is FLOAT[KontextIndexConstants.VectorsDimension]
-// and that is a compile-time constant, so a 384-dim and a 1024-dim corpus cannot coexist in one build.
+// One leg of the model comparison on the shipped Focused chain. It is one model per invocation, not
+// an in-process A/B: the store's embedding column is FLOAT[KontextIndexConstants.VectorsDimension]
+// and that is a compile-time constant, so corpora of different widths cannot coexist in one build.
+// Comparing across widths means one run per model with VectorsDimension set to match — 384 for
+// pmm12, 768 for pmpnet, 1024 for bgem3 — which the report's "dim N schema FLOAT[M]" line makes
+// visible rather than letting a mismatch poison the vectors.
 static async ValueTask RunModelLeg(string model) {
 	Log.Logger = new LoggerConfiguration()
 		.MinimumLevel.Information()
@@ -371,9 +374,31 @@ static async ValueTask RunModelLeg(string model) {
 
 	try {
 		EmbeddingModelFactory factory = model switch {
-			"pmm12" => configure => new Pmm12EmbeddingGenerator(configure),
-			"bgem3" => configure => new BgeM3EmbeddingGenerator(configure),
-			_       => throw new ArgumentException($"Unknown model '{model}'. Use 'pmm12' or 'bgem3'.", nameof(model)),
+			// 384 — the shipped width. "pmm12" is the embedded copy the node runs; the rest are the
+			// same weights at other export precisions.
+			"pmm12"          => configure => new Pmm12EmbeddingGenerator(configure),
+			"pmm12-fp32"     => configure => new Pmm12VariantEmbeddingGenerator(OnnxExport.Fp32, configure),
+			"pmm12-fp16"     => configure => new Pmm12VariantEmbeddingGenerator(OnnxExport.Fp16, configure),
+			"pmm12-uint8"    => configure => new Pmm12VariantEmbeddingGenerator(OnnxExport.Uint8, configure),
+			"pmm12-int8full" => configure => new Pmm12VariantEmbeddingGenerator(OnnxExport.Int8Full, configure),
+			"pmm12-q4"       => configure => new Pmm12VariantEmbeddingGenerator(OnnxExport.Q4, configure),
+			"e5-small"       => configure => new E5SmallEmbeddingGenerator(configure),
+
+			// 768
+			"pmpnet"          => configure => new PmpnetEmbeddingGenerator(OnnxExport.Int8Partial, configure),
+			"pmpnet-fp32"     => configure => new PmpnetEmbeddingGenerator(OnnxExport.Fp32, configure),
+			"pmpnet-fp16"     => configure => new PmpnetEmbeddingGenerator(OnnxExport.Fp16, configure),
+			"pmpnet-uint8"    => configure => new PmpnetEmbeddingGenerator(OnnxExport.Uint8, configure),
+			"pmpnet-int8full" => configure => new PmpnetEmbeddingGenerator(OnnxExport.Int8Full, configure),
+			"pmpnet-q4"       => configure => new PmpnetEmbeddingGenerator(OnnxExport.Q4, configure),
+
+			// 1024
+			"bgem3"  => configure => new BgeM3EmbeddingGenerator(configure),
+			"arctic" => configure => new ArcticEmbeddingGenerator(configure),
+
+			_ => throw new ArgumentException(
+				$"Unknown model '{model}'. 384: pmm12[-fp32|-fp16|-uint8|-int8full|-q4], e5-small. "
+			  + "768: pmpnet[-fp32|-fp16|-uint8|-int8full|-q4]. 1024: bgem3.", nameof(model)),
 		};
 
 		await using var corpus = new KontextCorpus(null, factory);
