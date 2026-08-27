@@ -6,9 +6,7 @@ using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV2;
 
-[TestFixture(PTable.IndexEntryV2Size), Explicit]
-public class
-	opening_a_ptable_with_more_than_32bits_of_records : IndexV1.opening_a_ptable_with_more_than_32bits_of_records {
-	public opening_a_ptable_with_more_than_32bits_of_records(int indexEntrySize) : base(indexEntrySize) {
-	}
+[TestFixture(TypeArgs = [typeof(IndexEntry.V1)]), Explicit]
+public class opening_a_ptable_with_more_than_32bits_of_records<T> : IndexV1.opening_a_ptable_with_more_than_32bits_of_records<T>
+	where T : struct, IndexEntry.ILayout<T> {
 }
