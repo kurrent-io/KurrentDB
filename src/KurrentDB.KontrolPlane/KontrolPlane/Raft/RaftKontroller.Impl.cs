@@ -114,12 +114,12 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 			result = await _raft.ResignLeaderAsync(databaseId, epoch, token)
 			         && _appointmentState.TryGetValue(databaseId, out var appointment)
 			         && _appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
-
-			if (result) {
-				_appointmentRoundSignal.Set();
-			}
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		}
+
+		if (result) {
+			_appointmentRoundSignal.Set();
 		}
 
 		return result;
