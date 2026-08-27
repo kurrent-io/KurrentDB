@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Kontext.Memory;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -12,17 +13,17 @@ namespace Kurrent.Kontext.Tests;
 public class RetainRequestValidatorTests {
 	static readonly RetainRequestValidator Validator = new();
 
-	static Contracts.RetainRequest Request(params Contracts.Memory[] memories) {
-		var request = new Contracts.RetainRequest();
+	static MemoryContracts.RetainRequest Request(params MemoryContracts.Memory[] memories) {
+		var request = new MemoryContracts.RetainRequest();
 		request.Memories.AddRange(memories);
 		return request;
 	}
 
-	static Contracts.Memory Memory(Contracts.MemoryType type = Contracts.MemoryType.Fact) =>
+	static MemoryContracts.Memory Memory(MemoryContracts.MemoryType type = MemoryContracts.MemoryType.Fact) =>
 		new() { MemoryType = type, Content = "a memory that stands on its own" };
 
-	static Contracts.Evidence WebCitation(params string[] excerpts) {
-		var web = new Contracts.Evidence.Types.WebRef { Uri = "https://example.test/spec" };
+	static MemoryContracts.Evidence WebCitation(params string[] excerpts) {
+		var web = new MemoryContracts.Evidence.Types.WebRef { Uri = "https://example.test/spec" };
 		web.Excerpts.AddRange(excerpts);
 		return new() { Web = web };
 	}
@@ -59,7 +60,7 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask rejects_a_web_citation_with_no_excerpt() {
 		// Arrange — without the quoted passage the citation is a bookmark, and it dies with the page.
-		var memory = Memory(Contracts.MemoryType.Fact);
+		var memory = Memory(MemoryContracts.MemoryType.Fact);
 		memory.Evidence.Add(WebCitation());
 
 		var request = Request(memory);
@@ -74,7 +75,7 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask rejects_a_web_excerpt_below_the_floor() {
 		// Arrange — a degenerate excerpt ("yes") satisfies "at least one" while carrying no evidence.
-		var memory = Memory(Contracts.MemoryType.Fact);
+		var memory = Memory(MemoryContracts.MemoryType.Fact);
 		memory.Evidence.Add(WebCitation(Passage(19)));
 
 		var request = Request(memory);
@@ -89,7 +90,7 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask rejects_a_web_excerpt_above_the_ceiling() {
 		// Arrange — past the ceiling it stops being a passage and becomes a copy of the source.
-		var memory = Memory(Contracts.MemoryType.Fact);
+		var memory = Memory(MemoryContracts.MemoryType.Fact);
 		memory.Evidence.Add(WebCitation(Passage(1001)));
 
 		var request = Request(memory);
@@ -104,7 +105,7 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask rejects_more_web_excerpts_than_the_cap() {
 		// Arrange — six passages from one page is a summary of it, which is a memory of its own.
-		var memory   = Memory(Contracts.MemoryType.Fact);
+		var memory   = Memory(MemoryContracts.MemoryType.Fact);
 		var excerpts = Enumerable.Repeat(Passage(50), 6).ToArray();
 		memory.Evidence.Add(WebCitation(excerpts));
 
@@ -120,7 +121,7 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask accepts_web_excerpts_at_both_bounds() {
 		// Arrange — the inclusive edges: 20 and 1000 characters, five of them.
-		var memory   = Memory(Contracts.MemoryType.Fact);
+		var memory   = Memory(MemoryContracts.MemoryType.Fact);
 		var excerpts = new[] { Passage(20), Passage(1000), Passage(50), Passage(50), Passage(50) };
 		memory.Evidence.Add(WebCitation(excerpts));
 
@@ -140,8 +141,8 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask accepts_a_git_citation_with_no_excerpt() {
 		// Arrange — optional: our own history is immutable, so the commit already anchors it.
-		var memory = Memory(Contracts.MemoryType.Fact);
-		memory.Evidence.Add(new Contracts.Evidence {
+		var memory = Memory(MemoryContracts.MemoryType.Fact);
+		memory.Evidence.Add(new MemoryContracts.Evidence {
 			Git = new() { Commit = "c93c6ae82", Path = "src/x.cs", Symbol = "Foo.Bar" }
 		});
 
@@ -158,7 +159,7 @@ public class RetainRequestValidatorTests {
 	public async ValueTask rejects_a_memory_citation_that_is_not_a_uuid() {
 		// Arrange — the server mints every id as a UUID, so anything else was invented by the caller.
 		var memory = Memory();
-		memory.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = "the-devex-lead-memory" } });
+		memory.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = "the-devex-lead-memory" } });
 
 		var request = Request(memory);
 
@@ -173,7 +174,7 @@ public class RetainRequestValidatorTests {
 	public async ValueTask accepts_a_memory_citation_carrying_a_uuid() {
 		// Arrange
 		var memory = Memory();
-		memory.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = Guid.NewGuid().ToString() } });
+		memory.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = Guid.NewGuid().ToString() } });
 
 		var request = Request(memory);
 
@@ -187,8 +188,8 @@ public class RetainRequestValidatorTests {
 	[Test]
 	public async ValueTask rejects_a_git_excerpt_below_the_floor() {
 		// Arrange
-		var memory = Memory(Contracts.MemoryType.Fact);
-		memory.Evidence.Add(new Contracts.Evidence {
+		var memory = Memory(MemoryContracts.MemoryType.Fact);
+		memory.Evidence.Add(new MemoryContracts.Evidence {
 			Git = new() { Commit = "c93c6ae82", Excerpt = Passage(19) }
 		});
 
@@ -205,7 +206,7 @@ public class RetainRequestValidatorTests {
 
 	#region ->> Supersedes <<-
 
-	static Contracts.Memory Superseding(params string[] ids) {
+	static MemoryContracts.Memory Superseding(params string[] ids) {
 		var memory = Memory();
 		memory.Supersedes.AddRange(ids);
 		return memory;

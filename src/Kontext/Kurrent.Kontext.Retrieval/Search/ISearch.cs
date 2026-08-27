@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -18,7 +20,7 @@ public interface ISearch {
 /// One candidate as a search saw it: the memory plus the search-native score reoriented so
 /// higher = better (vector distances arrive inverted). The list order IS the search's ranking.
 /// </summary>
-public sealed record SearchCandidate(Contracts.StoredMemory Memory, double Score);
+public sealed record SearchCandidate(MemoryContracts.StoredMemory Memory, double Score);
 
 /// <summary>A search's ranked output, best first; <see cref="Source"/> tags which search produced it.</summary>
 public sealed record CandidateSet(string Source, IReadOnlyList<SearchCandidate> Candidates);

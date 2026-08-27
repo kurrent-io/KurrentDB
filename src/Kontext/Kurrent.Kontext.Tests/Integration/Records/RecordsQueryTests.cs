@@ -16,6 +16,7 @@ using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Tests.Records;
 
@@ -134,8 +135,8 @@ public class RecordsQueryTests {
 
     static readonly RequestValidationService Validation = new(
         new ServiceCollection()
-            .AddSingleton<IValidator<Contracts.QueryRequest>, QueryRequestValidator>()
-            .AddSingleton<IValidator<Contracts.SearchRequest>, SearchRequestValidator>()
+            .AddSingleton<IValidator<RecordsContracts.QueryRequest>, QueryRequestValidator>()
+            .AddSingleton<IValidator<RecordsContracts.SearchRequest>, SearchRequestValidator>()
             .BuildServiceProvider());
 
     async Task<string> WriteJsonEvents(int count, CancellationToken ct) {

@@ -16,6 +16,7 @@ using KurrentDB.SecondaryIndexing.Query;
 using Value = Google.Protobuf.WellKnownTypes.Value;
 
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records;
 
@@ -34,7 +35,7 @@ public sealed class KontextRecords(
 	static readonly Operation ReadAllOperation = new Operation(Operations.Streams.Read)
 		.WithParameter(Operations.Streams.Parameters.StreamId(SystemStreams.AllStream));
 
-	public async ValueTask<Contracts.SearchResponse> SearchAsync(Contracts.SearchRequest request, CancellationToken ct = default) {
+	public async ValueTask<RecordsContracts.SearchResponse> SearchAsync(RecordsContracts.SearchRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
 		// Flags the text as a QUERY, for models that encode queries and documents differently.
@@ -44,20 +45,20 @@ public sealed class KontextRecords(
 			Query          = request.Query,
 			QueryEmbedding = embedding,
 			K              = request.Limit > 0 ? request.Limit : DefaultSearchLimit,
-			Stream         = request.ScopeCase is Contracts.SearchRequest.ScopeOneofCase.Stream ? request.Stream : null,
-			Category       = request.ScopeCase is Contracts.SearchRequest.ScopeOneofCase.Category ? request.Category : null,
-			SchemaName     = request.SchemaCase is Contracts.SearchRequest.SchemaOneofCase.SchemaName ? request.SchemaName : null,
-			SchemaId       = request.SchemaCase is Contracts.SearchRequest.SchemaOneofCase.SchemaId ? request.SchemaId : null,
-			SchemaFormat   = request.SchemaCase is Contracts.SearchRequest.SchemaOneofCase.SchemaFormat ? request.SchemaFormat : null,
+			Stream         = request.ScopeCase is RecordsContracts.SearchRequest.ScopeOneofCase.Stream ? request.Stream : null,
+			Category       = request.ScopeCase is RecordsContracts.SearchRequest.ScopeOneofCase.Category ? request.Category : null,
+			SchemaName     = request.SchemaCase is RecordsContracts.SearchRequest.SchemaOneofCase.SchemaName ? request.SchemaName : null,
+			SchemaId       = request.SchemaCase is RecordsContracts.SearchRequest.SchemaOneofCase.SchemaId ? request.SchemaId : null,
+			SchemaFormat   = request.SchemaCase is RecordsContracts.SearchRequest.SchemaOneofCase.SchemaFormat ? request.SchemaFormat : null,
 		};
 
-		var response = new Contracts.SearchResponse();
+		var response = new RecordsContracts.SearchResponse();
 
 		await foreach (var hit in store.SearchAsync(options, ct).ConfigureAwait(false)) {
 			if (hit.Score < request.MinScore)
 				continue;
 
-			response.Hits.Add(new Contracts.SearchResponse.Types.RecordHit {
+			response.Hits.Add(new RecordsContracts.SearchResponse.Types.RecordHit {
 				Score  = hit.Score,
 				Record = ToContract(hit.Record),
 			});
@@ -66,8 +67,8 @@ public sealed class KontextRecords(
 		return response;
 	}
 
-	public async ValueTask<Contracts.QueryResponse> QueryAsync(
-		Contracts.QueryRequest request, ClaimsPrincipal principal, CancellationToken ct = default
+	public async ValueTask<RecordsContracts.QueryResponse> QueryAsync(
+		RecordsContracts.QueryRequest request, ClaimsPrincipal principal, CancellationToken ct = default
 	) {
 		validation.Validate(request);
 
@@ -101,7 +102,7 @@ public sealed class KontextRecords(
 			prepared.Dispose();
 		}
 
-		var response = new Contracts.QueryResponse { Truncated = consumer.Truncated };
+		var response = new RecordsContracts.QueryResponse { Truncated = consumer.Truncated };
 		response.Rows.AddRange(consumer.Rows);
 
 		return response;
@@ -131,8 +132,8 @@ public sealed class KontextRecords(
 		}
 	}
 
-	static Contracts.Record ToContract(StoredRecord record) {
-		var contract = new Contracts.Record {
+	static RecordsContracts.Record ToContract(StoredRecord record) {
+		var contract = new RecordsContracts.Record {
 			RecordId    = record.RecordId.ToString(),
 			Stream      = record.Stream,
 			Category    = record.Category,

@@ -9,6 +9,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -61,11 +62,11 @@ public class TagPrefilterPushdownProbeTests {
 
 		var vectors = await embeddings.GenerateAsync(texts, options, cancellationToken);
 
-		var mine   = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
-		var theirs = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "someone-else" });
+		var mine   = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
+		var theirs = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "someone-else" });
 
 		var rows = texts
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 				Embedding = vectors[i].Vector.ToArray(),
 				Tags      = [i < MineCount ? mine : theirs],
 			})
@@ -74,7 +75,7 @@ public class TagPrefilterPushdownProbeTests {
 		var store = await MemorySeeding.Seed(dataSources, rows);
 		var qv    = (await embeddings.GenerateAsync([query], options, cancellationToken))[0].Vector.ToArray();
 
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		// Act — DEFAULT K (10). If containment were post-applied, the pool would be all-majority.
 		var unfiltered = await store

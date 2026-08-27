@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Google.Protobuf.WellKnownTypes;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Infrastructure.Datasets.LongMemEval;
 
@@ -21,7 +22,7 @@ namespace Kurrent.Kontext.Tests.Infrastructure.Datasets.LongMemEval;
 public sealed partial class LongMemEvalDataSource(string path, LongMemEvalOptions? options = null) : IKontextTestDataSource {
     LongMemEvalOptions Options { get; } = options ?? new();
 
-    public async IAsyncEnumerable<Contracts.MemoriesRetained> ReadEvents([EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<MemoryContracts.MemoriesRetained> ReadEvents([EnumeratorCancellation] CancellationToken ct = default) {
         await using var file = File.OpenRead(path);
 
         var instances = 0;
@@ -37,7 +38,7 @@ public sealed partial class LongMemEvalDataSource(string path, LongMemEvalOption
         }
     }
 
-    IEnumerable<Contracts.MemoriesRetained> MapInstance(LongMemEvalInstance instance) {
+    IEnumerable<MemoryContracts.MemoriesRetained> MapInstance(LongMemEvalInstance instance) {
         // haystack_sessions arrive in arbitrary date order; emit chronologically so a
         // knowledge-update successor is always yielded after the memory it supersedes.
         var sessions = instance.HaystackSessions
@@ -65,13 +66,13 @@ public sealed partial class LongMemEvalDataSource(string path, LongMemEvalOption
 
                 var memoryId = $"{Options.TagScope}:{instance.QuestionId}:{sessionIndex}:{turnIndex}";
 
-                var memory = new Contracts.Memory {
+                var memory = new MemoryContracts.Memory {
                     // A turn is a claim the speaker asserted, so it is a FACT. The dataset's own
                     // ground truth treats these as true; what the benchmark actually exercises is
                     // the supersession chain between evidence turns, not any trust distinction.
-                    MemoryType = Contracts.MemoryType.Fact,
+                    MemoryType = MemoryContracts.MemoryType.Fact,
                     Content    = turn.Content,
-                    Tags       = { new Contracts.Tag { Scope = Options.TagScope, Value = instance.QuestionId } }
+                    Tags       = { new MemoryContracts.Tag { Scope = Options.TagScope, Value = instance.QuestionId } }
                 };
 
                 if (isEvidence) {
@@ -85,7 +86,7 @@ public sealed partial class LongMemEvalDataSource(string path, LongMemEvalOption
                 // rides on the event, not the memory body: the write shape carries none because the
                 // server mints it (see resources.proto Memory).
                 yield return new() {
-                    Memories   = { new Contracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory } },
+                    Memories   = { new MemoryContracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory } },
                     RetainedAt = retainedAt,
                 };
             }

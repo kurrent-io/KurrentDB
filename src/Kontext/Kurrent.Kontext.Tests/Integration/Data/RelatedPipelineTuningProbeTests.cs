@@ -8,6 +8,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -70,10 +71,10 @@ public class RelatedPipelineTuningProbeTests {
 			.ToArray();
 
 		var vectors = await embeddings.GenerateAsync(stored, options, cancellationToken);
-		var tag     = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
+		var tag     = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
 
 		var rows = stored
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 				Embedding = vectors[i].Vector.ToArray(),
 				Tags      = [tag],
 			})
@@ -81,7 +82,7 @@ public class RelatedPipelineTuningProbeTests {
 
 		var store = await MemorySeeding.Seed(dataSources, rows);
 
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		Console.WriteLine($"{Marker} noise={NoiseSize} pairs={pairs.Length} limit={Limit}  (MRR, higher is better)");
 		Console.WriteLine($"{Marker} alpha  reranker   lexical  semantic   overall");
@@ -112,7 +113,7 @@ public class RelatedPipelineTuningProbeTests {
 	static async ValueTask<double> Mrr(
 		IKontextRetriever retriever,
 		IEnumerable<(string Stored, string Incoming, string Kind)> pairs,
-		Contracts.Tag[] scope,
+		MemoryContracts.Tag[] scope,
 		CancellationToken ct
 	) {
 		var total = 0.0;

@@ -77,7 +77,7 @@ public sealed class KontextMemoryProjector(
         checkpoints.EnsureSchema(connection);
 
         // The dimension is the schema's — the FLOAT[N] column type and the writer's cast must
-        // agree, and both come from KontextSchemaTask.Dimension.
+        // agree, and both come from KontextIndexConstants.VectorsDimension.
         var writer = new KontextMemoryWriter(connection, embeddings, new() { Dimensions = KontextIndexConstants.VectorsDimension });
 
         // Only used when no checkpoint exists yet — resumption always wins. Earliest, unlike the

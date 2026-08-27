@@ -3,6 +3,7 @@
 
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records.Grpc;
 
@@ -11,10 +12,10 @@ namespace Kurrent.Kontext.Records.Grpc;
 /// It owns only the gRPC plumbing (<see cref="ServerCallContext"/>); all request shaping, domain mapping,
 /// and validation live behind the service and its decorators.
 /// </summary>
-public sealed class GrpcRecordsService(IKontextRecords service) : Contracts.RecordsService.RecordsServiceBase {
-	public override async Task<Contracts.SearchResponse> Search(Contracts.SearchRequest request, ServerCallContext context) =>
+public sealed class GrpcRecordsService(IKontextRecords service) : RecordsContracts.RecordsService.RecordsServiceBase {
+	public override async Task<RecordsContracts.SearchResponse> Search(RecordsContracts.SearchRequest request, ServerCallContext context) =>
 		await service.SearchAsync(request, context.CancellationToken).ConfigureAwait(false);
 
-	public override async Task<Contracts.QueryResponse> Query(Contracts.QueryRequest request, ServerCallContext context) =>
+	public override async Task<RecordsContracts.QueryResponse> Query(RecordsContracts.QueryRequest request, ServerCallContext context) =>
 		await service.QueryAsync(request, context.GetHttpContext().User, context.CancellationToken).ConfigureAwait(false);
 }

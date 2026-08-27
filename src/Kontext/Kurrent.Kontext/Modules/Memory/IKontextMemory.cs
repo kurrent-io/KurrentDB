@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 namespace Kurrent.Kontext.Memory;
 
 /// <summary>
@@ -9,13 +10,13 @@ namespace Kurrent.Kontext.Memory;
 /// The gRPC edge is a thin shim over this service.
 /// </summary>
 public interface IKontextMemory {
-	ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default);
+	ValueTask<MemoryContracts.RetainResponse> RetainAsync(MemoryContracts.RetainRequest request, CancellationToken ct = default);
 
-	ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default);
+	ValueTask<MemoryContracts.RecallResponse> RecallAsync(MemoryContracts.RecallRequest request, CancellationToken ct = default);
 
-	IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default);
+	IAsyncEnumerable<MemoryContracts.StoredMemory> ReclaimAsync(MemoryContracts.ReclaimRequest request, CancellationToken ct = default);
 
-	IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, CancellationToken ct = default);
+	IAsyncEnumerable<MemoryContracts.StoredMemory> RecollectAsync(MemoryContracts.RecollectRequest request, CancellationToken ct = default);
 
-	ValueTask<Contracts.ReinforceResponse> ReinforceAsync(Contracts.ReinforceRequest request, CancellationToken ct = default);
+	ValueTask<MemoryContracts.ReinforceResponse> ReinforceAsync(MemoryContracts.ReinforceRequest request, CancellationToken ct = default);
 }

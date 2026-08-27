@@ -8,6 +8,7 @@ using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -101,7 +102,7 @@ public class LanceHybridSearchSemanticsProbeTests {
 			.Select((content, i) => {
 				var superseded = i >= liveWanted;
 
-				return new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+				return new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 					Embedding    = vectors[i],
 					IsSuperseded = superseded,
 					SupersededAt = superseded ? Base.AddHours(1) : null,

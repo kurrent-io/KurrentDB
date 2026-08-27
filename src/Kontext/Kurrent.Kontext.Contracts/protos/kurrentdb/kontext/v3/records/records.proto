@@ -3,9 +3,9 @@
 
 edition = "2023";
 
-package kurrent.kontext;
+package kurrentdb.kontext.v3.records;
 
-option csharp_namespace = "Kurrent.Kontext.Contracts";
+option csharp_namespace = "Kurrent.Kontext.Contracts.Records";
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";

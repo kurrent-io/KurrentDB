@@ -6,6 +6,7 @@ using Kurrent.Kontext.Records.Indexer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records;
 
@@ -30,8 +31,8 @@ public static class KontextRecordsWireUp {
 
         IServiceCollection AddRequestValidation() {
             services.TryAddSingleton<RequestValidationService>();
-            services.TryAddSingleton<IValidator<Contracts.SearchRequest>, SearchRequestValidator>();
-            services.TryAddSingleton<IValidator<Contracts.QueryRequest>, QueryRequestValidator>();
+            services.TryAddSingleton<IValidator<RecordsContracts.SearchRequest>, SearchRequestValidator>();
+            services.TryAddSingleton<IValidator<RecordsContracts.QueryRequest>, QueryRequestValidator>();
             return services;
         }
 

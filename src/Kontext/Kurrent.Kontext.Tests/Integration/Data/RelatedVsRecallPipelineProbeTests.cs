@@ -9,6 +9,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -52,11 +53,11 @@ public class RelatedVsRecallPipelineProbeTests {
 			.ToArray();
 
 		var vectors = await embeddings.GenerateAsync(texts, options, cancellationToken);
-		var mine    = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
+		var mine    = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
 
 		var rows = texts
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content,
-					i == 0 ? Contracts.MemoryImportance.Low : Contracts.MemoryImportance.Critical,
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content,
+					i == 0 ? MemoryContracts.MemoryImportance.Low : MemoryContracts.MemoryImportance.Critical,
 					i == 0 ? Now.AddDays(-365) : Now.AddDays(-1)) {
 				Embedding      = vectors[i].Vector.ToArray(),
 				Tags           = [mine],
@@ -67,7 +68,7 @@ public class RelatedVsRecallPipelineProbeTests {
 		var store = await MemorySeeding.Seed(dataSources, rows);
 		var qv    = (await embeddings.GenerateAsync([incoming], options, cancellationToken))[0].Vector.ToArray();
 
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		var retriever = KontextRetriever.New().Focused(store, embeddings, clock).Build();
 

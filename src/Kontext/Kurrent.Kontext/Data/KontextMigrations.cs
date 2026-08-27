@@ -20,6 +20,7 @@ public sealed class KontextMigrations {
             x.Enqueue<MemoriesInitialSchema>();
             x.Enqueue<RecordsInitialSchema>();
             x.Enqueue<AutoCleanupTables>();
+            x.Enqueue<EntitiesInitialSchema>();
         });
 
         return new(engineOptions);

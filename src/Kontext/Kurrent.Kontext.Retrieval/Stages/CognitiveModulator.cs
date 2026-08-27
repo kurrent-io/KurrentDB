@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>
@@ -75,7 +77,7 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
         return ValueTask.FromResult(modulated);
     }
 
-    double RecencyOf(Contracts.StoredMemory memory, DateTimeOffset asOf) =>
+    double RecencyOf(MemoryContracts.StoredMemory memory, DateTimeOffset asOf) =>
         ScoreNormalization.ExponentialDecay(asOf - memory.LastAccessedAt.ToDateTimeOffset(), options.RecencyTau);
 }
 
@@ -105,20 +107,20 @@ public sealed class CognitiveModulationOptions {
     public TimeSpan RecencyTau { get; set; } = TimeSpan.FromDays(30);
 
     /// <summary>Salience [0,1] per importance level — the agent's coarse enum resolved to the number the ranking uses.</summary>
-    public Dictionary<Contracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
-        [Contracts.MemoryImportance.Unspecified] = 0.50,
-        [Contracts.MemoryImportance.Low]         = 0.25,
-        [Contracts.MemoryImportance.Normal]      = 0.50,
-        [Contracts.MemoryImportance.High]        = 0.75,
-        [Contracts.MemoryImportance.Critical]    = 1.00,
+    public Dictionary<MemoryContracts.MemoryImportance, double> ImportanceWeights { get; set; } = new() {
+        [MemoryContracts.MemoryImportance.Unspecified] = 0.50,
+        [MemoryContracts.MemoryImportance.Low]         = 0.25,
+        [MemoryContracts.MemoryImportance.Normal]      = 0.50,
+        [MemoryContracts.MemoryImportance.High]        = 0.75,
+        [MemoryContracts.MemoryImportance.Critical]    = 1.00,
     };
 
     // TryGetValue first so a present key never touches the fallback lookup (GetValueOrDefault's
     // second argument is evaluated eagerly, so indexing the fallback key unconditionally would
     // throw even for a present key); the fallback lookup itself degrades to a literal neutral
     // instead of indexing, so a partial dictionary that omits Normal/Unspecified can't throw either.
-    internal double SalienceOf(Contracts.MemoryImportance importance) =>
+    internal double SalienceOf(MemoryContracts.MemoryImportance importance) =>
         ImportanceWeights.TryGetValue(importance, out var weight)
             ? weight
-            : ImportanceWeights.GetValueOrDefault(Contracts.MemoryImportance.Normal, 0.5);
+            : ImportanceWeights.GetValueOrDefault(MemoryContracts.MemoryImportance.Normal, 0.5);
 }

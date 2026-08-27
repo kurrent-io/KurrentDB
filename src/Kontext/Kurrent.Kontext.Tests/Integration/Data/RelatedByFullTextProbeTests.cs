@@ -5,6 +5,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using TUnit.Assertions.Enums;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -111,5 +112,5 @@ public class RelatedByFullTextProbeTests {
 	}
 
 	static MemoryRow Row(string id, string content) =>
-		new(id, Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base);
+		new(id, MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base);
 }

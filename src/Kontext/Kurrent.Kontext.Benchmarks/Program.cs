@@ -3,36 +3,290 @@
 
 using System.Diagnostics;
 using Benchmarks;
+using Benchmarks.Entities;
 using Benchmarks.Retrieval;
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Embeddings.GlinerOnnx;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
+using Kurrent.Kontext.Entities;
+using Kurrent.Kontext.Entities.Extraction;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 
-if (args is ["--determinism", ..]) {
-	await RunDeterminism();
-	return;
+await (args switch {
+	["--determinism", ..]        => RunDeterminism(),
+	["--max-tokens-ab", ..]      => RunMaxTokensAb(),
+	["--main-ab", ..]            => RunMainAb(),
+	["--model", var model, ..]   => RunModelLeg(model),
+	["--chains", ..]             => RunChains(),
+	["--legs", ..]               => RunLegs(),
+	["--entities-ab", ..]        => RunEntitiesAb(),
+	["--entities-lab", ..]       => RunEntitiesLab(),
+	["--entities-quality", ..]   => RunEntitiesQuality(),
+	["--extraction-quality", ..] => RunExtractionQuality(),
+	_                            => RunRetrievalQuality(),
+});
+
+return;
+
+// Scores extraction against labelled memories, in the shape the neo4j agent-memory extraction
+// benchmark uses: per-type precision/recall/F1, micro and macro averaged, beside latency and
+// throughput. Compares the label vocabularies and thresholds the ingest pipeline can run with.
+static async ValueTask RunExtractionQuality() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		var labels = await EntityExtractionLabels.Load(
+			Path.Combine(AppContext.BaseDirectory, "Corpus", "Data", "entity-extraction-labels.json"));
+
+		Log.Information(
+			"Labels {SampleId}: {Documents} memories, {Entities} labelled entities",
+			labels.SampleId, labels.Documents.Count, labels.ExpectedCount);
+
+		var q8 = GlinerOnnxEntityRecognizer.DefaultModelId;
+
+		var pole = EntityTypes.Canonical;
+		var life = EntityTypes.Everyday;
+
+		// One GLiNER pass per label set: span scores dilute as the label prompt grows, so a wide
+		// vocabulary may recall more when split across passes.
+		var variants = new (string Name, string ModelId, double Threshold, IReadOnlyList<IReadOnlyList<string>> LabelSets, bool Split)[] {
+			("poleo t=.5 (legacy)", q8, 0.5, [pole], false),
+			("shipped t=.5 nosplit", q8, 0.5, [EntityTypes.ExtractionLabels], false),
+			("shipped t=.5", q8, 0.5, [EntityTypes.ExtractionLabels], true),
+			("shipped t=.4", q8, 0.4, [EntityTypes.ExtractionLabels], true),
+			("shipped t=.35", q8, 0.35, [EntityTypes.ExtractionLabels], true),
+			("2pass t=.5", q8, 0.5, [pole, life], true),
+			("2pass t=.4", q8, 0.4, [pole, life], true),
+			("2pass fp32 t=.4", "gliner-small-fp32", 0.4, [pole, life], true),
+		};
+
+		var runs = new List<ExtractionRun>();
+
+		foreach (var (name, modelId, threshold, labelSets, split) in variants) {
+			using var recognizer = new GlinerOnnxEntityRecognizer(
+				EntityCorpusSeeder.GlinerRegistry(modelId),
+				new GlinerOnnxOptions { ModelId = modelId, Threshold = threshold });
+
+			var extractor = new EntityExtractor.Pipeline(
+				[.. labelSets.Select(set => new EntityExtractor.Gliner(recognizer, set))],
+				NullLogger<EntityExtractor.Pipeline>.Instance,
+				new EntityExtractor.PipelineOptions { SplitCoordinatedSpans = split });
+
+			runs.Add(await new EntityExtractionBenchmark(labels).Run(name, extractor));
+		}
+
+		EntityExtractionReport.PrintMetrics(runs);
+		EntityExtractionReport.PrintDetail(runs.MaxBy(run => run.Untyped.F1)!);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
 }
 
-if (args is ["--max-tokens-ab", ..]) {
-	await RunMaxTokensAb();
-	return;
+// Scores the resolver directly instead of through its echo in ranking: labelled surface forms
+// (real extractor output from the corpus, grouped by hand) go through the production resolver and
+// writer, and the entity ids they land on are compared with the labels pairwise. No NER model, no
+// retrieval — seconds to run, and it names the wrong and missed merges instead of averaging them
+// into an ndcg delta.
+static async ValueTask RunEntitiesQuality() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		var labels = await EntitySurfaceForms.Load(
+			Path.Combine(AppContext.BaseDirectory, "Corpus", "Data", "entity-surface-forms.json"));
+
+		Log.Information(
+			"Labels {SampleId}: {Clusters} clusters, {Forms} surface forms",
+			labels.SampleId, labels.Clusters.Count, labels.FormCount);
+
+		// The before/after: Legacy is the cascade as it shipped before the resolution work, so the
+		// lexical tier is priced rather than assumed.
+		var variants = new (string Name, EntityResolverOptions Options)[] {
+			("legacy (exact+vector)", EntityResolverOptions.Legacy),
+			("shipped", new EntityResolverOptions()),
+		};
+
+		var runs = new List<ResolutionRun>();
+
+		// A fresh store per variant: the catalog a run builds is the catalog it resolves against,
+		// so sharing one would let the first variant's merges decide the second's.
+		foreach (var (name, options) in variants) {
+			await using var store = new KontextStoreFixture();
+			await store.InitializeAsync();
+
+			runs.Add(await new EntityResolutionBenchmark(labels).Run(name, store, options));
+		}
+
+		EntityResolutionReport.PrintMetrics(runs, labels.Clusters.Count);
+
+		foreach (var run in runs)
+			EntityResolutionReport.PrintErrors(run);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
 }
 
-if (args is ["--model", var model, ..]) {
-	await RunModelLeg(model);
-	return;
+// The README's headline table: the shipped default against the legacy baseline.
+static async ValueTask RunMainAb() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		await using var corpus = new KontextCorpus();
+		await corpus.InitializeAsync();
+
+		var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+
+		var legacy = await benchmark.Run(
+			"legacy",
+			KontextRetriever.New().Legacy(corpus.Store, corpus.EmbeddingGenerator).Build());
+
+		var shipped = await benchmark.Run(
+			"default",
+			KontextRetriever.New().Default(corpus.Store, corpus.EmbeddingGenerator).Build());
+
+		QualityReport.PrintMetrics([shipped, legacy], baseline: legacy);
+		QualityReport.PrintHeadToHead(legacy, shipped);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
 }
 
-if (args is ["--chains", ..]) {
-	await RunChains();
-	return;
+// The extraction-config sweep behind the entity leg: each config seeds a fresh corpus store the
+// way production ingestion would under that config, then Connected is measured against Focused
+// on the same store. Per-question outcomes dump to JSON for offline analysis.
+static async ValueTask RunEntitiesLab() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	var dumpDir = Environment.GetEnvironmentVariable("ENTITIES_LAB_DUMP") ?? Path.Combine(Path.GetTempPath(), "entities-lab");
+	Directory.CreateDirectory(dumpDir);
+
+	// Extraction recall rises steeply as the threshold drops (see --extraction-quality); the
+	// question here is whether the entity leg's guards absorb the extra spans or drown in them.
+	var configs = new (string Name, EntityCorpusSeeder.SeedOptions Options)[] {
+		("t=0.5", new()),
+		("t=0.4", new() { Threshold = 0.4 }),
+		("t=0.35", new() { Threshold = 0.35 }),
+	};
+
+	try {
+		var allRuns = new List<QualityRun>();
+		QualityRun? focusedRun = null;
+
+		foreach (var (name, options) in configs) {
+			await using var corpus = new KontextCorpus();
+			await corpus.InitializeAsync();
+
+			var catalog = await EntityCorpusSeeder.Seed(corpus, options);
+
+			Log.Information("[{Config}] catalog: {Entities} entities, {Aliases} aliases, {Mentions} mentions",
+				name, catalog.Entities, catalog.Aliases, catalog.Mentions);
+
+			foreach (var (alias, type, mentions) in catalog.TopEntities)
+				Log.Information("  {Mentions,4} mentions  {Type,-14} {Alias}", mentions, type, alias);
+
+			var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+
+			if (focusedRun is null) {
+				focusedRun = await benchmark.Run(
+					"focused (shipped)",
+					KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build());
+				allRuns.Add(focusedRun);
+				QualityReport.Dump(focusedRun, Path.Combine(dumpDir, "focused.json"));
+			}
+
+			var connected = await benchmark.Run(
+				$"{name} connected",
+				KontextRetriever.New().Connected(corpus.Store, corpus.Store, corpus.EmbeddingGenerator).Build());
+
+			allRuns.Add(connected);
+			QualityReport.Dump(connected, Path.Combine(dumpDir, $"{name}.json"));
+		}
+
+		QualityReport.PrintMetrics(allRuns, baseline: focusedRun!);
+
+		var best = allRuns.Skip(1).MaxBy(run => run.NdcgAt(10))!;
+		QualityReport.PrintHeadToHead(focusedRun!, best);
+
+		Log.Information("Per-question dumps in {DumpDir}", dumpDir);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
 }
 
-if (args is ["--legs", ..]) {
-	await RunLegs();
-	return;
+// The shipped A/B: seeds the catalog the way production ingestion does (GLiNER extraction over
+// the production label vocabulary, the resolver's full cascade, the production writer), then
+// measures the shipped Connected chain against the shipped Focused chain. The permissive row
+// shows what the measured constants protect against.
+static async ValueTask RunEntitiesAb() {
+	Log.Logger = new LoggerConfiguration()
+		.MinimumLevel.Information()
+		.WriteTo.Console()
+		.CreateLogger();
+
+	try {
+		await using var corpus = new KontextCorpus();
+		await corpus.InitializeAsync();
+
+		Log.Information("Corpus {SampleId}: {Memories} memories, {Questions} questions", corpus.Data.SampleId, corpus.MemoryCount, corpus.Questions.Count);
+
+		var catalog = await EntityCorpusSeeder.Seed(corpus);
+
+		Log.Information("Entity catalog: {Entities} entities, {Aliases} aliases, {Mentions} mentions", catalog.Entities, catalog.Aliases, catalog.Mentions);
+
+		foreach (var (alias, type, mentions) in catalog.TopEntities)
+			Log.Information("  {Mentions,4} mentions  {Type,-14} {Alias}", mentions, type, alias);
+
+		var benchmark = new RetrievalQualityBenchmark(corpus.Data);
+		var runs      = new List<QualityRun>();
+
+		var focused = await benchmark.Run(
+			"focused (shipped)",
+			KontextRetriever.New().Focused(corpus.Store, corpus.EmbeddingGenerator).Build());
+
+		runs.Add(focused);
+
+		var connected = await benchmark.Run(
+			"connected (shipped)",
+			KontextRetriever.New().Connected(corpus.Store, corpus.Store, corpus.EmbeddingGenerator).Build());
+
+		runs.Add(connected);
+
+		// The cautionary row: the same leg with every guard off — no candidate cap, every
+		// query-named entity scoring, no frequency gate.
+		runs.Add(await benchmark.Run(
+			"connected permissive",
+			KontextRetriever.New()
+				.Connected(corpus.Store, corpus.Store, corpus.EmbeddingGenerator, configureEntities: options => {
+					options.MaxDocumentFrequencyRatio = 1.0;
+					options.MaxCandidates             = int.MaxValue;
+					options.ScoreRareEntitiesOnly     = false;
+				})
+				.Build()));
+
+		QualityReport.PrintMetrics(runs, baseline: focused);
+		QualityReport.PrintHeadToHead(focused, connected);
+	}
+	finally {
+		await Log.CloseAndFlushAsync();
+	}
 }
 
 // Isolates the raw retrieval signal: each leg is the search stage ALONE, with no reranker or
@@ -107,7 +361,7 @@ static async ValueTask RunChains() {
 }
 
 // One leg of the pMM12 vs bge-m3 comparison on the shipped Focused chain. It is one model per
-// invocation, not an in-process A/B: the store's embedding column is FLOAT[KontextSchemaTask.Dimension]
+// invocation, not an in-process A/B: the store's embedding column is FLOAT[KontextIndexConstants.VectorsDimension]
 // and that is a compile-time constant, so a 384-dim and a 1024-dim corpus cannot coexist in one build.
 static async ValueTask RunModelLeg(string model) {
 	Log.Logger = new LoggerConfiguration()
@@ -177,10 +431,6 @@ static async ValueTask RunMaxTokensAb() {
 		await Log.CloseAndFlushAsync();
 	}
 }
-
-await RunRetrievalQuality();
-
-return;
 
 // Localizes the two-leg wobble: sequential triples per composition separate engine-level
 // nondeterminism from concurrency effects; the concurrent pair reintroduces the suite's overlap.

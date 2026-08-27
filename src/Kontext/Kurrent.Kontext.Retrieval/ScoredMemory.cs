@@ -1,11 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval;
 
 /// <summary>One ranked memory with its full score breakdown.</summary>
 public sealed record ScoredMemory {
-    public required Contracts.StoredMemory Memory { get; init; }
+    public required MemoryContracts.StoredMemory Memory { get; init; }
 
     /// <summary>The value the ranking ordered on — higher = stronger. Semantics depend on the pipeline (see the breakdown).</summary>
     public required double Score { get; init; }

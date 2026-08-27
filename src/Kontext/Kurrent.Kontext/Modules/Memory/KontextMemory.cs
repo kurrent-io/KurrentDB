@@ -12,6 +12,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Memory;
 
@@ -54,12 +55,12 @@ public sealed class KontextMemory(
 	/// whole call. One retained moments ago may not be projected yet, and reads as missing until it
 	/// lands.</para>
 	/// </summary>
-	public async ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default) {
+	public async ValueTask<MemoryContracts.RetainResponse> RetainAsync(MemoryContracts.RetainRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
-		var response = new Contracts.RetainResponse();
+		var response = new MemoryContracts.RetainResponse();
 
-		var retained = new Contracts.MemoriesRetained {
+		var retained = new MemoryContracts.MemoriesRetained {
 			RetainedAt = Timestamp.FromDateTimeOffset(time.GetUtcNow()),
 		};
 
@@ -71,8 +72,8 @@ public sealed class KontextMemory(
 			// is stored, because deciding otherwise means guessing which tags and which citations
 			// the caller meant to keep.
 			if (await FindIdenticalAsync(memory, ct).ConfigureAwait(false) is { } identical) {
-				response.Results.Add(new Contracts.RetainResponse.Types.RetainResult {
-					Outcome  = Contracts.RetainOutcome.Noop,
+				response.Results.Add(new MemoryContracts.RetainResponse.Types.RetainResult {
+					Outcome  = MemoryContracts.RetainOutcome.Noop,
 					MemoryId = identical.MemoryId,
 				});
 
@@ -83,10 +84,10 @@ public sealed class KontextMemory(
 			// cite one it is sending in this same batch.
 			var memoryId = Guid.CreateVersion7().ToString();
 
-			retained.Memories.Add(new Contracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory });
+			retained.Memories.Add(new MemoryContracts.MemoriesRetained.Types.RetainedMemory { MemoryId = memoryId, Memory = memory });
 
-			response.Results.Add(new Contracts.RetainResponse.Types.RetainResult {
-				Outcome  = Contracts.RetainOutcome.Created,
+			response.Results.Add(new MemoryContracts.RetainResponse.Types.RetainResult {
+				Outcome  = MemoryContracts.RetainOutcome.Created,
 				MemoryId = memoryId,
 			});
 		}
@@ -112,7 +113,7 @@ public sealed class KontextMemory(
 	/// null. <c>supersedes</c> counts: a fold retains the surviving claim again with the loser
 	/// attached, which matches the survivor in every other field.
 	/// </summary>
-	async ValueTask<Contracts.StoredMemory?> FindIdenticalAsync(Contracts.Memory memory, CancellationToken ct) {
+	async ValueTask<MemoryContracts.StoredMemory?> FindIdenticalAsync(MemoryContracts.Memory memory, CancellationToken ct) {
 		if (await store.FindLiveByContentAsync(memory.Content, ct).ConfigureAwait(false) is not { } existing)
 			return null;
 
@@ -131,7 +132,7 @@ public sealed class KontextMemory(
 	/// <c>MemoryRef</c> citation need only EXIST — evidence is frozen at retain, so citing a memory
 	/// superseded later records what the claim actually rested on.
 	/// </summary>
-	async ValueTask EnsureReferencedMemoriesResolveAsync(Contracts.MemoriesRetained retained, CancellationToken ct) {
+	async ValueTask EnsureReferencedMemoriesResolveAsync(MemoryContracts.MemoriesRetained retained, CancellationToken ct) {
 		var superseded = retained.Memories.SelectMany(entry => entry.Memory.Supersedes).ToHashSet();
 		var cited      = retained.Memories.SelectMany(entry => KontextMemoryDataStore.EncodeCitedMemoryIds(entry.Memory)).ToHashSet();
 
@@ -144,19 +145,19 @@ public sealed class KontextMemory(
 
 		if (superseded.Where(id => !tips.ContainsKey(id)).ToList() is { Count: > 0 } missingTargets)
 			failures.Add(new ValidationFailure(
-				nameof(Contracts.Memory.Supersedes),
+				nameof(MemoryContracts.Memory.Supersedes),
 				$"No such memory: {string.Join(", ", missingTargets)}."
 			));
 
 		if (superseded.Where(id => tips.TryGetValue(id, out var tip) && !tip.IsLive).ToList() is { Count: > 0 } staleTargets)
 			failures.Add(new ValidationFailure(
-				nameof(Contracts.Memory.Supersedes),
+				nameof(MemoryContracts.Memory.Supersedes),
 				$"Already superseded — supersede the live tip instead: {string.Join(", ", staleTargets.Select(id => $"{id} -> {tips[id].SupersededBy}"))}."
 			));
 
 		if (cited.Where(id => !tips.ContainsKey(id)).ToList() is { Count: > 0 } missingCitations)
 			failures.Add(new ValidationFailure(
-				nameof(Contracts.Memory.Evidence),
+				nameof(MemoryContracts.Memory.Evidence),
 				$"A memory citation names no such memory: {string.Join(", ", missingCitations)}."
 			));
 
@@ -170,10 +171,10 @@ public sealed class KontextMemory(
 	/// embedding is the only reason retain touches a model at all — the projector owns the vectors
 	/// the store keeps — so leaving <c>neighbours</c> at 0 costs nothing.</para>
 	/// </summary>
-	async ValueTask ReportNeighboursAsync(Contracts.RetainRequest request, Contracts.RetainResponse response, CancellationToken ct) {
+	async ValueTask ReportNeighboursAsync(MemoryContracts.RetainRequest request, MemoryContracts.RetainResponse response, CancellationToken ct) {
 		var wanted = Math.Min(request.Neighbours, options.MaxNeighbours);
 
-		if (wanted <= 0 || !response.Results.Any(result => result.Outcome == Contracts.RetainOutcome.Created))
+		if (wanted <= 0 || !response.Results.Any(result => result.Outcome == MemoryContracts.RetainOutcome.Created))
 			return;
 
 		// ONE embedding call for the batch. The local ONNX generator runs one session per string
@@ -184,16 +185,16 @@ public sealed class KontextMemory(
 		var searchOpts = new HybridSearchOptions { K = wanted, Alpha = options.NeighbourAlpha };
 
 		for (var i = 0; i < request.Memories.Count; i++) {
-			if (response.Results[i].Outcome != Contracts.RetainOutcome.Created)
+			if (response.Results[i].Outcome != MemoryContracts.RetainOutcome.Created)
 				continue;
 
 			var memory     = request.Memories[i];
-			var neighbours = new List<Contracts.RetainResponse.Types.Neighbour>(wanted);
+			var neighbours = new List<MemoryContracts.RetainResponse.Types.Neighbour>(wanted);
 
 			// Scoped by the memory's own tags. Once the server stamps `user`, that is what keeps the
 			// search from crossing principals; an untagged memory is searched unscoped.
 			await foreach (var hit in store.SearchAsync(memory.Content, vectors[i].Vector.ToArray(), memory.Tags, searchOpts, ct).ConfigureAwait(false))
-				neighbours.Add(new Contracts.RetainResponse.Types.Neighbour {
+				neighbours.Add(new MemoryContracts.RetainResponse.Types.Neighbour {
 					// Infinity when the vector leg never placed this row: the keyword leg alone
 					// found it, and reporting 0 would read as identical, and it sorts last.
 					Distance     = hit.VectorDistance ?? double.PositiveInfinity,
@@ -208,10 +209,10 @@ public sealed class KontextMemory(
 		}
 	}
 
-	public async ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
+	public async ValueTask<MemoryContracts.RecallResponse> RecallAsync(MemoryContracts.RecallRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
-		var response = new Contracts.RecallResponse {
+		var response = new MemoryContracts.RecallResponse {
 			QueryId = request.QueryId.Length > 0 ? request.QueryId : Guid.CreateVersion7().ToString(),
 		};
 
@@ -225,7 +226,7 @@ public sealed class KontextMemory(
 		var ranked = await retriever.RetrieveAsync(query, ct).ConfigureAwait(false);
 
 		foreach (var scored in ranked) {
-			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = scored.Score };
+			var memory = new MemoryContracts.RecallResponse.Types.RecalledMemory { Score = scored.Score };
 
 			if (request.IncludeFull)
 				memory.Full = scored.Memory;
@@ -249,13 +250,13 @@ public sealed class KontextMemory(
 	/// to preserve, and a recall that silently stopped advancing the clock would hide that.</para>
 	/// </summary>
 	async ValueTask RecordRecallAsync(
-		Contracts.RecallRequest request, string queryId, IReadOnlyList<Retrieval.ScoredMemory> ranked, CancellationToken ct
+		MemoryContracts.RecallRequest request, string queryId, IReadOnlyList<Retrieval.ScoredMemory> ranked, CancellationToken ct
 	) {
 		// A recall that matched nothing accessed nothing.
 		if (ranked.Count == 0)
 			return;
 
-		var recalled = new Contracts.MemoriesRecalled {
+		var recalled = new MemoryContracts.MemoriesRecalled {
 			QueryId    = queryId,
 			Query      = request.Query,
 			Limit      = request.Limit,
@@ -268,7 +269,7 @@ public sealed class KontextMemory(
 		// not surface them. The decay mechanism does not need them — only replaying a past ranking
 		// would, and nothing does that yet.
 		foreach (var scored in ranked)
-			recalled.Memories.Add(new Contracts.ScoredMemory {
+			recalled.Memories.Add(new MemoryContracts.ScoredMemory {
 				MemoryId       = scored.Memory.MemoryId,
 				LastAccessedAt = scored.Memory.LastAccessedAt,
 				Score          = scored.Score,
@@ -286,8 +287,8 @@ public sealed class KontextMemory(
 	}
 
 	/// <summary>The lean projection both recall hits and retain's candidates are reported as.</summary>
-	static Contracts.LeanMemory ToLean(Contracts.StoredMemory stored) {
-		var lean = new Contracts.LeanMemory {
+	static MemoryContracts.LeanMemory ToLean(MemoryContracts.StoredMemory stored) {
+		var lean = new MemoryContracts.LeanMemory {
 			MemoryId   = stored.MemoryId,
 			MemoryType = stored.MemoryType,
 			Content    = stored.Content,
@@ -300,13 +301,13 @@ public sealed class KontextMemory(
 	}
 
 	// Not async iterators: an invalid request must be rejected on the call, not on first enumeration.
-	public IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default) {
+	public IAsyncEnumerable<MemoryContracts.StoredMemory> ReclaimAsync(MemoryContracts.ReclaimRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
 		return store.GetAsync([.. request.Ids], ct);
 	}
 
-	public IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, CancellationToken ct = default) {
+	public IAsyncEnumerable<MemoryContracts.StoredMemory> RecollectAsync(MemoryContracts.RecollectRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
 		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
@@ -323,7 +324,7 @@ public sealed class KontextMemory(
 	/// which is the one thing worth telling it — so the rejection hands back the tip, exactly as retain
 	/// does for a stale supersession target.</para>
 	/// </summary>
-	public async ValueTask<Contracts.ReinforceResponse> ReinforceAsync(Contracts.ReinforceRequest request, CancellationToken ct = default) {
+	public async ValueTask<MemoryContracts.ReinforceResponse> ReinforceAsync(MemoryContracts.ReinforceRequest request, CancellationToken ct = default) {
 		validation.Validate(request);
 
 		var ids   = request.Ids.ToHashSet();
@@ -333,13 +334,13 @@ public sealed class KontextMemory(
 
 		if (ids.Where(id => !known.ContainsKey(id)).ToList() is { Count: > 0 } missing)
 			failures.Add(new ValidationFailure(
-				nameof(Contracts.ReinforceRequest.Ids),
+				nameof(MemoryContracts.ReinforceRequest.Ids),
 				$"No such memory: {string.Join(", ", missing)}."
 			));
 
 		if (ids.Where(id => known.TryGetValue(id, out var tip) && !tip.IsLive).ToList() is { Count: > 0 } superseded)
 			failures.Add(new ValidationFailure(
-				nameof(Contracts.ReinforceRequest.Ids),
+				nameof(MemoryContracts.ReinforceRequest.Ids),
 				$"Superseded — you acted on a memory that has been corrected; reinforce the tip instead: {string.Join(", ", superseded.Select(id => $"{id} -> {known[id].SupersededBy}"))}."
 			));
 
@@ -350,7 +351,7 @@ public sealed class KontextMemory(
 
 		// ONE event for the whole call, like retain: the batch is the unit of the operation, and the
 		// projector folds a batch to one row state per id regardless.
-		var reinforced = new Contracts.MemoriesReinforced { ReinforcedAt = Timestamp.FromDateTimeOffset(accessedAt) };
+		var reinforced = new MemoryContracts.MemoriesReinforced { ReinforcedAt = Timestamp.FromDateTimeOffset(accessedAt) };
 		reinforced.MemoryIds.AddRange(ids);
 
 		await appendEvent(reinforced, ct).ConfigureAwait(false);

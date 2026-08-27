@@ -5,10 +5,11 @@
 
 using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Memory;
 
-public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRequest> {
+public sealed class RetainRequestValidator : RequestValidator<MemoryContracts.RetainRequest> {
     public RetainRequestValidator() {
         RuleFor(x => x.Memories)
             .NotEmpty()
@@ -48,7 +49,7 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
     }
 }
 
-public sealed class RecallRequestValidator : RequestValidator<Contracts.RecallRequest> {
+public sealed class RecallRequestValidator : RequestValidator<MemoryContracts.RecallRequest> {
     public RecallRequestValidator() {
         RuleFor(x => x.Query)
             .NotEmpty()
@@ -68,7 +69,7 @@ public sealed class RecallRequestValidator : RequestValidator<Contracts.RecallRe
     }
 }
 
-public sealed class ReclaimRequestValidator : RequestValidator<Contracts.ReclaimRequest> {
+public sealed class ReclaimRequestValidator : RequestValidator<MemoryContracts.ReclaimRequest> {
     public ReclaimRequestValidator() {
         RuleFor(x => x.Ids)
             .NotEmpty()
@@ -80,7 +81,7 @@ public sealed class ReclaimRequestValidator : RequestValidator<Contracts.Reclaim
     }
 }
 
-public sealed class RecollectRequestValidator : RequestValidator<Contracts.RecollectRequest> {
+public sealed class RecollectRequestValidator : RequestValidator<MemoryContracts.RecollectRequest> {
     public RecollectRequestValidator() {
         RuleFor(x => x.Limit)
             .GreaterThanOrEqualTo(0)
@@ -88,7 +89,7 @@ public sealed class RecollectRequestValidator : RequestValidator<Contracts.Recol
     }
 }
 
-public sealed class ReinforceRequestValidator : RequestValidator<Contracts.ReinforceRequest> {
+public sealed class ReinforceRequestValidator : RequestValidator<MemoryContracts.ReinforceRequest> {
     public ReinforceRequestValidator() {
         RuleFor(x => x.Ids)
             .NotEmpty()
@@ -112,7 +113,7 @@ static class MemoryRequestRules {
     public static bool Guid(string value) => System.Guid.TryParse(value, out _);
 
     /// <summary>The supersession targets named more than once across a whole retain request.</summary>
-    public static IReadOnlyList<string> RepeatedSupersedes(IEnumerable<Contracts.Memory> memories) {
+    public static IReadOnlyList<string> RepeatedSupersedes(IEnumerable<MemoryContracts.Memory> memories) {
         var seen = new HashSet<string>();
 
         return memories
@@ -124,11 +125,11 @@ static class MemoryRequestRules {
 
     public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _);
 
-    public static bool ValidWebExcerpts(Contracts.Evidence.Types.WebRef web) =>
+    public static bool ValidWebExcerpts(MemoryContracts.Evidence.Types.WebRef web) =>
         web.Excerpts.Count is > 0 and <= MaxWebExcerpts
      && web.Excerpts.All(WithinExcerptBounds);
 
-    public static bool ValidGitExcerpt(Contracts.Evidence.Types.GitRef git) =>
+    public static bool ValidGitExcerpt(MemoryContracts.Evidence.Types.GitRef git) =>
         string.IsNullOrEmpty(git.Excerpt) || WithinExcerptBounds(git.Excerpt);
 
     static bool WithinExcerptBounds(string excerpt) =>

@@ -9,6 +9,7 @@ using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
 using TUnit.Assertions.Enums;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -122,7 +123,7 @@ public class RelatedByHybridProbeTests {
 	}
 
 	static MemoryRow Row(string id, string content) =>
-		new(id, Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base);
+		new(id, MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base);
 
 	// Replaces each row's placeholder embedding with the REAL vector for its content — the seeding
 	// default is a fixed stub, which would make the vector leg meaningless here.

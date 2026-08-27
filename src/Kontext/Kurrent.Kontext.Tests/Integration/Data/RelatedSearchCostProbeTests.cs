@@ -9,6 +9,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -74,11 +75,11 @@ public class RelatedSearchCostProbeTests {
 
 		// Half the corpus belongs to another principal — `related` must never cross that line, and
 		// the tag filter is what enforces it.
-		var mine   = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
-		var theirs = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "someone-else" });
+		var mine   = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
+		var theirs = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "someone-else" });
 
 		var rows = corpus
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 				Embedding = vectors[i].Vector.ToArray(),
 				Tags      = [i % 2 == 0 ? mine : theirs],
 			})
@@ -109,7 +110,7 @@ public class RelatedSearchCostProbeTests {
 		// 8. The same searches WITH the isolation tag — the shape `related` must actually use.
 		//    HybridSearchOptions.K notes the candidate pool is raised to the table row count when a
 		//    tag filter applies, so this is the honest cost, not the untagged one.
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		for (var i = 0; i < Warmup; i++)
 			await store.SearchAsync(query, scope, new FullTextSearchOptions { K = 5 }, cancellationToken).ToListAsync(cancellationToken);

@@ -28,6 +28,9 @@ public sealed class OnnxModelRegistry {
 		return this;
 	}
 
+	/// <summary>Whether a manifest is registered under <paramref name="key"/>.</summary>
+	public bool Contains(string key) => _manifests.ContainsKey(key);
+
 	/// <summary>Resolves a model by key into a lazy <see cref="OnnxModel"/>. Throws if the key is not registered.</summary>
 	public OnnxModel Get(string key) {
 		if (!_manifests.TryGetValue(key, out var manifest))

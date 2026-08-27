@@ -12,18 +12,21 @@ namespace Kurrent.Kontext.Retrieval;
 /// <para>The number is parsed and clamped. An unparseable answer falls back to neutral rather than discarding the passage.</para>
 /// <para>Concurrency is bounded so a large candidate set doesn't open one request per passage all at once.</para>
 /// </summary>
-public sealed class ChatRelevanceModel(IChatClient chat, ChatRelevanceModelOptions options) : IRelevanceModel {
+public sealed class ChatRelevanceModel(ChatRelevanceModelOptions options) : IRelevanceModel {
     static readonly Regex FirstNumber = new(@"[-+]?[0-9]*\.?[0-9]+", RegexOptions.Compiled);
 
-    /// <summary>Creates the model from pre-built options — the config-binding door.</summary>
-    public static ChatRelevanceModel Create(IChatClient chat, ChatRelevanceModelOptions options) =>
-        new(chat, options);
+    readonly IChatClient _chat = options.Chat
+        ?? throw new InvalidOperationException($"{nameof(ChatRelevanceModelOptions)}.{nameof(ChatRelevanceModelOptions.Chat)} is required.");
 
-    /// <summary>Creates the model over default options, tuned via <paramref name="configure"/> when given.</summary>
-    public static ChatRelevanceModel Create(IChatClient chat, Action<ChatRelevanceModelOptions>? configure = null) {
+    /// <summary>Creates the model from pre-built options — the config-binding door.</summary>
+    public static ChatRelevanceModel Create(ChatRelevanceModelOptions options) =>
+        new(options);
+
+    /// <summary>Creates the model over default options, tuned via <paramref name="configure"/>.</summary>
+    public static ChatRelevanceModel Create(Action<ChatRelevanceModelOptions> configure) {
         var options = new ChatRelevanceModelOptions();
-        configure?.Invoke(options);
-        return Create(chat, options);
+        configure(options);
+        return Create(options);
     }
 
     public async ValueTask<IReadOnlyList<double>> ScoreAsync(string query, IReadOnlyList<string> passages, CancellationToken ct = default) {
@@ -46,7 +49,7 @@ public sealed class ChatRelevanceModel(IChatClient chat, ChatRelevanceModelOptio
 
         try {
             var prompt   = options.BuildPrompt(query, passage);
-            var response = await chat.GetResponseAsync(prompt, chatOptions, ct).ConfigureAwait(false);
+            var response = await _chat.GetResponseAsync(prompt, chatOptions, ct).ConfigureAwait(false);
 
             return Parse(response.Text);
         } finally {
@@ -69,6 +72,9 @@ public sealed class ChatRelevanceModel(IChatClient chat, ChatRelevanceModelOptio
 }
 
 public sealed class ChatRelevanceModelOptions {
+    /// <summary>The chat client the model asks. Required.</summary>
+    public IChatClient? Chat { get; set; }
+
     /// <summary>How many passages are scored at once — the ceiling on concurrent chat requests.</summary>
     public int MaxConcurrency { get; set; } = 8;
 

@@ -8,6 +8,7 @@ using static Kurrent.Kontext.Records.Mcp.McpRecordMappers;
 using QueryResult = Kurrent.Kontext.Records.Mcp.Model.QueryResult;
 using SearchOptions = Kurrent.Kontext.Records.Mcp.Model.SearchOptions;
 using SearchResult = Kurrent.Kontext.Records.Mcp.Model.SearchResult;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records.Mcp;
 
@@ -45,7 +46,7 @@ public sealed class McpRecordsService(IKontextRecords service, IHttpContextAcces
         int limit = 0,
         CancellationToken ct = default
     ) {
-        var request = new Contracts.QueryRequest { Sql = sql, Limit = limit };
+        var request = new RecordsContracts.QueryRequest { Sql = sql, Limit = limit };
 
         var response = await service.QueryAsync(request, Principal, ct).ConfigureAwait(false);
 

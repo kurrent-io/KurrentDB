@@ -3,8 +3,8 @@
 
 namespace Kurrent.Kontext.Memory.Mcp.Model;
 
-// Values mirror Contracts.MemoryType numerically — the mapper is a cast, so renumbering the proto
-// enum without renumbering this one remaps every type silently.
+// Values mirror the contract MemoryType numerically — the mapper is a cast, so renumbering the
+// proto enum without renumbering this one remaps every type silently.
 public enum MemoryType {
 	Unspecified = 0,
 

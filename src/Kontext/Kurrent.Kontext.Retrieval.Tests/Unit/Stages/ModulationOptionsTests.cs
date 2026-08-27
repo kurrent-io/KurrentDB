@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
@@ -11,11 +13,11 @@ public class ModulationOptionsTests {
 		// argument eagerly, so omitting Normal threw a KeyNotFoundException even though Critical,
 		// the key actually requested, was present
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Critical),
+			Fixtures.Scored("a", 0.5, importance: MemoryContracts.MemoryImportance.Critical),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
-			[Contracts.MemoryImportance.Critical] = 1.0,
+			[MemoryContracts.MemoryImportance.Critical] = 1.0,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);
@@ -26,7 +28,7 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask empty_importance_weights_falls_back_to_neutral_salience() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: Contracts.MemoryImportance.Normal),
+			Fixtures.Scored("a", 0.5, importance: MemoryContracts.MemoryImportance.Normal),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new());
@@ -39,11 +41,11 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask unknown_importance_value_falls_back_to_neutral_salience() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.5, importance: (Contracts.MemoryImportance) 999),
+			Fixtures.Scored("a", 0.5, importance: (MemoryContracts.MemoryImportance) 999),
 		];
 
 		var options = CognitiveModulator.Create(o => o.ImportanceWeights = new() {
-			[Contracts.MemoryImportance.Normal] = 0.5,
+			[MemoryContracts.MemoryImportance.Normal] = 0.5,
 		});
 
 		var result = await options.ProcessAsync(Fixtures.Query(), pool);

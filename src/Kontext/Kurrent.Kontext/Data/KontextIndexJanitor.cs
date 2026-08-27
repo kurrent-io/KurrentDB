@@ -93,7 +93,7 @@ public sealed class KontextIndexJanitor : IDisposable {
 
     // The single tick body. Never throws — every failure is caught and logged; quietly skips
     // while the memories table has not been created yet (a tick that fires before the host ran
-    // the migration stream — KontextSchemaTask).
+    // the migration stream — KontextMigrations).
     void RunTickBody() {
         if (Volatile.Read(ref _disposed) != 0)
             return;

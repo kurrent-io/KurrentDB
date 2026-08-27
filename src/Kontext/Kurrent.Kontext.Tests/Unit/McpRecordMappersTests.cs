@@ -6,6 +6,7 @@ using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Records.Mcp;
 using KurrentDB.Testing.Bogus;
 using SearchOptions = Kurrent.Kontext.Records.Mcp.Model.SearchOptions;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -28,7 +29,7 @@ public class McpRecordMappersTests {
         var request = McpRecordMappers.ToContract(query, new SearchOptions { Stream = expectedStream });
 
         // Assert
-        await Assert.That(request.ScopeCase).IsEqualTo(Contracts.SearchRequest.ScopeOneofCase.Stream);
+        await Assert.That(request.ScopeCase).IsEqualTo(RecordsContracts.SearchRequest.ScopeOneofCase.Stream);
         await Assert.That(request.Stream).IsEqualTo(expectedStream);
     }
 
@@ -42,7 +43,7 @@ public class McpRecordMappersTests {
         var request = McpRecordMappers.ToContract(query, new SearchOptions { Category = expectedCategory });
 
         // Assert
-        await Assert.That(request.ScopeCase).IsEqualTo(Contracts.SearchRequest.ScopeOneofCase.Category);
+        await Assert.That(request.ScopeCase).IsEqualTo(RecordsContracts.SearchRequest.ScopeOneofCase.Category);
         await Assert.That(request.Category).IsEqualTo(expectedCategory);
     }
 
@@ -56,7 +57,7 @@ public class McpRecordMappersTests {
         var request = McpRecordMappers.ToContract(query, new SearchOptions { SchemaName = expectedSchemaName });
 
         // Assert — the filter agents reach for most, so it must survive the collapse into the oneof.
-        await Assert.That(request.SchemaCase).IsEqualTo(Contracts.SearchRequest.SchemaOneofCase.SchemaName);
+        await Assert.That(request.SchemaCase).IsEqualTo(RecordsContracts.SearchRequest.SchemaOneofCase.SchemaName);
         await Assert.That(request.SchemaName).IsEqualTo(expectedSchemaName);
     }
 
@@ -69,8 +70,8 @@ public class McpRecordMappersTests {
         var request = McpRecordMappers.ToContract(query, new SearchOptions());
 
         // Assert — an unfiltered search ranks across the whole log, which is the documented default.
-        await Assert.That(request.ScopeCase).IsEqualTo(Contracts.SearchRequest.ScopeOneofCase.None);
-        await Assert.That(request.SchemaCase).IsEqualTo(Contracts.SearchRequest.SchemaOneofCase.None);
+        await Assert.That(request.ScopeCase).IsEqualTo(RecordsContracts.SearchRequest.ScopeOneofCase.None);
+        await Assert.That(request.SchemaCase).IsEqualTo(RecordsContracts.SearchRequest.SchemaOneofCase.None);
     }
 
     [Test]
@@ -113,7 +114,7 @@ public class McpRecordMappersTests {
         var expectedStream = Faker.Random.AlphaNumeric(12);
         var expectedCount  = Faker.Random.Int(1, 500);
 
-        var response = new Contracts.QueryResponse { Truncated = true };
+        var response = new RecordsContracts.QueryResponse { Truncated = true };
 
         response.Rows.Add(new Struct {
             Fields = {
@@ -147,9 +148,9 @@ public class McpRecordMappersTests {
         var expectedCreatedAt = Faker.Date.RecentOffset().ToUniversalTime();
         var expectedTenant    = Faker.Company.CompanyName();
 
-        var response = new Contracts.SearchResponse();
+        var response = new RecordsContracts.SearchResponse();
 
-        response.Hits.Add(new Contracts.SearchResponse.Types.RecordHit {
+        response.Hits.Add(new RecordsContracts.SearchResponse.Types.RecordHit {
             Score = expectedScore,
             Record = new() {
                 Properties  = { ["tenant"] = Value.ForString(expectedTenant), ["retries"] = Value.ForNumber(3) },

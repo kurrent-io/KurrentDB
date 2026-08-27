@@ -1,11 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
 edition = "2023";
 
-package kurrent.kontext;
+package kurrentdb.kontext.v3.memory;
 
-option csharp_namespace = "Kurrent.Kontext.Contracts";
+option csharp_namespace = "Kurrent.Kontext.Contracts.Memory";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
@@ -14,7 +18,7 @@ import "google/protobuf/struct.proto";
 // is the write/command shape: provided on Retain and stamped onto MemoryRetained. The read paths
 // return the folded StoredMemory read model (or, for recall, the LeanMemory projection of it).
 //
-// There is deliberately NO memory_id here. The server mints every id, so a client can never collide
+// There is deliberately NO memory_id here. The server assigns every id, so a client can never collide
 // with an existing memory and never has to invent one. Retain returns the assigned ids positionally
 // (results[i] for memories[i]). A consequence worth knowing: you cannot cite a memory you are
 // sending in the same request, because its id does not exist yet — retain the sources first, then

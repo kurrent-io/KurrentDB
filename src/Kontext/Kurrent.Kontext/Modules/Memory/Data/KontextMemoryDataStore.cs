@@ -12,6 +12,7 @@ using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Quack;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Memory.Data;
 
@@ -38,7 +39,7 @@ namespace Kurrent.Kontext.Memory.Data;
 /// - every value travels as a named $parameter, never inlined into the text (validated live:
 ///   even Lance's named arguments bind); only a clause or the FLOAT[N] dimension is interpolated
 /// </summary>
-public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMemoryIndex {
+public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMemoryIndex, IEntityIndex {
     /// <summary>
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///
@@ -57,7 +58,7 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     /// <param name="ct">Cancels the read.</param>
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         VectorSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -68,11 +69,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
         // (Verified by LanceHybridSearchSemanticsProbeTests.)
         var k = options.K;
 
-        // Every value is bound as a named $parameter — the Lance named arguments included
-        // (validated live 2026-07-20: k := $k, prefilter := $prefilter, … all bind). Only two
-        // things can never be parameters and stay in the text: the FLOAT[N] dimension (a type,
-        // not a value) and the optional knob CLAUSES, appended only when the caller set them so
-        // the engine's defaults stay intact — their values are still bound.
+        // Optional knob CLAUSES are appended only when the caller set them, so the engine's
+        // defaults stay intact — their values are still bound as parameters.
         var nprobs   = options.Nprobs is not null ? ", nprobs := $nprobs" : "";
         var useIndex = options.UseIndex is not null ? ", use_index := $use_index" : "";
 
@@ -165,7 +163,7 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     /// <param name="ct">Cancels the read.</param>
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         FullTextSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -176,12 +174,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
         // (Verified by LanceHybridSearchSemanticsProbeTests.)
         var k = options.K;
 
-        // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
-        // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
         var tagFilter = tags.Count > 0 ? "\n              AND array_has_all(tags, CAST($tags AS VARCHAR[]))" : "";
 
-        // Every value is bound as a named $parameter — the Lance named arguments included
-        // (validated live 2026-07-20); the tag clause is the one conditional splice.
         var commandText =
             $"""
             SELECT memory_id,
@@ -223,9 +217,6 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     using var reader  = command.ExecuteReader();
 
                     while (reader.Read()) {
-                        // The score arrives as a single-precision FLOAT; Convert widens it (a
-                        // strict GetDouble would throw on a Single). Only the keyword leg ran —
-                        // the other scores are null by construction, never fabricated.
                         results.Add(new(
                             ReadStoredMemory(reader),
                             HybridScore: null,
@@ -268,7 +259,7 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     public async IAsyncEnumerable<MemoryHit> SearchAsync(
         string query,
         float[] queryEmbedding,
-        IReadOnlyCollection<Contracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
         HybridSearchOptions? options = null,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -279,16 +270,9 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
         // (Verified by LanceHybridSearchSemanticsProbeTests.)
         var k = options.K;
 
-        // Every value is bound as a named $parameter — the Lance named arguments included
-        // (validated live 2026-07-20: k := $k, alpha := $alpha, … all bind). Only two things can
-        // never be parameters and stay in the text: the FLOAT[N] dimension (a type, not a value)
-        // and the optional knob CLAUSES, appended only when the caller set them so the engine's
-        // defaults stay intact — their values are still bound.
         var nprobs   = options.Nprobs is not null ? ", nprobs := $nprobs" : "";
         var useIndex = options.UseIndex is not null ? ", use_index := $use_index" : "";
 
-        // Spliced only when tags exist: non-empty containment pushes down as a true prefilter,
-        // but an EMPTY list is unencodable for the engine, and a required prefilter refuses it.
         var tagFilter = tags.Count > 0 ? "\n               AND array_has_all(tags, CAST($tags AS VARCHAR[]))" : "";
 
         var commandText =
@@ -348,9 +332,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
                     using var reader  = command.ExecuteReader();
 
                     while (reader.Read()) {
-                        // The scores arrive as single-precision FLOATs; Convert widens them (a
-                        // strict GetDouble would throw on a Single). A leg that did not surface
-                        // the row leaves its diagnostic column NULL — only the blend is always set.
+                        // A leg that did not surface the row leaves its diagnostic column NULL —
+                        // only the blend is always set.
                         results.Add(new(
                             ReadStoredMemory(reader),
                             HybridScore: Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture),
@@ -366,12 +349,180 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             yield return hit;
     }
 
+    /// <summary>
+    /// Entity search: ranks memories by how many query-named entities they mention, each weighted
+    /// by how rare it is.
+    ///
+    /// Recall's view of the world:
+    /// - superseded memories never surface
+    /// - every requested tag must be present
+    /// - a memory competes only by mentioning an entity rarer than
+    ///   <see cref="EntitySearchOptions.MaxDocumentFrequencyRatio"/> of active memories (or within
+    ///   <see cref="EntitySearchOptions.MinDocumentFrequency"/> mentions) — an everywhere-entity
+    ///   carries no signal on its own, and letting it admit candidates floods rank fusion with noise
+    /// - scores sum ln(1 + N/df) per distinct named entity it mentions, so memories matching the
+    ///   same entity set tie exactly: the leg has no opinion between them
+    ///
+    /// An alias matches on whole words, case-, punctuation- and inflection-insensitive: "who runs
+    /// Acme Corp?" names the entity behind "acme corp", "camped" names "camping", and "art" never
+    /// matches inside "started".
+    /// </summary>
+    /// <param name="query">The question as plain words — scanned for catalog aliases.</param>
+    /// <param name="tags">Every requested tag must be present on a memory for it to surface.</param>
+    /// <param name="options">The entity-leg knobs; null = the defaults.</param>
+    /// <param name="ct">Cancels the read.</param>
+    /// <remarks>
+    /// Explicit implementation on purpose: a public overload would make the two-argument
+    /// full-text <c>SearchAsync(string, tags)</c> call ambiguous for direct store callers.
+    /// </remarks>
+    async IAsyncEnumerable<EntityHit> IEntityIndex.SearchAsync(
+        string query,
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
+        EntitySearchOptions? options,
+        [EnumeratorCancellation] CancellationToken ct
+    ) {
+        options ??= new();
+
+        var tagFilter = tags.Count > 0
+            ? "AND array_has_all(m.tags, CAST($tags AS VARCHAR[]))"
+            : "";
+
+        var commandText =
+            $"""
+             -- Both sides of the alias match fold through the SAME expression — lowercase,
+             -- punctuation as word boundaries, stemmed words — so word boundaries survive,
+             -- "camped" names "camping", and the two sides can never disagree. The query side is a
+             -- scalar subquery, so it folds once rather than once per alias row.
+             WITH folded_query AS (SELECT ' ' || fold($query) || ' ' AS text),
+
+             -- every alias in the query's folded ' word word ' shape
+             alias_words AS (
+                 SELECT entity_id, ' ' || alias_norm || ' ' AS needle
+                 FROM (SELECT entity_id, fold(alias) AS alias_norm FROM ldb.main.entities)
+                 WHERE alias_norm <> ''
+             ),
+
+             -- entities whose alias occurs in the query
+             named_entities AS (
+                 SELECT DISTINCT entity_id
+                 FROM alias_words
+                 WHERE contains((SELECT text FROM folded_query), needle)
+             ),
+
+             -- the population every frequency is measured against
+             active_memories AS (
+                 SELECT CAST(count(*) AS DOUBLE) AS n
+                 FROM ldb.main.memories
+                 WHERE is_superseded = false
+             ),
+
+             -- how many active memories mention each named entity, its rarity weight, and whether
+             -- it is rare enough to admit a memory on its own. The +1 keeps an everywhere-entity
+             -- at a small positive weight instead of zeroing whole scores.
+             entity_reach AS (
+                 SELECT em.entity_id,
+                        ln(1 + n / count(DISTINCT em.memory_id)) AS idf,
+                        count(DISTINCT em.memory_id) <= greatest($min_df, n * $max_df_ratio) AS is_rare
+                 FROM ldb.main.entity_mentions em
+                 JOIN named_entities USING (entity_id)
+                 JOIN ldb.main.memories am
+                   ON am.memory_id = em.memory_id
+                  AND am.is_superseded = false
+                 CROSS JOIN active_memories
+                 GROUP BY em.entity_id, n
+             ),
+
+             -- a memory competes only by mentioning a discriminating entity; everywhere-entities
+             -- (a conversation's own speakers) admit nothing on their own.
+             candidates AS (
+                 SELECT em.memory_id
+                 FROM ldb.main.entity_mentions em
+                 JOIN entity_reach USING (entity_id)
+                 GROUP BY em.memory_id
+                 HAVING bool_or(is_rare)
+             ),
+
+             -- one idf per (candidate, entity), however many mentions. $rare_only decides whether
+             -- a gated common entity still orders the admitted candidates: false lets it score, so
+             -- a conjunction ("Caroline" AND "support group") outranks the rare entity alone; true
+             -- leaves same-entity candidates tied exactly for the text legs to order. Mention
+             -- confidence stays out of the score on purpose — it measures how the link was made,
+             -- not how well the memory answers the query, and folding it in would split identical
+             -- matches into distinct scores that rank fusion then reads as a real ordering.
+             scored_mentions AS (
+                 SELECT DISTINCT em.memory_id, em.entity_id, idf
+                 FROM ldb.main.entity_mentions em
+                 JOIN entity_reach USING (entity_id)
+                 JOIN candidates USING (memory_id)
+                 WHERE is_rare OR NOT $rare_only
+             ),
+
+             -- one score per memory: the sum over its named entities
+             memory_scores AS (
+                 SELECT memory_id, sum(idf) AS entity_score
+                 FROM scored_mentions
+                 GROUP BY memory_id
+             )
+             SELECT m.memory_id,
+                    m.memory_type,
+                    m.content,
+                    m.importance,
+                    m.tags,
+                    m.reasoning,
+                    m.evidence,
+                    m.supersedes,
+                    m.content_time_start,
+                    m.content_time_end,
+                    m.retained_at,
+                    m.last_accessed_at,
+                    m.superseded_at,
+                    m.superseded_by,
+                    s.entity_score
+             FROM ldb.main.memories m
+             JOIN memory_scores s ON s.memory_id = m.memory_id
+             WHERE m.is_superseded = false
+               {tagFilter}
+             ORDER BY s.entity_score DESC, m.memory_id
+             LIMIT $limit
+             """;
+
+        var tagValues = tags.Select(EncodeTag).ToList();
+
+        var hits = await connections.ExecuteAsync(
+                connection => {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = commandText;
+                    command.Parameters.Add(new("query", query));
+                    command.Parameters.Add(new("limit", options.Limit));
+                    command.Parameters.Add(new("max_df_ratio", options.MaxDocumentFrequencyRatio));
+                    command.Parameters.Add(new("min_df", options.MinDocumentFrequency));
+                    command.Parameters.Add(new("rare_only", options.ScoreRareEntitiesOnly));
+
+                    if (tags.Count > 0)
+                        command.Parameters.Add(new("tags", tagValues));
+
+                    var       results = new List<EntityHit>();
+                    using var reader  = command.ExecuteReader();
+
+                    while (reader.Read())
+                        results.Add(new(
+                            ReadStoredMemory(reader),
+                            Convert.ToDouble(reader.GetValue(14), CultureInfo.InvariantCulture)));
+
+                    return results;
+                }, ct)
+            .ConfigureAwait(false);
+
+        foreach (var hit in hits)
+            yield return hit;
+    }
+
     /// <summary>The stored memory with the given id, or null. Never hides: superseded memories come back too.</summary>
-    public async ValueTask<Contracts.StoredMemory?> GetAsync(string memoryId, CancellationToken ct = default) => 
+    public async ValueTask<MemoryContracts.StoredMemory?> GetAsync(string memoryId, CancellationToken ct = default) =>
         await GetAsync([memoryId], ct).FirstOrDefaultAsync(ct);
 
     /// <summary>Streams the stored memories for the given ids; ids that don't exist are simply absent. Never hides.</summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> GetAsync(string[] memoryIds, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> GetAsync(string[] memoryIds, [EnumeratorCancellation] CancellationToken ct = default) {
         const string sql =
             """
             SELECT memory_id,
@@ -446,7 +597,7 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     /// which is a merge rather than a duplicate. Cross-principal isolation therefore rests entirely
     /// on server-stamped tags, which are not implemented yet.
     /// </remarks>
-    public async ValueTask<Contracts.StoredMemory?> FindLiveByContentAsync(string content, CancellationToken ct = default) {
+    public async ValueTask<MemoryContracts.StoredMemory?> FindLiveByContentAsync(string content, CancellationToken ct = default) {
         const string commandText =
             """
             SELECT memory_id,
@@ -496,7 +647,7 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     /// - UNION (not UNION ALL) makes the recursion set-based: a row already in the family is
     ///   never expanded twice, and the recursion stops when no new row appears
     /// </summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> GetLineageAsync(string memoryId, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> GetLineageAsync(string memoryId, [EnumeratorCancellation] CancellationToken ct = default) {
         // One statement, three parts:
         // - the seed: the requested memory
         // - the recursive step: everything ONE supersession hop away from the family so far,
@@ -560,11 +711,11 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     ///   descending = most important, most recently used first; ascending = least important,
     ///   longest untouched first (the eviction sweep)
     /// </summary>
-    public async IAsyncEnumerable<Contracts.StoredMemory> ListAsync(
-        IReadOnlyCollection<Contracts.Tag> tags,
-        IReadOnlyCollection<Contracts.MemoryType> types,
-        Contracts.RecollectSort sort,
-        Contracts.SortDirection direction,
+    public async IAsyncEnumerable<MemoryContracts.StoredMemory> ListAsync(
+        IReadOnlyCollection<MemoryContracts.Tag> tags,
+        IReadOnlyCollection<MemoryContracts.MemoryType> types,
+        MemoryContracts.RecollectSort sort,
+        MemoryContracts.SortDirection direction,
         int limit,
         [EnumeratorCancellation] CancellationToken ct = default
     ) {
@@ -626,14 +777,14 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
         var tagValues  = tags.Select(EncodeTag).ToList();
 
         var sortKey = sort switch {
-            Contracts.RecollectSort.LastAccessedAt => "last_accessed_at",
-            Contracts.RecollectSort.Importance     => "importance",
+            MemoryContracts.RecollectSort.LastAccessedAt => "last_accessed_at",
+            MemoryContracts.RecollectSort.Importance     => "importance",
             _                                      => "retained_at", // default: when the memory was recorded
         };
 
         // The number every sort term is multiplied by: 1 keeps the natural (ascending) order,
         // -1 flips it to descending.
-        var sortSign = direction == Contracts.SortDirection.Ascending ? 1 : -1;
+        var sortSign = direction == MemoryContracts.SortDirection.Ascending ? 1 : -1;
 
         var memories = await connections.ExecuteAsync(
                 connection => {
@@ -653,8 +804,8 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
             yield return memory;
     }
 
-    static List<Contracts.StoredMemory> ReadAllStoredMemories(DbCommand command) {
-        var memories = new List<Contracts.StoredMemory>();
+    static List<MemoryContracts.StoredMemory> ReadAllStoredMemories(DbCommand command) {
+        var memories = new List<MemoryContracts.StoredMemory>();
 
         using var reader = command.ExecuteReader();
 
@@ -666,27 +817,27 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
 
     // The tag wire encoding shared with the projector: a tag is stored as "scope:value" (bare
     // "value" when the scope is empty), sanitized by TagParser on the way in.
-    public static string EncodeTag(Contracts.Tag tag) {
+    public static string EncodeTag(MemoryContracts.Tag tag) {
         var scope = TagParser.Sanitize(tag.Scope);
         var value = TagParser.Sanitize(tag.Value);
         return scope.Length == 0 ? value : $"{scope}:{value}";
     }
 
-    public static Contracts.Tag DecodeTag(string encoded) {
+    public static MemoryContracts.Tag DecodeTag(string encoded) {
         var (value, scope) = TagParser.Parse(encoded);
         return new() { Scope = scope, Value = value };
     }
 
     // The evidence wire encoding shared with the projector: one citation per VARCHAR[] element, as
     // protobuf canonical JSON (see the column's note in MemoriesInitialSchema).
-    public static string EncodeEvidence(Contracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
+    public static string EncodeEvidence(MemoryContracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
 
-    public static Contracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<Contracts.Evidence>(encoded);
+    public static MemoryContracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<MemoryContracts.Evidence>(encoded);
 
     // The memory citations, flattened into their own column for the lineage walk. Only a cited
     // MEMORY makes a record derived; git, web, and record citations are provenance, so they stay
     // out of this column.
-    public static List<string> EncodeCitedMemoryIds(Contracts.Memory memory) =>
+    public static List<string> EncodeCitedMemoryIds(MemoryContracts.Memory memory) =>
         memory.Evidence
             .Where(evidence => evidence.Memory is not null)
             .Select(evidence => evidence.Memory.Id)
@@ -711,12 +862,12 @@ public sealed class KontextMemoryDataStore(KontextDataSource connections) : IMem
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
     // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in MemoriesInitialSchema)
     // - timestamps are BIGINT Unix epoch milliseconds (UTC) — the schema's one stated rule
-    static Contracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
-        var stored = new Contracts.StoredMemory {
+    static MemoryContracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
+        var stored = new MemoryContracts.StoredMemory {
             MemoryId       = reader.GetString(0),
-            MemoryType     = (Contracts.MemoryType)reader.GetInt32(1),
+            MemoryType     = (MemoryContracts.MemoryType)reader.GetInt32(1),
             Content        = reader.GetString(2),
-            Importance     = (Contracts.MemoryImportance)reader.GetInt32(3),
+            Importance     = (MemoryContracts.MemoryImportance)reader.GetInt32(3),
             Reasoning      = reader.GetString(5),
             RetainedAt     = DecodeTimestamp(reader, 10),
             LastAccessedAt = DecodeTimestamp(reader, 11),

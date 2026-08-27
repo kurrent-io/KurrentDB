@@ -1,0 +1,138 @@
+{
+  "sampleId": "locomo-conv26-extraction",
+  "source": "Every 9th memory of LoCoMo conv-26, first 45, labelled by hand with the entities extraction should find.",
+  "policy": "An entity is something a later question could NAME to find this memory. Proper nouns, specific events, activities, works, places, animals and concrete objects count. Generic relational nouns (friends, family, kids, people, mentors), abstract feelings, and bare pronouns do not -- they discriminate nothing, and the span filter is meant to drop them. Text inside [shared image: ...] is part of the memory and is labelled the same way. 'types' lists every defensible type for the span, first one canonical: zero-shot labels are genuinely ambiguous (pottery is defensible as a creative work, an activity, or an object), so the typed score accepts any of them and the untyped score ignores type entirely.",
+  "documents": [
+    { "memoryId": "D1:1", "text": "Hey Mel! Good to see you! How have you been?", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D1:10", "text": "Wow, Caroline! What kinda jobs are you thinkin' of? Anything that stands out?", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D2:1", "text": "Hey Caroline, since we last chatted, I've had a lot of things happening to me. I ran a charity race for mental health last Saturday – it was really rewarding. Really made me think about taking care of our minds.", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "charity race", "types": ["event", "activity"] },
+      { "name": "mental health", "types": ["health condition", "object"] }
+    ] },
+    { "memoryId": "D2:10", "text": "Thanks, Mel! My goal is to give kids a loving home. I'm truly grateful for all the support I've got from friends and mentors. Now the hard work starts to turn my dream into a reality. And here's one of the adoption agencies I'm looking into. It's a lot to take in, but I'm feeling hopeful and optimistic. [shared image: a photography of a sign for a new arrival and an information and domestic building]", "expected": [
+      { "name": "Mel", "types": ["person"] },
+      { "name": "adoption agencies", "types": ["organization"] }
+    ] },
+    { "memoryId": "D3:2", "text": "Hey Caroline! Great to hear from you. Sounds like your event was amazing! I'm so proud of you for spreading awareness and getting others involved in the LGBTQ community. You've come a long way since your transition - keep on inspiring people with your strength and courage!", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "LGBTQ community", "types": ["organization"] },
+      { "name": "transition", "types": ["event"] }
+    ] },
+    { "memoryId": "D3:11", "text": "Thanks, Mel! My friends, family and mentors are my rocks – they motivate me and give me the strength to push on. Here's a pic from when we met up last week! [shared image: a photo of a family posing for a picture in a yard]", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D3:20", "text": "It so fun! We played games, ate good food, and just hung out together. Family moments make life awesome.", "expected": [] },
+    { "memoryId": "D4:6", "text": "That sounds great, Caroline! It's awesome having stuff around that make us think of good connections and times. Actually, I just took my fam camping in the mountains last week - it was a really nice time together!", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "camping", "types": ["event", "activity"] },
+      { "name": "mountains", "types": ["location"] }
+    ] },
+    { "memoryId": "D4:15", "text": "Thanks, Melanie. It really mattered. My own journey and the support I got made a huge difference. Now I want to help people go through it too. I saw how counseling and support groups improved my life, so I started caring more about mental health and understanding myself. Now I'm passionate about creating a safe, inviting place for people to grow.", "expected": [
+      { "name": "Melanie", "types": ["person"] },
+      { "name": "counseling", "types": ["activity", "event"] },
+      { "name": "support groups", "types": ["organization"] },
+      { "name": "mental health", "types": ["health condition", "object"] }
+    ] },
+    { "memoryId": "D5:6", "text": "I'm a big fan of pottery - the creativity and skill is awesome. Plus, making it is so calming. Look at this! [shared image: a photo of a bowl with a black and white flower design]", "expected": [
+      { "name": "pottery", "types": ["creative work", "activity", "object"] },
+      { "name": "bowl", "types": ["object"] }
+    ] },
+    { "memoryId": "D5:15", "text": "Cool, thanks Mel! Can't wait. I'll keep ya posted. Bye!", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D6:8", "text": "Sounds great! What kind of books you got in your library?", "expected": [{ "name": "library", "types": ["location"] }] },
+    { "memoryId": "D7:1", "text": "Hey Mel, great to chat with you again! So much has happened since we last spoke - I went to an LGBTQ conference two days ago and it was really special. I got the chance to meet and connect with people who've gone through similar journeys. It was such a welcoming environment and I felt totally accepted. I'm really thankful for this amazing community - it's shown me how important it is to fight for trans rights and spread awareness.", "expected": [
+      { "name": "Mel", "types": ["person"] },
+      { "name": "LGBTQ conference", "types": ["event"] }
+    ] },
+    { "memoryId": "D7:10", "text": "Wow, Caroline! Books have such an awesome power! Which one has been your favorite guide?", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D7:19", "text": "Love that purple color! For walking or running?", "expected": [
+      { "name": "walking", "types": ["activity"] },
+      { "name": "running", "types": ["activity"] }
+    ] },
+    { "memoryId": "D8:1", "text": "Hey Mel, what's up? Been a busy week since we talked.", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D8:10", "text": "Wow, Caroline, way to go! Your future fam will get a kick out of having you. What do you think of these? [shared image: a photo of a blue vase with a bouquet of sunflowers and roses]", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "blue vase", "types": ["object"] },
+      { "name": "sunflowers", "types": ["object", "food"] },
+      { "name": "roses", "types": ["object"] }
+    ] },
+    { "memoryId": "D8:19", "text": "Yes, I did. It was amazing! I felt so accepted and happy, just being around people who accepted and celebrated me. It's definitely a top memory. [shared image: a photo of a group of people holding up signs and smiling]", "expected": [{ "name": "signs", "types": ["object"] }] },
+    { "memoryId": "D8:28", "text": "I'm getting there, Caroline. Creativity and family keep me at peace. [shared image: a photo of a man holding a frisbee in front of a frisbee golf basket]", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "frisbee", "types": ["object"] }
+    ] },
+    { "memoryId": "D8:37", "text": "Thanks, Melanie! Really glad to have you as a friend to share my journey. You're awesome!", "expected": [{ "name": "Melanie", "types": ["person"] }] },
+    { "memoryId": "D9:7", "text": "Caroline, awesome news that you two are getting along! What was it like for you both? Care to fill me in?", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D9:16", "text": "Thanks, Melanie! I painted this after I visited a LGBTQ center. I wanted to capture everyone's unity and strength.", "expected": [
+      { "name": "Melanie", "types": ["person"] },
+      { "name": "LGBTQ center", "types": ["organization", "location"] }
+    ] },
+    { "memoryId": "D10:8", "text": "Wow, fantastic, Caroline! Bet the atmosphere was incredible. Oh yeah, we went to the beach recently. It was awesome! The kids had such a blast. [shared image: a photo of three children playing on the beach with a kite]", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "beach", "types": ["location"] },
+      { "name": "kite", "types": ["object"] }
+    ] },
+    { "memoryId": "D10:17", "text": "Wow, Mel. That must've been breathtaking!", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D11:2", "text": "Wow, sounds wonderful! Your love for your kids is so awesome. What concert was it? The advocacy event was a cool experience - so much love and support, amazing! [shared image: a photo of a poster for a concert with a picture of a man]", "expected": [
+      { "name": "concert", "types": ["event"] },
+      { "name": "advocacy event", "types": ["event"] },
+      { "name": "poster", "types": ["object"] }
+    ] },
+    { "memoryId": "D11:11", "text": "Your art's amazing, Caroline. I love how you use it to tell your stories and teach people about trans folks. I'd love to see another painting of yours! [shared image: a photo of a person holding a purple bowl in their hand]", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "art", "types": ["creative work", "object"] },
+      { "name": "painting", "types": ["creative work", "object"] },
+      { "name": "purple bowl", "types": ["object"] }
+    ] },
+    { "memoryId": "D12:3", "text": "Sure thing, Melanie! Can't wait to see your pottery project.  I'm happy you found something that makes you happy. Show me when you can!", "expected": [
+      { "name": "Melanie", "types": ["person"] },
+      { "name": "pottery project", "types": ["creative work", "object", "event"] }
+    ] },
+    { "memoryId": "D12:12", "text": "Yeah, same here Caroline. You make life's struggles more bearable.", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D12:21", "text": "Yeah, Mel! Life's all about creating memories. Can't wait for the trip!", "expected": [
+      { "name": "Mel", "types": ["person"] },
+      { "name": "trip", "types": ["event"] }
+    ] },
+    { "memoryId": "D13:9", "text": "Wow, Melanie, that's amazing! Love all the details and how you got the horse's grace and strength. Do you like painting animals?", "expected": [
+      { "name": "Melanie", "types": ["person"] },
+      { "name": "horse", "types": ["animal"] },
+      { "name": "painting", "types": ["creative work", "activity"] }
+    ] },
+    { "memoryId": "D13:18", "text": "Bye Caroline. I'm here for you. Take care of yourself.", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D14:9", "text": "Thanks Mel, really appreciate your kind words. It means a lot to me that you can feel the sense of peace and serenity. Makes me feel connected.", "expected": [{ "name": "Mel", "types": ["person"] }] },
+    { "memoryId": "D14:18", "text": "Wow, Caroline, that looks amazing! What inspired it?", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D14:27", "text": "Thanks, Mel! Art gives me so much joy. It helps me show my feelings and freeze gorgeous moments, like a bouquet of flowers. [shared image: a photo of a drawing of a bunch of flowers on a table]", "expected": [
+      { "name": "Mel", "types": ["person"] },
+      { "name": "Art", "types": ["creative work", "object"] },
+      { "name": "flowers", "types": ["object", "food"] },
+      { "name": "drawing", "types": ["creative work", "object"] }
+    ] },
+    { "memoryId": "D15:1", "text": "Hey Melanie, great to hear from you. What's been up since we talked?", "expected": [{ "name": "Melanie", "types": ["person"] }] },
+    { "memoryId": "D15:10", "text": "That's great news, Caroline! Love seeing your dedication to helping others. Any specific projects or activities you're looking forward to there?", "expected": [{ "name": "Caroline", "types": ["person"] }] },
+    { "memoryId": "D15:19", "text": "Guitar's mostly my thing. Playing it helps me get my emotions out. [shared image: a photo of a guitar on display in a store]", "expected": [{ "name": "Guitar", "types": ["object"] }] },
+    { "memoryId": "D15:28", "text": "I'm a fan of both classical like Bach and Mozart, as well as modern music like Ed Sheeran's \"Perfect\". [shared image: a photo of a laptop computer with a graph on it]", "expected": [
+      { "name": "Bach", "types": ["person"] },
+      { "name": "Mozart", "types": ["person"] },
+      { "name": "Ed Sheeran", "types": ["person"] },
+      { "name": "Perfect", "types": ["creative work"] }
+    ] },
+    { "memoryId": "D16:9", "text": "Melanie, those bowls are amazing! They each have such cool designs. I love that you chose pottery for your art. Painting and drawing have helped me express my feelings and explore my gender identity. Creating art was really important to me during my transition - it helped me understand and accept myself. I'm so grateful.", "expected": [
+      { "name": "Melanie", "types": ["person"] },
+      { "name": "bowls", "types": ["object"] },
+      { "name": "pottery", "types": ["creative work", "activity", "object"] },
+      { "name": "Painting", "types": ["creative work", "activity"] },
+      { "name": "drawing", "types": ["creative work", "activity"] },
+      { "name": "transition", "types": ["event"] }
+    ] },
+    { "memoryId": "D16:18", "text": "The sign was just a precaution, I had a great time. But thank you for your concern, you're so thoughtful!", "expected": [{ "name": "sign", "types": ["object"] }] },
+    { "memoryId": "D17:7", "text": "Yep! Do your research and find an adoption agency or lawyer. They'll help with the process and provide all the info. Gather documents like references, financial info and medical checks. Don't forget to prepare emotionally, since the wait can be hard. It's all worth it in the end though.", "expected": [
+      { "name": "adoption agency", "types": ["organization"] },
+      { "name": "lawyer", "types": ["organization", "person"] }
+    ] },
+    { "memoryId": "D17:16", "text": "I wanted a peaceful blue streaks to show tranquility. Blue calms me, so I wanted the painting to have a serene vibe while still having lots of vibrant colors.", "expected": [{ "name": "painting", "types": ["creative work", "object"] }] },
+    { "memoryId": "D17:25", "text": "Yep, Melanie! Being ourselves is such a great feeling. It's an ongoing adventure of learning and growing.", "expected": [{ "name": "Melanie", "types": ["person"] }] },
+    { "memoryId": "D18:8", "text": "Kids are amazingly resilient in tough situations. They have an amazing ability to bounce back.", "expected": [] },
+    { "memoryId": "D18:17", "text": "Thanks, Caroline! Yup, we just did it yesterday! The kids loved it and it was a nice way to relax after the road trip.", "expected": [
+      { "name": "Caroline", "types": ["person"] },
+      { "name": "road trip", "types": ["event"] }
+    ] }
+  ]
+}

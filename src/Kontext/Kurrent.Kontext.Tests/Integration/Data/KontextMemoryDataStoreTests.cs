@@ -12,6 +12,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Testing;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -26,7 +27,7 @@ namespace Kurrent.Kontext.Tests.Data;
 public class KontextMemoryDataStoreTests {
 	static readonly DateTimeOffset Base = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
-	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
+	static MemoryContracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
 
 	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
 	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
@@ -43,9 +44,9 @@ public class KontextMemoryDataStoreTests {
 
 		// Assert
 		await Assert.That(stored).IsNotNull();
-		await Assert.That(stored!.MemoryType).IsEqualTo((Contracts.MemoryType)1);
+		await Assert.That(stored!.MemoryType).IsEqualTo((MemoryContracts.MemoryType)1);
 		await Assert.That(stored.Content).IsEqualTo("memory one");
-		await Assert.That(stored.Importance).IsEqualTo((Contracts.MemoryImportance)3);
+		await Assert.That(stored.Importance).IsEqualTo((MemoryContracts.MemoryImportance)3);
 		await Assert.That(stored.Tags.Count).IsEqualTo(2);
 		await Assert.That(stored.Tags[0].Scope).IsEqualTo("work");
 		await Assert.That(stored.Tags[0].Value).IsEqualTo("alpha");
@@ -96,8 +97,8 @@ public class KontextMemoryDataStoreTests {
 
 		// Act
 		var memories = await store.ListAsync(
-				[], [], Contracts.RecollectSort.RetainedAt,
-				Contracts.SortDirection.Descending, 10)
+				[], [], MemoryContracts.RecollectSort.RetainedAt,
+				MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		// Assert
@@ -113,8 +114,8 @@ public class KontextMemoryDataStoreTests {
 
 		// Act + Assert
 		var byTypes = await store.ListAsync(
-				[], [(Contracts.MemoryType)1, (Contracts.MemoryType)3],
-				Contracts.RecollectSort.RetainedAt, Contracts.SortDirection.Descending, 10)
+				[], [(MemoryContracts.MemoryType)1, (MemoryContracts.MemoryType)3],
+				MemoryContracts.RecollectSort.RetainedAt, MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		await Assert.That(byTypes.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m3", "m4", "m1"], CollectionOrdering.Matching);
@@ -122,7 +123,7 @@ public class KontextMemoryDataStoreTests {
 		// ALL tags must be present: work:alpha AND team:blue.
 		var byTags = await store.ListAsync(
 				[Tag("work", "alpha"), Tag("team", "blue")], [],
-				Contracts.RecollectSort.RetainedAt, Contracts.SortDirection.Descending, 10)
+				MemoryContracts.RecollectSort.RetainedAt, MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		await Assert.That(byTags.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m4", "m1"], CollectionOrdering.Matching);
@@ -137,16 +138,16 @@ public class KontextMemoryDataStoreTests {
 
 		// Act + Assert
 		var byImportance = await store.ListAsync(
-				[], [], Contracts.RecollectSort.Importance,
-				Contracts.SortDirection.Ascending, 10)
+				[], [], MemoryContracts.RecollectSort.Importance,
+				MemoryContracts.SortDirection.Ascending, 10)
 			.ToListAsync();
 
 		await Assert.That(byImportance.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m2", "m4", "m1", "m3", "m5"], CollectionOrdering.Matching);
 
 		// Last accessed descending, limited to the two freshest.
 		var byAccess = await store.ListAsync(
-				[], [], Contracts.RecollectSort.LastAccessedAt,
-				Contracts.SortDirection.Descending, 2)
+				[], [], MemoryContracts.RecollectSort.LastAccessedAt,
+				MemoryContracts.SortDirection.Descending, 2)
 			.ToListAsync();
 
 		await Assert.That(byAccess.Select(m => m.MemoryId).ToList()).IsEquivalentTo(["m5", "m1"], CollectionOrdering.Matching);
@@ -215,13 +216,13 @@ public class KontextMemoryDataStoreTests {
 
 		// Act
 		var best = await store.ListAsync(
-				[], [], Contracts.RecollectSort.Importance,
-				Contracts.SortDirection.Descending, 10)
+				[], [], MemoryContracts.RecollectSort.Importance,
+				MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		var evict = await store.ListAsync(
-				[], [], Contracts.RecollectSort.Importance,
-				Contracts.SortDirection.Ascending, 10)
+				[], [], MemoryContracts.RecollectSort.Importance,
+				MemoryContracts.SortDirection.Ascending, 10)
 			.ToListAsync();
 
 		// Assert
@@ -240,13 +241,13 @@ public class KontextMemoryDataStoreTests {
 
 		// Act
 		var first = await store.ListAsync(
-				[], [], Contracts.RecollectSort.RetainedAt,
-				Contracts.SortDirection.Descending, 10)
+				[], [], MemoryContracts.RecollectSort.RetainedAt,
+				MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		var second = await store.ListAsync(
-				[], [], Contracts.RecollectSort.RetainedAt,
-				Contracts.SortDirection.Descending, 10)
+				[], [], MemoryContracts.RecollectSort.RetainedAt,
+				MemoryContracts.SortDirection.Descending, 10)
 			.ToListAsync();
 
 		// Assert
@@ -502,7 +503,7 @@ public class KontextMemoryDataStoreTests {
 
 	#region ->> Test Infrastructure <<-
 
-	static Contracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
+	static MemoryContracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
 
 	/// <summary>Creates the schema through <see cref="KontextMigrations"/> and seeds the five fixed rows, then hands back a store over the same data sources.</summary>
 	static async ValueTask<KontextMemoryDataStore> Seed(KontextDataSource dataSource) {

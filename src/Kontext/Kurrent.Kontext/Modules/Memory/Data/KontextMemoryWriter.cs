@@ -1,10 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Kontext.Contracts;
+using Kurrent.Kontext.Contracts.Memory;
 using Kurrent.Quack;
 using Kurrent.Surge;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Memory.Data;
 
@@ -27,7 +28,7 @@ public sealed class KontextMemoryWriter(
     sealed class PendingMemory(string memoryId) {
         public string MemoryId { get; } = memoryId;
 
-        public Contracts.Memory? Memory       { get; private set; }
+        public MemoryContracts.Memory? Memory       { get; private set; }
         public long              RetainedAt   { get; private set; }
         public string?           SupersededBy { get; private set; }
         public long              SupersededAt { get; private set; }
@@ -44,7 +45,7 @@ public sealed class KontextMemoryWriter(
             return this;
         }
 
-        public void Retain(Contracts.Memory memory, long retainedAt) {
+        public void Retain(MemoryContracts.Memory memory, long retainedAt) {
             Memory     = memory;
             RetainedAt = retainedAt;
         }

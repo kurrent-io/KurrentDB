@@ -18,6 +18,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Time.Testing;
 
 using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -49,14 +50,14 @@ public class KontextMemoryTests {
 		// appends, so an unseeded store would fail the search rather than return none.
 		await MemorySeeding.CreateSchema(dataSources);
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var clock    = new FakeTimeProvider(Base);
 		var store    = new KontextMemoryDataStore(dataSources);
 		var memory   = NewMemory(store, Capture(appended), clock);
 
-		var request = new Contracts.RetainRequest();
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "the suite runs via test-runner.cs" });
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Preference, Content = "prefers K&R braces" });
+		var request = new MemoryContracts.RetainRequest();
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "the suite runs via test-runner.cs" });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Preference, Content = "prefers K&R braces" });
 
 		var expectedCount = 2;
 
@@ -88,18 +89,18 @@ public class KontextMemoryTests {
 
 		const string content = "the test runner lives at scripts/testing/test-runner.cs";
 
-		var repo  = new Contracts.Tag { Scope = "repo", Value = "kurrentdb" };
+		var repo  = new MemoryContracts.Tag { Scope = "repo", Value = "kurrentdb" };
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("existing", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Tags     = [KontextMemoryDataStore.EncodeTag(repo)],
 				Evidence = SeedEvidenceBlobs(),
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content };
 		incoming.Tags.Add(repo);
 		incoming.Evidence.Add(SeedEvidence());
 		request.Memories.Add(incoming);
@@ -109,7 +110,7 @@ public class KontextMemoryTests {
 
 		// Assert — an idempotency guard against a resend: same content, same tags, same evidence, so
 		// there is nothing a second copy could carry that the first does not.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Noop);
 		await Assert.That(response.Results[0].MemoryId).IsEqualTo("existing");
 		await Assert.That(appended).IsEmpty();
 	}
@@ -122,20 +123,20 @@ public class KontextMemoryTests {
 
 		const string content = "the test runner lives at scripts/testing/test-runner.cs";
 
-		var repo    = new Contracts.Tag { Scope = "repo", Value = "kurrentdb" };
-		var session = new Contracts.Tag { Scope = "session", Value = "9fb733bd" };
+		var repo    = new MemoryContracts.Tag { Scope = "repo", Value = "kurrentdb" };
+		var session = new MemoryContracts.Tag { Scope = "session", Value = "9fb733bd" };
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("existing", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Tags     = [KontextMemoryDataStore.EncodeTag(repo)],
 				Evidence = SeedEvidenceBlobs(),
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content };
 		incoming.Tags.Add(session);
 		request.Memories.Add(incoming);
 
@@ -145,7 +146,7 @@ public class KontextMemoryTests {
 		// Assert — anything short of identical is stored AS SENT. Folding the stored memory's tags
 		// and citations in would hand back a memory carrying labels the caller never chose, and the
 		// caller cannot have "forgotten" to supersede something it did not know was there.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 
 		var written = appended[0].Memories[0].Memory;
 
@@ -162,16 +163,16 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, "the projector checkpoints after the batch lands", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("existing", MemoryContracts.MemoryType.Fact, "the projector checkpoints after the batch lands", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Evidence = SeedEvidenceBlobs(),
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		request.Memories.Add(new Contracts.Memory {
-			MemoryType = Contracts.MemoryType.Fact,
+		request.Memories.Add(new MemoryContracts.Memory {
+			MemoryType = MemoryContracts.MemoryType.Fact,
 			Content    = "the projector checkpoints once the batch has landed",
 		});
 
@@ -181,7 +182,7 @@ public class KontextMemoryTests {
 		// Assert — stored as sent. Nothing was superseded and no citation was inherited: at this
 		// distance the two are plausibly the same claim, and plausibly is not good enough to rewrite
 		// what the caller wrote. The curation pass folds it later, with the whole corpus in view.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 
 		var written = appended[0].Memories[0].Memory;
 
@@ -196,14 +197,14 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, "a colleague reported the outage during standup", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row("existing", MemoryContracts.MemoryType.Fact, "a colleague reported the outage during standup", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
 		var embeddings = new CountingEmbeddings(MemorySeeding.Vector(1f));
 		var memory     = NewMemory(store, NoOp, TimeProvider.System, embeddings);
-		var request    = new Contracts.RetainRequest();
+		var request    = new MemoryContracts.RetainRequest();
 
-		request.Memories.Add(new Contracts.Memory {
-			MemoryType = Contracts.MemoryType.Fact,
+		request.Memories.Add(new MemoryContracts.Memory {
+			MemoryType = MemoryContracts.MemoryType.Fact,
 			Content    = "someone mentioned the downtime at the morning meeting",
 		});
 
@@ -224,15 +225,15 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("far", Contracts.MemoryType.Fact, "a colleague reported the outage during standup", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("near", Contracts.MemoryType.Fact, "someone mentioned the downtime at the morning meeting", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row("far", MemoryContracts.MemoryType.Fact, "a colleague reported the outage during standup", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("near", MemoryContracts.MemoryType.Fact, "someone mentioned the downtime at the morning meeting", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(Cosine25));
-		var request  = new Contracts.RetainRequest { Neighbours = 2 };
+		var request  = new MemoryContracts.RetainRequest { Neighbours = 2 };
 
-		request.Memories.Add(new Contracts.Memory {
-			MemoryType = Contracts.MemoryType.Fact,
+		request.Memories.Add(new MemoryContracts.Memory {
+			MemoryType = MemoryContracts.MemoryType.Fact,
 			Content    = "the outage came up in this morning's standup",
 		});
 
@@ -243,7 +244,7 @@ public class KontextMemoryTests {
 
 		// Assert — the memory was stored regardless; the neighbours are a report, nearest first, and
 		// each carries the raw distance rather than a score normalised across this one search.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(appended[0].Memories.Count).IsEqualTo(1);
 
 		var neighbours = response.Results[0].Neighbours;
@@ -262,20 +263,20 @@ public class KontextMemoryTests {
 		const string content = "the test runner lives at scripts/testing/test-runner.cs";
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("other", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row("existing", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("other", MemoryContracts.MemoryType.Fact, "penguins waddle across antarctic ice", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 
 		var memory  = NewMemory(store, NoOp, TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
-		var request = new Contracts.RetainRequest { Neighbours = 3 };
+		var request = new MemoryContracts.RetainRequest { Neighbours = 3 };
 
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content });
 
 		// Act
 		var response = await memory.RetainAsync(request);
 
 		// Assert — a NOOP resolved to a memory that was already there, so there is no "what did I
 		// store next to" to answer.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Noop);
 		await Assert.That(response.Results[0].Neighbours).IsEmpty();
 	}
 
@@ -288,14 +289,14 @@ public class KontextMemoryTests {
 		const string known = "the test runner lives at scripts/testing/test-runner.cs";
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, known, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row("existing", MemoryContracts.MemoryType.Fact, known, MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
-		var request  = new Contracts.RetainRequest { Neighbours = 2 };
+		var request  = new MemoryContracts.RetainRequest { Neighbours = 2 };
 
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = known });
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "gossip timeouts default to two seconds" });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = known });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "gossip timeouts default to two seconds" });
 
 		// Act
 		var response = await memory.RetainAsync(request);
@@ -305,11 +306,11 @@ public class KontextMemoryTests {
 		// the results and the embeddings in lockstep, so a skipped write must not shift the rest.
 		await Assert.That(response.Results.Count).IsEqualTo(2);
 
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Noop);
 		await Assert.That(response.Results[0].MemoryId).IsEqualTo("existing");
 		await Assert.That(response.Results[0].Neighbours).IsEmpty();
 
-		await Assert.That(response.Results[1].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[1].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(response.Results[1].Neighbours).IsNotEmpty();
 
 		// One memory reached the log, and it is the one that was created.
@@ -325,13 +326,13 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "Sergio is CTO" };
 		incoming.Supersedes.Add(OutdatedId);
 		request.Memories.Add(incoming);
 
@@ -341,7 +342,7 @@ public class KontextMemoryTests {
 		// Assert — supersession is the caller's to express and the server's only job is to carry it
 		// through untouched. This is the whole correction mechanism: there is no update and no
 		// delete, so a `supersedes` the server dropped would silently lose the correction.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(appended[0].Memories[0].Memory.Supersedes).IsEquivalentTo([OutdatedId]);
 	}
 
@@ -352,13 +353,13 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("live", Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row("live", MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "Sergio is CTO" };
 		incoming.Supersedes.Add("no-such-memory");
 		request.Memories.Add(incoming);
 
@@ -375,20 +376,20 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(1),
 				SupersededBy = CurrentId,
 			},
-			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row(CurrentId, MemoryContracts.MemoryType.Fact, "Sergio is CTO", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Supersedes = [OutdatedId],
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is chairman" };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "Sergio is chairman" };
 		incoming.Supersedes.Add(OutdatedId);
 		request.Memories.Add(incoming);
 
@@ -411,14 +412,14 @@ public class KontextMemoryTests {
 		const string content = "Sergio is CTO";
 
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
+			new Row("existing", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content };
 		incoming.Supersedes.Add(OutdatedId);
 		request.Memories.Add(incoming);
 
@@ -428,7 +429,7 @@ public class KontextMemoryTests {
 		// Assert — this is the shape a fold takes: the surviving claim retained again with the loser
 		// attached. It matches "existing" in every other field, so leaving supersedes out of the
 		// identity check would NOOP the fold and leave the duplicate live.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(response.Results[0].MemoryId).IsNotEqualTo("existing");
 		await Assert.That(appended[0].Memories[0].Memory.Supersedes).IsEquivalentTo([OutdatedId]);
 	}
@@ -442,20 +443,20 @@ public class KontextMemoryTests {
 		const string content = "Sergio is CTO";
 
 		var store = await Seed(dataSources,
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(1),
 				SupersededBy = SuccessorId,
 			},
-			new Row(SuccessorId, Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row(SuccessorId, MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Supersedes = [OutdatedId],
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content };
 		incoming.Supersedes.Add(OutdatedId);
 		request.Memories.Add(incoming);
 
@@ -465,7 +466,7 @@ public class KontextMemoryTests {
 		// Assert — the retry the idempotency guard exists to absorb. Its target is superseded BY the
 		// memory this resend duplicates, so validating the request rather than what would actually be
 		// WRITTEN would reject exactly the call that must be safe to repeat.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Noop);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Noop);
 		await Assert.That(response.Results[0].MemoryId).IsEqualTo(SuccessorId);
 		await Assert.That(appended).IsEmpty();
 	}
@@ -477,14 +478,14 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("live", Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
+			new Row("live", MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio is CTO" };
-		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = "no-such-memory" } });
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "Sergio is CTO" };
+		incoming.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = "no-such-memory" } });
 		request.Memories.Add(incoming);
 
 		// Act / Assert — a citation nothing resolves breaks both jobs it exists for: a reader cannot
@@ -500,21 +501,21 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(1),
 				SupersededBy = CurrentId,
 			},
-			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row(CurrentId, MemoryContracts.MemoryType.Fact, "Sergio is CTO", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Supersedes = [OutdatedId],
 			});
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "Sergio's title changed during 2026" };
-		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = OutdatedId } });
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "Sergio's title changed during 2026" };
+		incoming.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = OutdatedId } });
 		request.Memories.Add(incoming);
 
 		// Act
@@ -523,7 +524,7 @@ public class KontextMemoryTests {
 		// Assert — the opposite rule to `supersedes`, and deliberately so. Evidence is frozen at
 		// retain, so a superseded memory was still the thing this claim rested on; requiring a live
 		// tip here would forbid the normal case and gut the cascade.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(appended[0].Memories[0].Memory.Evidence[0].Memory.Id).IsEqualTo(OutdatedId);
 	}
 
@@ -535,23 +536,23 @@ public class KontextMemoryTests {
 
 		const string content = "the test runner lives at scripts/testing/test-runner.cs";
 
-		var repo  = new Contracts.Tag { Scope = "repo", Value = "kurrentdb" };
+		var repo  = new MemoryContracts.Tag { Scope = "repo", Value = "kurrentdb" };
 		var store = await Seed(dataSources,
-			new Row("existing", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("existing", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Tags     = [KontextMemoryDataStore.EncodeTag(repo)],
 				Evidence = SeedEvidenceBlobs(),
 			},
 			// The incoming citation has to resolve: retain rejects a MemoryRef naming no memory.
-			new Row(CitedAltId, Contracts.MemoryType.Fact, "the runner builds once, then tests with --no-build", Contracts.MemoryImportance.Normal, Base, MemorySeeding.Vector(1f)));
+			new Row(CitedAltId, MemoryContracts.MemoryType.Fact, "the runner builds once, then tests with --no-build", MemoryContracts.MemoryImportance.Normal, Base, MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System);
-		var request  = new Contracts.RetainRequest();
+		var request  = new MemoryContracts.RetainRequest();
 
 		// Same content, same tags, DIFFERENT citation — new support for a claim already held.
-		var incoming = new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = content };
+		var incoming = new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = content };
 		incoming.Tags.Add(repo);
-		incoming.Evidence.Add(new Contracts.Evidence { Memory = new() { Id = CitedAltId } });
+		incoming.Evidence.Add(new MemoryContracts.Evidence { Memory = new() { Id = CitedAltId } });
 		request.Memories.Add(incoming);
 
 		// Act
@@ -559,7 +560,7 @@ public class KontextMemoryTests {
 
 		// Assert — identical means content AND tags AND evidence. A second citation is exactly the
 		// case worth keeping, so it must not be swallowed by the idempotency guard.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(appended[0].Memories[0].Memory.Evidence.Count).IsEqualTo(1);
 	}
 
@@ -570,16 +571,16 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var crowd = Enumerable.Range(0, 12)
-			.Select(i => new Row($"m{i}", Contracts.MemoryType.Fact, $"note {i} about checkpoint bookkeeping", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)))
+			.Select(i => new Row($"m{i}", MemoryContracts.MemoryType.Fact, $"note {i} about checkpoint bookkeeping", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)))
 			.ToArray();
 
 		var store = await Seed(dataSources, crowd);
 
 		var options = new KontextMemoryOptions();
 		var memory  = NewMemory(store, NoOp, TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)), options);
-		var request = new Contracts.RetainRequest { Neighbours = 100 };
+		var request = new MemoryContracts.RetainRequest { Neighbours = 100 };
 
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "checkpoint bookkeeping runs on a schedule" });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "checkpoint bookkeeping runs on a schedule" });
 
 		// Act
 		var response = await memory.RetainAsync(request);
@@ -596,7 +597,7 @@ public class KontextMemoryTests {
 		using var dataSources = NewDataSources(dir.Path);
 
 		var store = await Seed(dataSources,
-			new Row("lexical", Contracts.MemoryType.Fact, "the projector checkpoints after the batch lands", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row("lexical", MemoryContracts.MemoryType.Fact, "the projector checkpoints after the batch lands", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
 		// The schema creates content_fts on the empty table, so seeded rows land in the unindexed
 		// tail where lance_fts returns arbitrary rows by scan arrival. Without this rebuild the
@@ -604,10 +605,10 @@ public class KontextMemoryTests {
 		RebuildContentFts(dataSources);
 
 		var memory  = NewMemory(store, NoOp, TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
-		var request = new Contracts.RetainRequest { Neighbours = 2 };
+		var request = new MemoryContracts.RetainRequest { Neighbours = 2 };
 
-		request.Memories.Add(new Contracts.Memory {
-			MemoryType = Contracts.MemoryType.Fact,
+		request.Memories.Add(new MemoryContracts.Memory {
+			MemoryType = MemoryContracts.MemoryType.Fact,
 			Content    = "the projector checkpoints once the batch has landed",
 		});
 
@@ -630,19 +631,19 @@ public class KontextMemoryTests {
 
 		await MemorySeeding.CreateSchema(dataSources);
 
-		var appended = new List<Contracts.MemoriesRetained>();
+		var appended = new List<MemoryContracts.MemoriesRetained>();
 		var store    = new KontextMemoryDataStore(dataSources);
 		var memory   = NewMemory(store, Capture(appended), TimeProvider.System, new FixedEmbeddings(MemorySeeding.Vector(1f)));
-		var request  = new Contracts.RetainRequest { Neighbours = 3 };
+		var request  = new MemoryContracts.RetainRequest { Neighbours = 3 };
 
-		request.Memories.Add(new Contracts.Memory { MemoryType = Contracts.MemoryType.Fact, Content = "the first thing I ever learned" });
+		request.Memories.Add(new MemoryContracts.Memory { MemoryType = MemoryContracts.MemoryType.Fact, Content = "the first thing I ever learned" });
 
 		// Act
 		var response = await memory.RetainAsync(request);
 
 		// Assert — asking for neighbours must not make the first write fail. Nothing to report is a
 		// result, not an error.
-		await Assert.That(response.Results[0].Outcome).IsEqualTo(Contracts.RetainOutcome.Created);
+		await Assert.That(response.Results[0].Outcome).IsEqualTo(MemoryContracts.RetainOutcome.Created);
 		await Assert.That(response.Results[0].Neighbours).IsEmpty();
 		await Assert.That(appended[0].Memories.Count).IsEqualTo(1);
 	}
@@ -653,14 +654,14 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row("a1", MemoryContracts.MemoryType.Fact, "aardvark burrows deep underground", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("a2", MemoryContracts.MemoryType.Fact, "penguins waddle across antarctic ice", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 
-		var appended = new List<Contracts.MemoriesRecalled>();
+		var appended = new List<MemoryContracts.MemoriesRecalled>();
 		var clock    = new FakeTimeProvider(Base.AddDays(1));
 		var memory   = NewMemory(store, CaptureRecalled(appended), clock);
 
-		var request = new Contracts.RecallRequest { Query = "aardvark", Limit = 5 };
+		var request = new MemoryContracts.RecallRequest { Query = "aardvark", Limit = 5 };
 
 		// Act
 		var response = await memory.RecallAsync(request);
@@ -687,9 +688,9 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row("a1", MemoryContracts.MemoryType.Fact, "aardvark burrows deep underground", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesRecalled>();
+		var appended = new List<MemoryContracts.MemoriesRecalled>();
 		var memory   = NewMemory(store, CaptureRecalled(appended), TimeProvider.System);
 
 		// Act
@@ -706,12 +707,12 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("a1", Contracts.MemoryType.Fact, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
-			new Row("a3", Contracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", Contracts.MemoryImportance.Low, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)));
+			new Row("a1", MemoryContracts.MemoryType.Fact, "aardvark burrows deep underground", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("a2", MemoryContracts.MemoryType.Fact, "penguins waddle across antarctic ice", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
+			new Row("a3", MemoryContracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", MemoryContracts.MemoryImportance.Low, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)));
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request            = new Contracts.RecallRequest { Query = "aardvark" };
+		var request            = new MemoryContracts.RecallRequest { Query = "aardvark" };
 		var expectedContent    = "aardvark burrows deep underground";
 		var expectedRetainedAt = Base.AddHours(1);
 
@@ -725,13 +726,13 @@ public class KontextMemoryTests {
 
 		var hit = response.Memories[0];
 
-		await Assert.That(hit.BodyCase).IsEqualTo(Contracts.RecallResponse.Types.RecalledMemory.BodyOneofCase.Lean);
+		await Assert.That(hit.BodyCase).IsEqualTo(MemoryContracts.RecallResponse.Types.RecalledMemory.BodyOneofCase.Lean);
 		await Assert.That(hit.Full).IsNull();
 		await Assert.That(hit.Score).IsGreaterThan(0);
 		await Assert.That(hit.Lean.MemoryId).IsEqualTo("a1");
 		await Assert.That(hit.Lean.Content).IsEqualTo(expectedContent);
-		await Assert.That(hit.Lean.MemoryType).IsEqualTo(Contracts.MemoryType.Fact);
-		await Assert.That(hit.Lean.Importance).IsEqualTo(Contracts.MemoryImportance.High);
+		await Assert.That(hit.Lean.MemoryType).IsEqualTo(MemoryContracts.MemoryType.Fact);
+		await Assert.That(hit.Lean.Importance).IsEqualTo(MemoryContracts.MemoryImportance.High);
 		await Assert.That(hit.Lean.RetainedAt.ToDateTimeOffset()).IsEqualTo(expectedRetainedAt);
 	}
 
@@ -741,14 +742,14 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("b1", Contracts.MemoryType.Fact, "flamingo stands gracefully on one leg", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("b1", MemoryContracts.MemoryType.Fact, "flamingo stands gracefully on one leg", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Evidence      = SeedEvidenceBlobs(),
 				ContentTimeStart = Base.AddHours(-24),
 				ContentTimeEnd   = Base.AddHours(24),
 			});
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request         = new Contracts.RecallRequest { Query = "flamingo", IncludeFull = true };
+		var request         = new MemoryContracts.RecallRequest { Query = "flamingo", IncludeFull = true };
 		var expectedContent = "flamingo stands gracefully on one leg";
 
 		// Act
@@ -759,7 +760,7 @@ public class KontextMemoryTests {
 
 		var hit = response.Memories[0];
 
-		await Assert.That(hit.BodyCase).IsEqualTo(Contracts.RecallResponse.Types.RecalledMemory.BodyOneofCase.Full);
+		await Assert.That(hit.BodyCase).IsEqualTo(MemoryContracts.RecallResponse.Types.RecalledMemory.BodyOneofCase.Full);
 		await Assert.That(hit.Lean).IsNull();
 		await Assert.That(hit.Score).IsGreaterThan(0);
 		await Assert.That(hit.Full.MemoryId).IsEqualTo("b1");
@@ -774,16 +775,16 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("c1", Contracts.MemoryType.Fact, "wombat digs a cozy burrow", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row("c2", Contracts.MemoryType.Fact, "wombat mistaken hidden note", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
-			new Row("c3", Contracts.MemoryType.Fact, "wombat obsolete replaced entry", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) {
+			new Row("c1", MemoryContracts.MemoryType.Fact, "wombat digs a cozy burrow", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row("c2", MemoryContracts.MemoryType.Fact, "wombat mistaken hidden note", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)),
+			new Row("c3", MemoryContracts.MemoryType.Fact, "wombat obsolete replaced entry", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(4),
 				SupersededBy = "c1",
 			});
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request        = new Contracts.RecallRequest { Query = "wombat" };
+		var request        = new MemoryContracts.RecallRequest { Query = "wombat" };
 		var expectedVisible = new List<string> { "c1", "c2" };
 
 		// Act
@@ -801,14 +802,14 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("d1", Contracts.MemoryType.Fact, "salmon swim upstream every year", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row("d1", MemoryContracts.MemoryType.Fact, "salmon swim upstream every year", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Tags = ["project:rivers"],
 			},
-			new Row("d2", Contracts.MemoryType.Fact, "salmon spawn in shallow gravel", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row("d2", MemoryContracts.MemoryType.Fact, "salmon spawn in shallow gravel", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request        = new Contracts.RecallRequest { Query = "salmon" };
-		request.Tags.Add(new Contracts.Tag { Scope = "project", Value = "rivers" });
+		var request        = new MemoryContracts.RecallRequest { Query = "salmon" };
+		request.Tags.Add(new MemoryContracts.Tag { Scope = "project", Value = "rivers" });
 		var expectedTagged = new List<string> { "d1" };
 
 		// Act
@@ -826,11 +827,11 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row(SecondId, Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row(FirstId, MemoryContracts.MemoryType.Fact, "kangaroo hops across the plains", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(SecondId, MemoryContracts.MemoryType.Fact, "kangaroo mistaken claim", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request = new Contracts.ReclaimRequest();
+		var request = new MemoryContracts.ReclaimRequest();
 		request.Ids.AddRange([FirstId, SecondId, MissingId]);
 		var expectedReturned = new List<string> { FirstId, SecondId };
 
@@ -849,14 +850,14 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
-			new Row(SecondId, Contracts.MemoryType.Fact, "kangaroo mistaken claim", Contracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
+			new Row(FirstId, MemoryContracts.MemoryType.Fact, "kangaroo hops across the plains", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)),
+			new Row(SecondId, MemoryContracts.MemoryType.Fact, "kangaroo mistaken claim", MemoryContracts.MemoryImportance.Normal, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)));
 
-		var appended = new List<Contracts.MemoriesReinforced>();
+		var appended = new List<MemoryContracts.MemoriesReinforced>();
 		var clock    = new FakeTimeProvider(Base);
 		var memory   = NewMemory(store, CaptureReinforced(appended), clock);
 
-		var request = new Contracts.ReinforceRequest();
+		var request = new MemoryContracts.ReinforceRequest();
 		request.Ids.AddRange([FirstId, SecondId]);
 
 		var expectedIds = new List<string> { FirstId, SecondId };
@@ -877,12 +878,12 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row(FirstId, Contracts.MemoryType.Fact, "kangaroo hops across the plains", Contracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
+			new Row(FirstId, MemoryContracts.MemoryType.Fact, "kangaroo hops across the plains", MemoryContracts.MemoryImportance.Normal, Base.AddHours(1), MemorySeeding.Vector(1f)));
 
-		var appended = new List<Contracts.MemoriesReinforced>();
+		var appended = new List<MemoryContracts.MemoriesReinforced>();
 		var memory   = NewMemory(store, CaptureReinforced(appended), TimeProvider.System);
 
-		var request = new Contracts.ReinforceRequest();
+		var request = new MemoryContracts.ReinforceRequest();
 		request.Ids.AddRange([FirstId, MissingId]);
 
 		// Act
@@ -900,19 +901,19 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row(OutdatedId, Contracts.MemoryType.Fact, "Sergio leads DevEx", Contracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
+			new Row(OutdatedId, MemoryContracts.MemoryType.Fact, "Sergio leads DevEx", MemoryContracts.MemoryImportance.High, Base, MemorySeeding.Vector(1f)) {
 				IsSuperseded = true,
 				SupersededAt = Base.AddHours(1),
 				SupersededBy = CurrentId,
 			},
-			new Row(CurrentId, Contracts.MemoryType.Fact, "Sergio is CTO", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
+			new Row(CurrentId, MemoryContracts.MemoryType.Fact, "Sergio is CTO", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) {
 				Supersedes = [OutdatedId],
 			});
 
-		var appended = new List<Contracts.MemoriesReinforced>();
+		var appended = new List<MemoryContracts.MemoriesReinforced>();
 		var memory   = NewMemory(store, CaptureReinforced(appended), TimeProvider.System);
 
-		var request = new Contracts.ReinforceRequest();
+		var request = new MemoryContracts.ReinforceRequest();
 		request.Ids.Add(OutdatedId);
 
 		// Act
@@ -932,17 +933,17 @@ public class KontextMemoryTests {
 		using var dir         = new TempDir();
 		using var dataSources = NewDataSources(dir.Path);
 		var       store       = await Seed(dataSources,
-			new Row("f1", Contracts.MemoryType.Fact, "fact about caching", Contracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) { LastAccessedAt = Base.AddHours(10) },
-			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)) { LastAccessedAt = Base.AddHours(20) },
-			new Row("f3", Contracts.MemoryType.Preference, "prefers the projector rewritten in one pass", Contracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(30) },
-			new Row("f4", Contracts.MemoryType.Fact, "fact about tags", Contracts.MemoryImportance.Low, Base.AddHours(4), MemorySeeding.Vector(0f, 0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(5) });
+			new Row("f1", MemoryContracts.MemoryType.Fact, "fact about caching", MemoryContracts.MemoryImportance.High, Base.AddHours(1), MemorySeeding.Vector(1f)) { LastAccessedAt = Base.AddHours(10) },
+			new Row("f2", MemoryContracts.MemoryType.Fact, "fact about the checkpoint format", MemoryContracts.MemoryImportance.Critical, Base.AddHours(2), MemorySeeding.Vector(0f, 1f)) { LastAccessedAt = Base.AddHours(20) },
+			new Row("f3", MemoryContracts.MemoryType.Preference, "prefers the projector rewritten in one pass", MemoryContracts.MemoryImportance.Normal, Base.AddHours(3), MemorySeeding.Vector(0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(30) },
+			new Row("f4", MemoryContracts.MemoryType.Fact, "fact about tags", MemoryContracts.MemoryImportance.Low, Base.AddHours(4), MemorySeeding.Vector(0f, 0f, 0f, 1f)) { LastAccessedAt = Base.AddHours(5) });
 		var       memory = NewMemory(store, NoOp, TimeProvider.System);
 
-		var request = new Contracts.RecollectRequest {
-			Sort      = Contracts.RecollectSort.Importance,
-			Direction = Contracts.SortDirection.Descending,
+		var request = new MemoryContracts.RecollectRequest {
+			Sort      = MemoryContracts.RecollectSort.Importance,
+			Direction = MemoryContracts.SortDirection.Descending,
 		};
-		request.Types_.Add(Contracts.MemoryType.Fact);
+		request.Types_.Add(MemoryContracts.MemoryType.Fact);
 		var expectedOrder = new List<string> { "f2", "f1", "f4" };
 
 		// Act
@@ -980,11 +981,11 @@ public class KontextMemoryTests {
 	/// <summary>The same validators the host registers, so these suites hit the real request rules.</summary>
 	static readonly RequestValidationService Validation = new(
 		new ServiceCollection()
-			.AddSingleton<IValidator<Contracts.RetainRequest>, RetainRequestValidator>()
-			.AddSingleton<IValidator<Contracts.RecallRequest>, RecallRequestValidator>()
-			.AddSingleton<IValidator<Contracts.ReclaimRequest>, ReclaimRequestValidator>()
-			.AddSingleton<IValidator<Contracts.RecollectRequest>, RecollectRequestValidator>()
-			.AddSingleton<IValidator<Contracts.ReinforceRequest>, ReinforceRequestValidator>()
+			.AddSingleton<IValidator<MemoryContracts.RetainRequest>, RetainRequestValidator>()
+			.AddSingleton<IValidator<MemoryContracts.RecallRequest>, RecallRequestValidator>()
+			.AddSingleton<IValidator<MemoryContracts.ReclaimRequest>, ReclaimRequestValidator>()
+			.AddSingleton<IValidator<MemoryContracts.RecollectRequest>, RecollectRequestValidator>()
+			.AddSingleton<IValidator<MemoryContracts.ReinforceRequest>, ReinforceRequestValidator>()
 			.BuildServiceProvider());
 
 	/// <summary>
@@ -1004,21 +1005,21 @@ public class KontextMemoryTests {
 		});
 
 	/// <summary>Records what reaches the log; the projector, not this service, applies it.</summary>
-	static AppendEvent Capture(List<Contracts.MemoriesRetained> appended) =>
+	static AppendEvent Capture(List<MemoryContracts.MemoriesRetained> appended) =>
 		(evt, _) => {
-			appended.Add((Contracts.MemoriesRetained)evt);
+			appended.Add((MemoryContracts.MemoriesRetained)evt);
 			return Task.CompletedTask;
 		};
 
-	static AppendEvent CaptureRecalled(List<Contracts.MemoriesRecalled> appended) =>
+	static AppendEvent CaptureRecalled(List<MemoryContracts.MemoriesRecalled> appended) =>
 		(evt, _) => {
-			appended.Add((Contracts.MemoriesRecalled)evt);
+			appended.Add((MemoryContracts.MemoriesRecalled)evt);
 			return Task.CompletedTask;
 		};
 
-	static AppendEvent CaptureReinforced(List<Contracts.MemoriesReinforced> appended) =>
+	static AppendEvent CaptureReinforced(List<MemoryContracts.MemoriesReinforced> appended) =>
 		(evt, _) => {
-			appended.Add((Contracts.MemoriesReinforced)evt);
+			appended.Add((MemoryContracts.MemoriesReinforced)evt);
 			return Task.CompletedTask;
 		};
 
@@ -1084,7 +1085,7 @@ public class KontextMemoryTests {
 	static IKontextRetriever KeywordRetriever(KontextMemoryDataStore store) =>
 		KontextRetriever.New().AddSearch(new KeywordSearch(store)).Build();
 
-	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = CitedId } };
+	static MemoryContracts.Evidence SeedEvidence() => new() { Memory = new() { Id = CitedId } };
 
 	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
 	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
@@ -1165,9 +1166,9 @@ public class KontextMemoryTests {
 	/// <summary>One seed row: the fields these tests set, with neutral defaults for the rest.</summary>
 	sealed record Row(
 		string Id,
-		Contracts.MemoryType Type,
+		MemoryContracts.MemoryType Type,
 		string Content,
-		Contracts.MemoryImportance Importance,
+		MemoryContracts.MemoryImportance Importance,
 		DateTimeOffset RetainedAt,
 		float[] Embedding
 	) {

@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" />
     <ProjectReference Include="..\..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
+    <ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />

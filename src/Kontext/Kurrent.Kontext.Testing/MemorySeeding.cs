@@ -5,6 +5,7 @@ using DuckDB.NET.Data;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Memory.Data;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Testing;
 
@@ -97,9 +98,9 @@ public static class MemorySeeding {
 /// <summary>One seed row: the fields the tests set, with neutral defaults for the rest.</summary>
 public sealed record MemoryRow(
 	string                     Id,
-	Contracts.MemoryType       Type,
+	MemoryContracts.MemoryType       Type,
 	string                     Content,
-	Contracts.MemoryImportance Importance,
+	MemoryContracts.MemoryImportance Importance,
 	DateTimeOffset             RetainedAt
 ) {
 	/// <summary>

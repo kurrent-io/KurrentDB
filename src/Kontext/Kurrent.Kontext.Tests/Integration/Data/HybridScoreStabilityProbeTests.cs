@@ -8,6 +8,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -46,10 +47,10 @@ public class HybridScoreStabilityProbeTests {
 			.ToArray();
 
 		var vectors = await embeddings.GenerateAsync(texts, options, cancellationToken);
-		var tag     = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
+		var tag     = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
 
 		var rows = texts
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 				Embedding = vectors[i].Vector.ToArray(),
 				Tags      = [tag],
 			})
@@ -58,7 +59,7 @@ public class HybridScoreStabilityProbeTests {
 		var store = await MemorySeeding.Seed(dataSources, rows);
 		var qv    = (await embeddings.GenerateAsync([incoming], options, cancellationToken))[0].Vector.ToArray();
 
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		Console.WriteLine($"{Marker} one twin, {NoiseSize} noise rows, identical query every time");
 		Console.WriteLine($"{Marker}  limit    K   effK   twinScore  bestNoise");

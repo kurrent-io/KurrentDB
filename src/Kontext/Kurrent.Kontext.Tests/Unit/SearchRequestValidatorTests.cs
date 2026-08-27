@@ -3,6 +3,7 @@
 
 using Kurrent.Kontext.Records;
 using KurrentDB.Testing.Bogus;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -20,7 +21,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask accepts_a_query_on_its_own() {
         // Arrange
-        var request = new Contracts.SearchRequest { Query = Faker.Lorem.Sentence() };
+        var request = new RecordsContracts.SearchRequest { Query = Faker.Lorem.Sentence() };
 
         // Act
         var result = Validator.Validate(request);
@@ -32,7 +33,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask rejects_an_empty_query() {
         // Arrange
-        var request = new Contracts.SearchRequest { Limit = Faker.Random.Int(1, 50) };
+        var request = new RecordsContracts.SearchRequest { Limit = Faker.Random.Int(1, 50) };
 
         // Act
         var result = Validator.Validate(request);
@@ -44,7 +45,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask rejects_a_negative_limit() {
         // Arrange
-        var request = new Contracts.SearchRequest {
+        var request = new RecordsContracts.SearchRequest {
             Query = Faker.Lorem.Sentence(),
             Limit = Faker.Random.Int(-50, -1),
         };
@@ -59,7 +60,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask query_accepts_sql_on_its_own() {
         // Arrange
-        var request = new Contracts.QueryRequest { Sql = "SELECT count(*) FROM kdb.records" };
+        var request = new RecordsContracts.QueryRequest { Sql = "SELECT count(*) FROM kdb.records" };
 
         // Act
         var result = new QueryRequestValidator().Validate(request);
@@ -71,7 +72,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask query_rejects_empty_sql() {
         // Arrange
-        var request = new Contracts.QueryRequest { Limit = Faker.Random.Int(1, 50) };
+        var request = new RecordsContracts.QueryRequest { Limit = Faker.Random.Int(1, 50) };
 
         // Act
         var result = new QueryRequestValidator().Validate(request);
@@ -84,7 +85,7 @@ public class SearchRequestValidatorTests {
     public async ValueTask query_accepts_sql_naming_a_forbidden_table() {
         // Arrange — the query engine parses the statement and rejects what it may not touch. Deciding
         // that here too would be a second, drifting copy of its allowlist.
-        var request = new Contracts.QueryRequest { Sql = "SELECT * FROM pg_catalog.pg_tables" };
+        var request = new RecordsContracts.QueryRequest { Sql = "SELECT * FROM pg_catalog.pg_tables" };
 
         // Act
         var result = new QueryRequestValidator().Validate(request);
@@ -96,7 +97,7 @@ public class SearchRequestValidatorTests {
     [Test]
     public async ValueTask rejects_a_negative_minimum_score() {
         // Arrange
-        var request = new Contracts.SearchRequest {
+        var request = new RecordsContracts.SearchRequest {
             Query    = Faker.Lorem.Sentence(),
             MinScore = Faker.Random.Double(-5, -0.1),
         };

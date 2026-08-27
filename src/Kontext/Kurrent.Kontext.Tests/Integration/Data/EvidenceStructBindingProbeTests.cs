@@ -8,18 +8,17 @@ using Kurrent.Kontext.Infrastructure.Data;
 namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
-/// Pins why the repeated citation column is a VARCHAR[] of JSON rather than a native STRUCT[],
-/// probed live 2026-08-03 against lance-encoding 6.0.0.
+/// Pins whether a native STRUCT[] can hold the repeated citation column, which today is a VARCHAR[]
+/// of JSON. STRUCT[] is the efficient shape — every struct field becomes its own Arrow child array,
+/// so a read touches one buffer instead of parsing text — and evidence is a oneof, so structs whose
+/// null fields differ across elements of one list is not an edge case but every memory citing more
+/// than one kind of source.
 ///
-/// STRUCT[] is the efficient shape on paper — every struct field becomes its own Arrow child array,
-/// so a read touches one buffer instead of parsing text. It is unusable here: the column CREATEs and
-/// WRITEs, but reading a list whose structs differ in which fields are null throws an internal
-/// decoder error. Evidence is a oneof, so sparse fields varying across elements in one list is not
-/// an edge case — it is every memory that cites more than one kind of source.
-///
-/// The decoder limitation this probe was written to pin is FIXED: a sparse STRUCT[] now reads
-/// back. The probe stays as the regression guard, and moving evidence off VARCHAR[] canonical
-/// JSON to a real STRUCT[] is now viable.
+/// Probed 2026-08-03 against lance-encoding 6.0.0 the read threw an internal decoder error, and the
+/// column stayed VARCHAR[] for that reason. Re-probed 2026-08-23 it reads back correctly, so the
+/// limitation has lifted and moving evidence to STRUCT[] is now a question of whether the migration
+/// is worth it rather than whether the engine allows it. This test pins that it still works, so the
+/// answer does not silently rot back.
 /// </summary>
 [Category("Integration")]
 [Timeout(30_000)]
@@ -38,7 +37,7 @@ public class EvidenceStructBindingProbeTests {
 			Exec(connection, $"CREATE TABLE ldb.main.probe_evidence (memory_id VARCHAR, evidence {EvidenceType})"));
 
 		// Act — two citations of different kinds, so `repo` is set on one element and null on the
-		// other. That asymmetry is what the decoder mishandles.
+		// other. That asymmetry is what the decoder used to mishandle.
 		var write = Try(() => {
 			dataSources.Execute(connection =>
 				Exec(connection,
@@ -49,17 +48,26 @@ public class EvidenceStructBindingProbeTests {
 					"""));
 		});
 
-		var read = Try(() => {
-			dataSources.Execute(connection => {
-				using var command = connection.CreateCommand();
-				command.CommandText = "SELECT evidence[1].memory_id FROM ldb.main.probe_evidence";
-				command.ExecuteScalar();
-			});
+		var cited = dataSources.Execute(connection => {
+			using var command = connection.CreateCommand();
+			command.CommandText =
+				"""
+				SELECT evidence[1].memory_id, evidence[2].repo, evidence[1].repo
+				FROM ldb.main.probe_evidence
+				""";
+
+			using var reader = command.ExecuteReader();
+			reader.Read();
+
+			return (First: reader.GetString(0), SecondRepo: reader.GetString(1), FirstRepo: reader.IsDBNull(2));
 		});
 
-		// Assert — both halves work now: the sparse child array decodes.
+		// Assert — both halves work, and the sparse arm reads as itself rather than as its neighbour:
+		// the field set on one element only must not bleed across the list.
 		await Assert.That(write).IsEqualTo("OK");
-		await Assert.That(read).IsEqualTo("OK");
+		await Assert.That(cited.First).IsEqualTo("cited-1");
+		await Assert.That(cited.SecondRepo).IsEqualTo("kurrent--kurrentdb");
+		await Assert.That(cited.FirstRepo).IsTrue();
 	}
 
 	static string Try(Action action) {

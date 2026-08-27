@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
@@ -9,9 +11,9 @@ public class CognitiveModulatorTests {
 	[Test]
 	public async ValueTask breakdown_reproduces_score() {
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("a", 0.9, importance: Contracts.MemoryImportance.Critical, age: TimeSpan.Zero),
-			Fixtures.Scored("b", 0.5, importance: Contracts.MemoryImportance.Normal, age: TimeSpan.FromDays(7)),
-			Fixtures.Scored("c", 0.2, importance: Contracts.MemoryImportance.Low, age: TimeSpan.FromDays(30)),
+			Fixtures.Scored("a", 0.9, importance: MemoryContracts.MemoryImportance.Critical, age: TimeSpan.Zero),
+			Fixtures.Scored("b", 0.5, importance: MemoryContracts.MemoryImportance.Normal, age: TimeSpan.FromDays(7)),
+			Fixtures.Scored("c", 0.2, importance: MemoryContracts.MemoryImportance.Low, age: TimeSpan.FromDays(30)),
 		];
 
 		var result = await CognitiveModulator.Create().ProcessAsync(Fixtures.Query(), pool);

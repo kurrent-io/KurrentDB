@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
+
 namespace Kurrent.Kontext.Retrieval.Tests.Stages;
 
 [Category("Stages")]
@@ -10,8 +12,8 @@ public class BoostedModulatorTests {
 		// leader takes the worst-case penalties (stale ×0.9, low importance ×0.95 → 0.855) while
 		// chaser takes the maximum boosts (fresh ×1.1, critical ×1.1 → 0.6 × 1.21 = 0.726)
 		IReadOnlyList<ScoredMemory> pool = [
-			Fixtures.Scored("leader", 1.0, importance: Contracts.MemoryImportance.Low, age: TimeSpan.FromDays(3650)),
-			Fixtures.Scored("chaser", 0.6, importance: Contracts.MemoryImportance.Critical, age: TimeSpan.Zero),
+			Fixtures.Scored("leader", 1.0, importance: MemoryContracts.MemoryImportance.Low, age: TimeSpan.FromDays(3650)),
+			Fixtures.Scored("chaser", 0.6, importance: MemoryContracts.MemoryImportance.Critical, age: TimeSpan.Zero),
 			Fixtures.Scored("floor", 0.0),
 		];
 

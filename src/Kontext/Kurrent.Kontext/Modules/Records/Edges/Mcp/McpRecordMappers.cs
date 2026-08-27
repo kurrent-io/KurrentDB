@@ -11,6 +11,7 @@ using SchemaInfo = Kurrent.Kontext.Records.Mcp.Model.SchemaInfo;
 using QueryResult = Kurrent.Kontext.Records.Mcp.Model.QueryResult;
 using SearchOptions = Kurrent.Kontext.Records.Mcp.Model.SearchOptions;
 using SearchResult = Kurrent.Kontext.Records.Mcp.Model.SearchResult;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records.Mcp;
 
@@ -20,7 +21,7 @@ namespace Kurrent.Kontext.Records.Mcp;
 /// (<c>Record</c>, <c>SchemaInfo</c>, …), so they are aliased throughout.
 /// </summary>
 static class McpRecordMappers {
-    public static Contracts.SearchRequest ToContract(string query, SearchOptions options) {
+    public static RecordsContracts.SearchRequest ToContract(string query, SearchOptions options) {
         // Assigning both halves of a protobuf oneof keeps only the last, so an over-specified request
         // would silently be answered under a filter the caller did not choose. Refuse it instead.
         if (options is { Stream: not null, Category: not null })
@@ -30,7 +31,7 @@ static class McpRecordMappers {
             throw new ArgumentException(
                 "schemaName, schemaId and schemaFormat are alternatives — an id pins a version of a name, and a name implies its format. Set one, not several.");
 
-        var request = new Contracts.SearchRequest {
+        var request = new RecordsContracts.SearchRequest {
             Query    = query,
             Limit    = options.Limit,
             MinScore = options.MinScore,
@@ -56,7 +57,7 @@ static class McpRecordMappers {
       + (options.SchemaId is not null ? 1 : 0)
       + (options.SchemaFormat is not null ? 1 : 0);
 
-    public static QueryResult ToModel(Contracts.QueryResponse response) =>
+    public static QueryResult ToModel(RecordsContracts.QueryResponse response) =>
         new() {
             Truncated = response.Truncated,
             Rows      = [.. response.Rows.Select(ToJsonElement)],
@@ -69,16 +70,16 @@ static class McpRecordMappers {
         return document.RootElement.Clone();
     }
 
-    public static SearchResult ToModel(Contracts.SearchResponse response) =>
+    public static SearchResult ToModel(RecordsContracts.SearchResponse response) =>
         new() { Hits = [.. response.Hits.Select(ToModel)] };
 
-    static RecordHit ToModel(Contracts.SearchResponse.Types.RecordHit hit) =>
+    static RecordHit ToModel(RecordsContracts.SearchResponse.Types.RecordHit hit) =>
         new() {
             Score  = hit.Score,
             Record = ToModel(hit.Record),
         };
 
-    static Record ToModel(Contracts.Record? record) =>
+    static Record ToModel(RecordsContracts.Record? record) =>
         record is null
             ? new()
             : new() {
@@ -111,7 +112,7 @@ static class McpRecordMappers {
 
     static readonly IReadOnlyDictionary<string, JsonElement> EmptyProperties = new Dictionary<string, JsonElement>();
 
-    static SchemaInfo ToModel(Contracts.SchemaInfo? schema) =>
+    static SchemaInfo ToModel(RecordsContracts.SchemaInfo? schema) =>
         schema is null
             ? new()
             : new() {

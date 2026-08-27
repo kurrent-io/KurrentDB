@@ -3,12 +3,13 @@
 
 using FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
+using RecordsContracts = Kurrent.Kontext.Contracts.Records;
 
 namespace Kurrent.Kontext.Records;
 
 // `scope` and `schema` are protobuf oneofs, so their exclusivity is structural — setting the second
 // field clears the first before a validator could ever see both.
-public sealed class SearchRequestValidator : RequestValidator<Contracts.SearchRequest> {
+public sealed class SearchRequestValidator : RequestValidator<RecordsContracts.SearchRequest> {
     public SearchRequestValidator() {
         RuleFor(x => x.Query)
             .NotEmpty()
@@ -26,7 +27,7 @@ public sealed class SearchRequestValidator : RequestValidator<Contracts.SearchRe
 
 // What the SQL may touch is the query engine's rule, not this validator's: it parses the statement
 // and rejects any table outside its allowlist. Re-deciding that here would be a second, drifting copy.
-public sealed class QueryRequestValidator : RequestValidator<Contracts.QueryRequest> {
+public sealed class QueryRequestValidator : RequestValidator<RecordsContracts.QueryRequest> {
     public QueryRequestValidator() {
         RuleFor(x => x.Sql)
             .NotEmpty()

@@ -18,12 +18,16 @@ public partial class KontextConventions {
     public static class Streams {
         public const string KontextStreamPrefix  = "$kontext"; //$ktx/memories
         public const string MemoriesStreamPrefix = $"{KontextStreamPrefix}/memories";
+        public const string EntitiesStreamPrefix = $"{KontextStreamPrefix}/entities";
+
+        // NOT under $kontext/entities: the entity projector's prefix filter would consume it.
+        public const string EntityResolutionCheckpointsStream = $"{KontextStreamPrefix}/entity-resolution/checkpoints";
     }
 
     // Copied from SchemaRegistryConventions.RegisterMessages (minus its Eventuous type mapping,
     // which Kontext does not use) until the primitive moves into Core — deduplicate then.
-    public static async Task<RegisteredSchema> RegisterMessages<T>(ISchemaRegistry client, CancellationToken ct = default) {
-        var schemaName = $"{Streams.MemoriesStreamPrefix}-{typeof(T).Name.Kebaberize()}";
+    public static async Task<RegisteredSchema> RegisterMessages<T>(ISchemaRegistry client, string streamPrefix, CancellationToken ct = default) {
+        var schemaName = $"{streamPrefix}-{typeof(T).Name.Kebaberize()}";
 
         return await client.RegisterSchema<T>(
             new SchemaInfo(schemaName, SchemaDataFormat.Json),
@@ -37,7 +41,12 @@ public partial class KontextConventions {
         [GeneratedRegex($@"^\{Streams.MemoriesStreamPrefix}")]
         private static partial Regex GetMemoriesStreamFilterRegEx();
 
+        [GeneratedRegex($@"^\{Streams.EntitiesStreamPrefix}")]
+        private static partial Regex GetEntitiesStreamFilterRegEx();
+
         public static readonly ConsumeFilter MemoriesFilter = FromRegex(ConsumeFilterScope.Stream, GetMemoriesStreamFilterRegEx());
+
+        public static readonly ConsumeFilter EntitiesFilter = FromRegex(ConsumeFilterScope.Stream, GetEntitiesStreamFilterRegEx());
 
         // The whole-log records index consumes everything except system events — which also
         // excludes every $kontext stream, so the indexer never eats its own exhaust.

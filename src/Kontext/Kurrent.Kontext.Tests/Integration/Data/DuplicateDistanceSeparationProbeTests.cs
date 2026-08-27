@@ -8,6 +8,7 @@ using Kurrent.Kontext.Memory.Data;
 using Kurrent.Kontext.Retrieval;
 using Kurrent.Kontext.Testing;
 using Microsoft.Extensions.AI;
+using MemoryContracts = Kurrent.Kontext.Contracts.Memory;
 
 namespace Kurrent.Kontext.Tests.Data;
 
@@ -89,10 +90,10 @@ public class DuplicateDistanceSeparationProbeTests {
 		var stored = pairs.Select(pair => pair.Stored).Concat(noise).ToArray();
 
 		var storedVectors = await embeddings.GenerateAsync(stored, options, cancellationToken);
-		var tag           = KontextMemoryDataStore.EncodeTag(new Contracts.Tag { Scope = "user", Value = "sergio" });
+		var tag           = KontextMemoryDataStore.EncodeTag(new MemoryContracts.Tag { Scope = "user", Value = "sergio" });
 
 		var rows = stored
-			.Select((content, i) => new MemoryRow($"m{i}", Contracts.MemoryType.Fact, content, Contracts.MemoryImportance.Normal, Base) {
+			.Select((content, i) => new MemoryRow($"m{i}", MemoryContracts.MemoryType.Fact, content, MemoryContracts.MemoryImportance.Normal, Base) {
 				Embedding = storedVectors[i].Vector.ToArray(),
 				Tags      = [tag],
 			})
@@ -105,7 +106,7 @@ public class DuplicateDistanceSeparationProbeTests {
 		// top k by score. Without this rebuild the keyword leg measures nothing. See KontextCorpus.
 		RebuildContentFts(dataSources);
 
-		Contracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
+		MemoryContracts.Tag[] scope = [new() { Scope = "user", Value = "sergio" }];
 
 		// Unit length is what makes a raw distance mean the same thing in every query: squared L2
 		// reduces to 2-2cos only on the unit sphere.
