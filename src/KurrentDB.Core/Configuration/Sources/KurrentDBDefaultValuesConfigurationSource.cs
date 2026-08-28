@@ -22,7 +22,9 @@ public class KurrentDefaultValuesConfigurationProvider(IEnumerable<KeyValuePair<
 	: MemoryConfigurationProvider(new() {
 		InitialData = initialData
 			// todo: something more permanent. exclude GossipSeed default because it overrides gossip seeds specified as arrays
-			.Where(kvp => kvp.Key is not nameof(ClusterVNodeOptions.Cluster.GossipSeed))
+			.Where(kvp => kvp.Key
+				is not nameof(ClusterVNodeOptions.Cluster.GossipSeed)
+				and not nameof(ClusterVNodeOptions.Cluster.KontrolPlaneSeed))
 			.ToDictionary(
 			kvp => $"{KurrentConfigurationKeys.Prefix}:{kvp.Key}",
 			kvp => kvp.Value,

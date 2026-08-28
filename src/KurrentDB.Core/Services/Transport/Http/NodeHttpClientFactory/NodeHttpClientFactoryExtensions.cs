@@ -17,6 +17,7 @@ public static class NodeHttpClientFactoryExtensions {
 		EndPoint address) {
 
 		var httpClient = httpClientFactory.CreateHttpClient(address.GetOtherNames());
+		// infinite so that streaming calls do not timeout. see also CallInvokerWithUnaryCallTimeout
 		httpClient.Timeout = Timeout.InfiniteTimeSpan;
 		httpClient.DefaultRequestVersion = new Version(2, 0);
 

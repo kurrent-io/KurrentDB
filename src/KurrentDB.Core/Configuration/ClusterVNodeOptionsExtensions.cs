@@ -283,4 +283,10 @@ public static class ClusterVNodeOptionsExtensions {
 				$"No trusted root certificate files were loaded from the specified path: {options.Certificate.TrustedRootCertificatesPath}");
 		return trustedRootCerts;
 	}
+
+	extension(ClusterVNodeOptions options) {
+		public bool KontrolPlaneMode => //qqq possibly the callers should just be using one or other of these lower level flags
+			options.Cluster.IsDataPlaneNode ||
+			options.Cluster.IsKontrolPlaneNode;
+	}
 }

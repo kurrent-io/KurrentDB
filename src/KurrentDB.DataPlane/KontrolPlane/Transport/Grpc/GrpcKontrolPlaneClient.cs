@@ -23,16 +23,6 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	}
 
 	/// <summary>
-	/// Gets or sets timeout for <see cref="RenewLeaderAppointmentAsync"/> or <see cref="ResignLeaderAsync"/> underlying gRPC
-	/// calls.
-	/// </summary>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is less than or equal to <see cref="TimeSpan.Zero"/>.</exception>
-	public TimeSpan UnaryCallTimeout {
-		get;
-		init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
-	} = TimeSpan.FromSeconds(30);
-
-	/// <summary>
 	/// Creates gRPC communication channel.
 	/// </summary>
 	/// <param name="address">The address of the gRPC service.</param>
@@ -43,7 +33,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	/// <inheritdoc cref="IKontrolPlane.AnnounceNodeAsync"/>
 	public async IAsyncEnumerable<KontrolPlane.DatabaseCluster> AnnounceNodeAsync(KontrolPlane.DatabaseNode node, [EnumeratorCancellation] CancellationToken token = default) {
 		for (var currentAddress = _kontrollerNodes[0];; token.ThrowIfCancellationRequested()) {
-			var entry = CreateClient(currentAddress, InfiniteTimeSpan);
+			var entry = CreateClient(currentAddress);
 
 			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) }, cancellationToken: token);
 			try {

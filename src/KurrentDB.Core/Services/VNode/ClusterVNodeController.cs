@@ -18,6 +18,7 @@ using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
+using Serilog.Events;
 using ILogger = Serilog.ILogger;
 using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
@@ -34,6 +35,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private static readonly TimeSpan LeaderSubscriptionTimeout = TimeSpan.FromMilliseconds(1000);
 	private static readonly TimeSpan LeaderDiscoveryTimeout = TimeSpan.FromMilliseconds(3000);
 
+	private readonly bool _kontrolPlaneMode;
 	private readonly InMemoryBus _outputBus;
 	private readonly VNodeInfo _nodeInfo;
 	private readonly TFChunkDb _db;
@@ -103,6 +105,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		Ensure.NotNull(forwardingProxy, "forwardingProxy");
 		Ensure.NotNull(startSubsystems, "startSubsystems");
 
+		_kontrolPlaneMode = options.KontrolPlaneMode;
 		_nodeInfo = nodeInfo;
 		_db = db;
 		_node = node;
@@ -145,7 +148,8 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<AuthenticationMessage.AuthenticationProviderInitialized>().Do(Handle)
 			.When<AuthenticationMessage.AuthenticationProviderInitializationFailed>().Do(Handle)
 			.When<SystemMessage.SubSystemInitialized>().Do(Handle)
-			.When<SystemMessage.SystemCoreReady>().Do(Handle);
+			.When<SystemMessage.SystemCoreReady>().Do(Handle)
+			.When<ClientMessage.ResignNode>().Do(Handle);
 
 		stm.InState(VNodeState.Initializing)
 			.When<SystemMessage.SystemInit>().Do(Handle)
@@ -521,7 +525,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		var id = Guid.NewGuid();
 		Message msg = _nodeInfo.IsReadOnlyReplica
 			? new SystemMessage.BecomeReadOnlyLeaderless(id)
-			: _clusterSize > 1
+			: _clusterSize > 1 && !_kontrolPlaneMode
 				? new SystemMessage.BecomeDiscoverLeader(id)
 				: new SystemMessage.BecomeUnknown(id);
 
@@ -534,10 +538,21 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		State = VNodeState.Unknown;
 		_leader = null;
 		await _outputBus.DispatchAsync(message, token);
-		_mainQueue.Publish(new ElectionMessage.StartElections());
+
+		if (_kontrolPlaneMode) {
+			// NoOp. KPlane will tell us what to do next.
+		} else {
+			_mainQueue.Publish(new ElectionMessage.StartElections());
+		}
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomeDiscoverLeader message, CancellationToken token) {
+		if (_kontrolPlaneMode) {
+			// Not allowed to discover leader from gossip in KPlane mode, must be told the leader by the kplane.
+			// If we discover it from gossip we may subvert the KPlane's fence on an old epoch.
+			throw new InvalidOperationException();
+		}
+
 		Log.Information("========== [{httpEndPoint}] IS ATTEMPTING TO DISCOVER EXISTING LEADER...", _nodeInfo.HttpEndPoint);
 
 		State = VNodeState.DiscoverLeader;
@@ -545,6 +560,23 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 
 		var msg = new LeaderDiscoveryMessage.DiscoveryTimeout();
 		_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderDiscoveryTimeout, _publishEnvelope, msg));
+	}
+
+	private ValueTask Handle(ClientMessage.ResignNode message, CancellationToken token) {
+		if (!_kontrolPlaneMode) {
+			return _outputBus.DispatchAsync(message, token);
+		}
+
+		if (!_state.CanReplicateToOtherNodes()) {
+			Log.Information(
+				"========== [{httpEndPoint}] IGNORING RESIGNATION: THIS NODE DOES NOT HOLD LEADERSHIP. State: {state}.",
+				_nodeInfo.HttpEndPoint, _state);
+			return ValueTask.CompletedTask;
+		}
+
+		// works in the same was as NoQuorumMessage
+		Log.Information("========== [{httpEndPoint}] IS RESIGNING LEADERSHIP...", _nodeInfo.HttpEndPoint);
+		return _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
 	}
 
 	private ValueTask Handle(SystemMessage.InitiateLeaderResignation message, CancellationToken token) {
@@ -1220,7 +1252,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (_leader is null)
 			return ValueTask.FromException(new Exception("_leader == null"));
 
-		if (message.ClusterInfo.Members.Count(IsAliveLeader) > 1) {
+		if (_kontrolPlaneMode) {
+			// Don't start elections, KPlane will tell us what to do.
+		} else if (message.ClusterInfo.Members.Count(IsAliveLeader) > 1) {
 			Log.Debug("There are MULTIPLE LEADERS according to gossip, need to start elections. LEADER: [{leader}]",
 				_leader);
 			Log.Debug("GOSSIP:");
@@ -1279,6 +1313,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (_leader is null)
 			return ValueTask.FromException(new Exception("_leader == null"));
 
+		if (_kontrolPlaneMode) {
+			// Don't start elections. KPlane will tell us what to do.
+			return _outputBus.DispatchAsync(message, token);
+		}
+
 		var leader = message.ClusterInfo.Members.FirstOrDefault(x => x.InstanceId == _leader.InstanceId);
 		if (leader is null or { IsAlive: false }) {
 			Log.Debug(
@@ -1331,7 +1370,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(SystemMessage.Freeze message, CancellationToken token) {
-		Log.Information("========== [{httpEndPoint}] IS FROZEN BY THE KONTROL PLANE. State was {State}.",
+		Log.Information("========== [{httpEndPoint}] IS FREEZING. State was {State}.",
 			_nodeInfo.HttpEndPoint, State);
 		await _fsm.HandleAsync(new SystemMessage.BecomeUnknown(Guid.NewGuid()), token);
 		message.Envelope.ReplyWith(SystemMessage.Frozen.Instance);
@@ -1395,7 +1434,10 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(ReplicationMessage.ReplicaSubscriptionRetry message, CancellationToken token) {
-		if (IsLegitimateReplicationMessage(message)) {
+		// ReplicaSubscriptionRetry means the node isn't ready to replicate yet or it wasn't the node we were intending
+		// to replicate from (the leaderId on the request didn't match the instanceId of the node)
+		// Therefore it is ok if the leaderId doesn't match; we don't need to ensure it, we just skip handling the message.
+		if (IsLegitimateReplicationMessage(message, ensureLeaderIdMatch: false)) {
 			await _outputBus.DispatchAsync(message, token);
 
 			var msg = new ReplicationMessage.SubscribeToLeader(_stateCorrelationId, _leader.InstanceId,
@@ -1470,7 +1512,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		return task;
 	}
 
-	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message) {
+	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message, bool ensureLeaderIdMatch = true) {
 		if (message.SubscriptionId == Guid.Empty)
 			throw new Exception("IReplicationMessage with empty SubscriptionId provided.");
 		if (message.SubscriptionId != _subscriptionId) {
@@ -1481,13 +1523,20 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		}
 
 		if (_leader == null || _leader.InstanceId != message.LeaderId) {
-			var msg = string.Format("{0} message passed SubscriptionId check, but leader is either null or wrong. "
-									+ "Message.Leader: [{1:B}], VNode Leader: {2}.",
+			// it is ok for instanceId not to match for ReplicaSubscriptionRetry
+			Log.Write(
+				ensureLeaderIdMatch ? LogEventLevel.Fatal : LogEventLevel.Debug,
+				"{messageType} message passed SubscriptionId check, but leader is either null or wrong. " +
+				"Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
 				message.GetType().Name, message.LeaderId, _leader);
-			Log.Fatal("{messageType} message passed SubscriptionId check, but leader is either null or wrong. "
-					  + "Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
-				message.GetType().Name, message.LeaderId, _leader);
-			Application.Exit(ExitCode.Error, msg);
+
+			if (ensureLeaderIdMatch) {
+				Application.Exit(ExitCode.Error, string.Format(
+					"{0} message passed SubscriptionId check, but leader is either null or wrong. " +
+					"Message.Leader: [{1:B}], VNode Leader: {2}.",
+					message.GetType().Name, message.LeaderId, _leader));
+			}
+
 			return false;
 		}
 

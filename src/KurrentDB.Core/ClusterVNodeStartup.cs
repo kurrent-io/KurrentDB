@@ -25,6 +25,8 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DataPlane.Transport.Grpc;
+using KurrentDB.KontrolPlane.Transport.Grpc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -158,6 +160,12 @@ public class ClusterVNodeStartup<TStreamId>
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
+
+		if (_options.Cluster.IsKontrolPlaneNode)
+			app.MapGrpcService<GrpcKontrollerServer>();
+
+		if (_options.Cluster.IsDataPlaneNode)
+			app.MapGrpcService<GrpcDataPlaneServer>();
 
 #if DEBUG
 		app.MapGrpcReflectionService();

@@ -27,4 +27,15 @@ public static class ESConsts {
 	public const string DefaultIndexDirectoryName = "index";
 	public const string StreamExistenceFilterDirectoryName = "stream-existence";
 	public const string KontrollerDirectoryName = "kontroller";
+
+	public const int KPlaneConnectionPoolCapacity = 32;
+
+	// number of records to accumulate in wal before squash
+	public const int KPlaneSnapshotDepth = 512;
+
+	// renewal delay as a multiple of timeout
+	public const double KPlaneRenewalRate = 0.5;
+
+	// Normal HTTP timeout
+	public const int KPlaneUnaryCallTimeoutMs = 30_000;
 }
