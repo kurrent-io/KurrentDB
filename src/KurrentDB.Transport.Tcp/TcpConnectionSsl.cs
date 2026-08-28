@@ -153,7 +153,6 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 		Func<X509Certificate2> serverCertificateSelector,
 		Func<X509Certificate2Collection> intermediatesSelector) {
 		try {
-			var enabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
 			var certificate = serverCertificateSelector?.Invoke();
 			var intermediates = intermediatesSelector?.Invoke();
 			Ensure.NotNull(certificate, "certificate");
@@ -162,11 +161,11 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 				ServerCertificateContext = SslStreamCertificateContext.Create(
 					certificate!, intermediates, offline: true),
 				ClientCertificateRequired = true,
-				EnabledSslProtocols = enabledSslProtocols,
-				CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+				EnabledSslProtocols = NodeTlsPolicy.PinnedSslProtocols,
+				CertificateRevocationCheckMode = NodeTlsPolicy.CertificateRevocationCheckMode,
 				RemoteCertificateValidationCallback = ValidateClientCertificate,
 				ApplicationProtocols = new List<SslApplicationProtocol>(),
-				AllowRenegotiation = false,
+				AllowRenegotiation = NodeTlsPolicy.AllowRenegotiation,
 			});
 
 			lock (_streamLock) {
@@ -225,9 +224,14 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 			}
 
 			try {
-				var enabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
 				var clientCertificates = clientCertificatesSelector?.Invoke();
-				_sslStream.BeginAuthenticateAsClient(targetHost, clientCertificates, enabledSslProtocols, false, OnEndAuthenticateAsClient, _sslStream);
+				_sslStream.BeginAuthenticateAsClient(
+					targetHost,
+					clientCertificates,
+					NodeTlsPolicy.PinnedSslProtocols,
+					NodeTlsPolicy.CheckCertificateRevocation,
+					OnEndAuthenticateAsClient,
+					_sslStream);
 			} catch (AuthenticationException exc) {
 				Log.Information(exc,
 					"[S{remoteEndPoint}, L{localEndPoint}]: Authentication exception on BeginAuthenticateAsClient.",
@@ -272,22 +276,16 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 
 	// The following method is invoked by the RemoteCertificateValidationDelegate.
 	public bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain,
-		SslPolicyErrors sslPolicyErrors) {
-		var (isValid, error) = _serverCertValidator(certificate, chain, sslPolicyErrors, _otherNames);
-		if (!isValid && error != null) {
-			Log.Error("Server certificate validation error: {e}", error);
-		}
-		return isValid;
-	}
+		SslPolicyErrors sslPolicyErrors) =>
+		NodeTlsPolicy
+			.ForServerCertificate(_serverCertValidator, () => _otherNames)
+			.Invoke(sender, certificate, chain, sslPolicyErrors);
 
 	public bool ValidateClientCertificate(object sender, X509Certificate certificate, X509Chain chain,
-		SslPolicyErrors sslPolicyErrors) {
-		var (isValid, error) = _clientCertValidator(certificate, chain, sslPolicyErrors);
-		if (!isValid && error != null) {
-			Log.Error("Client certificate validation error: {e}", error);
-		}
-		return isValid;
-	}
+		SslPolicyErrors sslPolicyErrors) =>
+		NodeTlsPolicy
+			.ForClientCertificate(_clientCertValidator, allowNoCertificate: false)
+			.Invoke(sender, certificate, chain, sslPolicyErrors);
 
 	private void DisplaySslStreamInfo(SslStream stream) {
 		Log.Information("[S{remoteEndPoint}, L{localEndPoint}]", RemoteEndPoint, LocalEndPoint);
