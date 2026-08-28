@@ -131,6 +131,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 			Func<IDataPlane> dataPlaneClientFactory,
 			CancellationToken token) {
 			System.IO.Directory.CreateDirectory(stateRoot);
+			var grpcAddress = ToGrpcEndPoint(raftAddress);
 
 			var kontroller = new RaftKontroller(new RaftKontroller.Options {
 				ListenAddress = raftAddress,
@@ -138,7 +139,7 @@ partial class KPlaneDataPlaneIntegrationTest {
 				ConnectionPoolCapacity = 10,
 				PersistentStateRoot = stateRoot,
 				Nodes = raftSeed,
-				ApiPort = ToGrpcEndPoint(raftAddress).Port,
+				ApiPort = grpcAddress.Port,
 				// DotNext's default (150-300ms) is tuned for a healthy LAN; it's too tight when several real
 				// 3-node Raft clusters compete for CPU in the same test process, which can livelock elections.
 				LowerElectionTimeout = 300,
@@ -149,8 +150,6 @@ partial class KPlaneDataPlaneIntegrationTest {
 			};
 
 			await kontroller.StartAsync(token);
-
-			var grpcAddress = ToGrpcEndPoint(raftAddress);
 
 			var builder = WebApplication.CreateBuilder();
 			builder.WebHost.ConfigureKestrel(o => o.Listen(grpcAddress, lo => lo.Protocols = HttpProtocols.Http2));
