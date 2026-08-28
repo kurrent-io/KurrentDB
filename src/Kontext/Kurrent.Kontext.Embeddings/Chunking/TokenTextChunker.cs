@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Text;
 using Kurrent.Kontext.Embeddings.SentencePieceOnnx;
 using Microsoft.Extensions.AI;
 using Microsoft.ML.Tokenizers;
@@ -71,33 +70,23 @@ public sealed class TokenTextChunker : ITextChunker {
     }
 
     /// <summary>
-    /// Re-splits an oversized chunk on word boundaries until every piece fits, keeping the header on
-    /// each piece. Word boundaries, not <c>GetIndexByTokenCount</c>: that returns an index into the
-    /// tokenizer's NORMALIZED text, where SentencePiece has rewritten every space to U+2581, so it
-    /// cannot address the text being stored.
+    /// Re-splits an oversized chunk with the library's own line splitter, which descends to word
+    /// boundaries, then reattaches the header to each piece.
     /// </summary>
+    /// <remarks>
+    /// Applying the bound AFTER packing rather than before is the whole difference: splitting every
+    /// line up front first, as the two-step call does, costs about a third more chunks — and a chunk
+    /// is a vector every query compares against.
+    /// </remarks>
     IEnumerable<string> Enforce(string chunk) {
         var header = _chunkHeader ?? "";
         var body   = chunk.StartsWith(header, StringComparison.Ordinal) ? chunk[header.Length..] : chunk;
 
-        var current = new StringBuilder(header);
-        var started = false;
+        // The header rides in every piece, so the body has to fit in what is left of the window.
+        var budget = _maxTokens - _tokenizer.CountTokens(header);
 
-        foreach (var word in body.Split(' ', StringSplitOptions.RemoveEmptyEntries)) {
-            var candidate = started ? $"{current} {word}" : $"{current}{word}";
-
-            if (started && _tokenizer.CountTokens(candidate) > _maxTokens) {
-                yield return current.ToString();
-
-                current.Clear().Append(header).Append(word);
-                continue;
-            }
-
-            current.Clear().Append(candidate);
-            started = true;
-        }
-
-        if (started)
-            yield return current.ToString();
+        return SemanticKernelChunker
+            .SplitPlainTextLines(body, budget, text => _tokenizer.CountTokens(text))
+            .Select(line => header + line);
     }
 }
