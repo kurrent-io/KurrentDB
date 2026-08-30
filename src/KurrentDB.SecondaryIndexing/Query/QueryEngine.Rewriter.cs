@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DotNext.Buffers;
@@ -43,11 +44,14 @@ partial class QueryEngine {
 	private void RewriteNode(JsonNode? ast, ref PreparedQueryBuilder builder) {
 		switch (ast) {
 			case JsonObject obj:
-				RewriteKnownNode(obj, ref builder);
+				// Post-order: recurse into children first, then handle this node. A node we replace
+				// (see SpliceLogSource) must not be re-descended - post-order means it isn't - and the
+				// splice clears/re-adds this object's keys, which would throw mid-enumeration otherwise.
 				foreach (var property in obj) {
 					RewriteNode(property.Value, ref builder);
 				}
 
+				RewriteKnownNode(obj, ref builder);
 				break;
 			case JsonArray array:
 				foreach (var element in array) {
@@ -98,10 +102,21 @@ partial class QueryEngine {
 		// validate schema name
 		switch (tableReference[schemaNameProperty]?.ToString()) {
 			case "kdb":
-				// rewrite system table name
 				var tableName = tableReference[tableNameProperty]?.ToString() ?? string.Empty;
-				tableName = RewriteSystemTableName(tableName, ref builder);
-				tableReference[tableNameProperty] = tableName;
+				// logs/stats are not real tables: replace the reference with an inlined read of the
+				// node's own CLEF files. The whole node becomes a SUBQUERY, so return before the
+				// schema/table fixups below.
+				switch (tableName) {
+					case "logs":
+						SpliceLogSource(tableReference.AsObject(), logViews.BuildLogsSql(), defaultAlias: "logs");
+						return;
+					case "stats":
+						SpliceLogSource(tableReference.AsObject(), logViews.BuildStatsSql(), defaultAlias: "stats");
+						return;
+				}
+
+				// rewrite system table name (records)
+				tableReference[tableNameProperty] = RewriteSystemTableName(tableName, ref builder);
 				break;
 			case "usr":
 				// rewrite user index
@@ -125,5 +140,26 @@ partial class QueryEngine {
 			default:
 				throw new UnsupportedSystemTableException(tableName);
 		}
+	}
+
+	// Replaces a kdb.logs / kdb.stats BASE_TABLE node in place with an inlined SUBQUERY over the
+	// node's CLEF files. Rather than hand-build the SUBQUERY node shape, parse a wrapper select and
+	// lift its from_table (DuckDB produces the correct shape), then copy it over the base-table node.
+	private void SpliceLogSource(JsonObject tableReference, string sourceSql, string defaultAlias) {
+		var alias = tableReference["alias"]?.ToString();
+
+		JsonNode lifted;
+		using (sharedPool.Rent(out var connection))
+			lifted = connection.ParseSyntaxTree(Encoding.UTF8.GetBytes($"SELECT * FROM ({sourceSql}) AS __t"))
+				!["statements"]![0]!["node"]!["from_table"]!;
+
+		foreach (var key in tableReference.Select(p => p.Key).ToArray())
+			tableReference.Remove(key);
+		foreach (var kv in lifted.AsObject())
+			tableReference[kv.Key] = kv.Value?.DeepClone();
+
+		// preserve the original reference's alias so qualified columns still resolve; an unaliased
+		// reference defaults to the table name (so `logs.message` / `stats.x` keep working).
+		tableReference["alias"] = string.IsNullOrEmpty(alias) ? defaultAlias : alias;
 	}
 }
