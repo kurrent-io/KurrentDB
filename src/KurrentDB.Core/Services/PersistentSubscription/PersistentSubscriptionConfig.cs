@@ -59,6 +59,7 @@ public class BadConfigDataException : Exception {
 public class PersistentSubscriptionEntry {
 	public string Stream;
 	public string Group;
+	public string IndexName;
 	public EventFilter.EventFilterDto Filter;
 	public bool ResolveLinkTos;
 	public bool ExtraStatistics;
