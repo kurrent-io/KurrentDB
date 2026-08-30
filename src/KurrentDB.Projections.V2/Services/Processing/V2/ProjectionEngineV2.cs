@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
@@ -144,13 +145,46 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 
+		Exception partitionFault = null;
 		try {
-			await RunReadLoop(checkpoint, dispatcher, coordinator, ct);
+			// Race the read loop against the first partition exit: partition processors
+			// only complete early when they fault, and a continuous projection's read
+			// loop never completes, so awaiting the read loop alone left processor
+			// faults unobserved - the projection reported Running forever with no
+			// checkpoints, no persistence, and nothing logged (DB-2159).
+			using var readCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+			using var drainCts = new CancellationTokenSource();
+			var readLoop = RunReadLoop(checkpoint, dispatcher, coordinator, readCts.Token, drainCts.Token);
+			var firstPartitionExit = Task.WhenAny(partitionTasks);
+
+			var winner = await Task.WhenAny(readLoop, firstPartitionExit);
+			if (winner == firstPartitionExit) {
+				var exited = await firstPartitionExit;
+				if (exited.IsFaulted) {
+					partitionFault = exited.Exception!.InnerException ?? exited.Exception;
+					Log.Error(partitionFault, "ProjectionEngineV2 {Name} partition processor failed", _config.ProjectionName);
+					// Cancelling both tokens is what stops the read loop: every await
+					// in it is token-governed, including the final checkpoint marker
+					// (drain token), which must not wait on a checkpoint the dead
+					// partition will never ack. Completing the channels is what lets
+					// the sibling processors exit; doing it before awaiting the read
+					// loop is deliberate redundancy - if a future await in the read
+					// loop misses a token, channel closure still unblocks the writer
+					// instead of wedging the fault path again.
+					await readCts.CancelAsync();
+					await drainCts.CancelAsync();
+					dispatcher.Complete(partitionFault);
+					await readLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+					ExceptionDispatchInfo.Capture(partitionFault).Throw();
+				}
+			}
+
+			await readLoop;
 			dispatcher.Complete();
 		} catch (OperationCanceledException) when (ct.IsCancellationRequested) {
 			dispatcher.Complete();
 			throw;
-		} catch (Exception ex) {
+		} catch (Exception ex) when (!ReferenceEquals(ex, partitionFault)) {
 			Log.Error(ex, "ProjectionEngineV2 {Name} read loop failed", _config.ProjectionName);
 			dispatcher.Complete(ex);
 			throw;
@@ -160,6 +194,14 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 				await Task.WhenAll(partitionTasks);
 			} catch (OperationCanceledException) when (ct.IsCancellationRequested) {
 				// Expected on cancellation
+			} catch (Exception) when (partitionFault is not null) {
+				// The primary partition fault is already propagating; sibling
+				// processors failing during drain must not replace it. WhenAll only
+				// surfaces its first fault, so log distinct siblings off the tasks.
+				foreach (var task in partitionTasks) {
+					if (task.IsFaulted && !ReferenceEquals(task.Exception?.InnerException, partitionFault))
+						Log.Warning(task.Exception?.InnerException, "ProjectionEngineV2 {Name} sibling partition processor failed during drain", _config.ProjectionName);
+				}
 			}
 
 			// Dispose per-partition state handlers
@@ -170,7 +212,7 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 		}
 	}
 
-	private async Task RunReadLoop(TFPos checkpoint, PartitionDispatcher dispatcher, CheckpointCoordinator coordinator, CancellationToken ct) {
+	private async Task RunReadLoop(TFPos checkpoint, PartitionDispatcher dispatcher, CheckpointCoordinator coordinator, CancellationToken ct, CancellationToken drainCt) {
 		long eventsProcessed = 0;
 		long bytesProcessed = 0;
 		var lastCheckpointTime = Instant.Now;
@@ -263,9 +305,13 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 
 		// Inject a final checkpoint marker if the read position has advanced
 		// since the last checkpoint — covers both handled events and tails of
-		// filtered events that still moved the log position forward.
+		// filtered events that still moved the log position forward. The drain
+		// token (not ct) governs it: on graceful shutdown ct is already cancelled
+		// but the final checkpoint must still be written, while the partition-fault
+		// path cancels the drain so this cannot wait on a checkpoint the dead
+		// partition will never ack.
 		if (eventsProcessed > 0 || bytesProcessed > 0) {
-			await coordinator.InjectCheckpointMarker(lastLogPosition, CancellationToken.None);
+			await coordinator.InjectCheckpointMarker(lastLogPosition, drainCt);
 		}
 	}
 
