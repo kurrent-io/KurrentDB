@@ -3,8 +3,8 @@
 
 @page "/ui/license"
 @attribute [Authorize]
+@implements IDisposable
 @using EventStore.Plugins.Licensing
-@using JetBrains.Annotations
 @using KurrentDB.Licensing
 @using Microsoft.AspNetCore.Authorization
 
@@ -69,17 +69,47 @@
 </MudStack>
 
 @code {
-	[Inject] ILicenseService LicenseService { get; set; }
+#nullable enable
+	[Inject] ILicenseService LicenseService { get; set; } = null!;
 
-	[CanBeNull] Dictionary<string, object> _licenseSummary;
+	Dictionary<string, object?>? _licenseSummary;
+	IDisposable? _subscription;
 
 	protected override void OnInitialized() {
 		base.OnInitialized();
-		if (LicenseService.CurrentLicense == null) {
+
+		// Show the current license immediately (this is also the only work done during prerender).
+		var current = LicenseService.CurrentLicense;
+		_licenseSummary = current is null ? null : LicenseSummary.SelectForEndpoint(current);
+
+		// The live subscription needs the interactive circuit; skip it during the prerender pass.
+		if (!RendererInfo.IsInteractive) {
 			return;
 		}
 
-		_licenseSummary = LicenseSummary.SelectForEndpoint(LicenseService.CurrentLicense);
+		// Delivers the current license immediately and then subsequent changes.
+		_subscription = LicenseService.Licenses.Subscribe(
+			license => Update(license is null ? null : LicenseSummary.SelectForEndpoint(license)),
+			_ => Update(null));
+	}
+
+	// Updates arrive off the licensing service's background thread, so marshal to the renderer
+	// and guard the teardown race (the circuit can be disposed while an update is in flight).
+	void Update(Dictionary<string, object?>? summary) => _ = RefreshAsync(summary);
+
+	async Task RefreshAsync(Dictionary<string, object?>? summary) {
+		try {
+			await InvokeAsync(() => {
+				_licenseSummary = summary;
+				StateHasChanged();
+			});
+		} catch (ObjectDisposedException) {
+			// Component/renderer torn down while an update was in flight — ignore.
+		}
+	}
+
+	public void Dispose() {
+		_subscription?.Dispose();
 	}
 
 	string GetValue(string key) => _licenseSummary?[key]?.ToString() ?? string.Empty;

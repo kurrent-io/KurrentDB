@@ -83,6 +83,7 @@ public class LicensingPlugin : Plugin {
 							// todo: Interceptors = [new KeygenSignatureInterceptor()],
 						})),
 				new Fingerprint(clientOptions.Licensing.IncludePortInFingerprint ? clientOptions.NodePort : null),
+				heartbeatsPerRevalidation: 4,
 				revalidationDelay: TimeSpan.FromSeconds(10));
 
 			licenses = lifecycleService.Licenses;

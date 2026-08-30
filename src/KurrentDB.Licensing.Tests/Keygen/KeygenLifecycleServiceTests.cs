@@ -18,6 +18,13 @@ public sealed class KeygenLifecycleServiceTests : IDisposable {
 
 	public KeygenLifecycleServiceTests() {
 		_licenses = Channel.CreateUnbounded<LicenseInfo>();
+		_keygen = new KeygenSimulator();
+		// High heartbeat count so that most tests exercise the steady-state heartbeat behaviour
+		// without triggering revalidation. Periodic revalidation is covered by its own test.
+		_sut = CreateSut(heartbeatsPerRevalidation: int.MaxValue);
+	}
+
+	KeygenLifecycleService CreateSut(int heartbeatsPerRevalidation) {
 		var options = new KeygenClientOptions {
 			Licensing = new() {
 				LicenseKey = "the-key",
@@ -25,8 +32,7 @@ public sealed class KeygenLifecycleServiceTests : IDisposable {
 			ReadOnlyReplica = true,
 			Archiver = true,
 		};
-		_keygen = new KeygenSimulator();
-		_sut = new KeygenLifecycleService(
+		var sut = new KeygenLifecycleService(
 			new KeygenClient(
 				options,
 				new RestClient(
@@ -34,9 +40,11 @@ public sealed class KeygenLifecycleServiceTests : IDisposable {
 						ConfigureMessageHandler = _ => _keygen,
 					})),
 			new Fingerprint(port: null),
+			heartbeatsPerRevalidation: heartbeatsPerRevalidation,
 			revalidationDelay: TimeSpan.FromMilliseconds(10));
 
-		_sut.Licenses.Subscribe(async x => await _licenses.Writer.WriteAsync(x));
+		sut.Licenses.Subscribe(async x => await _licenses.Writer.WriteAsync(x));
+		return sut;
 	}
 
 	public void Dispose() {
@@ -236,5 +244,53 @@ public sealed class KeygenLifecycleServiceTests : IDisposable {
 		await _keygen.ReplyWith_Error("LICENSE_SUSPENDED");
 
 		await _keygen.ShouldReceive_ValidationRequest();
+	}
+
+	[Fact]
+	public async Task revalidates_to_pick_up_a_renewed_expiry() {
+		var originalExpiry = new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		var renewedExpiry = new DateTimeOffset(2031, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+		// revalidate after a single heartbeat so the test doesn't depend on timing
+		using var sut = CreateSut(heartbeatsPerRevalidation: 1);
+		await sut.StartAsync(CancellationToken.None);
+
+		// initial validation reports the original expiry
+		await _keygen.ShouldReceive_ValidationRequest();
+		await _keygen.ReplyWith_ValidationResponse("VALID", expiry: originalExpiry);
+		await _keygen.ShouldReceive_EntitlementRequest();
+		await _keygen.ReplyWith_Entitlements("A_SPECIAL_ENTITLEMENT");
+
+		await AssertNextLicense(new LicenseInfo.Conclusive(
+			LicenseId: "the-license-id",
+			Name: "the name of the license",
+			Valid: true,
+			Trial: false,
+			Warning: false,
+			Detail: "valid",
+			Expiry: originalExpiry,
+			Entitlements: ["A_SPECIAL_ENTITLEMENT"]));
+
+		// after one heartbeat the service revalidates from the top
+		await _keygen.ShouldReceive_GetMachine();
+		await _keygen.ReplyWith_Machine();
+		await _keygen.ShouldReceive_Heartbeat();
+		await _keygen.ReplyWith_HeartbeatResponse();
+
+		// revalidation reports the renewed expiry
+		await _keygen.ShouldReceive_ValidationRequest();
+		await _keygen.ReplyWith_ValidationResponse("VALID", expiry: renewedExpiry);
+		await _keygen.ShouldReceive_EntitlementRequest();
+		await _keygen.ReplyWith_Entitlements("A_SPECIAL_ENTITLEMENT");
+
+		await AssertNextLicense(new LicenseInfo.Conclusive(
+			LicenseId: "the-license-id",
+			Name: "the name of the license",
+			Valid: true,
+			Trial: false,
+			Warning: false,
+			Detail: "valid",
+			Expiry: renewedExpiry,
+			Entitlements: ["A_SPECIAL_ENTITLEMENT"]));
 	}
 }
