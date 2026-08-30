@@ -242,9 +242,11 @@ public class StreamsServiceTests {
         // Fill the request with records and must ensure that the size of the request must be within the limits
         while (true) {
             // Create a random valid record size
+            // leave a bit overhead space for props and schema name in CalculateSizeOnDisk
+            var recordOverHead = 1024;
             var validRecordSize = Faker.Random.Int(
                 Math.Min(Fixture.ServerOptions.Application.MaxAppendSize / 4, 1024),
-                Fixture.ServerOptions.Application.MaxAppendEventSize);
+                Fixture.ServerOptions.Application.MaxAppendEventSize - recordOverHead);
 
             request.Records.Add(CreateSyntheticTestRecord(Faker.Random.Bytes(validRecordSize)));
 
