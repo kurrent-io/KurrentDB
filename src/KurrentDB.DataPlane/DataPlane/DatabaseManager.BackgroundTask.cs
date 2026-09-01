@@ -8,8 +8,6 @@ using Serilog;
 namespace KurrentDB.DataPlane;
 
 partial class DatabaseManager {
-	private static readonly ILogger Logger = Log.ForContext<DatabaseManager>();
-
 	private readonly AsyncStateTracker.Token _clusterInfoNullVersion;
 	private readonly AsyncStateTracker _clusterInfoChanged;
 	private Task _controlProcess;
@@ -24,7 +22,7 @@ partial class DatabaseManager {
 			} catch (OperationCanceledException e) when (e.CancellationToken == _lifecycleToken) {
 				break;
 			} catch (Exception e) {
-				Logger.Warning(e, "Failed to fetch notifications from KPlane.");
+				_logger.Warning(e, "Failed to fetch notifications from KPlane.");
 			}
 		}
 	}

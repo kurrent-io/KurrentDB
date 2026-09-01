@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext.Net.Cluster.Consensus.Raft;
+
 namespace KurrentDB.KontrolPlane.Raft;
 
 partial class RaftKontroller {
@@ -16,18 +18,21 @@ partial class RaftKontroller {
 				break;
 			} catch (ObjectDisposedException) {
 				break;
+			} catch (QuorumUnreachableException) {
+				// the cluster has been stopped; no leader will ever be observed again
+				break;
 			}
 
-			Logger.Information("Kontroller is now a KPlane leader");
+			_logger.Information("Kontroller is now a KPlane leader");
 
 			// the local node is elected as Kontrol Plane leader
 			try {
 				await ProcessAppointmentsAsync(leadershipToken);
 			} catch (OperationCanceledException e) when (e.CancellationToken == leadershipToken) {
 				// the local node is not a leader anymore
-				Logger.Information("Kontroller lost its leadership");
+				_logger.Information("Kontroller lost its leadership");
 			} catch (Exception e) {
-				Logger.Error(e, "KPlane leader encountered an error");
+				_logger.Error(e, "KPlane leader encountered an error");
 			}
 		}
 	}

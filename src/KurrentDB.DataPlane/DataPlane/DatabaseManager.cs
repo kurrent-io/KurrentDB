@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Threading;
+using Serilog;
 
 namespace KurrentDB.DataPlane;
 
@@ -14,6 +15,7 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	private readonly CancellationToken _lifecycleToken; // cached to avoid ObjectDisposedException
 	private readonly double _renewalRate;
 	private readonly AsyncExclusiveLock _stateLock;
+	private readonly ILogger _logger;
 	private DatabaseState _state;
 	private CancellationTokenSource? _lifecycleCts;
 
@@ -26,6 +28,7 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 		_state = new FrozenState();
 		_clusterInfoChanged = new();
 		_clusterInfoNullVersion = _clusterInfoChanged.CurrentState;
+		_logger = Log.ForContext<DatabaseManager>();
 	}
 
 	public async Task<bool> ResignLeader(CancellationToken token = default) {
@@ -64,7 +67,10 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	/// </summary>
 	public required IDatabaseStateHandler DatabaseHandler {
 		get;
-		init;
+		init {
+			field = value;
+			_logger = _logger.ForContext("DPlaneNode", value.CurrentNode.Address.ToString());
+		}
 	}
 
 	/// <summary>

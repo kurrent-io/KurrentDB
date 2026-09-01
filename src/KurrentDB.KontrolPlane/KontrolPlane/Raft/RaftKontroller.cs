@@ -19,7 +19,7 @@ using StateMachine;
 /// </summary>
 public partial class RaftKontroller : IAsyncDisposable {
 	private const string ApiPortMetadataKey = "api.port";
-	private static readonly ILogger Logger = Log.ForContext<RaftKontroller>();
+	private readonly ILogger _logger;
 
 	private readonly WriteAheadLog _wal;
 	private readonly ClusterStateMachine _state;
@@ -30,6 +30,9 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
+		_logger = Log
+			.ForContext<RaftKontroller>()
+			.ForContext("KPlaneNode", options.ListenAddress.ToString());
 		var stateLocation = new DirectoryInfo(Path.Combine(options.PersistentStateRoot, "replicated_state"));
 		var configStorageLocation = Path.Combine(options.PersistentStateRoot, "members.list");
 		_state = new(stateLocation, options.ConnectionPoolCapacity) {
@@ -49,7 +52,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			LowerElectionTimeout = options.LowerElectionTimeout,
 			UpperElectionTimeout = options.UpperElectionTimeout,
 			SslOptions = options.Tls,
-			LoggerFactory = new SerilogLoggerFactory(Logger),
+			LoggerFactory = new SerilogLoggerFactory(_logger),
 		};
 
 		config.Metadata[ApiPortMetadataKey] = options.ApiPort.ToString(InvariantCulture);
