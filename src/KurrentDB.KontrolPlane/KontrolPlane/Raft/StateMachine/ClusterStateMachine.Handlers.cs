@@ -121,10 +121,8 @@ partial class ClusterStateMachine {
 		StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
-		if (result) {
-			NotifyDatabaseChanged(command);
-		}
-
+		// Do not send database update here, because the appointment process needs to update
+		// its internal dictionary with appointments.
 		resultContainer?.Value = result;
 	}
 
