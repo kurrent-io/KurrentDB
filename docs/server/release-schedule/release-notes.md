@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.16](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.16)
+
+1 September 2026
+
+### Increased the maximum number of chunks (PR [#5725](https://github.com/kurrent-io/KurrentDB/pull/5725))
+
+A database can now contain up to 600,000 logical chunks, raised from 400,000. With the default chunk size this increases the maximum logical size of the transaction log from approximately 100 TiB to 150 TiB. As before, the server logs warnings and then errors as the database approaches the limit, and shuts down if the limit is reached.
+
 ## [24.10.15](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.15)
 
 19 August 2026
