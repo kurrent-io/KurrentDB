@@ -3,6 +3,7 @@
 
 using System.Net;
 using System.Runtime.CompilerServices;
+using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Reflection;
 using Kurrent.Quack;
@@ -185,7 +186,10 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 			.GetAsyncEnumerator(token);
 
 		static async Task<EndPoint> GetMemberAddressAsync(IRaftClusterMember member, CancellationToken token) {
-			var metadata = await member.GetMetadataAsync(refresh: false, token);
+			var metadata = member.Status is ClusterMemberStatus.Available
+				? await member.GetMetadataAsync(refresh: false, token)
+				: throw new MemberUnavailableException(member);
+
 			return GetApiEndPoint(member.EndPoint, CreateMetadata(metadata).ApiPort);
 		}
 	}
