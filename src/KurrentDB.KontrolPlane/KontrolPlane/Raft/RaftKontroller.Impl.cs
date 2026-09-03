@@ -4,6 +4,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Reflection;
 using Kurrent.Quack;
 using static System.Threading.Timeout;
 
@@ -177,17 +178,15 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 		}
 	}
 
-	async IAsyncEnumerator<EndPoint> IAsyncEnumerable<EndPoint>.GetAsyncEnumerator(CancellationToken token) {
-		foreach (IRaftClusterMember member in _raft.Members) {
-			var address = member.EndPoint;
-			IReadOnlyDictionary<string, string> metadata;
-			try {
-				metadata = await member.GetMetadataAsync(refresh: false, token);
-			} catch {
-				continue;
-			}
+	IAsyncEnumerator<EndPoint> IAsyncEnumerable<EndPoint>.GetAsyncEnumerator(CancellationToken token) {
+		return Task.WhenEach(_raft.Members.Select(member => GetMemberAddressAsync(member, token)))
+			.Where<Task<EndPoint>>(Task.IsCompletedSuccessfullyGetter)
+			.Select(static task => task.Result)
+			.GetAsyncEnumerator(token);
 
-			yield return GetApiEndPoint(address, CreateMetadata(metadata).ApiPort);
+		static async Task<EndPoint> GetMemberAddressAsync(IRaftClusterMember member, CancellationToken token) {
+			var metadata = await member.GetMetadataAsync(refresh: false, token);
+			return GetApiEndPoint(member.EndPoint, CreateMetadata(metadata).ApiPort);
 		}
 	}
 

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
@@ -54,6 +55,8 @@ public partial class RaftKontroller : IAsyncDisposable {
 			ColdStart = _seed.Count is 0,
 			LowerElectionTimeout = options.LowerElectionTimeout,
 			UpperElectionTimeout = options.UpperElectionTimeout,
+			ConnectTimeout = TimeSpan.Min(TimeSpan.FromMilliseconds(options.LowerElectionTimeout),
+				options.HeartbeatTimeout) / 2,
 			SslOptions = options.Tls,
 			LoggerFactory = new SerilogLoggerFactory(_logger),
 			AggressiveLeaderStickiness = true,
