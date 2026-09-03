@@ -3,6 +3,7 @@
 
 using System.Net;
 using System.Runtime.CompilerServices;
+using DotNext.Collections.Generic;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Reflection;
@@ -16,6 +17,8 @@ using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
 partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
+	private static readonly Task<EndPoint?> NoEndPointTask = Task.FromResult<EndPoint?>(null);
+
 	IAsyncEnumerable<EndPoint> IKontroller.Nodes => this;
 
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
@@ -181,15 +184,15 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 
 	IAsyncEnumerator<EndPoint> IAsyncEnumerable<EndPoint>.GetAsyncEnumerator(CancellationToken token) {
 		return Task.WhenEach(_raft.Members.Select(member => GetMemberAddressAsync(member, token)))
-			.Where<Task<EndPoint>>(Task.IsCompletedSuccessfullyGetter)
-			.Select(static task => task.Result)
+			.Select(static task => task.IsCompletedSuccessfully ? task.Result : null)
+			.SkipNulls()
 			.GetAsyncEnumerator(token);
 
-		static async Task<EndPoint> GetMemberAddressAsync(IRaftClusterMember member, CancellationToken token) {
-			var metadata = member.Status is ClusterMemberStatus.Available
-				? await member.GetMetadataAsync(refresh: false, token)
-				: throw new MemberUnavailableException(member);
+		static Task<EndPoint?> GetMemberAddressAsync(IRaftClusterMember member, CancellationToken token)
+			=> member.Status is ClusterMemberStatus.Available ? GetMemberAddressCoreAsync(member, token) : NoEndPointTask;
 
+		static async Task<EndPoint?> GetMemberAddressCoreAsync(IRaftClusterMember member, CancellationToken token) {
+			var metadata = await member.GetMetadataAsync(refresh: false, token);
 			return GetApiEndPoint(member.EndPoint, CreateMetadata(metadata).ApiPort);
 		}
 	}
