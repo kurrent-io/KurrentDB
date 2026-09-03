@@ -201,7 +201,7 @@ partial class RaftKontroller {
 							// that all background tasks related to the network access are finished
 							await tokenSource.CancelAsync();
 						}
-					} catch (OperationCanceledException) when (token.IsCancellationRequested) {
+					} catch (Exception) when (token.IsCancellationRequested) {
 						responses.Clear();
 						goto exit; // cancellation requested, abort appointment
 					} catch (Exception) {
