@@ -31,11 +31,12 @@ partial class RaftKontroller {
 		var deletedDatabases = new HashSet<string>();
 		var activeMembers = new HashSet<EndPoint>();
 		var dataPlane = DataPlaneClientFactory.Invoke();
+		var readyToRenew = _readyToRenew;
 		try {
 			for (var pauseDuration = _heartbeatTimeout;; await _appointmentRoundSignal.WaitAsync(pauseDuration, token)) {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
 				try {
-					StartAppointments(snapshot, dataPlane, tasks, databases, activeMembers, token);
+					StartAppointments(snapshot, dataPlane, tasks, databases, activeMembers, !readyToRenew.Task.IsCompleted, token);
 
 					var task = Task.WhenAll(tasks);
 
@@ -59,8 +60,11 @@ partial class RaftKontroller {
 					databases.Clear();
 					activeMembers.Clear();
 				}
+
+				readyToRenew.TrySetResult();
 			}
 		} finally {
+			Interlocked.CompareExchange(ref _readyToRenew, new(TaskCreationOptions.RunContinuationsAsynchronously), readyToRenew);
 			_appointmentState.Clear();
 			_reusableEpochs.Clear();
 			await dataPlane.DisposeAsync();
@@ -97,6 +101,7 @@ partial class RaftKontroller {
 		List<Task> tasks,
 		HashSet<string> databases,
 		HashSet<EndPoint> activeMembers,
+		bool freshRun,
 		CancellationToken token) {
 		// Process appointment for every database in parallel
 		using (clusterState.RentConnection(out var connection)) {
@@ -108,16 +113,23 @@ partial class RaftKontroller {
 
 				var nodes = connection
 					.GetDatabaseNodes(database.Id)
-					.Select(static node => (node.Address, node.Role))
+					.Select(static node => (node.Address, node.Role, node.IsLeader, node.InstanceId))
 					.ToList();
 
-				ImportMembers(CollectionsMarshal.AsSpan(nodes), activeMembers);
-				if (IsAppointmentRequired(database.Id, nodes, out var resignedLeader))
+				var nodesSpan = CollectionsMarshal.AsSpan(nodes);
+				ImportMembers(nodesSpan, activeMembers);
+
+				// First appointment occurs in the lifecycle of the Raft Kontroller,
+				// we can keep existing leadership for Data Plane
+				if (freshRun && nodesSpan.FirstOrNone(static node => node.IsLeader).TryGet(out var leader)) {
+					_appointmentState[database.Id] = new LeaderAppointment(leader.Address, database.Epoch, leader.InstanceId);
+				} else if (IsAppointmentRequired(database.Id, nodes, out var resignedLeader)) {
 					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, dataPlane, nodes, resignedLeader, token));
+				}
 			}
 		}
 
-		static void ImportMembers(ReadOnlySpan<(EndPoint Address, DatabaseNodeRole Role)> input, HashSet<EndPoint> output) {
+		static void ImportMembers(ReadOnlySpan<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> input, HashSet<EndPoint> output) {
 			foreach (ref readonly var node in input) {
 				output.Add(node.Address);
 			}
@@ -125,7 +137,7 @@ partial class RaftKontroller {
 	}
 
 	private bool IsAppointmentRequired(string databaseId,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
 		out EndPoint? resignedLeader) {
 		if (nodes is [] || !_appointmentState.TryGetValue(databaseId, out var appointment)) {
 			resignedLeader = null;
@@ -145,7 +157,7 @@ partial class RaftKontroller {
 		string databaseId,
 		ulong currentEpoch,
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
 		_logger.Information($"Appointing leader for database '{databaseId}'");
@@ -175,7 +187,7 @@ partial class RaftKontroller {
 	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch, ulong Epoch)> FenceDatabaseAsync(
 		string databaseId,
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
 		ulong currentEpoch,
 		CancellationToken token) {
 		// bump epoch
@@ -249,7 +261,7 @@ partial class RaftKontroller {
 
 	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
 		ulong newEpoch,
 		out int quorum,
 		bool requiresAllNodes,

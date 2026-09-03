@@ -100,9 +100,13 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				// GetDatabaseLeadersAsync reflects the cluster-wide appointment, not "am I the leader" - any
 				// connected Data Plane node observes the same stream, so there's no need to know in advance
 				// which one KPlane elects.
-				await using var leaders = dataPlane[0].Handler.GetDatabaseLeadersAsync(TestToken).GetAsyncEnumerator();
-				Assert.True(await leaders.MoveNextAsync());
-				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
+				var leader = await dataPlane[0]
+					.Handler
+					.GetDatabaseLeadersAsync(TestToken)
+					.FirstAsync(TestToken);
+				Assert.Contains(leader.Address, dbNodeAddresses);
+				var clusterInfo = await dataPlane[0].Manager.GetDatabaseInfoAsync(TestToken);
+				Assert.Equal(clusterInfo.LeaderNode, leader);
 
 				// stop the current KPlane (Raft) leader
 				var leaderAddress = await kplane[0].Kontroller.WaitForLeaderAsync(TestToken);
@@ -110,11 +114,12 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				Assert.True(leaderIndex >= 0);
 				await kplane[leaderIndex].DisposeAsync();
 
-				// the new KPlane leader's appointment cache starts empty, so it re-appoints under a fresh
-				// epoch as soon as it takes over - even if the winning candidate ends up being the same DP
-				// node as before (tie-breaking isn't guaranteed stable across a quorum change).
-				Assert.True(await leaders.MoveNextAsync());
-				Assert.Contains(leaders.Current.Address, dbNodeAddresses);
+				// The new KPlane leader keeps existing appointments alive.
+				// Make sure that epoch wasn't changed, as well as the leader node
+				await Task.Delay(appointmentDuration * 2, TestToken);
+				var newInfo = await dataPlane[0].Manager.GetDatabaseInfoAsync(TestToken);
+				Assert.Equal(clusterInfo.Epoch, newInfo.Epoch);
+				Assert.Equal(newInfo.LeaderNode, leader);
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}

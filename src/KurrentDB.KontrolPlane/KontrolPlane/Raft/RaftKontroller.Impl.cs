@@ -84,28 +84,17 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 		}
 	}
 
-	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId, CancellationToken token = default) {
-		ValueTask<bool> task;
+	public async ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId, CancellationToken token = default) {
 		var leadershipToken = LeadershipToken;
-
-		if (token.IsCancellationRequested) {
-			task = ValueTask.FromCanceled<bool>(token);
-		} else {
-			try {
-				if (RenewLeaderAppointment(databaseId, leaderAddress, epoch, instanceId)) {
-					task = ValueTask.FromResult(true);
-				}
-				else if (leadershipToken.IsCancellationRequested) {
-					task = ValueTask.FromException<bool>(new LeadershipRequiredException());
-				} else {
-					task = ValueTask.FromResult(false);
-				}
-			} catch (Exception e) {
-				task = ValueTask.FromException<bool>(e);
-			}
+		try {
+			// When this node becomes a Raft leader, we need to keep existing DPlane appointments
+			// alive. To populate appointments, Raft leader needs some time to read information
+			// from the state machine. During that period, renewal call needs to be suspended.
+			await _readyToRenew.Task.WaitAsync(leadershipToken);
+			return RenewLeaderAppointment(databaseId, leaderAddress, epoch, instanceId);
+		} catch (OperationCanceledException e) when (e.CancellationToken == leadershipToken) {
+			throw new LeadershipRequiredException(e);
 		}
-
-		return task;
 	}
 
 	public async ValueTask<bool> ResignDatabaseLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default) {

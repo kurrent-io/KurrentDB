@@ -28,11 +28,14 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly IClusterConfigurationStorage<EndPoint> _raftMembershipStorage;
 	private readonly int _mainDatabaseClusterSize;
 	private Task _leadershipTask;
+	private volatile TaskCompletionSource _readyToRenew;
 
 	public RaftKontroller(in Options options) {
 		_logger = Log
 			.ForContext<RaftKontroller>()
 			.ForContext("KPlaneNode", options.ListenAddress.ToString());
+		_readyToRenew = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
 		var stateLocation = new DirectoryInfo(Path.Combine(options.PersistentStateRoot, "replicated_state"));
 		var configStorageLocation = Path.Combine(options.PersistentStateRoot, "members.list");
 		_state = new(stateLocation, options.ConnectionPoolCapacity) {
@@ -53,6 +56,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			UpperElectionTimeout = options.UpperElectionTimeout,
 			SslOptions = options.Tls,
 			LoggerFactory = new SerilogLoggerFactory(_logger),
+			AggressiveLeaderStickiness = true,
 		};
 
 		config.Metadata[ApiPortMetadataKey] = options.ApiPort.ToString(InvariantCulture);
