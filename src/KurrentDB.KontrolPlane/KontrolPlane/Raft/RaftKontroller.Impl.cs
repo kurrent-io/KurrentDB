@@ -16,7 +16,7 @@ using StateMachine;
 using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
-partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
+partial class RaftKontroller : IRaftKontroller, IAsyncEnumerable<EndPoint> {
 	private static readonly Task<EndPoint?> NoEndPointTask = Task.FromResult<EndPoint?>(null);
 
 	IAsyncEnumerable<EndPoint> IKontroller.Nodes => this;
@@ -278,6 +278,8 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 			await tokenSource.DisposeAsync();
 		}
 	}
+
+	public KontrollerClusterInfo GetClusterInfo() => new(_raft.Term, _raft.AuditTrail, _raft.Members);
 
 	IAsyncEnumerator<EndPoint> IAsyncEnumerable<EndPoint>.GetAsyncEnumerator(CancellationToken token) {
 		return Task.WhenEach(_raft.Members.Select(member => GetMemberAddressAsync(member, token)))

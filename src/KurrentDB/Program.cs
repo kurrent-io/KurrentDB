@@ -318,6 +318,9 @@ try {
 			builder.Services.AddSingleton<PluginsService>();
 			builder.Services.AddScoped<UserManagementService>();
 			builder.Services.AddScoped<ClusterOperationsService>();
+			// Optional resolution: IKontroller is only registered on a Kontrol Plane node.
+			builder.Services.AddScoped(sp =>
+				new KontrolPlaneService(sp.GetService<KurrentDB.KontrolPlane.IKontroller>()));
 			// Process-wide node-role tracker (subscribes to $mem-node-state); shared by all UI circuits.
 			builder.Services.AddSingleton<KurrentDB.Components.Cluster.GossipMonitor>();
 			builder.Services.AddSingleton<IHostedService>(sp =>

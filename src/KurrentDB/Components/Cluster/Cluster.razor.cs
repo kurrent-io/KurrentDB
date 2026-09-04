@@ -2,13 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Components.Licensed;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Cluster;
+using KurrentDB.KontrolPlane.Raft;
 using KurrentDB.Tools;
 using KurrentDB.UI.Theme;
 using Microsoft.AspNetCore.Components;
@@ -22,6 +25,8 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 	[Inject] MonitoringService MonitoringService { get; set; } = null!;
 	[Inject] Core.Metrics.InternalExporter InternalExporter { get; set; } = null!;
 	[Inject] ClusterOperationsService ClusterOperationsService { get; set; } = null!;
+	[Inject] KontrolPlaneService KontrolPlaneService { get; set; } = null!;
+	[Inject] NavigationManager Navigation { get; set; } = null!;
 	[Inject] IDialogService DialogService { get; set; } = null!;
 	[Inject] ISnackbar Snackbar { get; set; } = null!;
 	[Inject] IAuthorizationProvider Authorizer { get; set; } = null!;
@@ -29,6 +34,7 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
 
 	ClientClusterInfo _clusterInfo;
+	KontrollerClusterInfo? _kontrolPlaneInfo;
 	Timer _timer;
 	bool _canShutdown;
 	bool _canResign;
@@ -58,6 +64,9 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 		} catch (Exception) {
 			// Gossip timed out or the node is shutting down — keep the last known cluster info.
 		}
+
+		// Local and non-blocking, so it needs no timeout of its own.
+		_kontrolPlaneInfo = KontrolPlaneService.GetClusterInfo();
 	}
 
 	void Callback(object state) {
@@ -87,6 +96,66 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 				// Component/renderer torn down between timer ticks — ignore.
 			}
 		});
+	}
+
+	// Gossip and the Kontroller each report members in whatever order they happen to hold them, which
+	// is not stable between refreshes, so sort both to keep the cards in place.
+	IEnumerable<ClientClusterInfo.ClientMemberInfo> SortedMembers {
+		get {
+			ClientClusterInfo.ClientMemberInfo[] members = _clusterInfo?.Members ?? [];
+			return members
+				.OrderBy(x => x.HttpEndPointIp, StringComparer.OrdinalIgnoreCase)
+				.ThenBy(x => x.HttpEndPointPort);
+		}
+	}
+
+	IEnumerable<KontrollerNodeInfo> SortedKontrolPlaneNodes {
+		get {
+			IReadOnlyList<KontrollerNodeInfo> nodes = _kontrolPlaneInfo?.Nodes ?? [];
+			return nodes
+				.OrderBy(x => x.EndPoint.GetHost(), StringComparer.OrdinalIgnoreCase)
+				.ThenBy(x => x.EndPoint.GetPort());
+		}
+	}
+
+	KontrollerNodeInfo? KontrolPlaneLeader {
+		get {
+			foreach (var node in _kontrolPlaneInfo?.Nodes ?? [])
+				if (node.IsLeader)
+					return node;
+
+			return null;
+		}
+	}
+
+	// Only the Kontrol Plane leader has a complete picture: a follower does not contact its peers
+	// between elections, so it cannot report their status and shows them as Unknown.
+	bool IsKontrolPlaneLeader => KontrolPlaneLeader is { IsRemote: false };
+
+	// A Kontroller is known by its Raft address, while its UI is on the node's HTTP endpoint, so the
+	// two are matched by host through gossip. Deliberately no link when the host does not identify a
+	// single member - guessing a port would send people to the wrong node.
+	string KontrolPlaneLeaderUrl {
+		get {
+			if (KontrolPlaneLeader is not { } leader)
+				return null;
+
+			var host = leader.EndPoint.GetHost();
+			ClientClusterInfo.ClientMemberInfo match = null;
+			foreach (var member in _clusterInfo?.Members ?? []) {
+				if (!string.Equals(member.HttpEndPointIp, host, StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				if (match is not null)
+					return null;
+
+				match = member;
+			}
+
+			return match is null
+				? null
+				: $"{new Uri(Navigation.BaseUri).Scheme}://{match.HttpEndPointIp}:{match.HttpEndPointPort}/ui/cluster";
+		}
 	}
 
 	readonly ChartOptions _options = new() {

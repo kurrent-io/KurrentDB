@@ -61,10 +61,59 @@
 		<MudDivider/>
 		<MudText Typo="Typo.h5" Class="pt-2 pl-2">Cluster status</MudText>
 	</MudItem>
-	@foreach (var member in _clusterInfo?.Members ?? []) {
+	@foreach (var member in SortedMembers) {
 		<MudItem @key="(member.HttpEndPointIp, member.HttpEndPointPort)" Style="flex: 0 0 500px;">
 			<ClusterMember Member="member" IsLocal="IsLocalNode(member)"/>
 		</MudItem>
+	}
+	@if (KontrolPlaneService.IsRaftKontrolPlaneNode) {
+		<MudItem xs="12">
+			<MudDivider/>
+			<MudStack Row="true" AlignItems="AlignItems.Center" Class="pl-2 pt-2">
+				<MudText Typo="Typo.h5">Kontrol Plane status</MudText>
+				@if (_kontrolPlaneInfo is { } info) {
+					<MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">Term @info.Term</MudChip>
+					@* A committed index that stops advancing while the term climbs means the leader
+					   cannot reach a quorum. Both indexes are this node's own. *@
+					<MudTooltip Text="Raft log: entries committed, of entries written.">
+						<MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+							Committed @info.LastCommittedEntryIndex of @info.LastEntryIndex
+						</MudChip>
+					</MudTooltip>
+				}
+			</MudStack>
+		</MudItem>
+		@if (IsKontrolPlaneLeader) {
+			// we are the leader and have the full picture. show the node cards.
+			@foreach (var node in SortedKontrolPlaneNodes) {
+				<MudItem @key="node.EndPoint" Style="flex: 0 0 500px;">
+					<KontrollerNode Node="node"/>
+				</MudItem>
+			}
+		}
+		else if (KontrolPlaneLeader is { } kontrolPlaneLeader) {
+			// not the leader but we know who is
+			<MudItem xs="12">
+				@if (KontrolPlaneLeaderUrl is { } kontrolPlaneLeaderUrl) {
+					<MudText Typo="Typo.body2" Class="pl-2">
+						See Kontrol plane
+						<MudLink Href="@kontrolPlaneLeaderUrl" Target="_blank">leader</MudLink>
+						for details.
+					</MudText>
+				} else {
+					// we know who the leader is but not how to reach its UI
+					<MudText Typo="Typo.body2" Class="pl-2">
+						Kontrol plane leader is @kontrolPlaneLeader.EndPoint.
+					</MudText>
+				}
+			</MudItem>
+		} else {
+			<MudItem xs="12">
+				<MudText Typo="Typo.body2" Class="pl-2">
+					No known leader.
+				</MudText>
+			</MudItem>
+		}
 	}
 	<MudItem xs="12">
 		<MudDivider/>

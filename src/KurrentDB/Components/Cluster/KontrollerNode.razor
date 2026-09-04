@@ -1,0 +1,66 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using DotNext.Net.Cluster
+@using KurrentDB.KontrolPlane.Raft
+
+<MudCard Class="ma-2">
+	<MudCardHeader>
+		<CardHeaderAvatar>
+			<MudAvatar Color="@StatusColor">
+				<MudIcon Icon="@StatusIcon" aria-label="@Role"/>
+			</MudAvatar>
+		</CardHeaderAvatar>
+		<CardHeaderContent>
+			<MudText Typo="Typo.h6">@Role</MudText>
+		</CardHeaderContent>
+		<CardHeaderActions>
+			@if (!Node.IsRemote) {
+				<MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">This node</MudChip>
+			}
+		</CardHeaderActions>
+	</MudCardHeader>
+	<MudCardContent>
+		<MudSimpleTable Dense="true" Elevation="0" Style="background: transparent;">
+			<tbody>
+				<tr>
+					<td class="pl-0">Raft address</td>
+					<td style="text-align:right; font-family: monospace;">@Node.EndPoint</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Status</td>
+					<td style="text-align:right; font-family: monospace;">@Node.Status</td>
+				</tr>
+			</tbody>
+		</MudSimpleTable>
+	</MudCardContent>
+</MudCard>
+
+@code {
+	[Parameter] public KontrollerNodeInfo Node { get; set; }
+
+	// Only a leader is identifiable: a member's own Raft state is not observable from here, so a
+	// reachable node that is not the leader we can see is called a follower without knowing whether it
+	// is in fact a follower or a candidate. A node we cannot reach is not claimed to be anything.
+	string Role => Node.IsLeader
+		? "Leader"
+		: Node.Status switch {
+			ClusterMemberStatus.Available => "Follower",
+			ClusterMemberStatus.Unavailable => "Unreachable",
+			_ => "Unknown",
+		};
+
+	Color StatusColor => Node.Status switch {
+		ClusterMemberStatus.Available => Color.Primary,
+		ClusterMemberStatus.Unavailable => Color.Error,
+		_ => Color.Warning,
+	};
+
+	string StatusIcon => Node.IsLeader
+		? Icons.Material.Filled.FileUpload
+		: Node.Status switch {
+			ClusterMemberStatus.Available => Icons.Material.Filled.FileDownload,
+			ClusterMemberStatus.Unavailable => Icons.Material.Filled.Error,
+			_ => Icons.Material.Filled.Info,
+		};
+}
