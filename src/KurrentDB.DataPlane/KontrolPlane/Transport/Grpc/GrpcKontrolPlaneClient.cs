@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using DotNext;
 using Google.Protobuf;
 using Grpc.Core;
+using Serilog;
 using static System.Threading.Timeout;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
@@ -15,22 +16,18 @@ namespace KurrentDB.KontrolPlane.Transport.Grpc;
 /// </summary>
 public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane {
 	/// <summary>
+	/// How long to wait before reconnecting the announce stream, so that an unreachable Kontrol Plane
+	/// does not turn the reconnection loop into a spin.
+	/// </summary>
+	private static readonly TimeSpan ReconnectDelay = TimeSpan.FromMilliseconds(500);
+
+	/// <summary>
 	/// Sets a statically known list of Kontroller nodes.
 	/// </summary>
 	/// <exception cref="ArgumentOutOfRangeException">The set is empty.</exception>
 	public required IReadOnlySet<EndPoint> KontrolPlaneNodes {
 		init => _kontrollerNodes = value.Count > 0 ? [.. value] : throw new ArgumentOutOfRangeException(nameof(value));
 	}
-
-	/// <summary>
-	/// Gets or sets timeout for <see cref="RenewLeaderAppointmentAsync"/> or <see cref="ResignLeaderAsync"/> underlying gRPC
-	/// calls.
-	/// </summary>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is less than or equal to <see cref="TimeSpan.Zero"/>.</exception>
-	public TimeSpan UnaryCallTimeout {
-		get;
-		init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
-	} = TimeSpan.FromSeconds(30);
 
 	/// <summary>
 	/// Creates gRPC communication channel.
@@ -43,13 +40,16 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	/// <inheritdoc cref="IKontrolPlane.AnnounceNodeAsync"/>
 	public async IAsyncEnumerable<KontrolPlane.DatabaseCluster> AnnounceNodeAsync(KontrolPlane.DatabaseNode node, [EnumeratorCancellation] CancellationToken token = default) {
 		for (var currentAddress = _kontrollerNodes[0];; token.ThrowIfCancellationRequested()) {
-			var entry = CreateClient(currentAddress, InfiniteTimeSpan);
+			Log.Error("AnnounceNodeAsync top of main loop");
+			var entry = CreateClient(currentAddress);
 
 			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) }, cancellationToken: token);
+			var redirected = false;
 			try {
 				// Outer loop for reconnections
 				// Inner loop for enumerating database cluster changes
 				for (;; token.ThrowIfCancellationRequested()) {
+					Log.Error("AnnounceNodeAsync top of inner loop");
 					try {
 						if (!await call.ResponseStream.MoveNext())
 							break;
@@ -65,6 +65,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 					// KPlane informed us about a new KPlane leader, switch to it
 					if (!response.KontrollerLeader.IsEmpty) {
 						currentAddress = response.KontrollerLeader.ToEndPoint();
+						redirected = true;
 						break;
 					}
 
@@ -74,6 +75,10 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 				call.Dispose();
 				entry.Release();
 			}
+
+			// Following a redirect to the Kontrol Plane leader is progress, so reconnect straight away.
+			if (!redirected)
+				await Task.Delay(ReconnectDelay, token);
 		}
 	}
 

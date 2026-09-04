@@ -15,8 +15,9 @@ public interface IDatabaseStateHandler {
 	/// <remarks>
 	/// This method implements Follower state logic.
 	/// If method returns, it doesn't force DPlane to switch the state.
+	/// DataPlane state machine calls this for followers (including RoR) to start replication.
 	/// </remarks>
-	/// <param name="database">The database descriptor.</param>
+	/// <param name="database">The database description.</param>
 	/// <param name="leaderNode">The appointed leader.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The task representing asynchronous state of the operation.</returns>
@@ -29,10 +30,11 @@ public interface IDatabaseStateHandler {
 	/// This method implements Leader state logic.
 	/// When it returns, the leadership is over and the node moves to Frozen state.
 	/// </remarks>
+	/// <param name="initial">The initial database description.</param>
 	/// <param name="changes">An infinite sequence of database cluster changes.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The task representing asynchronous state of the operation.</returns>
-	Task RunLeadershipAsync(IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token);
+	Task RunLeadershipAsync(DatabaseCluster initial, IAsyncEnumerable<DatabaseCluster> changes, CancellationToken token);
 
 	/// <summary>
 	/// Gets the replication state

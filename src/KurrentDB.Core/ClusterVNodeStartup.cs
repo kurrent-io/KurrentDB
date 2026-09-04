@@ -8,6 +8,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Grpc.Core;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
@@ -25,6 +26,8 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DataPlane.Transport.Grpc;
+using KurrentDB.KontrolPlane.Transport.Grpc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -158,6 +161,15 @@ public class ClusterVNodeStartup<TStreamId>
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
+
+		// Kestrel is listening before the node has started - GenericWebHostService is registered ahead of
+		// ClusterVNodeHostedService - so these are reachable before the kontroller and database manager
+		// have been started. Unavailable is what peers retry on, so hold them off until the node is ready.
+		if (_options.Cluster.IsKontrolPlaneNode)
+			app.MapGrpcService<GrpcKontrollerServer>().AddEndpointFilter(RejectUntilReady);
+
+		if (_options.Cluster.IsDataPlaneNode)
+			app.MapGrpcService<GrpcDataPlaneServer>().AddEndpointFilter(RejectUntilReady);
 
 #if DEBUG
 		app.MapGrpcReflectionService();
@@ -347,6 +359,11 @@ public class ClusterVNodeStartup<TStreamId>
 	public void Handle(SystemMessage.SystemReady _) => _ready = true;
 
 	public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
+
+	private ValueTask<object?> RejectUntilReady(EndpointFilterInvocationContext context, EndpointFilterDelegate next) =>
+		_ready
+			? next(context)
+			: throw new RpcException(new Status(StatusCode.Unavailable, "The node is not ready yet."));
 
 	private class StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
 		private readonly ClusterVNodeStartup<TStreamId> _startup = startup ?? throw new ArgumentNullException(nameof(startup));

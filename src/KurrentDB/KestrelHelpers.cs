@@ -4,9 +4,8 @@
 using System;
 using System.IO;
 using System.Net.Security;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -77,25 +76,13 @@ public static class KestrelHelpers {
 					hostedService.Node.IntermediateCertificatesSelector(),
 					offline: true),
 				ClientCertificateRequired = true, // request a client certificate but it's not necessary for the client to supply one
-				RemoteCertificateValidationCallback = (_, certificate, chain, sslPolicyErrors) => {
-					if (certificate == null) // not necessary to have a client certificate
-						return true;
-
-					var (isValid, error) =
-						hostedService.Node.InternalClientCertificateValidator(
-							certificate,
-							chain,
-							sslPolicyErrors);
-					if (!isValid && error != null) {
-						Log.Error("Client certificate validation error: {e}", error);
-					}
-
-					return isValid;
-				},
-				CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-				EnabledSslProtocols = SslProtocols.None, // let the OS choose a secure TLS protocol
+				RemoteCertificateValidationCallback = NodeTlsPolicy.ForClientCertificate(
+					hostedService.Node.InternalClientCertificateValidator,
+					allowNoCertificate: true),
+				CertificateRevocationCheckMode = NodeTlsPolicy.CertificateRevocationCheckMode,
+				EnabledSslProtocols = NodeTlsPolicy.SystemSslProtocols,
 				ApplicationProtocols = [SslApplicationProtocol.Http2, SslApplicationProtocol.Http11],
-				AllowRenegotiation = false
+				AllowRenegotiation = NodeTlsPolicy.AllowRenegotiation
 			};
 
 			return ValueTask.FromResult(serverOptions);

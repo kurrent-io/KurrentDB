@@ -74,7 +74,7 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 	}
 
 	/// <summary>
-	/// Stops any incoming replication.
+	/// Stops any incoming & outgoing replication.
 	/// </summary>
 	/// <param name="currentEpoch">The epoch reported by the KPlane.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
@@ -89,6 +89,7 @@ public sealed partial class DatabaseManager : IAsyncEnumerable<DatabaseCluster> 
 				// this same (already-applied) epoch, ChangeDatabaseLeaderAsync sees baseline.Epoch == newVersion.Epoch
 				// and treats it as a no-op, leaving a re-appointed leader stuck in the FrozenState this fence forced it into.
 				var fencedVersion = clusterInfo with { Epoch = currentEpoch, LeaderAddress = null };
+				_logger.Error($"####### fence bumped epoch to {currentEpoch}");
 				_clusterInfo = fencedVersion;
 				await ChangeStateAsync(new FrozenState());
 				advanced = true;

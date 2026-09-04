@@ -4,7 +4,9 @@
 namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
+using Serilog;
 
+// Leader, replicating to other nodes.
 internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	DatabaseCluster cluster,
 	double renewalRate) : DatabaseState {
@@ -12,13 +14,18 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	private async Task SendHeartbeatsAsync(CancellationTokenSource heartbeatSource) {
 		var token = heartbeatSource.Token; // cached to avoid ObjectDisposedException
 		using (var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate)) {
+			Log.Error("### renewing every {period}", cluster.HeartbeatTimeout * renewalRate);
+			Log.Error("### renewing...");
 			while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(cluster.Id,
 				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, stateMachine.DatabaseHandler.CurrentNode.InstanceId, token)) {
+				Log.Error("### renewed!");
 				await timer.WaitForNextTickAsync(token);
+				Log.Error("### renewing...");
 			}
 		}
 
 		// Renewal is rejected
+		Log.Error("### renewal rejected");
 		await heartbeatSource.CancelAsync();
 	}
 
@@ -29,7 +36,7 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 			heartbeatTask = SendHeartbeatsAsync(linkedCts);
 			await stateMachine
 				.DatabaseHandler
-				.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token)
+				.RunLeadershipAsync(cluster, stateMachine.DatabaseChanges, linkedCts.Token)
 				.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
 				                | ConfigureAwaitOptions.SuppressThrowing);
 

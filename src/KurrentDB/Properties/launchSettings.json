@@ -1,20 +1,22 @@
-﻿{
-	"$schema": "http://json.schemastore.org/launchsettings.json",
-	"profiles": {
-		"KurrentDB": {
-			"commandName": "Project",
-			"dotnetRunMessages": true
-		},
-		"KurrentDB - Dev DB": {
-			"commandName": "Project",
-			"dotnetRunMessages": true,
-			"commandLineArgs": "--dev --db ./dev-db/data --index ./dev-db/index --log ./dev-db/log",
-			"applicationUrl": "https://127.0.0.1:2113",
-			"launchUrl": "ui/cluster",
-			"launchBrowser": true,
-			"environmentVariables": {
-				"ASPNETCORE_ENVIRONMENT": "Development"
-			}
-		}
-	}
+{
+  "profiles": {
+    "KurrentDB": {
+      "commandName": "Project",
+      "commandLineArgs": "--config d:/Kurrent/cluster/output/node1.conf",
+      "dotnetRunMessages": true,
+      "hotReloadEnabled": false
+    },
+    "KurrentDB - Dev DB": {
+      "commandName": "Project",
+      "commandLineArgs": "--dev --db ./dev-db/data --index ./dev-db/index --log ./dev-db/log",
+      "launchBrowser": true,
+      "launchUrl": "ui/cluster",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://127.0.0.1:2113"
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json"
 }

@@ -32,6 +32,7 @@ namespace KurrentDB.Core.Telemetry;
 public sealed class TelemetryService :
 	IHandle<SystemMessage.StateChangeMessage>,
 	IHandle<ElectionMessage.ElectionsDone>,
+	IHandle<ElectionMessage.LeaderAppointed>,
 	IHandle<SystemMessage.ReplicaStateMessage>,
 	IHandle<LeaderDiscoveryMessage.LeaderFound>,
 	IAsyncDisposable {
@@ -162,6 +163,12 @@ public sealed class TelemetryService :
 		_epochNumber = message.ProposalNumber;
 		_leaderId = message.Leader.InstanceId;
 	}
+
+	public void Handle(ElectionMessage.LeaderAppointed message) {
+		_epochNumber = message.EpochNumber;
+		_leaderId = message.Leader.InstanceId;
+	}
+
 	public void Handle(SystemMessage.ReplicaStateMessage message) {
 		_epochNumber = message.Leader.EpochNumber;
 		_leaderId = message.Leader.InstanceId;

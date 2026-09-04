@@ -9,6 +9,8 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Messages;
 
 public static partial class GossipMessage {
+	// Asks the GossipService to retrieve the seeds from the IGossipSeedSource
+	// (Config, DNS, etc)
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class RetrieveGossipSeedSources : Message {
 	}
@@ -22,6 +24,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Periodic trigger to send some gossip
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class Gossip : Message {
 		public readonly int GossipRound;
@@ -31,6 +34,8 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent to GossipService when receive gossip, either because we requested it
+	// or because another node just decided to send some.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GossipReceived : Message {
 		public readonly IEnvelope Envelope;
@@ -44,6 +49,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent to the GossipService to retrieve the current gossip
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class ReadGossip : Message {
 		public readonly IEnvelope Envelope;
@@ -53,6 +59,8 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Used to tell the GrpcSendService to send gossip somewhere
+	// And as an envelope reply to ReadGossip and GossipReceived
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class SendGossip : Message {
 		public readonly ClusterInfo ClusterInfo;
@@ -64,6 +72,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Used to retrieve the current gossip on behalf of a client
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class ClientGossip : Message {
 		public readonly IEnvelope Envelope;
@@ -73,6 +82,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent in response to ClientGossip
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class SendClientGossip : Message {
 		public readonly ClientClusterInfo ClusterInfo;
@@ -82,6 +92,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent by the GossipServiceBase when the gossip as this node knows it has changed.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GossipUpdated : Message {
 		public readonly ClusterInfo ClusterInfo;
@@ -91,6 +102,8 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent by EventStoreClusterClient when failing to SendGossip
+	// Handled by GossipServiceBase. Curiously not via reply envelope.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GossipSendFailed : Message {
 		public readonly string Reason;
@@ -106,11 +119,14 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Sent by GossipServiceBase to get gossip from another node if the replication
+	// connection drops. Verifies if the node is still reachable.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossip : Message {
 		public GetGossip() { }
 	}
 
+	// Replication connection dropped, attempted to get gossip and failed.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossipFailed : Message {
 		public readonly string Reason;
@@ -126,6 +142,7 @@ public static partial class GossipMessage {
 		}
 	}
 
+	// Replication connection dropped, attempted to get gossip and suceeded.
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossipReceived : Message {
 		public readonly ClusterInfo ClusterInfo;

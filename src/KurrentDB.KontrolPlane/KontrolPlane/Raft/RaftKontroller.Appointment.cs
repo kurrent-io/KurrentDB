@@ -160,27 +160,35 @@ partial class RaftKontroller {
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
-		_logger.Information($"Appointing leader for database '{databaseId}'");
+		_logger.Information($"Appointing leader for database '{databaseId}'...");
 		(var responses, var maxEpoch, currentEpoch)
 			= await FenceDatabaseAsync(databaseId, dataPlane, nodes, currentEpoch, token);
 
-		// Find the node with the max offset
-		(EndPoint? Address, Guid InstanceId) candidate = responses
-			.Where(pair => pair.Value.Epoch == maxEpoch)
-			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
-			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
-			.ThenByDescending(
-				resignedLeader is null ? Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0) : resignedLeader.GetOrder)
-			.ThenByDescending(static pair => pair.Value.Priority)
-			.Select(static pair => (pair.Key, pair.Value.InstanceId))
-			.FirstOrDefault();
+		_logger.Information($"FOO"); //qq
 
-		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
-		// if the current node is not a leader anymore
-		if (candidate.Address is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate.Address, candidate.InstanceId, CancellationToken.None)) {
-			_logger.Information($"DPlane node '{candidate.Address}' with instance id '{candidate.InstanceId}' is appointed as leader for database '{databaseId}'");
-			_appointmentState[databaseId] = new(candidate.Address, currentEpoch, candidate.InstanceId);
-			_state.NotifyDatabaseChanged(databaseId);
+		try {
+			// Find the node with the max offset
+			(EndPoint? Address, Guid InstanceId) candidate = responses
+				.Where(pair => pair.Value.Epoch == maxEpoch)
+				.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
+				.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
+				.ThenByDescending(
+					resignedLeader is null ? Func<KeyValuePair<EndPoint, ReplicaState>, int>.Constant(0) : resignedLeader.GetOrder)
+				.ThenByDescending(static pair => pair.Value.Priority)
+				.Select(static pair => (pair.Key, pair.Value.InstanceId))
+				.FirstOrDefault();
+
+			_logger.Information("Appointed {address} as leader for database '{databaseId}'...", candidate.Address, databaseId);
+
+			// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
+			// if the current node is not a leader anymore
+			if (candidate.Address is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate.Address, candidate.InstanceId, CancellationToken.None)) {
+				_logger.Information($"DPlane node '{candidate.Address}' with instance id '{candidate.InstanceId}' is appointed as leader for database '{databaseId}' for epoch {currentEpoch}");
+				_appointmentState[databaseId] = new(candidate.Address, currentEpoch, candidate.InstanceId);
+				_state.NotifyDatabaseChanged(databaseId);
+			}
+		} catch (Exception ex) {
+			_logger.Information(ex, "unexpected during appointleaderasync");
 		}
 	}
 
@@ -202,10 +210,13 @@ partial class RaftKontroller {
 		     responses.Clear()) {
 			int quorum;
 			using (var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token)) {
+				_logger.Warning("Fencing. RequiresAllNodes: {requiresAllNodes}, CurrentEpoch: {currentEpoch}, newEpoch: {newEpoch}",
+					requiresAllNodes, currentEpoch, newEpoch);
 				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes,
 					               tokenSource.Token)) {
 					try {
 						var pair = await task;
+						_logger.Warning("Got replica state from {endpoint}", pair.Key); //qq
 						responses.Add(pair.Key, pair.Value);
 
 						if (responses.Count >= quorum) {
@@ -214,9 +225,11 @@ partial class RaftKontroller {
 							await tokenSource.CancelAsync();
 						}
 					} catch (Exception) when (token.IsCancellationRequested) {
+						_logger.Warning("Cancelled getting replica state from {endpoint}", null); //qq
 						responses.Clear();
 						goto exit; // cancellation requested, abort appointment
-					} catch (Exception) {
+					} catch (Exception /*ex*/) {
+						_logger.Warning("Failed to get replica state from {endpoint} {reason}", null); //qq
 						// member is unavailable, don't add it to a collection of successful responses
 					}
 				}
@@ -247,16 +260,34 @@ partial class RaftKontroller {
 	}
 
 	private ValueTask<bool> BumpEpochAsync(string databaseId, ulong currentEpoch, ref ulong newEpoch, CancellationToken token) {
-		ValueTask<bool> task;
-
 		if (_reusableEpochs.TryRemove(databaseId, out var cachedEpoch)) {
 			newEpoch = cachedEpoch;
-			task = ValueTask.FromResult(true);
-		} else {
-			task = _raft.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token);
+			return ValueTask.FromResult(true);
 		}
 
-		return task;
+		return BumpEpochAsync(databaseId, currentEpoch, newEpoch, token);
+	}
+
+	// Replicating the epoch bump needs a Kontrol Plane quorum. Without one the replication never commits,
+	// and left unbounded that stalls the appointment round before it has said anything about what it is
+	// doing - the loop stops making rounds, no leader is appointed, and nothing reports why. So it is
+	// bounded by the same interval the loop paces itself at, and giving up leaves the round to be retried.
+	private async ValueTask<bool> BumpEpochAsync(string databaseId, ulong currentEpoch, ulong newEpoch, CancellationToken token) {
+		try {
+			return await _raft
+				.BumpEpochAsync(databaseId, currentEpoch, newEpoch, token)
+				.AsTask()
+				.WaitAsync(_heartbeatTimeout, token);
+		} catch (TimeoutException) {
+			_logger.Warning(
+				"Could not commit epoch {newEpoch} for database '{databaseId}' within {timeout}. The Kontrol " +
+				"Plane most likely has no quorum; no leader can be appointed until it does.",
+				newEpoch, databaseId, _heartbeatTimeout);
+
+			// Deliberately not remembered as reusable: the replication we stopped waiting for may still
+			// commit, so the next round reads the epoch afresh rather than assuming this one went unused.
+			return false;
+		}
 	}
 
 	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(

@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -81,6 +83,9 @@ using KurrentDB.Core.TransactionLog.Scavenging.Stages;
 using KurrentDB.Core.Transforms;
 using KurrentDB.Core.Transforms.Identity;
 using KurrentDB.Core.Util;
+using KurrentDB.DataPlane;
+using KurrentDB.KontrolPlane;
+using KurrentDB.KontrolPlane.Raft;
 using KurrentDB.Licensing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Data.Sqlite;
@@ -215,6 +220,11 @@ public class ClusterVNode<TStreamId> :
 	private readonly Func<CancellationToken, ValueTask> _start;
 	private readonly INodeHttpClientFactory _nodeHttpClientFactory;
 	private readonly EventStoreClusterClientCache _eventStoreClusterClientCache;
+
+	// In KPlane mode these are null or not null according to what component(s) the node is running
+	// Outside of KPlane mode they are both null.
+	private readonly RaftKontroller _kontroller; // Kontrol plane component
+	private readonly DatabaseManager _databaseManager; // Data plane component
 
 	private int _stopCalled;
 	private int _reloadingConfig;
@@ -415,10 +425,6 @@ public class ClusterVNode<TStreamId> :
 						throw;
 					}
 				}
-
-				var kontrollerPath = Path.Combine(dbPath, ESConsts.KontrollerDirectoryName);
-
-
 
 				var indexPath = options.Database.Index ?? Path.Combine(dbPath, ESConsts.DefaultIndexDirectoryName);
 				Log.Information("Index Path set to {indexPath}", indexPath);
@@ -827,6 +833,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.EpochWritten>(inaugurationManager);
 		_mainBus.Subscribe<SystemMessage.CheckInaugurationConditions>(inaugurationManager);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(inaugurationManager);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(inaugurationManager);
 		_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(inaugurationManager);
 		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(inaugurationManager);
 
@@ -947,22 +954,6 @@ public class ClusterVNode<TStreamId> :
 				options.Interface.AdvertiseHostToClientAs, options.Interface.AdvertiseNodePortToClientAs,
 				nodeTcpOptions?.NodeTcpPortAdvertiseAs ?? 0);
 		}
-
-		// static (IPEndPoint ListenAddr, EndPoint PublicAddr) GetKontrollerHostingOptions(
-		// 	ClusterVNodeOptions.InterfaceOptions options) {
-		// 	var kontrollerListenAddr = new IPEndPoint(options.NodeIp, options.KontrollerPort);
-		// 	var kontrollerPublicPort = options.AdvertiseKontrollerPortAs > 0
-		// 		? options.AdvertiseKontrollerPortAs
-		// 		: kontrollerListenAddr.Port;
-		//
-		// 	EndPoint kontrollerPublicAddr = options.KontrollerHostAdvertiseAs is { Length: > 0 } kontrollerHost
-		// 		? IPAddress.TryParse(kontrollerHost, out var publicIp)
-		// 			? new IPEndPoint(publicIp, kontrollerPublicPort)
-		// 			: new DnsEndPoint(kontrollerHost, kontrollerPublicPort)
-		// 		: kontrollerListenAddr;
-		//
-		// 	return (kontrollerListenAddr, kontrollerPublicAddr);
-		// }
 
 		_httpService = new KestrelHttpService(ServiceAccessibility.Public, _mainQueue, new TrieUriRouter(), options.Application.LogHttpRequests,
 			string.IsNullOrEmpty(GossipAdvertiseInfo.AdvertiseHostToClientAs) ? GossipAdvertiseInfo.AdvertiseExternalHostAs : GossipAdvertiseInfo.AdvertiseHostToClientAs,
@@ -1516,6 +1507,7 @@ public class ClusterVNode<TStreamId> :
 
 		// ELECTIONS TRACKER
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(trackers.ElectionCounterTracker);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(trackers.ElectionCounterTracker);
 
 		// TELEMETRY
 		var telemetryService = new TelemetryService(
@@ -1531,6 +1523,7 @@ public class ClusterVNode<TStreamId> :
 			_mainBus.Subscribe<SystemMessage.ReplicaStateMessage>(telemetryService);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(telemetryService);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(telemetryService);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(telemetryService);
 		_mainBus.Subscribe<LeaderDiscoveryMessage.LeaderFound>(telemetryService);
 
 		// LEADER REPLICATION
@@ -1572,7 +1565,7 @@ public class ClusterVNode<TStreamId> :
 		}
 
 		// ELECTIONS
-		if (!NodeInfo.IsReadOnlyReplica) {
+		if (!NodeInfo.IsReadOnlyReplica && !options.KontrolPlaneMode) {
 			var electionsService = new ElectionsService(
 				_mainQueue,
 				memberInfo,
@@ -1630,6 +1623,127 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<GossipMessage.GetGossipFailed>(gossip);
 		_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
+		_mainBus.Subscribe<ElectionMessage.LeaderAppointed>(gossip);
+
+		// KONTROL PLANE
+		var kontrollerPath = Path.Combine(dbConfig.Path, ESConsts.KontrollerDirectoryName);
+
+		if (options.Cluster.IsKontrolPlaneNode) {
+			var (raftListenAddress, raftPublicAddress) = GetKontrollerHostingOptions(options.Interface);
+			_kontroller = new(new() {
+				ApiPort = options.Interface.NodePortAdvertiseAs > 0
+					? options.Interface.NodePortAdvertiseAs
+					: options.Interface.NodePort,
+				ConnectionPoolCapacity = ESConsts.KPlaneConnectionPoolCapacity,
+				HeartbeatTimeout = TimeSpan.FromMilliseconds(options.Cluster.KontrolPlaneHeartbeatTimeoutMs),
+				ListenAddress = raftListenAddress,
+				PublicAddress = raftPublicAddress,
+				LowerElectionTimeout = options.Cluster.KontrolPlaneLowerElectionTimeoutMs,
+				UpperElectionTimeout = options.Cluster.KontrolPlaneUpperElectionTimeoutMs,
+				MainDatabaseClusterSize = options.Cluster.ClusterSize, // bootstrapping only
+				// initial set of endpoints to reach kplane nodes including this node
+				// used only for bootstrapping the kplane on first startup
+				Nodes = isSingleNode ? [] : options.Cluster.KontrolPlaneSeed.ToImmutableHashSet().Add(raftPublicAddress),
+				PersistentStateRoot = kontrollerPath,
+				SnapshotDepth = ESConsts.KPlaneSnapshotDepth,
+				//qq TargetHost is per-connection and drives SNI and hostname validation. SocketsHttpHandler
+				// fills it in per request; whether DotNext's TCP transport does the same per member is not
+				// established - worth confirming before trusting this in a secure cluster.
+				Tls = options.Application.TlsDisabled()
+					? null
+					: new() {
+						ClientOptions = NodeSslOptions.CreateClientOptions(
+							serverCertificateValidator: _internalServerCertificateValidator,
+							clientCertificateSelector: _certificateSelector,
+							additionalCertificateNames: null,
+							enabledSslProtocols: NodeTlsPolicy.PinnedSslProtocols),
+						ServerOptions = NodeSslOptions.CreateServerOptions(
+							clientCertificateValidator: _internalClientCertificateValidator,
+							serverCertificateSelector: _certificateSelector),
+					},
+			}) {
+				DataPlaneClientFactory = () => new DataPlaneClient(_nodeHttpClientFactory, uriScheme),
+			};
+		} else if (Directory.Exists(kontrollerPath)) {
+			// The Kontrol Plane only bootstraps against an already-populated database while its own
+			// epoch is 0: FenceDatabaseAsync then requires every node to answer, so it discovers epochs
+			// that were written but never replicated. Resuming from stale state skips that, and can
+			// settle on an epoch that a node not in the answering majority has already written - which
+			// that node can then never be appointed at, because WriteNewEpoch requires strictly greater.
+			//
+			// So a node that is not running a kontroller retires the state rather than leaving it to be
+			// picked up later. Retired rather than deleted so that it is recoverable.
+			var retiredPath = $"{kontrollerPath}-retired-" +
+				DateTime.UtcNow.ToString("yyyy-MM-dd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
+
+			Log.Warning(
+				"This node is not a Kontrol Plane node but has Kontrol Plane state at {kontrollerPath}. Moving it to {retiredPath}",
+				kontrollerPath, retiredPath);
+
+			Directory.Move(kontrollerPath, retiredPath);
+		}
+
+		if (options.Cluster.IsDataPlaneNode) {
+			var memberInfoLite = memberInfo.ToLite();
+			var databaseStateHandler = new DatabaseStateHandler(
+				mainQueue: _mainQueue,
+				epochManager: epochManager,
+				writerCheckpoint: Db.Config.WriterCheckpoint.AsReadOnly(),
+				chaserCheckpoint: Db.Config.ChaserCheckpoint.AsReadOnly(),
+				currentNode: new DatabaseNode {
+					DatabaseId = Database.MainDatabaseId,
+					Address = memberInfoLite.HttpEndPoint,
+					Role = options.Cluster.ReadOnlyReplica
+						? DatabaseNodeRole.ReadOnlyReplica
+						: DatabaseNodeRole.Regular,
+					ClientApiAddress = memberInfoLite.ClientHttpEndPoint,
+					ClientTcpApiPort = memberInfoLite.ClientTcpPort,
+					ClientTcpApiIsSecure = memberInfoLite.ClientTcpApiIsSecure,
+					ReplicationProtocolAddress = memberInfoLite.ReplicationEndPoint,
+					Version = VersionInfo.Version,
+					InstanceId = NodeInfo.InstanceId,
+				},
+				nodePriority: options.Cluster.NodePriority);
+			_mainBus.Subscribe<ClientMessage.SetNodePriority>(databaseStateHandler);
+			_mainBus.Subscribe<SystemMessage.SystemStart>(databaseStateHandler);
+			_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(databaseStateHandler);
+
+			_databaseManager = new(new() {
+				RenewalRate = ESConsts.KPlaneRenewalRate,
+			}) {
+				DatabaseHandler = databaseStateHandler,
+				KontrolPlane = new KontrolPlaneClient(_nodeHttpClientFactory, uriScheme) {
+					// Bootstrap only: the first AnnounceDatabaseNode response replaces this list with
+					// the Kontrol Plane's own and redirects to its leader. The gossip seeds are already
+					// the peers' gRPC endpoints, which is where KontrollerServer is served. This node is
+					// included so that the set is never empty - DNS discovery leaves GossipSeed empty -
+					// and so that bootstrap succeeds before any peer is up.
+					//qq do we want to discover kplane by dns too? can do later
+					//qq this wants to be kontrol plane seeds but with grpc port. for test it c an be gossip
+					KontrolPlaneNodes = new HashSet<EndPoint>(options.Cluster.GossipSeed) {
+						memberInfoLite.HttpEndPoint,
+					},
+				}
+			};
+		}
+
+		// Similar to GetGossipAdvertiseInfo
+		static (IPEndPoint ListenAddr, EndPoint PublicAddr) GetKontrollerHostingOptions(
+			ClusterVNodeOptions.InterfaceOptions options) {
+
+			var kontrollerListenAddr = new IPEndPoint(options.NodeIp, options.KontrollerPort);
+			var kontrollerPublicPort = options.AdvertiseKontrollerPortAs > 0
+				? options.AdvertiseKontrollerPortAs
+				: options.KontrollerPort;
+
+			EndPoint kontrollerPublicAddr = options.KontrollerHostAdvertiseAs is { Length: > 0 } kontrollerHostAdvertiseAs
+				? IPAddress.TryParse(kontrollerHostAdvertiseAs, out var publicIp)
+					? new IPEndPoint(publicIp, kontrollerPublicPort)
+					: new DnsEndPoint(kontrollerHostAdvertiseAs, kontrollerPublicPort)
+				: kontrollerListenAddr; //qq but with the public port?
+
+			return (kontrollerListenAddr, kontrollerPublicAddr);
+		}
 
 		var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
 		_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);
@@ -1669,6 +1783,14 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
 				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
 				.AddSingleton(dbConfig);
+
+			if (_kontroller is not null) {
+				services.AddSingleton<IKontroller>(_kontroller);
+			}
+
+			if (_databaseManager is not null) {
+				services.AddSingleton<DatabaseManager>(_databaseManager);
+			}
 
 			configureAdditionalNodeServices?.Invoke(services);
 			return services;
@@ -1728,6 +1850,12 @@ public class ClusterVNode<TStreamId> :
 			await epochManager.Init(token);
 
 			await storageWriter.Start(token);
+
+			if (_kontroller is not null)
+				await _kontroller.StartAsync(token);
+
+			if (_databaseManager is not null)
+				await _databaseManager.StartAsync(token);
 
 			_workersHandler.Start();
 			monitoringQueue.Start();
@@ -1864,6 +1992,12 @@ public class ClusterVNode<TStreamId> :
 			Log.Warning("Stop was already called.");
 			return;
 		}
+
+		if (_databaseManager is not null)
+			await (_databaseManager.StopAsync(cancellationToken));
+
+		if (_kontroller is not null)
+			await (_kontroller.StopAsync(cancellationToken));
 
 		_mainQueue.Publish(new ClientMessage.RequestShutdown(false, true));
 

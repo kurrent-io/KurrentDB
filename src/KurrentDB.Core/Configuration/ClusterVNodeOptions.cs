@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using DotNext.Net.Cluster.Consensus.Raft;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
@@ -340,6 +341,46 @@ public partial record ClusterVNodeOptions {
 		public int LeaderElectionTimeoutMs { get; init; } = 1_000;
 
 		public int QuorumSize => ClusterSize == 1 ? 1 : ClusterSize / 2 + 1;
+
+		// KPlane
+		//[Description("Use Kontrol Plane for leader appointment instead of legacy elections")]
+		//public bool? KontrolPlaneMode { get; init; } = true; //qq todo: default to true for new databases if we can make that safe
+
+		//qq at the moment the kplane doesn't have facility to add new nodes, including changing the host name of one to another
+
+		//qq up to the user to add nodes one at a time
+		//qq could have some validation that these must either both be true or false if necessary
+		// database without kontrol would work, only makes sense for RoR
+		// kontrol plane without database would be bad because loads of dataplane stuff will still start.
+		//qq todo: look at whether it would be practical to disable the misc dataplane stuff
+		[Description("")]
+		public bool IsKontrolPlaneNode { get; set; } = true; //qq wants to be false for RoR
+
+		[Description("")]
+		public bool IsDataPlaneNode { get; set; } = true; //qq
+
+		[Description("Endpoints for Kontrol Plane nodes.")] //qqq raft endpoints?
+		public EndPoint[] KontrolPlaneSeed { get; init; } = [];
+
+		[Description("How long, in ms, an appointed database leader may go without renewing its " +
+					 "appointment before the Kontrol Plane appoints another node. Also sets how often " +
+					 "the leader renews, as a fraction of this timeout."),
+		 Unit("ms")]
+		public int KontrolPlaneHeartbeatTimeoutMs { get; init; } = 6000; // LeaderElectionTimeoutMs; 100; //qq make 1_000?
+
+		[Description("The lower bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+		 Unit("ms")]
+		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = 5000;// ElectionTimeout.Recommended.LowerValue * 2; //qq 5000
+
+		[Description("The upper bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+		 Unit("ms")]
+		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = 6000; //qq ElectionTimeout.Recommended.UpperValue * 2; //qq 6000
+
+		//qq raft connect timeout defaults to the request time out which defaults to lower election timeout.
+		// - connect timeout which is used by raft tcp - which at the moment is taking too long to give up on a node which it can't reach
+		// - we got had because the lower election timeout wasn't low enough so sending the leader notification took longer than the leader timeout.
 	}
 
 	[Description("Database Options")]
