@@ -6,9 +6,11 @@ using System.Diagnostics;
 namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
+using Serilog;
 
 partial class DatabaseManager : IDatabaseStateMachine {
 	private async ValueTask ChangeStateAsync(DatabaseCluster newVersion) {
+		_logger.Error($"####### top of ChangeStateAsync");
 		bool advanced;
 		await _stateLock.AcquireAsync(_lifecycleToken);
 		try {
@@ -16,6 +18,8 @@ partial class DatabaseManager : IDatabaseStateMachine {
 			advanced = _clusterInfo is null || _clusterInfo.Epoch <= newVersion.Epoch;
 			if (advanced) {
 				await ChangeStateAsync(_clusterInfo, newVersion);
+			} else {
+				_logger.Error($"####### ignoring cluster info from epoch {newVersion.Epoch} because we are on epoch {_clusterInfo?.Epoch}");
 			}
 
 			_clusterInfo = newVersion;
@@ -29,13 +33,16 @@ partial class DatabaseManager : IDatabaseStateMachine {
 	}
 
 	private async ValueTask ChangeStateAsync(DatabaseCluster? baseline, DatabaseCluster newVersion) {
+		_logger.Error($"####### ChangeStateAsync baseline newversion");
 		var currentNode = DatabaseHandler.CurrentNode;
 		if (newVersion[currentNode.Address] is { } newCurrentNode) {
+			_logger.Error($"####### ChangeStateAsync got current node");
 			// update information about the current node if needed
 			newCurrentNode = newCurrentNode with { InstanceId = currentNode.InstanceId };
 			if (currentNode != newCurrentNode)
 				DatabaseHandler.CurrentNode = currentNode = newCurrentNode;
 		} else if (_state is not FrozenState) {
+			_logger.Error($"####### _state is not FrozenState");
 			// current node is removed from the cluster configuration, move to frozen state
 			await ChangeStateAsync(new FrozenState());
 			return;
@@ -45,6 +52,7 @@ partial class DatabaseManager : IDatabaseStateMachine {
 	}
 
 	private async ValueTask ChangeDatabaseLeaderAsync(DatabaseCluster? baseline, DatabaseCluster newVersion, DatabaseNode currentNode) {
+		_logger.Error($"####### ChangeDatabaseLeaderAsync");
 		var oldLeader = baseline?.LeaderAddress;
 		var newLeader = newVersion.LeaderAddress;
 
@@ -55,10 +63,12 @@ partial class DatabaseManager : IDatabaseStateMachine {
 		switch (currentNode.Address.Equals(oldLeader), currentNode.Address.Equals(newLeader)) {
 			case (false, true) when currentNode.InstanceId == newVersion.LeaderNode?.InstanceId:
 				// local node becomes a database leader
+				_logger.Warning("#### local node becomes a database leader");
 				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));
 				break;
 			case (true, false):
 				// local node is no longer a leader
+				_logger.Warning("#### local node is no longer a leader");
 				await ChangeStateAsync(newState = newLeader is null
 					? new FrozenState()
 					: new FollowerState(DatabaseHandler, newVersion));
@@ -66,17 +76,21 @@ partial class DatabaseManager : IDatabaseStateMachine {
 			case (true, true) when baseline is not null && baseline.Epoch != newVersion.Epoch:
 				// still the leader, but re-appointed under a new epoch: restart the leadership session
 				// so the renewal loop is guaranteed to use the epoch this appointment actually belongs to.
+				_logger.Warning("#### still the leader, but re-appointed under a new epoch");
 				await ChangeStateAsync(newState = new LeaderState(this, newVersion, _renewalRate));
 				break;
 			case (false, false) when newLeader is null && _state is not FrozenState:
 				// Leader is not known to the current node
+				_logger.Warning("#### Leader is not known to the current node");
 				await ChangeStateAsync(newState = new FrozenState());
 				break;
 			case (false, false) when newLeader is not null && !newLeader.Equals(oldLeader):
 				// Leader is changed, re-enter Follower state
+				_logger.Warning("#### Leader is changed, re-enter Follower state");
 				await ChangeStateAsync(newState = new FollowerState(DatabaseHandler, newVersion));
 				break;
 			default:
+				_logger.Warning($"#### ChangeDatabaseLeaderAsync default case baseline is not null: {baseline is not null}");
 				return;
 		}
 

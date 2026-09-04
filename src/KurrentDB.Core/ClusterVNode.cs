@@ -1719,10 +1719,10 @@ public class ClusterVNode<TStreamId> :
 					// included so that the set is never empty - DNS discovery leaves GossipSeed empty -
 					// and so that bootstrap succeeds before any peer is up.
 					//qq do we want to discover kplane by dns too? can do later
-					KontrolPlaneNodes = new HashSet<EndPoint>(options.Cluster.KontrolPlaneSeed) {
-					memberInfoLite.HttpEndPoint,
-				},
-					UnaryCallTimeout = TimeSpan.FromMilliseconds(ESConsts.KPlaneUnaryCallTimeoutMs),
+					//qq this wants to be kontrol plane seeds but with grpc port. for test it c an be gossip
+					KontrolPlaneNodes = new HashSet<EndPoint>(options.Cluster.GossipSeed) {
+						memberInfoLite.HttpEndPoint,
+					},
 				}
 			};
 		}
@@ -1734,13 +1734,13 @@ public class ClusterVNode<TStreamId> :
 			var kontrollerListenAddr = new IPEndPoint(options.NodeIp, options.KontrollerPort);
 			var kontrollerPublicPort = options.AdvertiseKontrollerPortAs > 0
 				? options.AdvertiseKontrollerPortAs
-				: kontrollerListenAddr.Port;
+				: options.KontrollerPort;
 
-			EndPoint kontrollerPublicAddr = options.KontrollerHostAdvertiseAs is { Length: > 0 } kontrollerHost
-				? IPAddress.TryParse(kontrollerHost, out var publicIp)
+			EndPoint kontrollerPublicAddr = options.KontrollerHostAdvertiseAs is { Length: > 0 } kontrollerHostAdvertiseAs
+				? IPAddress.TryParse(kontrollerHostAdvertiseAs, out var publicIp)
 					? new IPEndPoint(publicIp, kontrollerPublicPort)
-					: new DnsEndPoint(kontrollerHost, kontrollerPublicPort)
-				: kontrollerListenAddr;
+					: new DnsEndPoint(kontrollerHostAdvertiseAs, kontrollerPublicPort)
+				: kontrollerListenAddr; //qq but with the public port?
 
 			return (kontrollerListenAddr, kontrollerPublicAddr);
 		}

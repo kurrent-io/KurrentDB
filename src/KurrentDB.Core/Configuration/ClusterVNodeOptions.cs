@@ -363,20 +363,24 @@ public partial record ClusterVNodeOptions {
 		public EndPoint[] KontrolPlaneSeed { get; init; } = [];
 
 		[Description("How long, in ms, an appointed database leader may go without renewing its " +
-		             "appointment before the Kontrol Plane appoints another node. Also sets how often " +
-		             "the leader renews, as a fraction of this timeout."),
+					 "appointment before the Kontrol Plane appoints another node. Also sets how often " +
+					 "the leader renews, as a fraction of this timeout."),
 		 Unit("ms")]
-		public int KontrolPlaneHeartbeatTimeoutMs { get; init; } = 1_000;
+		public int KontrolPlaneHeartbeatTimeoutMs { get; init; } = 6000; // LeaderElectionTimeoutMs; 100; //qq make 1_000?
 
 		[Description("The lower bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
-		             "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.LowerValue;
+		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = 5000;// ElectionTimeout.Recommended.LowerValue * 2; //qq 5000
 
 		[Description("The upper bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
-		             "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.UpperValue;
+		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = 6000; //qq ElectionTimeout.Recommended.UpperValue * 2; //qq 6000
+
+		//qq raft connect timeout defaults to the request time out which defaults to lower election timeout.
+		// - connect timeout which is used by raft tcp - which at the moment is taking too long to give up on a node which it can't reach
+		// - we got had because the lower election timeout wasn't low enough so sending the leader notification took longer than the leader timeout.
 	}
 
 	[Description("Database Options")]

@@ -39,23 +39,34 @@ partial class ClusterStateMachine {
 	}
 
 	private async ValueTask<long> InstallSnapshotAsync(LogEntry entry, CancellationToken token) {
-		var fileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-		var fs = new FileStream(fileName, new FileStreamOptions {
-			Access = FileAccess.Write,
-			Mode = FileMode.CreateNew,
-			Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
-			PreallocationSize = entry.Length.GetValueOrDefault(),
-			Share = FileShare.None,
-		});
+		// The snapshot is written to its final location rather than to a temporary one, so that it
+		// survives a restart and can be served on to other nodes. Otherwise this node would keep
+		// reporting whatever older snapshot it recovered with, while its state machine has moved on.
+		var tempFileName = Path.Combine(_location.FullName, string.Concat(Path.GetRandomFileName(), ".tmp"));
 		try {
 			// save snapshot to the file
-			await entry.WriteToAsync(fs, token: token);
-			await fs.FlushAsync(token);
+			var fs = new FileStream(tempFileName, new FileStreamOptions {
+				Access = FileAccess.Write,
+				Mode = FileMode.CreateNew,
+				Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
+				PreallocationSize = entry.Length.GetValueOrDefault(),
+				Share = FileShare.None,
+			});
 
-			InstallSnapshot(fileName);
-		} finally {
-			await fs.DisposeAsync();
-			File.Delete(fileName);
+			await using (fs) {
+				await entry.WriteToAsync(fs, token: token);
+				await fs.FlushAsync(token);
+			}
+
+			// The file must be closed before DuckDB can ATTACH it.
+			var info = InstallSnapshot(tempFileName).LastAppliedCommand;
+
+			var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
+			Move(tempFileName, snapshotFileName);
+			_persistentSnapshot = new(snapshotFileName, info);
+		} catch {
+			File.Delete(tempFileName);
+			throw;
 		}
 
 		return entry.Index;

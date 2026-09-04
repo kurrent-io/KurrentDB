@@ -4,6 +4,7 @@
 namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
+using Serilog;
 
 // Leader, replicating to other nodes.
 internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
@@ -13,13 +14,18 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	private async Task SendHeartbeatsAsync(CancellationTokenSource heartbeatSource) {
 		var token = heartbeatSource.Token; // cached to avoid ObjectDisposedException
 		using (var timer = new PeriodicTimer(cluster.HeartbeatTimeout * renewalRate)) {
+			Log.Error("### renewing every {period}", cluster.HeartbeatTimeout * renewalRate);
+			Log.Error("### renewing...");
 			while (await stateMachine.KontrolPlane.RenewLeaderAppointmentAsync(cluster.Id,
 				       stateMachine.DatabaseHandler.CurrentNode.Address, cluster.Epoch, stateMachine.DatabaseHandler.CurrentNode.InstanceId, token)) {
+				Log.Error("### renewed!");
 				await timer.WaitForNextTickAsync(token);
+				Log.Error("### renewing...");
 			}
 		}
 
 		// Renewal is rejected
+		Log.Error("### renewal rejected");
 		await heartbeatSource.CancelAsync();
 	}
 
