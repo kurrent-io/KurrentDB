@@ -1634,6 +1634,9 @@ public class ClusterVNode<TStreamId> :
 		var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
 		_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);
 
+		var mixedInternalTlsListener = new ClusterMixedInternalTlsLogger();
+		_mainBus.Subscribe<GossipMessage.GossipUpdated>(mixedInternalTlsListener);
+
 		_reloadConfigSignalRegistration = PosixSignalRegistration.Create(PosixSignal.SIGHUP, c => {
 			c.Cancel = true;
 			Log.Information("Reloading the node's configuration since {Signal} has been received.", c.Signal);

@@ -161,9 +161,9 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		var schedule = Assert.IsType<TimerMessage.Schedule>(await _channelReader.ReadAsync());
 		var mem1 = CreateMemberInfo(Guid.NewGuid(), VNodeState.Leader, false);
 		var mem2 = CreateMemberInfo(Guid.NewGuid(), VNodeState.Follower, false);
-		var _electionsDoneMessage = new ElectionMessage.ElectionsDone(1, mem1.EpochNumber, mem1);
-		var _leaderFoundMessage = new LeaderDiscoveryMessage.LeaderFound(mem1);
-		var _replicaStateMessage = new SystemMessage.BecomeReadOnlyReplica(mem1.InstanceId, mem1);
+		var _electionsDoneMessage = new ElectionMessage.ElectionsDone(1, mem1.EpochNumber, mem1.ToLite());
+		var _leaderFoundMessage = new LeaderDiscoveryMessage.LeaderFound(mem1.ToLite());
+		var _replicaStateMessage = new SystemMessage.BecomeReadOnlyReplica(mem1.InstanceId, mem1.ToLite());
 		_sut.Handle(_electionsDoneMessage);
 		_sut.Handle(_leaderFoundMessage);
 		_sut.Handle(_replicaStateMessage);

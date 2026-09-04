@@ -620,7 +620,7 @@ public class when_state_changed_to_non_leader : NodeGossipServiceTestFixture {
 		);
 
 	protected override Message When() =>
-		new SystemMessage.BecomeFollower(Guid.NewGuid(), MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow));
+		new SystemMessage.BecomeFollower(Guid.NewGuid(), MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow).ToLite());
 
 	[Test]
 	public void should_update_gossip() {
@@ -675,7 +675,7 @@ public class when_gossip_send_failed_to_the_current_leader_node : NodeGossipServ
 					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow),
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, nodeState: VNodeState.Leader)),
 				_nodeTwo.HttpEndPoint),
-			new SystemMessage.BecomeFollower(Guid.NewGuid(), MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow))
+			new SystemMessage.BecomeFollower(Guid.NewGuid(), MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow).ToLite())
 		);
 
 	protected override Message When() => new GossipMessage.GossipSendFailed("failed",
@@ -905,7 +905,7 @@ public class when_elections_are_done : NodeGossipServiceTestFixture {
 
 	protected override Message When() =>
 		new ElectionMessage.ElectionsDone(0, 0,
-			MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader));
+			MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader).ToLite());
 
 	[Test]
 	public void should_set_leader_node_and_other_nodes_to_unknown() {
