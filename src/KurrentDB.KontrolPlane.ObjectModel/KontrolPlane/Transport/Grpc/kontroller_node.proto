@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package kurrent.kontrol_plane;
+
+option csharp_namespace = "KurrentDB.KontrolPlane.Transport.Grpc";
+
+service Kontroller
+{
+  rpc RenewLeaderAppointment(RenewLeaderAppointmentRequest) returns (RenewLeaderAppointmentResponse);
+  rpc AnnounceDatabaseNode(AnnouncementRequest) returns (stream AnnouncementResponse);
+  rpc ResignLeader(ResignRequest) returns (ResignResponse);
+}
+
+message RenewLeaderAppointmentRequest
+{
+  string databaseId = 1;
+  bytes address = 2;
+  uint64 epoch = 3;
+  bytes instanceId = 4;
+}
+
+message RenewLeaderAppointmentResponse
+{
+  bool success = 1;
+  bytes kontrollerLeader = 2;
+}
+
+message AnnouncementRequest
+{
+  DatabaseNode nodeInfo = 1;
+}
+
+enum DatabaseNodeRole
+{
+  DB_NODE_REGULAR = 0;
+  DB_NODE_READONLY_REPLICA = 1;
+}
+
+message DatabaseNode
+{
+  string databaseId = 1;
+  bytes nodeAddress = 2;
+  DatabaseNodeRole role = 3;
+  bytes clientApiAddress = 4;
+  bytes replicationAddress = 5;
+  string version = 6;
+  bytes instanceId = 7;
+  int32 clientTcpApiPort = 8;
+  bool clientTcpApiIsSecure = 9;
+}
+
+message DatabaseCluster
+{
+  string id = 1;
+  bytes databaseLeader = 2;
+  uint64 epoch = 3;
+  string description = 4;
+  int64 heartbeatTimeout = 5;
+  repeated DatabaseNode nodes = 7;
+}
+
+message AnnouncementResponse
+{
+  bytes kontrollerLeader = 1;
+  optional DatabaseCluster cluster = 2;
+  repeated bytes kontrollerNodes = 3;
+}
+
+message ResignRequest
+{
+  string databaseId = 1;
+  optional uint64 epoch = 2;
+}
+
+message ResignResponse
+{
+  bool successful = 1;
+  bytes kontrollerLeader = 2;
+}

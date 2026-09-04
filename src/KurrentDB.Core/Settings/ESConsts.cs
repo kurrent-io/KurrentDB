@@ -26,4 +26,5 @@ public static class ESConsts {
 
 	public const string DefaultIndexDirectoryName = "index";
 	public const string StreamExistenceFilterDirectoryName = "stream-existence";
+	public const string KontrollerDirectoryName = "kontroller";
 }

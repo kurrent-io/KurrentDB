@@ -532,6 +532,12 @@ public partial record ClusterVNodeOptions {
 		[Description("The TCP port used by internal replication between nodes in the cluster.")]
 		public int ReplicationPort { get; init; } = 1112;
 
+		[Description("The TCP port used by Kontrol Plane for replication.")]
+		public int KontrollerPort { get; init; } = 3113;
+
+		[Description("Advertise the KPlane node's host name to other KPlane nodes")]
+		public string? KontrollerHostAdvertiseAs { get; init; }
+
 		[Description("Advertise the Node's host name to other nodes and external clients as.")]
 		public string? NodeHostAdvertiseAs { get; init; } = null;
 
@@ -543,6 +549,9 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Advertise Node Port in Gossip to Client As.")]
 		public int AdvertiseNodePortToClientAs { get; init; } = 0;
+
+		[Description("Advertise KPlane Node Port to other KPlane nodes.")]
+		public int AdvertiseKontrollerPortAs { get; init; }
 
 		[Description("Advertise Http Port As.")]
 		public int NodePortAdvertiseAs { get; init; } = 0;
