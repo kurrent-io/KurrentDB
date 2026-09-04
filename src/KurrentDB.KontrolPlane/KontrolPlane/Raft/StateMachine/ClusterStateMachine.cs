@@ -66,7 +66,7 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, I
 		if (snapshots.Count > 0) {
 			var latestSnapshotFile = snapshots.MaxBy(static pair => pair.Key).Value;
 
-			var newSnapshot = InstallSnapshot(latestSnapshotFile.FullName);
+			var newSnapshot = LoadSnapshot(latestSnapshotFile.FullName);
 			_persistentSnapshot = new(latestSnapshotFile.FullName, newSnapshot.LastAppliedCommand);
 		} else {
 			_state.Initialize();

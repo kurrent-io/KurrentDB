@@ -39,29 +39,24 @@ partial class ClusterStateMachine {
 	}
 
 	private async ValueTask<long> InstallSnapshotAsync(LogEntry entry, CancellationToken token) {
-		var fileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-		var fs = new FileStream(fileName, new FileStreamOptions {
-			Access = FileAccess.Write,
-			Mode = FileMode.CreateNew,
-			Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
-			PreallocationSize = entry.Length.GetValueOrDefault(),
-			Share = FileShare.None,
-		});
-		try {
+		var tempFile = CreateTempFileName();
+		await using (var tempSnapshot = new FileStream(tempFile, new FileStreamOptions {
+			             Access = FileAccess.Write,
+			             Mode = FileMode.CreateNew,
+			             Options = FileOptions.Asynchronous | FileOptions.SequentialScan,
+			             PreallocationSize = entry.Length.GetValueOrDefault(),
+			             Share = FileShare.None,
+		             })) {
 			// save snapshot to the file
-			await entry.WriteToAsync(fs, token: token);
-			await fs.FlushAsync(token);
-
-			InstallSnapshot(fileName);
-		} finally {
-			await fs.DisposeAsync();
-			File.Delete(fileName);
+			await entry.WriteToAsync(tempSnapshot, token: token);
+			await tempSnapshot.FlushAsync(token);
 		}
 
+		InstallSnapshot(tempFile, in LoadSnapshot(tempFile).LastAppliedCommand);
 		return entry.Index;
 	}
 
-	private ClusterState InstallSnapshot(string fileName) {
+	private ClusterState LoadSnapshot(string fileName) {
 		var newSnapshot = new ClusterState(_poolCapacity);
 		newSnapshot.LoadFromFile(fileName);
 
@@ -84,16 +79,12 @@ partial class ClusterStateMachine {
 	}
 
 	private void SaveSnapshot(ClusterState clusterState, in CommandInfo info) {
-		var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
 
 		// Temp file needs to be on the same file system
-		var tempFileName = Path.Combine(_location.FullName, string.Concat(Path.GetRandomFileName(), ".tmp"));
+		var tempFileName = CreateTempFileName();
 		clusterState.SaveToFile(tempFileName);
 
-		// This operation is atomic on modern file systems
-		Move(tempFileName, snapshotFileName);
-
-		_persistentSnapshot = new(snapshotFileName, info);
+		InstallSnapshot(tempFileName, in info);
 	}
 
 	private unsafe void Move(string sourceFileName, string destFileName) {
@@ -104,6 +95,15 @@ partial class ClusterStateMachine {
 			FlushToDisk(Path.GetDirectoryName(destFileName),
 				(delegate*unmanaged<byte*, int, int, int>)openFileFunction);
 		}
+	}
+
+	private string CreateTempFileName()
+		=> Path.Combine(_location.FullName, string.Concat(Path.GetRandomFileName(), ".tmp"));
+
+	private void InstallSnapshot(string tempSnapshot, in CommandInfo info) {
+		var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
+		Move(tempSnapshot, snapshotFileName);
+		_persistentSnapshot = new(snapshotFileName, in info);
 	}
 
 	private sealed class SnapshotFile(string fileName, in CommandInfo info) : ISnapshot {
