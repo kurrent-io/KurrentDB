@@ -14,7 +14,10 @@ public class DefaultValuesConfigurationSourceTests {
 	public void Adds() {
 		// Arrange
 		var defaults = ClusterVNodeOptions.DefaultValues
-			.Where(x => x.Key is not nameof(ClusterVNodeOptions.ClusterOptions.GossipSeed))
+			.Where(x => x.Key
+				is not nameof(ClusterVNodeOptions.ClusterOptions.GossipSeed)
+				and not nameof(ClusterVNodeOptions.KontrolPlaneOptions.KontrolPlaneBootstrapSeed)
+				and not nameof(ClusterVNodeOptions.KontrolPlaneOptions.KontrolPlaneApiSeed))
 			.OrderBy(x => x.Key).ToList();
 
 		// Act

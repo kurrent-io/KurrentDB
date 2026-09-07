@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using DotNext.Net.Cluster.Consensus.Raft;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
@@ -42,6 +43,7 @@ public partial record ClusterVNodeOptions {
 	[OptionGroup] public CertificateOptions Certificate { get; init; } = new();
 	[OptionGroup] public CertificateFileOptions CertificateFile { get; init; } = new();
 	[OptionGroup] public CertificateStoreOptions CertificateStore { get; init; } = new();
+	[OptionGroup] public KontrolPlaneOptions KontrolPlane { get; init; } = new();
 	[OptionGroup] public ClusterOptions Cluster { get; init; } = new();
 	[OptionGroup] public DatabaseOptions Database { get; init; } = new();
 	[OptionGroup] public GrpcOptions Grpc { get; init; } = new();
@@ -80,6 +82,7 @@ public partial record ClusterVNodeOptions {
 			Certificate = configuration.BindOptions<CertificateOptions>(),
 			CertificateFile = configuration.BindOptions<CertificateFileOptions>(),
 			CertificateStore = configuration.BindOptions<CertificateStoreOptions>(),
+			KontrolPlane = configuration.BindOptions<KontrolPlaneOptions>(),
 			Cluster = configuration.BindOptions<ClusterOptions>(),
 			Database = configuration.BindOptions<DatabaseOptions>(),
 			Grpc = configuration.BindOptions<GrpcOptions>(),
@@ -277,6 +280,47 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The trusted root certificate fingerprint/thumbprint.")]
 		public string TrustedRootCertificateThumbprint { get; init; } = string.Empty;
+	}
+
+	[Description("Kontrol Plane Options")]
+	public record KontrolPlaneOptions {
+		[Description($"Sets this node as a Kontrol Plane node. Defaults to false. " +
+					 $"If neither {nameof(IsKontrolPlaneNode)} nor {nameof(IsDataPlaneNode)} are true, the legacy elections mechanism is used.")]
+		public bool IsKontrolPlaneNode { get; init; } = false;
+
+		[Description($"Sets this node as a Data Plane node. Defaults to false. " +
+					 $"If neither {nameof(IsKontrolPlaneNode)} nor {nameof(IsDataPlaneNode)} are true, the legacy elections mechanism is used.")]
+		public bool IsDataPlaneNode { get; init; } = false;
+
+		[Description("The TCP port used by Kontrol Plane for replication.")]
+		public int KontrollerPort { get; init; } = 3113;
+
+		[Description("Host name other Kontrol Plane nodes can reach this one on.")]
+		public string? KontrollerHostAdvertiseAs { get; init; } = null;
+
+		[Description("Port other Kontrol Plane Nodes can reach this one on.")]
+		public int KontrollerPortAdvertiseAs { get; init; } = 0;
+
+		[Description("Kontrol Plane TCP endpoints for Kontrol Plane nodes to discover each other during bootstrapping.")]
+		public EndPoint[] KontrolPlaneBootstrapSeed { get; init; } = [];
+
+		[Description("Kontrol Plane gRPC API endpoints for discovery by Data Plane nodes.")]
+		public EndPoint[] KontrolPlaneApiSeed { get; init; } = [];
+
+		[Description("The lower bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+		 Unit("ms")]
+		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.LowerValue * 2;
+
+		[Description("The upper bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
+					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+		 Unit("ms")]
+		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.UpperValue * 2;
+
+		[Description("Kontrol Plane will appoint another database leader if the current leader does not " +
+					 "renew its appointment within this many milliseconds. Renewal rate is 50% of this."),
+		 Unit("ms")]
+		public int KontrolPlaneAppointmentTimeoutMs { get; init; } = 1_000;
 	}
 
 	[Description("Cluster Options")]
@@ -532,12 +576,6 @@ public partial record ClusterVNodeOptions {
 		[Description("The TCP port used by internal replication between nodes in the cluster.")]
 		public int ReplicationPort { get; init; } = 1112;
 
-		[Description("The TCP port used by Kontrol Plane for replication.")]
-		public int KontrollerPort { get; init; } = 3113;
-
-		[Description("Advertise the KPlane node's host name to other KPlane nodes")]
-		public string? KontrollerHostAdvertiseAs { get; init; }
-
 		[Description("Advertise the Node's host name to other nodes and external clients as.")]
 		public string? NodeHostAdvertiseAs { get; init; } = null;
 
@@ -549,9 +587,6 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Advertise Node Port in Gossip to Client As.")]
 		public int AdvertiseNodePortToClientAs { get; init; } = 0;
-
-		[Description("Advertise KPlane Node Port to other KPlane nodes.")]
-		public int AdvertiseKontrollerPortAs { get; init; }
 
 		[Description("Advertise Http Port As.")]
 		public int NodePortAdvertiseAs { get; init; } = 0;
