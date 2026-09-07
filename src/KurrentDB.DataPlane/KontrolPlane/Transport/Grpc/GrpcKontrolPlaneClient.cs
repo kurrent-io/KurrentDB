@@ -4,6 +4,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext;
+using DotNext.Diagnostics;
 using Google.Protobuf;
 using Grpc.Core;
 using static System.Threading.Timeout;
@@ -43,9 +44,11 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	/// <inheritdoc cref="IKontrolPlane.AnnounceNodeAsync"/>
 	public async IAsyncEnumerable<KontrolPlane.DatabaseCluster> AnnounceNodeAsync(KontrolPlane.DatabaseNode node, [EnumeratorCancellation] CancellationToken token = default) {
 		for (var currentAddress = _kontrollerNodes[0];; token.ThrowIfCancellationRequested()) {
-			var entry = CreateClient(currentAddress, InfiniteTimeSpan);
+			var start = new Timestamp();
+			var entry = CreateClient(currentAddress);
 
 			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) }, cancellationToken: token);
+			var redirected = false;
 			try {
 				// Outer loop for reconnections
 				// Inner loop for enumerating database cluster changes
@@ -65,6 +68,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 					// KPlane informed us about a new KPlane leader, switch to it
 					if (!response.KontrollerLeader.IsEmpty) {
 						currentAddress = response.KontrollerLeader.ToEndPoint();
+						redirected = true;
 						break;
 					}
 
@@ -74,6 +78,11 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 				call.Dispose();
 				entry.Release();
 			}
+
+			// the loop normally takes at least connection timeout between iterations, but when connecting
+			// locally the OS bypasses the connection timeout so we have a small delay here as a baseline.
+			if (!redirected && start.ElapsedMilliseconds < 10)
+				await Task.Delay(50, token);
 		}
 	}
 
