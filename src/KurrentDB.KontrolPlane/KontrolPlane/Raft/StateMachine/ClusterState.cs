@@ -48,9 +48,10 @@ internal sealed partial class ClusterState : Disposable {
 	}
 
 	public void SaveToFile(string fileName) {
+		// Order of tables is important due to FK dependencies
 		var command = $"""
 		               ATTACH '{fileName}' AS snapshot;
-		               COPY FROM DATABASE memory TO snapshot;
+		               {CopyRows("memory", "snapshot")}
 		               DETACH snapshot;
 		               """;
 		using (_pool.Rent(out var connection)) {
@@ -61,7 +62,7 @@ internal sealed partial class ClusterState : Disposable {
 	public void LoadFromFile(string fileName, int targetVersion = LatestVersion) {
 		var command = $"""
 		               ATTACH '{fileName}' AS snapshot;
-		               COPY FROM DATABASE snapshot TO memory;
+		               {CopyRows("snapshot", "memory")}
 		               DETACH snapshot;
 		               """;
 		using (_pool.Rent(out var connection)) {

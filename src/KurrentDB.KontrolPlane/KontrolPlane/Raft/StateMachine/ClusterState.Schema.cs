@@ -42,6 +42,16 @@ partial class ClusterState {
 	                                                      INSERT INTO metadata VALUES ({LatestVersion}, 0, 0);
 	                                               """;
 
+	private static string CopyRows(string sourceCatalog, string destinationCatalog)
+		=> $"""
+		    COPY FROM DATABASE {sourceCatalog} TO {destinationCatalog} (SCHEMA);
+		    BEGIN;
+		    INSERT INTO {destinationCatalog}.metadata SELECT * FROM {sourceCatalog}.metadata;
+		    INSERT INTO {destinationCatalog}.database SELECT * FROM {sourceCatalog}.database;
+		    INSERT INTO {destinationCatalog}.node SELECT * FROM {sourceCatalog}.node;
+		    COMMIT;
+		    """;
+
 	/// <summary>
 	/// Initializes the databases with the default schema.
 	/// </summary>
