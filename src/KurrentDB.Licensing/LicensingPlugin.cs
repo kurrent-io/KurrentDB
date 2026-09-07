@@ -34,6 +34,10 @@ public class LicensingPlugin : Plugin {
 	public override void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var licenseService = builder.ApplicationServices.GetRequiredService<ILicenseService>();
 
+		new MultiNodeClusterLicenseMonitor(_isSingleNode).Monitor(
+			licenseService,
+			builder.ApplicationServices.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>());
+
 		License? currentLicense = null;
 		Exception? licenseError = null;
 		licenseService.Licenses.Subscribe(

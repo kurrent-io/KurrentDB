@@ -27,6 +27,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Licensing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -199,8 +200,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			[],
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,
-			expiryStrategy,
-			Guid.NewGuid(), debugIndex);
+			licenseProvider: new TestLicenseProvider(MultiNodeClusterLicenseMonitor.Entitlement),
+			expiryStrategy: expiryStrategy,
+			instanceId: Guid.NewGuid(),
+			debugIndex: debugIndex);
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 
 		var builder = WebApplication.CreateBuilder();
