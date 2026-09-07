@@ -60,9 +60,11 @@ public partial class RaftKontroller : IAsyncDisposable {
 			SslOptions = options.Tls,
 			LoggerFactory = new SerilogLoggerFactory(_logger),
 			AggressiveLeaderStickiness = true,
+			Metadata = {
+				[ApiPortMetadataKey] = options.ApiPort.ToString(InvariantCulture)
+			}
 		};
 
-		config.Metadata[ApiPortMetadataKey] = options.ApiPort.ToString(InvariantCulture);
 		_raft = new(config) {
 			AuditTrail = _wal
 		};
