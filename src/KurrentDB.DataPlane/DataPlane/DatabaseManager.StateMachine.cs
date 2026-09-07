@@ -16,6 +16,8 @@ partial class DatabaseManager : IDatabaseStateMachine {
 			advanced = _clusterInfo is null || _clusterInfo.Epoch <= newVersion.Epoch;
 			if (advanced) {
 				await ChangeStateAsync(_clusterInfo, newVersion);
+			} else {
+				_logger.Debug($"Ignoring cluster info from epoch {newVersion.Epoch} because we are on epoch {_clusterInfo?.Epoch}");
 			}
 
 			_clusterInfo = newVersion;

@@ -12,22 +12,31 @@ using EndPoint = System.Net.EndPoint;
 namespace KurrentDB.Core.Messages;
 
 public static partial class SystemMessage {
+	// Notice that the system is initializing
+	// Core services handle by initialising and sending ServiceInitialized
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemInit : Message {
 	}
 
+	// After a select subset of core services are initialised we send this
+	// Notice that the system is starting
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemStart : Message {
 	}
 
+	// Notice that we are ready to start subsystems
+	// - AuthenticationProvider is initialized
+	// - ClusterVNodeController is no longer in Initializing state
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemCoreReady : Message {
 	}
 
+	// Notice that subsystems are started
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemReady : Message {
 	}
 
+	// Core service response to SystemInit
 	[DerivedMessage(CoreMessage.System)]
 	public partial class ServiceInitialized : Message {
 		public readonly string ServiceName;
