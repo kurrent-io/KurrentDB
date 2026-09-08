@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using DotNext.Collections.Generic;
 using DotNext.Net.Cluster;
 using DotNext.Net.Cluster.Consensus.Raft;
+using DotNext.Threading;
 using Kurrent.Quack;
 using static System.Threading.Timeout;
 
@@ -22,34 +23,53 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
 		var result = new HashSet<string>();
-		var snapshot = await _state.CaptureCurrentStateAsync(token);
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
+		var snapshot = default(ClusterState);
 		try {
+			snapshot = await _state.CaptureCurrentStateAsync(tokenSource.Token);
 			using (snapshot.RentConnection(out var connection)) {
 				foreach (var databaseId in connection.GetDatabases()) {
 					result.Add(databaseId);
 				}
 			}
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
 		} finally {
-			snapshot.Release();
+			snapshot?.Release();
 		}
 
 		return result;
 	}
 
 	public async ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default) {
-		var snapshot = await _state.CaptureCurrentStateAsync(token);
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
+		var snapshot = default(ClusterState);
 		try {
+			snapshot = await _state.CaptureCurrentStateAsync(tokenSource.Token);
 			return GetDatabaseCluster(snapshot, databaseId);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
 		} finally {
-			snapshot.Release();
+			snapshot?.Release();
 		}
 	}
 
 	public async ValueTask AddOrUpdateDatabaseAsync(Database database, CancellationToken token = default) {
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			await _raft.AddOrUpdateDatabaseAsync(database.Id, database.Description, token);
+			await _raft.AddOrUpdateDatabaseAsync(database.Id, database.Description, tokenSource.Token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
@@ -57,58 +77,100 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 		if (databaseId is Database.MainDatabaseId)
 			throw new ArgumentException($"Built-in '{Database.MainDatabaseId}' database cannot be removed.", nameof(databaseId));
 
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			return await _raft.RemoveDatabaseAsync(databaseId, token);
+			return await _raft.RemoveDatabaseAsync(databaseId, tokenSource.Token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
 	public async ValueTask AddOrUpdateDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			await _raft.AddOrUpdateDatabaseNodeAsync(node, token);
+			await _raft.AddOrUpdateDatabaseNodeAsync(node, tokenSource.Token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
 	public async ValueTask<bool> TryAddDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			return await _raft.TryAddDatabaseNodeAsync(node, token);
+			return await _raft.TryAddDatabaseNodeAsync(node, tokenSource.Token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
 	public async ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default) {
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			return await _raft.RemoveDatabaseNodeAsync(databaseId, address, token);
+			return await _raft.RemoveDatabaseNodeAsync(databaseId, address, tokenSource.Token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
 	public async ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, Guid instanceId, CancellationToken token = default) {
 		var leadershipToken = LeadershipToken;
+		var tokenSource = _multiplexer.Combine(leadershipToken, token, _lifecycleToken);
 		try {
 			// When this node becomes a Raft leader, we need to keep existing DPlane appointments
 			// alive. To populate appointments, Raft leader needs some time to read information
 			// from the state machine. During that period, renewal call needs to be suspended.
-			await _readyToRenew.Task.WaitAsync(leadershipToken);
+			await _readyToRenew.Task.WaitAsync(tokenSource.Token);
 			return RenewLeaderAppointment(databaseId, leaderAddress, epoch, instanceId);
-		} catch (OperationCanceledException e) when (e.CancellationToken == leadershipToken) {
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, leadershipToken)) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 
 	public async ValueTask<bool> ResignDatabaseLeaderAsync(string databaseId, ulong? epoch, CancellationToken token = default) {
 		bool result;
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
-			result = await _raft.ResignLeaderAsync(databaseId, epoch, token)
+			result = await _raft.ResignLeaderAsync(databaseId, epoch, tokenSource.Token)
 			         && _appointmentState.TryGetValue(databaseId, out var appointment)
 			         && _appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 
 		if (result) {
@@ -119,16 +181,33 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 	}
 
 	public async IAsyncEnumerable<DatabaseCluster> ListenDatabaseAsync(string databaseId, [EnumeratorCancellation] CancellationToken token = default) {
-		await foreach (var snapshot in _state.TrackChangesAsync(databaseId, token)) {
-			try {
+		var tokenSource = CancellationToken.Combine([token, _lifecycleToken]);
+		var enumerator = _state.TrackChangesAsync(databaseId, tokenSource.Token).GetAsyncEnumerator();
+		try {
+			for (;;) {
+				var snapshot = default(ClusterState);
+				try {
+					if (!await enumerator.MoveNextAsync())
+						break;
+
+					snapshot = enumerator.Current;
+				} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, token) || e.CausedBy(tokenSource, _lifecycleToken)) {
+					break;
+				} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+					throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+				} finally {
+					snapshot?.Release();
+				}
+
 				if (GetDatabaseCluster(snapshot, databaseId) is { } cluster) {
 					yield return cluster;
 				} else {
 					break;
 				}
-			} finally {
-				snapshot.Release();
 			}
+		} finally {
+			await enumerator.DisposeAsync();
+			tokenSource.Dispose();
 		}
 	}
 
@@ -167,17 +246,26 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 	public CancellationToken LeadershipToken => _raft.LeadershipToken;
 
 	public async ValueTask<EndPoint> WaitForLeaderAsync(CancellationToken token = default) {
-		for (;; token.ThrowIfCancellationRequested()) {
-			IRaftClusterMember leader = await _raft.WaitForLeaderAsync(InfiniteTimeSpan, token);
-			IReadOnlyDictionary<string, string> metadata;
+		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
+		try {
+			for (;; token.ThrowIfCancellationRequested()) {
+				IRaftClusterMember leader = await _raft.WaitForLeaderAsync(InfiniteTimeSpan, tokenSource.Token);
+				IReadOnlyDictionary<string, string> metadata;
 
-			try {
-				metadata = await leader.GetMetadataAsync(refresh: false, token);
-			} catch {
-				continue;
+				try {
+					metadata = await leader.GetMetadataAsync(refresh: false, tokenSource.Token);
+				} catch {
+					continue;
+				}
+
+				return GetApiEndPoint(leader.EndPoint, CreateMetadata(metadata).ApiPort);
 			}
-
-			return GetApiEndPoint(leader.EndPoint, CreateMetadata(metadata).ApiPort);
+		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
+			throw new ObjectDisposedException(e.Message, e);
+		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
+			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
+		} finally {
+			await tokenSource.DisposeAsync();
 		}
 	}
 

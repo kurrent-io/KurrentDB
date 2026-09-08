@@ -6,6 +6,7 @@ using DotNext;
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.Membership;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
+using DotNext.Threading;
 using Serilog;
 using Serilog.Extensions.Logging;
 using static System.Globalization.CultureInfo;
@@ -28,6 +29,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly IReadOnlySet<EndPoint> _seed;
 	private readonly IClusterConfigurationStorage<EndPoint> _raftMembershipStorage;
 	private readonly int _mainDatabaseClusterSize;
+	private readonly CancellationTokenMultiplexer _multiplexer;
 	private Task _leadershipTask;
 	private volatile TaskCompletionSource _readyToRenew;
 
@@ -36,6 +38,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			.ForContext<RaftKontroller>()
 			.ForContext("KPlaneNode", options.ListenAddress.ToString());
 		_readyToRenew = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		_multiplexer = new() { MaximumRetained = 17 };
 
 		var stateLocation = new DirectoryInfo(Path.Combine(options.PersistentStateRoot, "replicated_state"));
 		var configStorageLocation = Path.Combine(options.PersistentStateRoot, "members.list");
