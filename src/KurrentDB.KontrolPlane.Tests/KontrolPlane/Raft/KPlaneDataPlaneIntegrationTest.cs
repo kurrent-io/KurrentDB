@@ -117,9 +117,12 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 				// The new KPlane leader keeps existing appointments alive.
 				// Make sure that epoch wasn't changed, as well as the leader node
 				await Task.Delay(appointmentDuration * 2, TestToken);
-				var newInfo = await dataPlane[0].Manager.GetDatabaseInfoAsync(TestToken);
-				Assert.Equal(clusterInfo.Epoch, newInfo.Epoch);
-				Assert.Equal(newInfo.LeaderNode, leader);
+				Assert.True(await dataPlane[0].Manager.KontrolPlane.RenewLeaderAppointmentAsync(
+					Database.MainDatabaseId,
+					leader.Address,
+					clusterInfo.Epoch,
+					leader.InstanceId,
+					TestToken));
 			} finally {
 				await Disposable.DisposeAsync(dataPlane);
 			}
