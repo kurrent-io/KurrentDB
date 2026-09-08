@@ -51,10 +51,15 @@ public sealed partial class KPlaneDataPlaneIntegrationTest : DirectoryFixture<KP
 		}
 	}
 
-	[Fact(Timeout = 60_000)]
-	public async Task AppointsDatabaseLeader_when_nodes_self_register_via_announcement() {
-		var raftPorts = new[] { 23101, 23102, 23103 };
-		var dbNodeAddresses = new[] { 23121, 23122, 23123 }.Select(CreateEndPoint).ToArray();
+	public static TheoryData<IReadOnlyList<int>, IReadOnlyList<int>> TestPorts => new() {
+		{ [23101, 23102, 23103], [23121, 23122, 23123] },
+		{ [23101], [23121] }
+	};
+
+	[Theory(Timeout = 60_000)]
+	[MemberData(nameof(TestPorts))]
+	public async Task AppointsDatabaseLeader_when_nodes_self_register_via_announcement(IReadOnlyList<int> raftPorts, IReadOnlyList<int> grpcPorts) {
+		var dbNodeAddresses = grpcPorts.Select(CreateEndPoint).ToArray();
 
 		var kplane = await StartKPlaneClusterAsync(raftPorts, TimeSpan.FromSeconds(1));
 		try {
