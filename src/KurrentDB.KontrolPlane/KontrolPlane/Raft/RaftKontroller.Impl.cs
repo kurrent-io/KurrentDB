@@ -185,7 +185,7 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 		var enumerator = _state.TrackChangesAsync(databaseId, tokenSource.Token).GetAsyncEnumerator();
 		try {
 			for (;;) {
-				var snapshot = default(ClusterState);
+				ClusterState snapshot;
 				try {
 					if (!await enumerator.MoveNextAsync())
 						break;
@@ -195,14 +195,16 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 					break;
 				} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
 					throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);
-				} finally {
-					snapshot?.Release();
 				}
 
-				if (GetDatabaseCluster(snapshot, databaseId) is { } cluster) {
-					yield return cluster;
-				} else {
-					break;
+				try {
+					if (GetDatabaseCluster(snapshot, databaseId) is { } cluster) {
+						yield return cluster;
+					} else {
+						break;
+					}
+				} finally {
+					snapshot.Release();
 				}
 			}
 		} finally {
