@@ -99,7 +99,7 @@ public sealed class GrpcKontrollerServer(IKontroller kontroller) : Kontroller.Ko
 	}
 }
 
-file static class ByteStringExtensions {
+file static class AnnouncementResponseExtensions {
 	public static async ValueTask PopulateKontrollerNodesAsync(this AnnouncementResponse response,
 		IAsyncEnumerable<EndPoint> kontrollerNodes,
 		CancellationToken token) {

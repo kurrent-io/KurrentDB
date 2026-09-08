@@ -52,8 +52,9 @@ partial class ClusterStateMachine {
 			await tempSnapshot.FlushAsync(token);
 		}
 
-		InstallSnapshot(tempFile, in LoadSnapshot(tempFile).LastAppliedCommand);
-		return entry.Index;
+		ref readonly var commandInfo = ref LoadSnapshot(tempFile).LastAppliedCommand;
+		InstallSnapshot(tempFile, in commandInfo);
+		return commandInfo.Index;
 	}
 
 	private ClusterState LoadSnapshot(string fileName) {
@@ -79,7 +80,6 @@ partial class ClusterStateMachine {
 	}
 
 	private void SaveSnapshot(ClusterState clusterState, in CommandInfo info) {
-
 		// Temp file needs to be on the same file system
 		var tempFileName = CreateTempFileName();
 		clusterState.SaveToFile(tempFileName);

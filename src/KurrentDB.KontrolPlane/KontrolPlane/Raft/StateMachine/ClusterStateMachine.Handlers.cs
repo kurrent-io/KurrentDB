@@ -115,7 +115,7 @@ partial class ClusterStateMachine {
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(ClusterState currentState,
+	private static void Apply(ClusterState currentState,
 		LogEntries.AppointLeader command,
 		in CommandInfo commandInfo,
 		StrongBox<bool>? resultContainer) {
@@ -139,20 +139,15 @@ partial class ClusterStateMachine {
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(ClusterState currentState,
+	private static void Apply(ClusterState currentState,
 		LogEntries.ResignLeader command,
 		in CommandInfo commandInfo,
 		StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
-
-		if (result) {
-			NotifyDatabaseChanged(command);
-		}
-
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(ClusterState currentState,
+	private static void Apply(ClusterState currentState,
 		LogEntries.BumpEpoch command,
 		in CommandInfo commandInfo,
 		StrongBox<bool>? resultContainer) {
