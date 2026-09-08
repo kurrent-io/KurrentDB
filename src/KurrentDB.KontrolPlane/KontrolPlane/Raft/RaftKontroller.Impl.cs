@@ -165,6 +165,10 @@ partial class RaftKontroller : IKontroller, IAsyncEnumerable<EndPoint> {
 			result = await _raft.ResignLeaderAsync(databaseId, epoch, tokenSource.Token)
 			         && _appointmentState.TryGetValue(databaseId, out var appointment)
 			         && _appointmentState.TryUpdate(databaseId, appointment with { IsResigned = true }, appointment);
+
+			if (result) {
+				_state.NotifyDatabaseChanged(databaseId);
+			}
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, _lifecycleToken)) {
