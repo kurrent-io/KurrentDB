@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -15,11 +16,10 @@ namespace KurrentDB.Common.Utils;
 /// </summary>
 public static class NodeSslOptions {
 	/// <summary>
-	/// Options for connecting to another node: present this node's certificate, and validate the
-	/// certificate the peer presents.
+	/// Options for connecting to another node, for transports that set the target host themselves.
 	/// </summary>
 	/// <param name="additionalCertificateNames">
-	/// Names the peer's certificate may carry in addition to the address we dialled, from
+	/// Names the peer's certificate may carry in addition to the target host, from
 	/// <see cref="EndpointExtensions.GetOtherNames"/>. Only DNS-discovered endpoints have any, so
 	/// null is the usual value for statically configured peers.
 	/// </param>
@@ -28,7 +28,7 @@ public static class NodeSslOptions {
 	/// <see cref="NodeTlsPolicy.SystemSslProtocols"/>. Explicit because the two are a real
 	/// choice: pinning excludes a protocol the system would allow, and offers one it has disabled.
 	/// </param>
-	public static SslClientAuthenticationOptions CreateClientOptions(
+	public static SslClientAuthenticationOptions CreateUntargetedClientOptions(
 		CertificateDelegates.ServerCertificateValidator serverCertificateValidator,
 		Func<X509Certificate> clientCertificateSelector,
 		string[] additionalCertificateNames,
@@ -41,6 +41,27 @@ public static class NodeSslOptions {
 			() => additionalCertificateNames),
 		LocalCertificateSelectionCallback = (_, _, _, _, _) => clientCertificateSelector(),
 	};
+
+	/// <summary>
+	/// Options for connecting to one particular node, whose certificate is expected to name it.
+	/// </summary>
+	/// <param name="target">The address being dialled. Its host is the name the peer's certificate
+	/// has to carry, and its other names are the ones it may carry instead.</param>
+	public static SslClientAuthenticationOptions CreateTargetedClientOptions(
+		EndPoint target,
+		CertificateDelegates.ServerCertificateValidator serverCertificateValidator,
+		Func<X509Certificate> clientCertificateSelector,
+		SslProtocols enabledSslProtocols) {
+
+		var options = CreateUntargetedClientOptions(
+			serverCertificateValidator: serverCertificateValidator,
+			clientCertificateSelector: clientCertificateSelector,
+			additionalCertificateNames: target.GetOtherNames(),
+			enabledSslProtocols: enabledSslProtocols);
+
+		options.TargetHost = target.GetHost();
+		return options;
+	}
 
 	/// <summary>
 	/// Options for accepting a connection from another node: present this node's certificate, and

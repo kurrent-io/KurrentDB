@@ -7,7 +7,6 @@ using DotNext;
 using DotNext.Diagnostics;
 using Google.Protobuf;
 using Grpc.Core;
-using static System.Threading.Timeout;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
@@ -22,16 +21,6 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 	public required IReadOnlySet<EndPoint> KontrolPlaneNodes {
 		init => _kontrollerNodes = value.Count > 0 ? [.. value] : throw new ArgumentOutOfRangeException(nameof(value));
 	}
-
-	/// <summary>
-	/// Gets or sets timeout for <see cref="RenewLeaderAppointmentAsync"/> or <see cref="ResignLeaderAsync"/> underlying gRPC
-	/// calls.
-	/// </summary>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is less than or equal to <see cref="TimeSpan.Zero"/>.</exception>
-	public TimeSpan UnaryCallTimeout {
-		get;
-		init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
-	} = TimeSpan.FromSeconds(30);
 
 	/// <summary>
 	/// Creates gRPC communication channel.

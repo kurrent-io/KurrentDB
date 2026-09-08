@@ -20,7 +20,9 @@ public class NodeHttpClientFactory(
 		HttpMessageHandler httpMessageHandler;
 		if (uriScheme == Uri.UriSchemeHttps) {
 			var socketsHttpHandler = new SocketsHttpHandler {
-				SslOptions = NodeSslOptions.CreateClientOptions(
+				// TargetHost is provided later by SocketsHttpHandler according to the host of the request.
+				// We will accept the server identifying as that target or any of the additionalCertificateNames.
+				SslOptions = NodeSslOptions.CreateUntargetedClientOptions(
 					serverCertificateValidator: nodeCertificateValidator,
 					clientCertificateSelector: clientCertificateSelector,
 					additionalCertificateNames: additionalCertificateNames,
