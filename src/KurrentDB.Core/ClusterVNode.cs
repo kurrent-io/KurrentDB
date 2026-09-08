@@ -108,6 +108,7 @@ public abstract class ClusterVNode {
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
+		ILicenseProvider licenseProvider = null,
 		Guid? instanceId = null,
 		int debugIndex = 0) {
 
@@ -121,6 +122,7 @@ public abstract class ClusterVNode {
 			factories,
 			certificateProvider,
 			configuration,
+			licenseProvider,
 			instanceId: instanceId,
 			debugIndex: debugIndex);
 	}
@@ -246,6 +248,7 @@ public class ClusterVNode<TStreamId> :
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
+		ILicenseProvider licenseProvider = null,
 		IExpiryStrategy expiryStrategy = null,
 		Guid? instanceId = null, int debugIndex = 0,
 		Action<IServiceCollection> configureAdditionalNodeServices = null) {
@@ -990,7 +993,7 @@ public class ClusterVNode<TStreamId> :
 		modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(isSingleNode, ex => {
 			Log.Warning("Shutting down due to licensing error: {Message}", ex.Message);
 			MainQueue.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
-		}));
+		}, licenseProvider));
 
 		var authorizationGateway = new AuthorizationGateway(_authorizationProvider);
 		{
