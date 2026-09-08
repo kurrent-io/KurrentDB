@@ -185,6 +185,12 @@ public static class ClusterVNodeOptionsValidator {
 				$"Note that since TLS is disabled the secret will be sent in clear text.");
 		}
 
+		if (options.Application.UsesClusterSecret() && !UsesHeaderSupportedCharacters(options.Cluster.ClusterSecret)) {
+			throw new InvalidConfigurationException(
+				$"The {nameof(options.Cluster.ClusterSecret)} contains unsupported characters. Use only " +
+				$"letters, digits and the characters - . _ ~ + / =");
+		}
+
 		if (!options.Application.UsesClusterSecret() && !string.IsNullOrEmpty(options.Cluster.ClusterSecret)) {
 			Log.Warning(
 				"A {clusterSecret} has been configured but will have no effect. It is only used for inter-node " +
@@ -193,6 +199,20 @@ public static class ClusterVNodeOptionsValidator {
 		}
 
 		return;
+
+		// The secret travels as the parameter of an HTTP Authorization header - see NodeHttpClientFactory,
+		// which writes it, and ClusterSecretAuthenticationProvider, which reads it back - and as the expected
+		// secret of the internal TCP service. These are the characters RFC 9110 allows in that header slot.
+		static bool UsesHeaderSupportedCharacters(string secret) {
+			const string supportedPunctuation = "-._~+/=";
+
+			foreach (var c in secret) {
+				if (!char.IsAsciiLetterOrDigit(c) && !supportedPunctuation.Contains(c))
+					return false;
+			}
+
+			return true;
+		}
 
 		static void ValidateDistinctDirectories(params ReadOnlySpan<(string Name, string Path)> directories) {
 			var names = new Dictionary<string, string>(directories.Length, StringComparer.Ordinal);

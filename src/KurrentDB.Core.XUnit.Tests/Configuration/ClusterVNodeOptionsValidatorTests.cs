@@ -321,6 +321,31 @@ public class ClusterVNodeOptionsValidatorTests {
 		Validate(options, expectedValid);
 	}
 
+	[Theory]
+	[InlineData("secret", true)]
+	[InlineData("a-perfectly.ordinary_secret~09+/=", true)]
+	[InlineData("MTI0NTY3ODkw+/aA==", true)]   // base64, the shape Basic auth uses
+	[InlineData("a=b", true)]                  // a name=value pair is legal too
+	[InlineData("sdf,", false)]
+	[InlineData("ab,cd", false)]
+	[InlineData("two words", false)]
+	[InlineData("trailing ", false)]
+	[InlineData("quote\"inside", false)]
+	[InlineData("new\nline", false)]
+	public void cluster_secret_characters_are_restricted(string clusterSecret, bool expectedValid) {
+		var options = new ClusterVNodeOptions {
+			Application = new() {
+				DisableTls = true,
+			},
+			Cluster = new() {
+				ClusterSize = 3,
+				ClusterSecret = clusterSecret,
+			},
+		};
+
+		Validate(options, expectedValid);
+	}
+
 	private static readonly EndPoint[] Seed = [new IPEndPoint(IPAddress.Loopback, 3111)];
 
 	private static void Validate(ClusterVNodeOptions options, bool expectedValid) {

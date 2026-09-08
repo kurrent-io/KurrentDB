@@ -27,11 +27,13 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 		public readonly IPEndPoint InternalTcp;
 		public readonly IPEndPoint ExternalTcp;
 		public readonly IPEndPoint HttpEndPoint;
+		public readonly IPEndPoint Kontroller;
 
 		public IEnumerable<int> Ports() {
 			yield return InternalTcp.Port;
 			yield return ExternalTcp.Port;
 			yield return HttpEndPoint.Port;
+			yield return Kontroller.Port;
 		}
 
 		private readonly List<Socket> _sockets;
@@ -53,9 +55,14 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 			httpEndPoint.Bind(defaultLoopBack);
 			_sockets.Add(httpEndPoint);
 
+			var kontroller = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+			kontroller.Bind(defaultLoopBack);
+			_sockets.Add(kontroller);
+
 			InternalTcp = CopyEndpoint((IPEndPoint)internalTcp.LocalEndPoint);
 			ExternalTcp = CopyEndpoint((IPEndPoint)externalTcp.LocalEndPoint);
 			HttpEndPoint = CopyEndpoint((IPEndPoint)httpEndPoint.LocalEndPoint);
+			Kontroller = CopyEndpoint((IPEndPoint)kontroller.LocalEndPoint);
 		}
 
 		public void DisposeSockets() {
