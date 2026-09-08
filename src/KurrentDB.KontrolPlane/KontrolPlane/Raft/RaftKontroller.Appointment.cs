@@ -113,7 +113,7 @@ partial class RaftKontroller {
 
 				var nodes = connection
 					.GetDatabaseNodes(database.Id)
-					.Select(static node => (node.Address, node.Role, node.IsLeader, node.InstanceId))
+					.Select(static node => new AppointmentCandidate(node))
 					.ToList();
 
 				var nodesSpan = CollectionsMarshal.AsSpan(nodes);
@@ -129,7 +129,7 @@ partial class RaftKontroller {
 			}
 		}
 
-		static void ImportMembers(ReadOnlySpan<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> input, HashSet<EndPoint> output) {
+		static void ImportMembers(ReadOnlySpan<AppointmentCandidate> input, HashSet<EndPoint> output) {
 			foreach (ref readonly var node in input) {
 				output.Add(node.Address);
 			}
@@ -137,7 +137,7 @@ partial class RaftKontroller {
 	}
 
 	private bool IsAppointmentRequired(string databaseId,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
+		IReadOnlyList<AppointmentCandidate> nodes,
 		out EndPoint? resignedLeader) {
 		if (nodes is [] || !_appointmentState.TryGetValue(databaseId, out var appointment)) {
 			resignedLeader = null;
@@ -157,7 +157,7 @@ partial class RaftKontroller {
 		string databaseId,
 		ulong currentEpoch,
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
+		IReadOnlyList<AppointmentCandidate> nodes,
 		EndPoint? resignedLeader,
 		CancellationToken token) {
 		_logger.Information($"Appointing leader for database '{databaseId}'");
@@ -187,7 +187,7 @@ partial class RaftKontroller {
 	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch, ulong Epoch)> FenceDatabaseAsync(
 		string databaseId,
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
+		IReadOnlyList<AppointmentCandidate> nodes,
 		ulong currentEpoch,
 		CancellationToken token) {
 		// bump epoch
@@ -261,7 +261,7 @@ partial class RaftKontroller {
 
 	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> FenceDatabaseAsync(
 		IDataPlane dataPlane,
-		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool, Guid)> nodes,
+		IReadOnlyList<AppointmentCandidate> nodes,
 		ulong newEpoch,
 		out int quorum,
 		bool requiresAllNodes,
@@ -309,6 +309,13 @@ partial class RaftKontroller {
 		public bool IsResigned { get; init; }
 
 		public bool IsExpired(TimeSpan expiration) => RenewedAt.Elapsed >= expiration;
+	}
+
+	[StructLayout(LayoutKind.Auto)]
+	private readonly record struct AppointmentCandidate(EndPoint Address, DatabaseNodeRole Role, bool IsLeader, Guid InstanceId) {
+		public AppointmentCandidate(in PersistentDatabaseNode node)
+			: this(node.Address, node.Role, node.IsLeader, node.InstanceId) {
+		}
 	}
 }
 
