@@ -18,6 +18,7 @@ using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
+using Serilog.Events;
 using ILogger = Serilog.ILogger;
 using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
@@ -1395,7 +1396,10 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(ReplicationMessage.ReplicaSubscriptionRetry message, CancellationToken token) {
-		if (IsLegitimateReplicationMessage(message)) {
+		// ReplicaSubscriptionRetry means the node isn't ready to replicate yet or it wasn't the node we were intending
+		// to replicate from (the leaderId on the request didn't match the instanceId of the node)
+		// Therefore it is ok if the leaderId doesn't match; we don't need to ensure it, we just skip handling the message.
+		if (IsLegitimateReplicationMessage(message, ensureLeaderIdMatch: false)) {
 			await _outputBus.DispatchAsync(message, token);
 
 			var msg = new ReplicationMessage.SubscribeToLeader(_stateCorrelationId, _leader.InstanceId,
@@ -1470,7 +1474,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		return task;
 	}
 
-	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message) {
+	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message, bool ensureLeaderIdMatch = true) {
 		if (message.SubscriptionId == Guid.Empty)
 			throw new Exception("IReplicationMessage with empty SubscriptionId provided.");
 		if (message.SubscriptionId != _subscriptionId) {
@@ -1481,13 +1485,20 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		}
 
 		if (_leader == null || _leader.InstanceId != message.LeaderId) {
-			var msg = string.Format("{0} message passed SubscriptionId check, but leader is either null or wrong. "
-									+ "Message.Leader: [{1:B}], VNode Leader: {2}.",
+			// it is ok for instanceId not to match for ReplicaSubscriptionRetry
+			Log.Write(
+				ensureLeaderIdMatch ? LogEventLevel.Fatal : LogEventLevel.Debug,
+				"{messageType} message passed SubscriptionId check, but leader is either null or wrong. " +
+				"Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
 				message.GetType().Name, message.LeaderId, _leader);
-			Log.Fatal("{messageType} message passed SubscriptionId check, but leader is either null or wrong. "
-					  + "Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
-				message.GetType().Name, message.LeaderId, _leader);
-			Application.Exit(ExitCode.Error, msg);
+
+			if (ensureLeaderIdMatch) {
+				Application.Exit(ExitCode.Error, string.Format(
+					"{0} message passed SubscriptionId check, but leader is either null or wrong. " +
+					"Message.Leader: [{1:B}], VNode Leader: {2}.",
+					message.GetType().Name, message.LeaderId, _leader));
+			}
+
 			return false;
 		}
 
