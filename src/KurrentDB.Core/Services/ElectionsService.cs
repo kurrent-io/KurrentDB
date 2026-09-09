@@ -662,7 +662,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 					FormatNodeInfo(_leaderProposal), FormatNodeInfo(GetOwnInfo()));
 				_lastElectedLeader = _leader;
 				_resigningLeaderInstanceId = null;
-				_publisher.Publish(new ElectionMessage.ElectionsDone(message.View, _leaderProposal.ProposalNumber, leader));
+				_publisher.Publish(new ElectionMessage.ElectionsDone(message.View, _leaderProposal.ProposalNumber, leader.ToLite()));
 			}
 		}
 	}

@@ -49,7 +49,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		}
 	}
 
-	private MemberInfo _leader;
+	private MemberInfoLite _leader;
 	private Guid _stateCorrelationId = Guid.NewGuid();
 	private Guid _leaderConnectionCorrelationId = Guid.NewGuid();
 	private Guid _subscriptionId = Guid.Empty;
@@ -1024,7 +1024,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.VNodeConnectionLost message, CancellationToken token) {
-		if (_leader?.Is(message.VNodeEndPoint) ?? false) // leader connection failed
+		if (_leader?.HasReplicationEndPoint(message.VNodeEndPoint) ?? false) // leader connection failed
 		{
 			_leaderConnectionCorrelationId = Guid.NewGuid();
 			var msg = State is VNodeState.PreReplica
@@ -1037,7 +1037,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsReadOnlyReplica(SystemMessage.VNodeConnectionLost message, CancellationToken token) {
-		if (_leader?.Is(message.VNodeEndPoint) ?? false) // leader connection failed
+		if (_leader?.HasReplicationEndPoint(message.VNodeEndPoint) ?? false) // leader connection failed
 		{
 			_leaderConnectionCorrelationId = Guid.NewGuid();
 			var msg = State is VNodeState.PreReadOnlyReplica
@@ -1094,7 +1094,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		var aliveLeaders = message.ClusterInfo.Members.Where(IsAliveLeader);
 		var leaderCount = aliveLeaders.Count();
 		if (leaderCount is 1) {
-			_leader = aliveLeaders.First();
+			_leader = aliveLeaders.First().ToLite();
 			Log.Information("LEADER found in READ ONLY LEADERLESS state. LEADER: [{leader}]. Proceeding to READ ONLY PRE-REPLICA state.", _leader);
 			_stateCorrelationId = Guid.NewGuid();
 			_leaderConnectionCorrelationId = Guid.NewGuid();
@@ -1135,7 +1135,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		var aliveLeaders = message.ClusterInfo.Members.Where(IsAliveLeader);
 		var leaderCount = aliveLeaders.Count();
 		if (leaderCount is 1) {
-			_leader = aliveLeaders.First();
+			_leader = aliveLeaders.First().ToLite();
 			Log.Information("Existing LEADER found during LEADER DISCOVERY stage. LEADER: [{leader}]. Proceeding to PRE-REPLICA state.", _leader);
 			_mainQueue.Publish(new LeaderDiscoveryMessage.LeaderFound(_leader));
 			_stateCorrelationId = Guid.NewGuid();
@@ -1255,10 +1255,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private async ValueTask Handle(ReplicationMessage.FollowerAssignment message, CancellationToken token) {
 		if (IsLegitimateReplicationMessage(message)) {
 			Log.Information(
-				"========== [{httpEndPoint}] FOLLOWER ASSIGNMENT RECEIVED FROM [{internalTcp},{internalSecureTcp},{leaderId:B}].",
+				"========== [{httpEndPoint}] FOLLOWER ASSIGNMENT RECEIVED FROM [{replicationEndPoint},{leaderId:B}].",
 				_nodeInfo.HttpEndPoint,
-				_leader.InternalTcpEndPoint == null ? "n/a" : _leader.InternalTcpEndPoint.ToString(),
-				_leader.InternalSecureTcpEndPoint == null ? "n/a" : _leader.InternalSecureTcpEndPoint.ToString(),
+				_leader.ReplicationEndPoint,
 				message.LeaderId);
 			await _outputBus.DispatchAsync(message, token);
 			await _fsm.HandleAsync(new SystemMessage.BecomeFollower(_stateCorrelationId, _leader), token);
@@ -1268,10 +1267,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private async ValueTask Handle(ReplicationMessage.CloneAssignment message, CancellationToken token) {
 		if (IsLegitimateReplicationMessage(message)) {
 			Log.Information(
-				"========== [{httpEndPoint}] CLONE ASSIGNMENT RECEIVED FROM [{internalTcp},{internalSecureTcp},{leaderId:B}].",
+				"========== [{httpEndPoint}] CLONE ASSIGNMENT RECEIVED FROM [{replicationEndPoint},{leaderId:B}].",
 				_nodeInfo.HttpEndPoint,
-				_leader.InternalTcpEndPoint == null ? "n/a" : _leader.InternalTcpEndPoint.ToString(),
-				_leader.InternalSecureTcpEndPoint == null ? "n/a" : _leader.InternalSecureTcpEndPoint.ToString(),
+				_leader.ReplicationEndPoint,
 				message.LeaderId);
 			await _outputBus.DispatchAsync(message, token);
 			await _fsm.HandleAsync(new SystemMessage.BecomeClone(_stateCorrelationId, _leader), token);
@@ -1283,10 +1281,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		try {
 			if (IsLegitimateReplicationMessage(message)) {
 				Log.Information(
-					"========== [{httpEndPoint}] DROP SUBSCRIPTION REQUEST RECEIVED FROM [{internalTcp},{internalSecureTcp},{leaderId:B}]. THIS MEANS THAT THERE IS A SURPLUS OF NODES IN THE CLUSTER, SHUTTING DOWN.",
+					"========== [{httpEndPoint}] DROP SUBSCRIPTION REQUEST RECEIVED FROM [{replicationEndPoint},{leaderId:B}]. THIS MEANS THAT THERE IS A SURPLUS OF NODES IN THE CLUSTER, SHUTTING DOWN.",
 					_nodeInfo.HttpEndPoint,
-					_leader.InternalTcpEndPoint == null ? "n/a" : _leader.InternalTcpEndPoint.ToString(),
-					_leader.InternalSecureTcpEndPoint == null ? "n/a" : _leader.InternalSecureTcpEndPoint.ToString(),
+					_leader.ReplicationEndPoint,
 					message.LeaderId);
 				task = _outputBus.DispatchAsync(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true), token);
 			} else {

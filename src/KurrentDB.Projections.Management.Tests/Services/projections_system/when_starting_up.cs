@@ -60,7 +60,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_system {
 						new IPEndPoint(IPAddress.Loopback, 1115), null, 0, 0,
 						1,
 						false
-					)));
+					).ToLite()));
 				yield return (new SystemMessage.SystemCoreReady());
 				yield return Yield;
 				if (_startSystemProjections) {

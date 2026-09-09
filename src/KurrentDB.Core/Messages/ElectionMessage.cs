@@ -333,9 +333,9 @@ public static partial class ElectionMessage {
 	public partial class ElectionsDone : Message {
 		public readonly int InstalledView;
 		public readonly int ProposalNumber;
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 
-		public ElectionsDone(int installedView, int proposalNumber, MemberInfo leader) {
+		public ElectionsDone(int installedView, int proposalNumber, MemberInfoLite leader) {
 			Ensure.Nonnegative(installedView, "installedView");
 			Ensure.NotNull(leader, "leader");
 			InstalledView = installedView;

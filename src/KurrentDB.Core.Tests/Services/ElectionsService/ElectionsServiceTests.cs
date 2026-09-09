@@ -829,7 +829,7 @@ public class when_receiving_a_proposal_as_acceptor : ElectionsFixture {
 					_nodeThree.InternalTcp,
 					_nodeThree.InternalSecureTcp, _nodeThree.ExternalTcp, _nodeThree.ExternalSecureTcp,
 					_nodeThree.HttpEndPoint, null, 0, 0, 0, 0, 0, 0, 0, _epochId, 0,
-					_nodeThree.IsReadOnlyReplica)),
+					_nodeThree.IsReadOnlyReplica).ToLite()),
 			new GrpcMessage.SendOverGrpc(_nodeThree.HttpEndPoint,
 				new ElectionMessage.Accept(_node.InstanceId, _node.HttpEndPoint,
 					_nodeThree.InstanceId,
@@ -967,7 +967,7 @@ public class when_receiving_majority_accept : ElectionsFixture {
 					_nodeTwo.InternalTcp,
 					_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 					_nodeTwo.HttpEndPoint, null, 0, 0, 0, 0, 0, 0, 0, _epochId, 0,
-					_nodeTwo.IsReadOnlyReplica)),
+					_nodeTwo.IsReadOnlyReplica).ToLite()),
 		};
 		_publisher.Messages.Should().BeEquivalentTo(expected);
 	}
@@ -1183,7 +1183,7 @@ public class when_electing_a_leader_and_leader_node_resigned : ElectionsFixture 
 					_nodeTwo.InternalTcp,
 					_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 					_nodeTwo.HttpEndPoint, null, 0, 0, 0, 0, 0, 0, 0, _epochId, 0,
-					_nodeTwo.IsReadOnlyReplica)),
+					_nodeTwo.IsReadOnlyReplica).ToLite()),
 		};
 		_publisher.Messages.Should().BeEquivalentTo(expected);
 	}
@@ -1193,7 +1193,7 @@ public class when_a_leader_is_found_during_leader_discovery : ElectionsFixture {
 	public when_a_leader_is_found_during_leader_discovery() :
 		base(NodeFactory(3), NodeFactory(2), NodeFactory(1)) {
 		var info = MemberInfoFromVNode(_nodeTwo, _timeProvider.UtcNow, VNodeState.Unknown, true, 0, _epochId, 0);
-		_sut.Handle(new LeaderDiscoveryMessage.LeaderFound(info));
+		_sut.Handle(new LeaderDiscoveryMessage.LeaderFound(info.ToLite()));
 		_sut.Handle(new GossipMessage.GossipUpdated(new ClusterInfo(
 			MemberInfoFromVNode(_node, _timeProvider.UtcNow, VNodeState.Unknown, true, 0, _epochId, 0),
 			info,
@@ -1266,7 +1266,7 @@ public class when_electing_a_leader_and_prepare_ok_is_received_from_previous_lea
 					_nodeThree.InternalSecureTcp, _nodeThree.ExternalTcp, _nodeThree.ExternalSecureTcp,
 					_nodeThree.HttpEndPoint, null, 0, 0,
 					0, 0, 0, 0, 0, _epochId, 0,
-					_nodeThree.IsReadOnlyReplica)),
+					_nodeThree.IsReadOnlyReplica).ToLite()),
 		};
 
 		_publisher.Messages.Should().BeEquivalentTo(expected);
@@ -1355,7 +1355,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 						_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 						_nodeTwo.HttpEndPoint, null, 0, 0,
 						0, 0, 0, 0, 0, _epochId, 0,
-						_nodeTwo.IsReadOnlyReplica)),
+						_nodeTwo.IsReadOnlyReplica).ToLite()),
 			};
 
 			_publisher.Messages.Should().BeEquivalentTo(expected);
@@ -1388,7 +1388,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 						_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 						_nodeTwo.HttpEndPoint, null, 0, 0,
 						0, 0, 0, 0, 0, _epochId, 0,
-						_nodeTwo.IsReadOnlyReplica)),
+						_nodeTwo.IsReadOnlyReplica).ToLite()),
 			};
 
 			_publisher.Messages.Should().BeEquivalentTo(expected);
@@ -1439,7 +1439,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 						_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 						_nodeTwo.HttpEndPoint, null, 0, 0,
 						0, 0, 0, 0, 0, _epochId, 0,
-						_nodeTwo.IsReadOnlyReplica)),
+						_nodeTwo.IsReadOnlyReplica).ToLite()),
 			};
 
 			_publisher.Messages.Should().BeEquivalentTo(expected);
@@ -1472,7 +1472,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 						_nodeTwo.InternalSecureTcp, _nodeTwo.ExternalTcp, _nodeTwo.ExternalSecureTcp,
 						_nodeTwo.HttpEndPoint, null, 0, 0,
 						0, 0, 0, 0, 0, _epochId, 0,
-						_nodeTwo.IsReadOnlyReplica)),
+						_nodeTwo.IsReadOnlyReplica).ToLite()),
 			};
 
 			_publisher.Messages.Should().BeEquivalentTo(expected);

@@ -38,11 +38,11 @@ public class VNodeInfo {
 
 	public bool Is(EndPoint endPoint) {
 		return endPoint != null
-			   && HttpEndPoint.Equals(endPoint)
+			   && (HttpEndPoint.Equals(endPoint)
 				   || (InternalTcp != null && InternalTcp.Equals(endPoint))
 				   || (InternalSecureTcp != null && InternalSecureTcp.Equals(endPoint))
 				   || (ExternalTcp != null && ExternalTcp.Equals(endPoint))
-				   || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint));
+				   || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint)));
 	}
 
 	public override string ToString() {

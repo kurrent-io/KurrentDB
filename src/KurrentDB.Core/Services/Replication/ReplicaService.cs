@@ -144,10 +144,10 @@ public class ReplicaService :
 		ConnectToLeader(message.ConnectionCorrelationId, message.Leader);
 	}
 
-	private void ConnectToLeader(Guid leaderConnectionCorrelationId, MemberInfo leader) {
+	private void ConnectToLeader(Guid leaderConnectionCorrelationId, MemberInfoLite leader) {
 		Debug.Assert(_state is VNodeState.PreReplica or VNodeState.PreReadOnlyReplica);
 
-		var leaderEndPoint = GetLeaderEndPoint(leader, _useSsl);
+		var leaderEndPoint = leader.ReplicationEndPoint;
 		if (leaderEndPoint == null) {
 			Log.Error("No valid endpoint found to connect to the Leader. Aborting connection operation to Leader.");
 			return;
@@ -183,24 +183,6 @@ public class ReplicaService :
 			Log.Error(ex, "Failed to connect to leader [{leader}]. This will be retried.", leader);
 			_publisher.Publish(new ReplicationMessage.LeaderConnectionFailed(leaderConnectionCorrelationId, leader));
 		}
-	}
-
-	private static EndPoint GetLeaderEndPoint(MemberInfo leader, bool useSsl) {
-		Ensure.NotNull(leader);
-		switch (useSsl) {
-			case true when leader.InternalSecureTcpEndPoint == null:
-				Log.Error(
-					"Internal secure connections are required, but no internal secure TCP end point is specified for leader [{leader}]!",
-					leader);
-				break;
-			case false when leader.InternalTcpEndPoint == null:
-				Log.Error(
-					"Internal connections are required, but no internal TCP end point is specified for leader [{leader}]!",
-					leader);
-				break;
-		}
-
-		return useSsl ? leader.InternalSecureTcpEndPoint : leader.InternalTcpEndPoint;
 	}
 
 	async ValueTask IAsyncHandle<ReplicationMessage.SubscribeToLeader>.HandleAsync(ReplicationMessage.SubscribeToLeader message, CancellationToken token) {
