@@ -12,7 +12,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using DotNext.Net.Cluster.Consensus.Raft;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
@@ -310,12 +309,12 @@ public partial record ClusterVNodeOptions {
 		[Description("The lower bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
 					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.LowerValue * 2;
+		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = 700;
 
 		[Description("The upper bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
 					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = ElectionTimeout.Recommended.UpperValue * 2;
+		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = 1_000;
 
 		[Description("Kontrol Plane will appoint another database leader if the current leader does not " +
 					 "renew its appointment within this many milliseconds. Renewal rate is 50% of this."),
