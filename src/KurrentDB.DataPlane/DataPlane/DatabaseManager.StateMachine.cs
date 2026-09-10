@@ -98,7 +98,9 @@ partial class DatabaseManager : IDatabaseStateMachine {
 			lockTaken = true;
 
 			if (transition.IsValid(_state)) {
-				await ChangeStateAsync(new ResigningState(KontrolPlane, transition.DatabaseId, transition.CurrentEpoch));
+				var newState = new ResigningState(KontrolPlane, transition.DatabaseId, transition.CurrentEpoch);
+				await ChangeStateAsync(newState);
+				newState.TryStart();
 			}
 		} catch {
 			// we can't throw here, it's async void method
