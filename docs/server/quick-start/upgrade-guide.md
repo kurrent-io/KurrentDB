@@ -5,7 +5,7 @@ order: 5
 
 ## Should you upgrade?
 
-KurrentDB 26.1 is a short term support (STS) release and will be supported until the next release. See the [release schedule](../release-schedule/README.md) for further information.
+KurrentDB 26.2 is a short term support (STS) release and will be supported until the next release. See the [release schedule](../release-schedule/README.md) for further information.
 
 Upgrade to this version if you want to try the new features and changes in this release, and do not need the long support window of an LTS release.
 
@@ -14,6 +14,8 @@ General changes, features and fixes are described in the [what's new](./whatsnew
 ## Upgrade procedure
 
 You can perform an online rolling upgrade from these earlier versions:
+- 26.1
+- 26.0
 - 25.1
 - 25.0
 - 24.10
@@ -37,6 +39,16 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 ::: warning
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
+
+## To 26.2
+
+### Breaking Changes
+
+- None
+
+### Deprecation Notices
+
+- None
 
 ## To 26.1
 
