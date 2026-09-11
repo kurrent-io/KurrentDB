@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Linq;
 using System.Runtime;
 using FluentAssertions;
 using KurrentDB.Common.Configuration;
@@ -45,7 +47,7 @@ public class SystemMetricsTests : IDisposable {
 			{ MetricsConfiguration.SystemTracker.TotalMem, "total" },
 		});
 
-		_sut.CreateDiskMetric("eventstore-sys-disk", ".", new() {
+		_sut.CreateDiskMetric("eventstore-sys-disk", ["."], DriveStats.GetDriveInfo, new() {
 			{ MetricsConfiguration.SystemTracker.DriveTotalBytes, "total" },
 			{ MetricsConfiguration.SystemTracker.DriveUsedBytes, "used" },
 		});
@@ -146,6 +148,71 @@ public class SystemMetricsTests : IDisposable {
 						Assert.Equal("total", tag.Value);
 					});
 			});
+	}
+
+	private static SystemMetrics CreateSystemMetrics(Meter meter) {
+		var config = new Dictionary<MetricsConfiguration.SystemTracker, bool>();
+		foreach (var value in Enum.GetValues<MetricsConfiguration.SystemTracker>())
+			config[value] = true;
+
+		return new SystemMetrics(meter, TimeSpan.FromSeconds(42), config, legacyNames: false);
+	}
+
+	[Fact]
+	public void deduplicates_disk_paths_on_the_same_drive() {
+		// Different paths that resolve to the same drive should only produce a single
+		// (kind, disk) series per kind, not one per path.
+		using var meter = new Meter($"{typeof(SystemMetricsTests)}.dedupe");
+		using var listener = new TestMeterListener<long>(meter);
+
+		DriveData GetDriveInfo(string path) => new("the-only-disk", TotalBytes: 1000, AvailableBytes: 400);
+
+		var sut = CreateSystemMetrics(meter);
+		sut.CreateDiskMetric("eventstore-sys-disk", ["/db", "/index", "/logs"], GetDriveInfo, new() {
+			{ MetricsConfiguration.SystemTracker.DriveTotalBytes, "total" },
+			{ MetricsConfiguration.SystemTracker.DriveUsedBytes, "used" },
+		});
+
+		listener.Observe();
+
+		// One "used" and one "total" measurement, despite three paths on the same disk.
+		listener.RetrieveMeasurements("eventstore-sys-disk-bytes").Should().HaveCount(2);
+	}
+
+	[Fact]
+	public void separate_drives_produce_separate_stats() {
+		// Paths on different drives should each produce their own (kind, disk) series.
+		using var meter = new Meter($"{typeof(SystemMetricsTests)}.twodisks");
+		using var listener = new TestMeterListener<long>(meter);
+
+		DriveData GetDriveInfo(string path) => path switch {
+			"/db" => new DriveData("disk-a", TotalBytes: 1000, AvailableBytes: 400), // used 600
+			"/logs" => new DriveData("disk-b", TotalBytes: 5000, AvailableBytes: 1000), // used 4000
+			_ => throw new ArgumentOutOfRangeException(nameof(path), path, null),
+		};
+
+		var sut = CreateSystemMetrics(meter);
+		sut.CreateDiskMetric("eventstore-sys-disk", ["/db", "/logs"], GetDriveInfo, new() {
+			{ MetricsConfiguration.SystemTracker.DriveTotalBytes, "total" },
+			{ MetricsConfiguration.SystemTracker.DriveUsedBytes, "used" },
+		});
+
+		listener.Observe();
+
+		var measurements = listener.RetrieveMeasurements("eventstore-sys-disk-bytes");
+
+		// used + total for each of the two distinct disks.
+		measurements.Should().HaveCount(4);
+
+		long ValueFor(string disk, string kind) => measurements
+			.Single(m => m.Tags.Any(t => t.Key == "disk" && (string)t.Value == disk) &&
+						 m.Tags.Any(t => t.Key == "kind" && (string)t.Value == kind))
+			.Value;
+
+		ValueFor("disk-a", "total").Should().Be(1000);
+		ValueFor("disk-a", "used").Should().Be(600);
+		ValueFor("disk-b", "total").Should().Be(5000);
+		ValueFor("disk-b", "used").Should().Be(4000);
 	}
 
 	[Fact]
