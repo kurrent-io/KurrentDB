@@ -33,6 +33,30 @@ Just as with message brokers, processing events in a group of consumers running 
 
 Clients must acknowledge (or not acknowledge) messages as they are handled. If messages aren't acknowledged before they time out on the server, the server will retry them. If a message has been retried more than the `maxRetryCount` setting for the persistent subscription, then the message will be parked and processing will continue.
 
+## Graceful shutdown
+
+When a consumer needs to shut down, simply closing the connection works but is abrupt: any events the consumer was still working on are immediately retried by another consumer in the group, even if the original consumer was about to ack them. This can lead to duplicate processing.
+
+To shut down cleanly, a consumer can send an explicit `Stop` message on its subscription stream. This:
+
+- Removes the consumer from the consumer pool, so the server stops sending it new events.
+- Leaves the connection open so the consumer can still acknowledge or not-acknowledge any events it already received.
+- Does **not** redistribute the consumer's in-flight events to other consumers — they stay assigned to the stopping consumer until it acks/nacks them or the message timeout fires.
+
+The recommended sequence is:
+
+1. **Send `Stop`.** The server marks the consumer as stopped and routes new events to the remaining active consumers in the group.
+2. **Drain in-flight events.** Continue receiving event-appeared messages already in flight on the stream, processing them normally, and sending acks or nacks back to the server.
+3. **Unsubscribe.** Once the consumer has nothing left in flight, close the subscription stream to fully unsubscribe.
+
+::: tip
+If the consumer disconnects without sending `Stop`, or disconnects after `Stop` while events are still in flight, those unconfirmed events follow the normal disconnect behavior: they are retried to other consumers as soon as the server detects the disconnect. `Stop` is therefore an optimization for clean shutdown, not a correctness requirement — at-least-once delivery is preserved either way.
+:::
+
+::: note
+If a stopping consumer never acks an in-flight event, that event will eventually hit the `messageTimeoutMilliseconds` and be retried to another consumer in the group, just like any other timed-out message. A consumer that intends to stop quickly should ack or nack what it can rather than relying on the timeout.
+:::
+
 ## Parked messages
 
 Messages that have been retried too many times will often be parked in the persistent subscription's parked message stream. This stream is named `$persistentsubscription-{streamname}::{groupname}-parked`. You can easily see the number of parked events in the persistent subscription statistics or browse the parked messages in the embedded UI.

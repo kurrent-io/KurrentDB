@@ -115,6 +115,9 @@ internal partial class PersistentSubscriptions {
 							_ => throw RpcExceptions.InvalidArgument(request.Nack.Action)
 						},
 						request.Nack.Ids.Select(id => Uuid.FromDto(id).ToGuid()).ToArray(), user),
+				ReadReq.ContentOneofCase.Stop =>
+					new ClientMessage.PersistentSubscriptionStopFromConsumer(
+						correlationId, correlationId, new NoopEnvelope(), subscriptionId, user),
 				_ => throw RpcExceptions.InvalidArgument(request.ContentCase)
 			});
 
