@@ -600,10 +600,10 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomePreReplica message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
 		if (_stateCorrelationId != message.CorrelationId)
 			return;
+		if (_leader is null)
+			throw new Exception("_leader == null");
 
 		Log.Information(
 			"========== [{httpEndPoint}] PRE-REPLICA STATE, WAITING FOR CHASER TO CATCH UP... LEADER IS [{masterHttp},{masterId:B}]",
@@ -631,11 +631,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeCatchingUp message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
 		if (_stateCorrelationId != message.CorrelationId)
 			return ValueTask.CompletedTask;
+
+		if (_leader is null)
+			return ValueTask.FromException(new Exception("_leader == null"));
 
 		Log.Information("========== [{httpEndPoint}] IS CATCHING UP... LEADER IS [{leaderHttp},{leaderId:B}]",
 			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
@@ -645,11 +645,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeClone message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
 		if (_stateCorrelationId != message.CorrelationId)
 			return ValueTask.CompletedTask;
+
+		if (_leader is null)
+			return ValueTask.FromException(new Exception("_leader == null"));
 
 		Log.Information("========== [{httpEndPoint}] IS CLONE... LEADER IS [{leaderHttp},{leaderId:B}]",
 			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
@@ -659,11 +659,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeFollower message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
 		if (_stateCorrelationId != message.CorrelationId)
 			return ValueTask.CompletedTask;
+
+		if (_leader is null)
+			return ValueTask.FromException(new Exception("_leader == null"));
 
 		Log.Information("========== [{httpEndPoint}] IS FOLLOWER... LEADER IS [{leaderHttp},{leaderId:B}]",
 			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
@@ -681,11 +681,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeReadOnlyReplica message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
 		if (_stateCorrelationId != message.CorrelationId)
 			return ValueTask.CompletedTask;
+
+		if (_leader is null)
+			return ValueTask.FromException(new Exception("_leader == null"));
 
 		Log.Information("========== [{httpEndPoint}] IS READ ONLY REPLICA... LEADER IS [{leaderHttp},{leaderId:B}]",
 			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
@@ -695,10 +695,10 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomePreLeader message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
 		if (_stateCorrelationId != message.CorrelationId)
 			return;
+		if (_leader is null)
+			throw new Exception("_leader == null");
 
 		Log.Information("========== [{httpEndPoint}] PRE-LEADER STATE, WAITING FOR CHASER TO CATCH UP...",
 			_nodeInfo.HttpEndPoint);
@@ -712,11 +712,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (State is VNodeState.Leader)
 			return ValueTask.FromException(new Exception("We should not BecomeLeader twice in a row."));
 
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
 		if (_stateCorrelationId != message.CorrelationId)
 			return ValueTask.CompletedTask;
+
+		if (_leader is null)
+			return ValueTask.FromException(new Exception("_leader == null"));
 
 		Log.Information("========== [{httpEndPoint}] IS LEADER... SPARTA!", _nodeInfo.HttpEndPoint);
 
