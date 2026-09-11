@@ -1729,19 +1729,19 @@ public class ClusterVNode<TStreamId> :
 			_mainBus.Subscribe<SystemMessage.SystemStart>(databaseStateHandler);
 			_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(databaseStateHandler);
 
+			// Bootstrap only: the first AnnounceDatabaseNode response replaces this list with the Kontrol
+			// Plane's own and redirects to its leader. A node running a Kontroller adds itself, so it can
+			// bootstrap before any peer is up and the set is never empty even with no seed configured.
+			var kontrolPlaneNodes = new HashSet<EndPoint>(options.KontrolPlane.KontrolPlaneApiSeed);
+			if (options.KontrolPlane.IsKontrolPlaneNode)
+				kontrolPlaneNodes.Add(memberInfoLite.HttpEndPoint);
+
 			_databaseManager = new(new() {
 				RenewalRate = ESConsts.KPlaneRenewalRate,
 			}) {
 				DatabaseHandler = databaseStateHandler,
 				KontrolPlane = new KontrolPlaneClient(_nodeHttpClientFactory, uriScheme) {
-					// Bootstrap only: the first AnnounceDatabaseNode response replaces this list with
-					// the Kontrol Plane's own and redirects to its leader. The gossip seeds are already
-					// the peers' gRPC endpoints, which is where KontrollerServer is served. This node is
-					// included so that the set is never empty - DNS discovery leaves GossipSeed empty -
-					// and so that bootstrap succeeds before any peer is up.
-					KontrolPlaneNodes = new HashSet<EndPoint>(options.KontrolPlane.KontrolPlaneApiSeed) {
-						memberInfoLite.HttpEndPoint,
-					},
+					KontrolPlaneNodes = kontrolPlaneNodes,
 				}
 			};
 		}
