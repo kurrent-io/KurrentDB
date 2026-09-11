@@ -7,9 +7,20 @@ order: 2
 ## New in 26.2
 
 Features
+* [Kontrol Plane](#kontrol-plane)
 * [Disable TLS](#disable-tls)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+### Kontrol Plane
+
+A database cluster can now have its leader appointed by the `Kontrol Plane`, a separate Raft-based cluster, instead of electing one internally.
+
+The Kontrol Plane is a significant step in our strategy to support multiple databases and also to store distributed but ephemeral or mutable data such as distributed leases and checkpoints.
+
+The Kontrol Plane is off by default and changes nothing until you turn it on.
+
+See the Kontrol Plane [configuration guide](../configuration/kontrol-plane.md) for details.
 
 ### Disable TLS
 
