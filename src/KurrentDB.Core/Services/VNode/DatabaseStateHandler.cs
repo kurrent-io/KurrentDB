@@ -212,7 +212,7 @@ public sealed class DatabaseStateHandler :
 	}
 
 	// Tells the node who the Kontrol Plane has appointed, once it is in a state to hear it.
-	private async Task AnnounceLeaderAsync(
+	private async ValueTask AnnounceLeaderAsync(
 		DatabaseNode leaderNode,
 		int epochNumber,
 		IEnvelope<ElectionMessage.LeadershipEnded>? envelope,

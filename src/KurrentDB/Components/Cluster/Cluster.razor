@@ -91,21 +91,12 @@
 				</MudItem>
 			}
 		}
-		else if (KontrolPlaneLeader is { } kontrolPlaneLeader) {
+		else if (KontrolPlaneLeaderHost is { } kontrolPlaneLeaderHost) {
 			// not the leader but we know who is
 			<MudItem xs="12">
-				@if (KontrolPlaneLeaderUrl is { } kontrolPlaneLeaderUrl) {
-					<MudText Typo="Typo.body2" Class="pl-2">
-						See Kontrol plane
-						<MudLink Href="@kontrolPlaneLeaderUrl" Target="_blank">leader</MudLink>
-						for details.
-					</MudText>
-				} else {
-					// we know who the leader is but not how to reach its UI
-					<MudText Typo="Typo.body2" Class="pl-2">
-						Kontrol plane leader is @kontrolPlaneLeader.EndPoint.
-					</MudText>
-				}
+				<MudText Typo="Typo.body2" Class="pl-2">
+					See Kontrol plane leader <code>@kontrolPlaneLeaderHost</code> for details.
+				</MudText>
 			</MudItem>
 		} else {
 			<MudItem xs="12">
