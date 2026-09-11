@@ -18,7 +18,7 @@ public class DuckDBConnectionPoolLifetimeTests : DirectoryPerTest<DuckDBConnecti
 	private string DefaultTempDirectory => Path.Combine(DbDirectory, "kurrent.ddb.tmp");
 
 	private DuckDBConnectionPoolLifetime CreateSut(string sqlEngineTempDirectory = "") =>
-		new(CreateDbConfig(sqlEngineTempDirectory), setups: [], log: null);
+		new(CreateDbConfig(sqlEngineTempDirectory), new ClusterVNodeOptions(), setups: [], log: null);
 
 	private TFChunkDbConfig CreateDbConfig(string sqlEngineTempDirectory) =>
 		new(DbDirectory,
