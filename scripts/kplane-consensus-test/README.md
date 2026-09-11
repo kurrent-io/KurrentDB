@@ -163,6 +163,11 @@ Two profiles worth running:
   arriving by a more realistic route than SIGSTOP. Expect churn: assert only the safety invariants
   and set `ENFORCE_SLOW_QUEUE=false`.
 
+`.env.example` also carries a commented **aggressive profile** that roughly doubles fault
+frequency. At that rate two nodes are impaired simultaneously often enough to matter, which on a
+three-node cluster is quorum loss — intended, but it makes the liveness budgets noisy. Judge those
+runs on S1–S6, and on S4 above all.
+
 ## Configuration
 
 The node configs in `conf/` are JSON (valid YAML, which is what the server parses) and are adapted
