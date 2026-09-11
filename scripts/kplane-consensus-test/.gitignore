@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+certs/
+logs/
+ledger/
+bin/
+obj/

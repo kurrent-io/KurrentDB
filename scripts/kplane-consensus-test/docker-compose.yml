@@ -1,0 +1,202 @@
+name: kplane-consensus
+
+# A KurrentDB cluster in Kontrol Plane mode, under continuous write load, with Pumba crashing and
+# freezing nodes underneath it. The checker owns the verdict:
+#
+#   ./run.sh
+#
+# Use run.sh rather than `up --abort-on-container-exit`: that flag suppresses `restart: always`,
+# so nodes Pumba kills never come back and the cluster dies after a few kills.
+#
+# See README.md.
+
+x-node: &node
+  build:
+    context: ../..
+    args:
+      RUNTIME: ${RUNTIME:-linux-x64}
+  environment:
+    # Kept out of the config files so the key is never committed. Note the source variable is
+    # deliberately NOT prefixed KURRENTDB_: the server parses every such variable as an option and
+    # would reject an unknown one, because AllowUnknownOptions is false.
+    - KURRENTDB__LICENSING__LICENSE_KEY=${KDB_LICENSE_KEY:?set KDB_LICENSE_KEY in .env}
+  volumes:
+    - ./certs:/etc/kurrentdb/certs
+    - ./conf:/etc/kurrentdb/conf:ro
+  # Covers a node that dies on its own. A node Pumba killed is brought back by the supervisor
+  # instead - see there for why the policy cannot do it.
+  restart: always
+  depends_on:
+    prepare:
+      condition: service_completed_successfully
+    cert-gen:
+      condition: service_completed_successfully
+
+x-app: &app
+  env_file: [ .env ]
+  depends_on:
+    node1: { condition: service_healthy }
+    node2: { condition: service_healthy }
+    node3: { condition: service_healthy }
+
+x-chaos: &chaos
+  image: ghcr.io/alexei-led/pumba:latest
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  depends_on:
+    node1: { condition: service_healthy }
+    node2: { condition: service_healthy }
+    node3: { condition: service_healthy }
+
+services:
+  # Creates the host directories the nodes and writers write into, world-writable so that the
+  # container uid (1001) and the host user do not have to agree.
+  #
+  # It also clears them. A node appends to the same log.json across restarts, so logs left from a
+  # previous run would be read back as appointments that happened during this one - which would
+  # corrupt every log-based invariant. Everything under logs/ therefore belongs to one run.
+  prepare:
+    image: alpine:3.20
+    command: >
+      sh -c "mkdir -p /work/certs /work/logs /work/ledger
+      && rm -rf /work/certs/* /work/logs/* /work/ledger/*
+      && mkdir -p /work/logs/node1 /work/logs/node2 /work/logs/node3
+      && chmod -R 0777 /work/certs /work/logs /work/ledger"
+    volumes:
+      - ./certs:/work/certs
+      - ./logs:/work/logs
+      - ./ledger:/work/ledger
+
+  cert-gen:
+    image: eventstore/es-gencert-cli:1.0.2
+    entrypoint: bash
+    command: >
+      -c "cd /certs
+      && es-gencert-cli create-ca
+      && es-gencert-cli create-node -out ./node1 --dns-names node1.eventstore
+      && es-gencert-cli create-node -out ./node2 --dns-names node2.eventstore
+      && es-gencert-cli create-node -out ./node3 --dns-names node3.eventstore
+      && find . -type f -print0 | xargs -0 chmod 644"
+    volumes:
+      - ./certs:/certs
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+
+  # Brings back nodes that Pumba killed.
+  #
+  # `restart: always` cannot do this: Docker deliberately ignores a container's restart policy when
+  # the container was stopped through the API, and Pumba's kill IS an API call. The policy still
+  # covers a node that dies on its own - a real crash - which is why both exist. Without this the
+  # cluster simply loses a node per kill and is dead for good after the third.
+  supervisor:
+    image: docker:27-cli
+    container_name: kplane-supervisor
+    command: >
+      sh -c "while true; do
+        for c in kplane-node1 kplane-node2 kplane-node3; do
+          state=$$(docker inspect -f '{{.State.Status}}' $$c 2>/dev/null || echo missing);
+          if [ \"$$state\" = exited ]; then
+            echo \"supervisor: restarting $$c\";
+            docker start $$c >/dev/null 2>&1 || true;
+          fi;
+        done;
+        sleep 2;
+      done"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  node1:
+    <<: *node
+    container_name: kplane-node1
+    command: [ "--config=/etc/kurrentdb/conf/node1.conf" ]
+    networks:
+      kplane: { aliases: [ node1.eventstore ] }
+    ports: [ "2111:2113" ]
+    volumes:
+      - ./certs:/etc/kurrentdb/certs
+      - ./conf:/etc/kurrentdb/conf:ro
+      - ./logs/node1:/var/log/kurrentdb
+      - node1-data:/var/lib/kurrentdb
+
+  node2:
+    <<: *node
+    container_name: kplane-node2
+    command: [ "--config=/etc/kurrentdb/conf/node2.conf" ]
+    networks:
+      kplane: { aliases: [ node2.eventstore ] }
+    ports: [ "2112:2113" ]
+    volumes:
+      - ./certs:/etc/kurrentdb/certs
+      - ./conf:/etc/kurrentdb/conf:ro
+      - ./logs/node2:/var/log/kurrentdb
+      - node2-data:/var/lib/kurrentdb
+
+  node3:
+    <<: *node
+    container_name: kplane-node3
+    command: [ "--config=/etc/kurrentdb/conf/node3.conf" ]
+    networks:
+      kplane: { aliases: [ node3.eventstore ] }
+    ports: [ "2113:2113" ]
+    volumes:
+      - ./certs:/etc/kurrentdb/certs
+      - ./conf:/etc/kurrentdb/conf:ro
+      - ./logs/node3:/var/log/kurrentdb
+      - node3-data:/var/lib/kurrentdb
+
+  # No container_name, so this can scale. WRITER_COUNT drives both the replica count and the
+  # number of ledgers the checker waits for, so the two cannot drift apart.
+  writer:
+    <<: *app
+    build: src/writer
+    deploy:
+      replicas: ${WRITER_COUNT:-1}
+    networks: [ kplane ]
+    volumes:
+      - ./ledger:/ledger
+
+  checker:
+    <<: *app
+    build: src/checker
+    container_name: kplane-checker
+    networks: [ kplane ]
+    volumes:
+      - ./logs:/logs:ro
+      - ./ledger:/ledger
+
+  # --- Fault injection -------------------------------------------------------------------------
+  # Pumba only acts on containers that already exist and reports nothing about the cluster; it is
+  # the checker that decides whether the run passed. The regex is anchored so it can never match
+  # the writers, the checker, or Pumba itself. Verify with: command: ... --dry-run kill ...
+
+  chaos-crash:
+    <<: *chaos
+    profiles: [ crash, chaos ]
+    command: >
+      --log-level=info --json --skip-error
+      --interval=${CHAOS_CRASH_INTERVAL:-90s}
+      --random
+      kill --signal SIGKILL "re2:^kplane-node[1-3]$$"
+
+  chaos-hang:
+    <<: *chaos
+    profiles: [ hang, chaos ]
+    # `pause` is the cgroup freezer: every thread stops but the container stays up and its sockets
+    # stay open, so peers see a stall rather than a reset. That is the failure mode consensus
+    # protocols get wrong, and the one the appointment timeout is supposed to catch.
+    command: >
+      --log-level=info --json --skip-error
+      --interval=${CHAOS_HANG_INTERVAL:-150s}
+      --random
+      pause --duration ${CHAOS_HANG_DURATION:-20s} "re2:^kplane-node[1-3]$$"
+
+networks:
+  kplane:
+    name: kplane-consensus
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
