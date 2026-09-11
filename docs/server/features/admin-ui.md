@@ -135,4 +135,10 @@ The _Scavenges_ page lists [scavenge](../operations/scavenge.md) operations and 
 
 - **License**: Shows the license status of the cluster node.
 - **Database Info**: Lets you set a friendly database name and a production flag, both shown in the top bar (the production flag adds a PRODUCTION warning).
-- **Navigator**: Links to the [Kurrent Navigator](https://navigator.kurrent.io/) app, including its feature-comparison table.
+
+## Tools
+
+The _Tools_ section of the sidebar links out to the tools that work alongside the server, rather than to pages of this UI.
+
+- **Navigator**: Opens [Kurrent Navigator](https://navigator.kurrent.io/) on the node you are viewing, if it is installed. The link carries no credentials, so Navigator asks you to sign in. If Navigator is not installed, its download page opens instead.
+- **Gaffer**: Opens [Gaffer](https://gaffer.kurrent.io/), the toolkit for authoring, debugging, testing and deploying projections. The _Projections_ pages link to it as well.

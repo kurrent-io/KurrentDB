@@ -11,6 +11,9 @@
 		<RuntimeHostConfigurationOption Include="System.GC.HeapHardLimitPercent" Value="60" />
 	</ItemGroup>
 	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Components.Tests" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="BlazorMonaco" />
 		<PackageReference Include="Extensions.MudBlazor.StaticInput" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
