@@ -257,15 +257,14 @@ partial class RaftKontroller : IRaftKontroller, IAsyncEnumerable<EndPoint> {
 		var tokenSource = _multiplexer.Combine(token, _lifecycleToken);
 		try {
 			for (;; tokenSource.Token.ThrowIfCancellationRequested()) {
-				IRaftClusterMember leader = await _raft.WaitForLeaderAsync(InfiniteTimeSpan, tokenSource.Token);
-				KontrollerMetadata metadata;
-
-				try {
-					for (var refreshMetadata = false;
-					     !TryParseMetadata(await leader.GetMetadataAsync(refreshMetadata, tokenSource.Token), out metadata);
-					     refreshMetadata = true) ;
-				} catch {
-					continue;
+				var leader = await _raft.WaitForLeaderAsync(InfiniteTimeSpan, tokenSource.Token);
+				if (!TryParseMetadata(leader, out var metadata)) {
+					try {
+						if (!TryParseMetadata(await leader.GetMetadataAsync(refresh: true, tokenSource.Token), out metadata))
+							continue;
+					} catch {
+						continue;
+					}
 				}
 
 				return GetApiEndPoint(leader.EndPoint, metadata.ApiPort);
@@ -287,14 +286,29 @@ partial class RaftKontroller : IRaftKontroller, IAsyncEnumerable<EndPoint> {
 			.SkipNulls()
 			.GetAsyncEnumerator(token);
 
-		static Task<EndPoint?> GetMemberAddressAsync(IRaftClusterMember member, CancellationToken token)
-			=> member.Status is ClusterMemberStatus.Available ? GetMemberAddressCoreAsync(member, token) : NoEndPointTask;
+		static Task<EndPoint?> GetMemberAddressAsync(RaftClusterMember member, CancellationToken token) {
+			Task<EndPoint?> task;
+			if (TryParseMetadata(member, out var metadata)) {
+				task = Task.FromResult<EndPoint?>(GetApiEndPoint(member.EndPoint, metadata.ApiPort));
+			} else if (member.Status is ClusterMemberStatus.Available) {
+				task = GetMemberAddressCoreAsync(member, token);
+			} else {
+				task = NoEndPointTask;
+			}
 
-		static async Task<EndPoint?> GetMemberAddressCoreAsync(IRaftClusterMember member, CancellationToken token)
-			=> TryParseMetadata(await member.GetMetadataAsync(refresh: false, token),
+			return task;
+		}
+
+		static async Task<EndPoint?> GetMemberAddressCoreAsync(RaftClusterMember member, CancellationToken token)
+			=> TryParseMetadata(await member.GetMetadataAsync(refresh: true, token),
 				out var metadata)
 				? GetApiEndPoint(member.EndPoint, metadata.ApiPort)
 				: null;
+	}
+
+	private static bool TryParseMetadata(RaftClusterMember member, out KontrollerMetadata result) {
+		result = default;
+		return member.TryGetMetadata() is { } metadata && TryParseMetadata(metadata, out result);
 	}
 
 	private static bool TryParseMetadata(IReadOnlyDictionary<string, string> metadata, out KontrollerMetadata result) {
