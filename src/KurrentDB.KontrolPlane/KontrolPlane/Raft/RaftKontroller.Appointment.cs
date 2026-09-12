@@ -178,11 +178,17 @@ partial class RaftKontroller {
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
 		// if the current node is not a leader anymore
 		if (candidate.Address is not null && await _raft.AppointLeaderAsync(databaseId, currentEpoch, candidate.Address, candidate.InstanceId, CancellationToken.None)) {
-			_logger.Information($"DPlane node '{candidate.Address}' with instance id '{candidate.InstanceId}' is appointed as leader for database '{databaseId}'");
+			_logger.Information($"DPlane node '{candidate.Address}' with instance id '{candidate.InstanceId}' is appointed as leader for database '{databaseId}'. Chosen from: {Environment.NewLine}{DescribeCandidates(responses, resignedLeader)}");
 			_appointmentState[databaseId] = new(candidate.Address, currentEpoch, candidate.InstanceId);
 			_state.NotifyDatabaseChanged(databaseId);
 		}
 	}
+
+	private static string DescribeCandidates(IReadOnlyDictionary<EndPoint, ReplicaState> responses, EndPoint? resignedLeader) =>
+		string.Join(Environment.NewLine, responses.Select(pair =>
+			$"{pair.Key} epoch={pair.Value.Epoch} writer={pair.Value.WriterCheckpoint} " +
+			$"chaser={pair.Value.ChaserCheckpoint} priority={pair.Value.Priority}" +
+			(pair.Key.Equals(resignedLeader) ? " (resigned)" : "")));
 
 	private async Task<(IReadOnlyDictionary<EndPoint, ReplicaState> State, ulong MaxEpoch, ulong Epoch)> FenceDatabaseAsync(
 		string databaseId,

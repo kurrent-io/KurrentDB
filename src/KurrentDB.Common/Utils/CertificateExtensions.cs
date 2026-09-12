@@ -188,6 +188,11 @@ public static class CertificateExtensions {
 	}
 
 	public static IDisposable ConvertToCertificate2(this X509Certificate certificate, out X509Certificate2 certificate2) {
+		if (certificate is null) {
+			certificate2 = null;
+			return null;
+		}
+
 		if (certificate is X509Certificate2 c2) {
 			certificate2 = c2;
 			return null;

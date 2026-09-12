@@ -5,6 +5,7 @@ namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
 
+// Leader, replicating to other nodes.
 internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 	DatabaseCluster cluster,
 	double renewalRate) : DatabaseState {
@@ -29,7 +30,7 @@ internal sealed class LeaderState(IDatabaseStateMachine stateMachine,
 			heartbeatTask = SendHeartbeatsAsync(linkedCts);
 			await stateMachine
 				.DatabaseHandler
-				.RunLeadershipAsync(stateMachine.DatabaseChanges, linkedCts.Token)
+				.RunLeadershipAsync(cluster, stateMachine.DatabaseChanges, linkedCts.Token)
 				.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext
 				                | ConfigureAwaitOptions.SuppressThrowing);
 

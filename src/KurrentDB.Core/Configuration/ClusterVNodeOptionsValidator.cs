@@ -116,6 +116,63 @@ public static class ClusterVNodeOptionsValidator {
 				"The Archiver node must also be a Read Only Replica.");
 		}
 
+		if (options.Cluster is { ReadOnlyReplica: true } && options.KontrolPlane.IsKontrolPlaneNode) {
+			throw new InvalidConfigurationException(
+				"A Read Only Replica cannot also be a Kontrol Plane node.");
+		}
+
+		if (!options.Cluster.ReadOnlyReplica && (options.KontrolPlane.IsKontrolPlaneNode != options.KontrolPlane.IsDataPlaneNode)) {
+			throw new InvalidConfigurationException(
+				"To use Kontrol Plane, at the moment all cluster nodes must be both Kontrol Plane and Data Plane nodes.");
+		}
+
+		if (options.KontrolPlane.IsKontrolPlaneNode &&
+			options.Cluster.ClusterSize > 1 &&
+			options.KontrolPlane.KontrolPlaneBootstrapSeed is []) {
+			throw new InvalidConfigurationException(
+				$"A Kontrol Plane node in a cluster of more than one node requires a " +
+				$"{nameof(options.KontrolPlane.KontrolPlaneBootstrapSeed)} so that the Kontrol Plane nodes " +
+				$"can discover each other.");
+		}
+
+		if (options.ClusterIsUsingKontrolPlane && options.Database.MemDb) {
+			throw new InvalidConfigurationException(
+				$"MemDb is deprecated and not supported by Kontrol Plane clusters");
+		}
+
+		// A node that runs a Kontroller can bootstrap against itself: it announces to its own Kontrol
+		// Plane API, which redirects it to the leader. A Data Plane node that runs no Kontroller has
+		// nowhere to start from.
+		if (options.KontrolPlane is { IsDataPlaneNode: true, IsKontrolPlaneNode: false } &&
+			options.KontrolPlane.KontrolPlaneApiSeed is []) {
+			throw new InvalidConfigurationException(
+				$"A Data Plane node that is not also a Kontrol Plane node requires a " +
+				$"{nameof(options.KontrolPlane.KontrolPlaneApiSeed)} so that it can reach the Kontrol Plane.");
+		}
+
+		if (options.KontrolPlane.KontrolPlaneLowerElectionTimeoutMs <= 0) {
+			throw new InvalidConfigurationException(
+				$"{nameof(options.KontrolPlane.KontrolPlaneLowerElectionTimeoutMs)} must be greater than 0.");
+		}
+
+		if (options.KontrolPlane.KontrolPlaneUpperElectionTimeoutMs <= 0) {
+			throw new InvalidConfigurationException(
+				$"{nameof(options.KontrolPlane.KontrolPlaneUpperElectionTimeoutMs)} must be greater than 0.");
+		}
+
+		if (options.KontrolPlane.KontrolPlaneAppointmentTimeoutMs <= 0) {
+			throw new InvalidConfigurationException(
+				$"{nameof(options.KontrolPlane.KontrolPlaneAppointmentTimeoutMs)} must be greater than 0.");
+		}
+
+		if (options.KontrolPlane.KontrolPlaneLowerElectionTimeoutMs >=
+			options.KontrolPlane.KontrolPlaneUpperElectionTimeoutMs) {
+			throw new InvalidConfigurationException(
+				$"{nameof(options.KontrolPlane.KontrolPlaneLowerElectionTimeoutMs)} must be less than " +
+				$"{nameof(options.KontrolPlane.KontrolPlaneUpperElectionTimeoutMs)}. Each Kontrol Plane node " +
+				$"picks its election timeout at random between the two.");
+		}
+
 		if (options.Cluster.Archiver && options.Database.UnsafeIgnoreHardDelete) {
 			throw new InvalidConfigurationException(
 				"The Archiving feature is not compatible with UnsafeIgnoreHardDelete.");
@@ -128,6 +185,12 @@ public static class ClusterVNodeOptionsValidator {
 				$"Note that since TLS is disabled the secret will be sent in clear text.");
 		}
 
+		if (options.Application.UsesClusterSecret() && !UsesHeaderSupportedCharacters(options.Cluster.ClusterSecret)) {
+			throw new InvalidConfigurationException(
+				$"The {nameof(options.Cluster.ClusterSecret)} contains unsupported characters. Use only " +
+				$"letters, digits and the characters - . _ ~ + / =");
+		}
+
 		if (!options.Application.UsesClusterSecret() && !string.IsNullOrEmpty(options.Cluster.ClusterSecret)) {
 			Log.Warning(
 				"A {clusterSecret} has been configured but will have no effect. It is only used for inter-node " +
@@ -136,6 +199,20 @@ public static class ClusterVNodeOptionsValidator {
 		}
 
 		return;
+
+		// The secret travels as the parameter of an HTTP Authorization header - see NodeHttpClientFactory,
+		// which writes it, and ClusterSecretAuthenticationProvider, which reads it back - and as the expected
+		// secret of the internal TCP service. These are the characters RFC 9110 allows in that header slot.
+		static bool UsesHeaderSupportedCharacters(string secret) {
+			const string supportedPunctuation = "-._~+/=";
+
+			foreach (var c in secret) {
+				if (!char.IsAsciiLetterOrDigit(c) && !supportedPunctuation.Contains(c))
+					return false;
+			}
+
+			return true;
+		}
 
 		static void ValidateDistinctDirectories(params ReadOnlySpan<(string Name, string Path)> directories) {
 			var names = new Dictionary<string, string>(directories.Length, StringComparer.Ordinal);
