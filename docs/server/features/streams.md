@@ -68,7 +68,7 @@ In KurrentDB, you cannot selectively delete events from the middle of a stream. 
 
 When you delete a stream, KurrentDB offers two options: **soft delete** or **hard delete**.
 
-**Soft delete** triggers scavenging, removing all events from the stream during the subsequent scavenging process. This allows for the reopening of the stream by appending new events.
+**Soft delete** marks the stream for scavenging, which physically deletes all events from the stream during the subsequent scavenging process. However, the stream can still be reopening by appending a new event.
 
 It's worth noting that the **`$all`** stream circumvents index checking. Deleted events within this stream remain readable until a scavenging process removes them. To understand the prerequisites for successful event removal through scavenging, refer to the [scavenging guide](../operations/scavenge.md).
 
