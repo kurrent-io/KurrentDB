@@ -13,6 +13,41 @@ Enabling the Kontrol Plane does not affect the clients, the gossip or replicatio
 
 The Kontrol Plane is a significant step in our strategy to support multiple databases and also to store distributed but ephemeral or mutable data such as distributed leases and checkpoints.
 
+## Quick start example configuration
+
+These examples show the settings that a typical deployment needs. The other Kontrol Plane settings,
+described below, have defaults that suit most deployments. TLS, certificates, gossip seeds and the
+rest of your configuration are unchanged, whether or not the Kontrol Plane is enabled.
+
+**Single node:**
+
+```
+IsDataPlaneNode: true
+IsKontrolPlaneNode: true
+```
+
+**Cluster node:** This is the configuration of `node1` in a three node cluster; each node seeds with
+the `KontrollerPort`s of the other two:
+
+```
+IsDataPlaneNode: true
+IsKontrolPlaneNode: true
+KontrolPlaneBootstrapSeed:
+  - node2.kurrentdb.example.com:3113
+  - node3.kurrentdb.example.com:3113
+```
+
+**Read-only replica:** It is a Data Plane node only, and seeds with the HTTP ports of all the Kontrol
+Plane nodes:
+
+```
+IsDataPlaneNode: true
+KontrolPlaneApiSeed:
+  - node1.kurrentdb.example.com:2113
+  - node2.kurrentdb.example.com:2113
+  - node3.kurrentdb.example.com:2113
+```
+
 ## Turning it on
 
 The role of a node is controlled with two flags: `IsDataPlaneNode` and `IsKontrolPlaneNode`.
