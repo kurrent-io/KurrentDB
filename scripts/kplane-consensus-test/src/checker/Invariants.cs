@@ -22,7 +22,18 @@ public static class Invariants {
 	// message does not silently switch a check off.
 	private const string AppointedOther = "Kontrol plane appointed [{leaderAddress}]";
 	private const string AppointedSelf = "Kontrol plane appointed this node as leader";
-	private const string OfflineTruncation = "OFFLINE TRUNCATION IS NEEDED";
+	// "ONLINE"/"OFFLINE TRUNCATION IS NEEDED" is a misleading pair: both branches shut the node
+	// down and truncate offline, and they differ only in whether the truncation point sits below
+	// lastIndexedPosition. A deposed leader discarding its un-replicated tail takes the "OFFLINE"
+	// branch routinely and is entirely correct, so keying on it reports normal failover as a fault.
+	//
+	// The product's own stronger signal is the Error it raises when the truncation crosses an epoch
+	// boundary with committed records behind it - which is what this keys on instead. Even that is
+	// documented as acceptable when a newly-appointed leader dies immediately after appointment, so
+	// at high fault rates treat it as something to investigate and let S4 settle whether anything
+	// was actually lost.
+	private const string CommittedRecordsTruncated = "ATTEMPT TO TRUNCATE EPOCH WITH COMMITTED RECORDS";
+	private const string TruncationNeeded = "TRUNCATION IS NEEDED";
 	private const string SlowQueue = "VERY SLOW QUEUE MSG";
 	private const string LegacyElections = "ELECTIONS:";
 	private const string UnhandledException = "Global Unhandled Exception";
@@ -104,13 +115,19 @@ public static class Invariants {
 	/// S3: offline truncation means the node found committed data it had to discard - the
 	/// clearest signal that the fence let something through.
 	/// </summary>
-	public static Check NoOfflineTruncation(IReadOnlyList<LogEvent> events) {
-		var hits = events.Where(e => e.TemplateContains(OfflineTruncation)).ToArray();
+	public static Check NoCommittedRecordsTruncated(IReadOnlyList<LogEvent> events) {
+		// Reported either way, because the rate of ordinary truncation is worth seeing.
+		var truncations = events.Count(e => e.TemplateContains(TruncationNeeded));
+		var hits = events.Where(e => e.TemplateContains(CommittedRecordsTruncated)).ToArray();
+
 		if (hits.Length == 0)
-			return Check.Pass("S3", "No offline truncation", "none");
+			return Check.Pass("S3", "No committed-record truncation",
+				$"none ({truncations} ordinary truncation(s) on failover)");
 
 		var detail = string.Join("; ", hits.Take(5).Select(e => $"{e.Node} @ {e.Timestamp:HH:mm:ss}"));
-		return Check.Fail("S3", "No offline truncation", $"{hits.Length} occurrence(s): {detail}");
+		return Check.Fail("S3", "No committed-record truncation",
+			$"{hits.Length} of {truncations} truncation(s) crossed an epoch with committed records: {detail}. " +
+			$"Expected when an appointed leader dies before replicating - check S4 for actual loss");
 	}
 
 	/// <summary>

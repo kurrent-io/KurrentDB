@@ -90,7 +90,7 @@ var checks = new List<Check> {
 	Invariants.DidSomething(appointments, events),
 	Invariants.SingleAppointeePerEpoch(appointments),
 	Invariants.EpochsAdvance(appointments),
-	Invariants.NoOfflineTruncation(events),
+	Invariants.NoCommittedRecordsTruncated(events),
 	Invariants.NoLegacyElections(events),
 	Invariants.NoUnexpectedCrash(events),
 	Invariants.NoSlowQueue(events, enforceSlowQueue),
