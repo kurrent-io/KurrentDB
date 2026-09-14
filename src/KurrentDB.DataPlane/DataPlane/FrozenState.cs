@@ -6,6 +6,8 @@ namespace KurrentDB.DataPlane;
 
 using KontrolPlane;
 
+// Data is frozen, no replication is happening to or from this node in the sense that
+// it is not contributing towards the commit process.
 internal class FrozenState : DatabaseState {
 	protected override Task RunAsync() => Task.CompletedTask;
 }

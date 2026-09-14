@@ -7,7 +7,6 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Settings;
-using Serilog;
 
 namespace KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 
@@ -21,21 +20,14 @@ public class NodeHttpClientFactory(
 		HttpMessageHandler httpMessageHandler;
 		if (uriScheme == Uri.UriSchemeHttps) {
 			var socketsHttpHandler = new SocketsHttpHandler {
-				SslOptions = {
-					CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-					RemoteCertificateValidationCallback = (sender, certificate, chain, errors) => {
-						var (isValid, error) = nodeCertificateValidator(certificate, chain, errors, additionalCertificateNames);
-						if (!isValid && error != null) {
-							Log.Error("Server certificate validation error: {e}", error);
-						}
-
-						return isValid;
-					},
-					LocalCertificateSelectionCallback = delegate {
-						return clientCertificateSelector();
-					}
-				},
-				PooledConnectionLifetime = ESConsts.HttpClientConnectionLifeTime
+				// TargetHost is provided later by SocketsHttpHandler according to the host of the request.
+				// We will accept the server identifying as that target or any of the additionalCertificateNames.
+				SslOptions = NodeSslOptions.CreateUntargetedClientOptions(
+					serverCertificateValidator: nodeCertificateValidator,
+					clientCertificateSelector: clientCertificateSelector,
+					additionalCertificateNames: additionalCertificateNames,
+					enabledSslProtocols: NodeTlsPolicy.SystemSslProtocols),
+				PooledConnectionLifetime = ESConsts.HttpClientConnectionLifeTime,
 			};
 
 			httpMessageHandler = socketsHttpHandler;

@@ -7,6 +7,7 @@ using System.Diagnostics.Metrics;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;
@@ -25,6 +26,8 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DataPlane.Transport.Grpc;
+using KurrentDB.KontrolPlane.Transport.Grpc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -42,6 +45,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using Serilog;
 using AuthenticationMiddleware = KurrentDB.Core.Services.Transport.Http.AuthenticationMiddleware;
+using AuthorizationOperations = EventStore.Plugins.Authorization.Operations;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
@@ -54,6 +58,7 @@ namespace KurrentDB.Core;
 
 public class ClusterVNodeStartup<TStreamId>
 	: IInternalStartup,
+		IHandle<SystemMessage.SystemStart>,
 		IHandle<SystemMessage.SystemReady>,
 		IHandle<SystemMessage.BecomeShuttingDown> {
 	private readonly ClusterVNodeOptions _options;
@@ -70,7 +75,10 @@ public class ClusterVNodeStartup<TStreamId>
 	private readonly StatusCheck _statusCheck;
 	private readonly Func<IServiceCollection, IServiceCollection> _configureNodeServices;
 	private readonly Action<IApplicationBuilder> _configureNode;
+	private static readonly Operation KontrolPlaneOperation = new(AuthorizationOperations.Node.KontrolPlane.Access);
+	private static readonly Operation DataPlaneOperation = new(AuthorizationOperations.Node.DataPlane.Access);
 
+	private bool _initialized;
 	private bool _ready;
 	private readonly IAuthorizationProvider _authorizationProvider;
 	private readonly IPublisher _httpMessageHandler;
@@ -158,6 +166,16 @@ public class ClusterVNodeStartup<TStreamId>
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
+
+		if (_options.KontrolPlane.IsKontrolPlaneNode)
+			app.MapGrpcService<GrpcKontrollerServer>().RequireAuthorization(RequireOperation(KontrolPlaneOperation));
+
+		if (_options.KontrolPlane.IsDataPlaneNode)
+			app.MapGrpcService<GrpcDataPlaneServer>().RequireAuthorization(RequireOperation(DataPlaneOperation));
+
+		Action<Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder> RequireOperation(Operation operation) =>
+			policy => policy.RequireAssertion(async context =>
+				await _authorizationProvider.CheckAccessAsync(context.User, operation, CancellationToken.None));
 
 #if DEBUG
 		app.MapGrpcReflectionService();
@@ -292,6 +310,7 @@ public class ClusterVNodeStartup<TStreamId>
 		// gRPC
 		services
 			.AddSingleton<LogRetriesInterceptor>()
+			.AddSingleton(new NotReadyInterceptor(() => _initialized))
 			.AddGrpc(options => {
 				var hostEnvironment = services
 					.BuildServiceProvider()
@@ -314,6 +333,8 @@ public class ClusterVNodeStartup<TStreamId>
 					options.ResponseCompressionLevel = compressionLevel;
 				}
 			})
+			.AddServiceOptions<GrpcKontrollerServer>(options => options.Interceptors.Add<NotReadyInterceptor>())
+			.AddServiceOptions<GrpcDataPlaneServer>(options => options.Interceptors.Add<NotReadyInterceptor>())
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 #if DEBUG
@@ -344,9 +365,14 @@ public class ClusterVNodeStartup<TStreamId>
 		}
 	}
 
+	public void Handle(SystemMessage.SystemStart _) => _initialized = true;
+
 	public void Handle(SystemMessage.SystemReady _) => _ready = true;
 
-	public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
+	public void Handle(SystemMessage.BecomeShuttingDown _) {
+		_initialized = false;
+		_ready = false;
+	}
 
 	private class StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
 		private readonly ClusterVNodeStartup<TStreamId> _startup = startup ?? throw new ArgumentNullException(nameof(startup));

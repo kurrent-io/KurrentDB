@@ -12,22 +12,31 @@ using EndPoint = System.Net.EndPoint;
 namespace KurrentDB.Core.Messages;
 
 public static partial class SystemMessage {
+	// Notice that the system is initializing
+	// Core services handle by initialising and sending ServiceInitialized
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemInit : Message {
 	}
 
+	// After a select subset of core services are initialised we send this
+	// Notice that the system is starting
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemStart : Message {
 	}
 
+	// Notice that we are ready to start subsystems
+	// - AuthenticationProvider is initialized
+	// - ClusterVNodeController is no longer in Initializing state
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemCoreReady : Message {
 	}
 
+	// Notice that subsystems are started
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemReady : Message {
 	}
 
+	// Core service response to SystemInit
 	[DerivedMessage(CoreMessage.System)]
 	public partial class ServiceInitialized : Message {
 		public readonly string ServiceName;
@@ -64,6 +73,9 @@ public static partial class SystemMessage {
 	public partial class RequestQueueDrained : Message {
 	}
 
+	// These trigger state changes, they are not requests for state changes.
+	// These should only be emitted by the ClusterVNodeController so that it is
+	// in full control of the transitions.
 	[DerivedMessage]
 	public abstract partial class StateChangeMessage : Message {
 		public readonly Guid CorrelationId;
@@ -306,6 +318,17 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class NoQuorumMessage : Message {
+	}
+
+	// Asks the node to stop taking part in replication.
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Freeze(IEnvelope<Frozen> envelope) : Message {
+		public IEnvelope<Frozen> Envelope => envelope;
+	}
+
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Frozen : Message {
+		public static readonly Frozen Instance = new();
 	}
 
 	[DerivedMessage(CoreMessage.System)]

@@ -917,6 +917,32 @@ public class when_elections_are_done : NodeGossipServiceTestFixture {
 	}
 }
 
+public class when_a_leader_is_appointed : NodeGossipServiceTestFixture {
+	protected override Message[] Given() =>
+		GivenSystemInitializedWithKnownGossipSeedSources(
+			new GossipMessage.GossipReceived(new NoopEnvelope(), new ClusterInfo(
+					MemberInfoForVNode(_currentNode, _timeProvider.UtcNow,
+						nodeState: VNodeState.Initializing),
+					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Initializing),
+					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow,
+						nodeState: VNodeState.Initializing)),
+				_nodeTwo.HttpEndPoint)
+		);
+
+	protected override Message When() =>
+		new ElectionMessage.LeaderAppointed(0,
+			MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader).ToLite());
+
+	[Test]
+	public void should_set_leader_node_and_other_nodes_to_unknown() {
+		ExpectMessages(
+			new GossipMessage.GossipUpdated(new ClusterInfo(
+				MemberInfoForVNode(_currentNode, _timeProvider.UtcNow, nodeState: VNodeState.Unknown),
+				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader),
+				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, nodeState: VNodeState.Unknown))));
+	}
+}
+
 public class when_updating_node_priority : NodeGossipServiceTestFixture {
 	private readonly int _nodePriority = new Random().Next();
 	protected override Message[] Given() => GivenSystemInitializedWithKnownGossipSeedSources();

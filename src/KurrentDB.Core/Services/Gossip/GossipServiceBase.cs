@@ -28,7 +28,8 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 	IHandle<SystemMessage.VNodeConnectionEstablished>,
 	IHandle<GossipMessage.GetGossipReceived>,
 	IHandle<GossipMessage.GetGossipFailed>,
-	IHandle<ElectionMessage.ElectionsDone> {
+	IHandle<ElectionMessage.ElectionsDone>,
+	IHandle<ElectionMessage.LeaderAppointed> {
 	public const int GossipRoundStartupThreshold = 20;
 	public static readonly TimeSpan DnsRetryTimeout = TimeSpan.FromMilliseconds(1000);
 	public static readonly TimeSpan GossipStartupInterval = TimeSpan.FromMilliseconds(100);
@@ -266,6 +267,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 		_bus.Publish(new GossipMessage.GossipUpdated(_cluster));
 	}
 
+	// Replication connection dropped so we tried to get gossip via grpc and couldn't.
 	public void Handle(GossipMessage.GetGossipFailed message) {
 		if (_state != GossipState.Working)
 			return;
@@ -294,14 +296,22 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 	}
 
 	public void Handle(ElectionMessage.ElectionsDone message) {
+		OnLeaderDecided(message.Leader.InstanceId, "Elections Done");
+	}
+
+	public void Handle(ElectionMessage.LeaderAppointed message) {
+		OnLeaderDecided(message.Leader.InstanceId, "Leader Appointed");
+	}
+
+	private void OnLeaderDecided(Guid instanceId, string description) {
 		var oldCluster = _cluster;
 		_cluster = UpdateCluster(_cluster,
-			x => x.InstanceId == message.Leader.InstanceId
+			x => x.InstanceId == instanceId
 				? x.Updated(_timeProvider.UtcNow, VNodeState.Leader)
 				: x.Updated(_timeProvider.UtcNow, VNodeState.Unknown),
 			_timeProvider, _deadMemberRemovalPeriod, CurrentRole);
 		if (_cluster.HasChangedSince(oldCluster))
-			LogClusterChange(oldCluster, _cluster, "Elections Done");
+			LogClusterChange(oldCluster, _cluster, description);
 		_bus.Publish(new GossipMessage.GossipUpdated(_cluster));
 	}
 
