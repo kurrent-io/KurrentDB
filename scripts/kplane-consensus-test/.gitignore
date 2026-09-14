@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 certs/
+conf/
 logs/
 ledger/
 bin/

@@ -170,7 +170,13 @@ runs on S1–S6, and on S4 above all.
 
 ## Configuration
 
-The node configs in `conf/` are JSON (valid YAML, which is what the server parses) and are adapted
+The node configs are **generated**, not checked in: `run.sh` runs `gen-conf.sh $CLUSTER_SIZE`
+before every run so that `ClusterSize` and the seed lists can never drift from the number of nodes
+actually started. Set `CLUSTER_SIZE` in `.env` to 3 or 5; five nodes adds node4 and node5 via the
+`n5` compose profile, and raises quorum to three so the cluster tolerates two simultaneous
+failures instead of one.
+
+The generated files in `conf/` are JSON (valid YAML, which is what the server parses) and are adapted
 from a known-good QA Kontrol Plane setup. Notable settings:
 
 - `IsKontrolPlaneNode` / `IsDataPlaneNode` — both true on every node; the validator currently

@@ -13,8 +13,23 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PROFILE="${1-chaos}"
+
+# CLUSTER_SIZE drives the node configs, which services start, and the diagnostics below, so the
+# three can never disagree about how big the cluster is. Only 3 and 5 are wired up.
+CLUSTER_SIZE=$(sed -n 's/^CLUSTER_SIZE=//p' .env 2>/dev/null | tail -1)
+CLUSTER_SIZE="${CLUSTER_SIZE:-3}"
+case "$CLUSTER_SIZE" in
+	3|5) ;;
+	*) echo "CLUSTER_SIZE must be 3 or 5, got '$CLUSTER_SIZE'" >&2; exit 2 ;;
+esac
+
 PROFILE_ARGS=()
 [ -n "$PROFILE" ] && PROFILE_ARGS=(--profile "$PROFILE")
+[ "$CLUSTER_SIZE" = 5 ] && PROFILE_ARGS+=(--profile n5)
+
+# Regenerated every run: ClusterSize and the seed lists must match what actually starts.
+./gen-conf.sh "$CLUSTER_SIZE"
+echo "running a $CLUSTER_SIZE-node cluster (quorum $(( CLUSTER_SIZE / 2 + 1 )))"
 
 cleanup() { docker compose "${PROFILE_ARGS[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
 
@@ -38,7 +53,7 @@ code=$(docker inspect kplane-checker --format '{{.State.ExitCode}}' 2>/dev/null 
 
 echo
 echo "=== nodes (each must be running again at the end) ==="
-for n in 1 2 3; do
+for n in $(seq 1 "$CLUSTER_SIZE"); do
 	printf '  kplane-node%s: ' "$n"
 	docker inspect "kplane-node$n" --format 'state={{.State.Status}} policyRestarts={{.RestartCount}}' 2>/dev/null || echo "gone"
 done
