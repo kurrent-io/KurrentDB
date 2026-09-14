@@ -20,6 +20,17 @@ cleanup() { docker compose "${PROFILE_ARGS[@]}" down -v --remove-orphans >/dev/n
 
 docker compose "${PROFILE_ARGS[@]}" up -d --build
 
+# Stop injecting faults the moment the checker starts verifying. Pumba has no shell and no total
+# duration, so it otherwise keeps killing nodes while the ledger is being read back - and at a high
+# fault rate the cluster never becomes readable, which turns the acknowledged-write check (the most
+# important one) into a permanent "inconclusive". The supervisor keeps running, so nodes still come
+# back for verification.
+(
+	docker compose logs -f checker 2>&1 | grep -q 'duration reached' || true
+	echo ">>> run finished, stopping fault injection before verification"
+	docker compose "${PROFILE_ARGS[@]}" stop chaos-crash chaos-hang >/dev/null 2>&1 || true
+) &
+
 # `logs -f` follows until the checker exits, so this both streams the run and blocks on it.
 docker compose logs -f checker || true
 
