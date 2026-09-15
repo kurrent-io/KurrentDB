@@ -63,8 +63,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		envelope.ReplyWith(ElectionMessage.LeadershipEnded.Instance);
 	}
 
-	private MemberInfoLite _leader;
-	private Guid _stateCorrelationId = Guid.NewGuid();
+	// Correlates state transitions associated with a given leadership.
+	private readonly LeadershipCorrelator _leadershipCorrelator = new();
+	// Regenerated if we reconnect to the leader
 	private Guid _leaderConnectionCorrelationId = Guid.NewGuid();
 	private Guid _subscriptionId = Guid.Empty;
 	private readonly int _clusterSize;
@@ -536,7 +537,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		Log.Information("========== [{httpEndPoint}] IS UNKNOWN...", _nodeInfo.HttpEndPoint);
 
 		State = VNodeState.Unknown;
-		_leader = null;
+		_leadershipCorrelator.ResetLeader();
 		await _outputBus.DispatchAsync(message, token);
 
 		if (_clusterIsUsingKontrolPlane) {
@@ -582,13 +583,17 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private ValueTask Handle(SystemMessage.InitiateLeaderResignation message, CancellationToken token) {
 		Log.Information("========== [{httpEndPoint}] IS INITIATING LEADER RESIGNATION...", _nodeInfo.HttpEndPoint);
 
-		return _fsm.HandleAsync(new SystemMessage.BecomeResigningLeader(_stateCorrelationId), token);
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out _, out var correlationId))
+			return ValueTask.CompletedTask;
+
+		return _fsm.HandleAsync(new SystemMessage.BecomeResigningLeader(correlationId), token);
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeResigningLeader message, CancellationToken token) {
-		Log.Information("========== [{httpEndPoint}] IS RESIGNING LEADER...", _nodeInfo.HttpEndPoint);
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out _))
 			return ValueTask.CompletedTask;
+
+		Log.Information("========== [{httpEndPoint}] IS RESIGNING LEADER...", _nodeInfo.HttpEndPoint);
 
 		State = VNodeState.ResigningLeader;
 		return _outputBus.DispatchAsync(message, token);
@@ -600,73 +605,59 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomePreReplica message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader, out var correlationId))
 			return;
 
 		Log.Information(
 			"========== [{httpEndPoint}] PRE-REPLICA STATE, WAITING FOR CHASER TO CATCH UP... LEADER IS [{masterHttp},{masterId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.PreReplica;
 		await _outputBus.DispatchAsync(message, token);
-		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(_stateCorrelationId, TimeSpan.Zero));
+		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(correlationId, TimeSpan.Zero));
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomePreReadOnlyReplica message, CancellationToken token) {
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader, out var correlationId))
 			return;
-
-		if (_leader is null)
-			throw new Exception("_leader == null");
 
 		Log.Information(
 			"========== [{httpEndPoint}] READ ONLY PRE-REPLICA STATE, WAITING FOR CHASER TO CATCH UP... LEADER IS [{leaderHttp},{leaderId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.PreReadOnlyReplica;
 		await _outputBus.DispatchAsync(message, token);
-		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(_stateCorrelationId, TimeSpan.Zero));
+		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(correlationId, TimeSpan.Zero));
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeCatchingUp message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader))
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS CATCHING UP... LEADER IS [{leaderHttp},{leaderId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.CatchingUp;
 		return _outputBus.DispatchAsync(message, token);
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeClone message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader))
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS CLONE... LEADER IS [{leaderHttp},{leaderId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.Clone;
 		return _outputBus.DispatchAsync(message, token);
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeFollower message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader))
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS FOLLOWER... LEADER IS [{leaderHttp},{leaderId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.Follower;
 		return _outputBus.DispatchAsync(message, token);
@@ -676,28 +667,23 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		Log.Information("========== [{httpEndPoint}] IS READ ONLY REPLICA WITH UNKNOWN LEADER...", _nodeInfo.HttpEndPoint);
 
 		State = VNodeState.ReadOnlyLeaderless;
-		_leader = null;
+		_leadershipCorrelator.ResetLeader();
 		return _outputBus.DispatchAsync(message, token);
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeReadOnlyReplica message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out var leader))
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS READ ONLY REPLICA... LEADER IS [{leaderHttp},{leaderId:B}]",
-			_nodeInfo.HttpEndPoint, _leader.HttpEndPoint, _leader.InstanceId);
+			_nodeInfo.HttpEndPoint, leader.HttpEndPoint, leader.InstanceId);
 
 		State = VNodeState.ReadOnlyReplica;
 		return _outputBus.DispatchAsync(message, token);
 	}
 
 	private async ValueTask Handle(SystemMessage.BecomePreLeader message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message, out _, out var correlationId))
 			return;
 
 		Log.Information("========== [{httpEndPoint}] PRE-LEADER STATE, WAITING FOR CHASER TO CATCH UP...",
@@ -705,17 +691,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 
 		State = VNodeState.PreLeader;
 		await _outputBus.DispatchAsync(message, token);
-		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(_stateCorrelationId, TimeSpan.Zero));
+		_mainQueue.Publish(new SystemMessage.WaitForChaserToCatchUp(correlationId, TimeSpan.Zero));
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeLeader message, CancellationToken token) {
 		if (State is VNodeState.Leader)
 			return ValueTask.FromException(new Exception("We should not BecomeLeader twice in a row."));
 
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
-
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message))
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS LEADER... SPARTA!", _nodeInfo.HttpEndPoint);
@@ -729,8 +712,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			return ValueTask.CompletedTask;
 
 		Log.Information("========== [{httpEndPoint}] IS SHUTTING DOWN...", _nodeInfo.HttpEndPoint);
-		_leader = null;
-		_stateCorrelationId = message.CorrelationId;
+		_leadershipCorrelator.ResetLeader();
 		_exitProcessOnShutdown = message.ExitProcess;
 		State = VNodeState.ShuttingDown;
 		_mainQueue.Publish(TimerMessage.Schedule.Create(ShutdownTimeout, _publishEnvelope,
@@ -760,9 +742,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(ElectionMessage.ElectionsDone message, CancellationToken token) {
-		if (_leader != null && _leader.InstanceId == message.Leader.InstanceId) {
+		if (_leadershipCorrelator.TryGetLeaderInfo(out var leader) && leader.InstanceId == message.Leader.InstanceId) {
 			//if the leader hasn't changed, we skip state changes through PreLeader or PreReplica
-			if (_leader.InstanceId == _nodeInfo.InstanceId && State == VNodeState.Leader) {
+			if (leader.InstanceId == _nodeInfo.InstanceId && State == VNodeState.Leader) {
 				//transitioning from leader to leader, we just write a new epoch
 				await _fsm.HandleAsync(new SystemMessage.WriteEpoch(message.ProposalNumber), token);
 			}
@@ -783,15 +765,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask OnLeaderDecided(Message message, MemberInfoLite leader, CancellationToken token) {
-		_leader = leader;
+		_leadershipCorrelator.SetLeader(leader, out var correlationId);
 		_subscriptionId = Guid.NewGuid();
-		_stateCorrelationId = Guid.NewGuid();
 		_leaderConnectionCorrelationId = Guid.NewGuid();
 		await _outputBus.DispatchAsync(message, token);
 
-		Message msg = _leader.InstanceId == _nodeInfo.InstanceId
-			? new SystemMessage.BecomePreLeader(_stateCorrelationId)
-			: new SystemMessage.BecomePreReplica(_stateCorrelationId, _leaderConnectionCorrelationId, _leader);
+		Message msg = leader.InstanceId == _nodeInfo.InstanceId
+			? new SystemMessage.BecomePreLeader(correlationId)
+			: new SystemMessage.BecomePreReplica(correlationId, _leaderConnectionCorrelationId, leader);
 
 		await _fsm.HandleAsync(msg, token);
 	}
@@ -892,7 +873,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -904,7 +885,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -916,7 +897,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -928,7 +909,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -940,7 +921,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -952,7 +933,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -964,7 +945,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (!message.RequireLeader)
 			return _outputBus.DispatchAsync(message, token);
 
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -973,77 +954,77 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void HandleAsNonLeader(ClientMessage.CreatePersistentSubscriptionToStream message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.ConnectToPersistentSubscriptionToStream message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.UpdatePersistentSubscriptionToStream message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.DeletePersistentSubscriptionToStream message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.CreatePersistentSubscriptionToAll message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.ConnectToPersistentSubscriptionToAll message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.UpdatePersistentSubscriptionToAll message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.DeletePersistentSubscriptionToAll message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.ReplayParkedMessages message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.ReplayParkedMessage message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 	}
 
 	private void HandleAsNonLeader(ClientMessage.TruncateParkedMessages message) {
-		if (_leader is null)
+		if (_leadershipCorrelator.LeaderIsUnknown)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
@@ -1116,7 +1097,8 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void DenyRequestBecauseNotLeader(Guid correlationId, IEnvelope envelope) {
-		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader, _nodeInfo.InstanceId);
+		_leadershipCorrelator.TryGetLeaderInfo(out var leaderInfo);
+		var leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, leaderInfo, _nodeInfo.InstanceId);
 		var endpoints = leaderInfoProvider.GetLeaderInfoEndPoints();
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
@@ -1205,7 +1187,8 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void DenyRequestBecauseReadOnly(Guid correlationId, IEnvelope envelope) {
-		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader, _nodeInfo.InstanceId);
+		_leadershipCorrelator.TryGetLeaderInfo(out var leaderInfo);
+		var leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, leaderInfo, _nodeInfo.InstanceId);
 		var endpoints = leaderInfoProvider.GetLeaderInfoEndPoints();
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
@@ -1223,12 +1206,12 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.VNodeConnectionLost message, CancellationToken token) {
-		if (_leader?.HasReplicationEndPoint(message.VNodeEndPoint) ?? false) // leader connection failed
+		if (_leadershipCorrelator.TryGetLeaderInfo(out var leader, out var correlationId) && leader.HasReplicationEndPoint(message.VNodeEndPoint)) // leader connection failed
 		{
 			_leaderConnectionCorrelationId = Guid.NewGuid();
 			var msg = State is VNodeState.PreReplica
-				? (Message)new ReplicationMessage.ReconnectToLeader(_leaderConnectionCorrelationId, _leader)
-				: new SystemMessage.BecomePreReplica(_stateCorrelationId, _leaderConnectionCorrelationId, _leader);
+				? (Message)new ReplicationMessage.ReconnectToLeader(_leaderConnectionCorrelationId, leader)
+				: new SystemMessage.BecomePreReplica(correlationId, _leaderConnectionCorrelationId, leader);
 			_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderReconnectionDelay, _publishEnvelope, msg));
 		}
 
@@ -1236,12 +1219,12 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsReadOnlyReplica(SystemMessage.VNodeConnectionLost message, CancellationToken token) {
-		if (_leader?.HasReplicationEndPoint(message.VNodeEndPoint) ?? false) // leader connection failed
+		if (_leadershipCorrelator.TryGetLeaderInfo(out var leader, out var correlationId) && leader.HasReplicationEndPoint(message.VNodeEndPoint)) // leader connection failed
 		{
 			_leaderConnectionCorrelationId = Guid.NewGuid();
 			var msg = State is VNodeState.PreReadOnlyReplica
-				? (Message)new ReplicationMessage.ReconnectToLeader(_leaderConnectionCorrelationId, _leader)
-				: new SystemMessage.BecomePreReadOnlyReplica(_stateCorrelationId, _leaderConnectionCorrelationId, _leader);
+				? (Message)new ReplicationMessage.ReconnectToLeader(_leaderConnectionCorrelationId, leader)
+				: new SystemMessage.BecomePreReadOnlyReplica(correlationId, _leaderConnectionCorrelationId, leader);
 			_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderReconnectionDelay, _publishEnvelope, msg));
 		}
 
@@ -1249,14 +1232,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsLeader(GossipMessage.GossipUpdated message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out var leader))
+			return ValueTask.FromException(new InvalidOperationException());
 
 		if (_clusterIsUsingKontrolPlane) {
 			// Don't start elections, KPlane will tell us what to do.
 		} else if (message.ClusterInfo.Members.Count(IsAliveLeader) > 1) {
 			Log.Debug("There are MULTIPLE LEADERS according to gossip, need to start elections. LEADER: [{leader}]",
-				_leader);
+				leader);
 			Log.Debug("GOSSIP:");
 			Log.Debug("{clusterInfo}", message.ClusterInfo);
 			_mainQueue.Publish(new ElectionMessage.StartElections());
@@ -1266,40 +1249,39 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask HandleAsReadOnlyReplica(GossipMessage.GossipUpdated message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out var leader))
+			throw new InvalidOperationException();
 
 		var aliveLeaders = message
 			.ClusterInfo
 			.Members
 			.Where(IsAliveLeader);
 
-		var leaderIsStillLeader = aliveLeaders.FirstOrDefault(x => x.InstanceId == _leader.InstanceId) is not null;
+		var leaderIsStillLeader = aliveLeaders.FirstOrDefault(x => x.InstanceId == leader.InstanceId) is not null;
 
 		if (!leaderIsStillLeader) {
 			var noLeader = !aliveLeaders.Any();
 			Log.Debug(
-				(noLeader ? "NO LEADER found" : "LEADER CHANGE detected") + " in READ ONLY PRE-REPLICA/READ ONLY REPLICA state. Proceeding to READ ONLY LEADERLESS STATE. CURRENT LEADER: [{leader}]", _leader);
-			_stateCorrelationId = Guid.NewGuid();
+				(noLeader ? "NO LEADER found" : "LEADER CHANGE detected") + " in READ ONLY PRE-REPLICA/READ ONLY REPLICA state. Proceeding to READ ONLY LEADERLESS STATE. CURRENT LEADER: [{leader}]", leader);
 			_leaderConnectionCorrelationId = Guid.NewGuid();
-			await _fsm.HandleAsync(new SystemMessage.BecomeReadOnlyLeaderless(_stateCorrelationId), token);
+			await _fsm.HandleAsync(new SystemMessage.BecomeReadOnlyLeaderless(Guid.NewGuid()), token);
 		}
 
 		await _outputBus.DispatchAsync(message, token);
 	}
 
 	private async ValueTask HandleAsReadOnlyLeaderLess(GossipMessage.GossipUpdated message, CancellationToken token) {
-		if (_leader is not null)
+		if (!_leadershipCorrelator.LeaderIsUnknown)
 			return;
 
 		var aliveLeaders = message.ClusterInfo.Members.Where(IsAliveLeader);
 		var leaderCount = aliveLeaders.Count();
 		if (leaderCount is 1) {
-			_leader = aliveLeaders.First().ToLite();
-			Log.Information("LEADER found in READ ONLY LEADERLESS state. LEADER: [{leader}]. Proceeding to READ ONLY PRE-REPLICA state.", _leader);
-			_stateCorrelationId = Guid.NewGuid();
+			var leader = aliveLeaders.First().ToLite();
+			_leadershipCorrelator.SetLeader(leader, out var correlationId);
+			Log.Information("LEADER found in READ ONLY LEADERLESS state. LEADER: [{leader}]. Proceeding to READ ONLY PRE-REPLICA state.", leader);
 			_leaderConnectionCorrelationId = Guid.NewGuid();
-			await _fsm.HandleAsync(new SystemMessage.BecomePreReadOnlyReplica(_stateCorrelationId, _leaderConnectionCorrelationId, _leader), token);
+			await _fsm.HandleAsync(new SystemMessage.BecomePreReadOnlyReplica(correlationId, _leaderConnectionCorrelationId, leader), token);
 		} else {
 			Log.Debug(
 				"{leadersFound} found in READ ONLY LEADERLESS state, making further attempts.",
@@ -1310,24 +1292,24 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsNonLeader(GossipMessage.GossipUpdated message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out var currentLeader))
+			return ValueTask.FromException(new InvalidOperationException());
 
 		if (_clusterIsUsingKontrolPlane) {
 			// Don't start elections. KPlane will tell us what to do.
 			return _outputBus.DispatchAsync(message, token);
 		}
 
-		var leader = message.ClusterInfo.Members.FirstOrDefault(x => x.InstanceId == _leader.InstanceId);
+		var leader = message.ClusterInfo.Members.FirstOrDefault(x => x.InstanceId == currentLeader.InstanceId);
 		if (leader is null or { IsAlive: false }) {
 			Log.Debug(
 				"There is NO LEADER or LEADER is DEAD according to GOSSIP. Starting new elections. LEADER: [{leader}].",
-				_leader);
+				currentLeader);
 			_mainQueue.Publish(new ElectionMessage.StartElections());
 		} else if (leader.State is not VNodeState.PreLeader and not VNodeState.Leader and not VNodeState.ResigningLeader) {
 			Log.Debug(
 				"LEADER node is still alive but is no longer in a LEADER state according to GOSSIP. Starting new elections. LEADER: [{leader}].",
-				_leader);
+				currentLeader);
 			_mainQueue.Publish(new ElectionMessage.StartElections());
 		}
 
@@ -1335,18 +1317,18 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask HandleAsDiscoverLeader(GossipMessage.GossipUpdated message, CancellationToken token) {
-		if (_leader is not null)
+		if (!_leadershipCorrelator.LeaderIsUnknown)
 			return;
 
 		var aliveLeaders = message.ClusterInfo.Members.Where(IsAliveLeader);
 		var leaderCount = aliveLeaders.Count();
 		if (leaderCount is 1) {
-			_leader = aliveLeaders.First().ToLite();
-			Log.Information("Existing LEADER found during LEADER DISCOVERY stage. LEADER: [{leader}]. Proceeding to PRE-REPLICA state.", _leader);
-			_mainQueue.Publish(new LeaderDiscoveryMessage.LeaderFound(_leader));
-			_stateCorrelationId = Guid.NewGuid();
+			var leader = aliveLeaders.First().ToLite();
+			_leadershipCorrelator.SetLeader(leader, out var correlationId);
+			Log.Information("Existing LEADER found during LEADER DISCOVERY stage. LEADER: [{leader}]. Proceeding to PRE-REPLICA state.", leader);
+			_mainQueue.Publish(new LeaderDiscoveryMessage.LeaderFound(leader));
 			_leaderConnectionCorrelationId = Guid.NewGuid();
-			await _fsm.HandleAsync(new SystemMessage.BecomePreReplica(_stateCorrelationId, _leaderConnectionCorrelationId, _leader), token);
+			await _fsm.HandleAsync(new SystemMessage.BecomePreReplica(correlationId, _leaderConnectionCorrelationId, leader), token);
 		} else {
 			Log.Debug(
 				"{leadersFound} found during LEADER DISCOVERY stage, making further attempts.",
@@ -1357,7 +1339,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsDiscoverLeader(LeaderDiscoveryMessage.DiscoveryTimeout _, CancellationToken token) {
-		if (_leader is not null)
+		if (!_leadershipCorrelator.LeaderIsUnknown)
 			return ValueTask.CompletedTask;
 
 		Log.Information("LEADER DISCOVERY timed out. Proceeding to UNKNOWN state.");
@@ -1377,41 +1359,41 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.WaitForChaserToCatchUp message, CancellationToken token) {
-		return message.CorrelationId == _stateCorrelationId
+		return _leadershipCorrelator.IsCorrelatedWith(message.CorrelationId)
 			? _outputBus.DispatchAsync(message, token)
 			: ValueTask.CompletedTask;
 	}
 
 	private ValueTask HandleAsPreLeader(SystemMessage.ChaserCaughtUp message, CancellationToken token) {
-		if (_leader is null)
-			return ValueTask.FromException(new Exception("_leader == null"));
+		if (_leadershipCorrelator.LeaderIsUnknown)
+			return ValueTask.FromException(new InvalidOperationException());
 
-		return _stateCorrelationId == message.CorrelationId
+		return _leadershipCorrelator.IsCorrelatedWith(message.CorrelationId)
 			? _outputBus.DispatchAsync(message, token)
 			: ValueTask.CompletedTask;
 	}
 
 	private async ValueTask HandleAsPreReplica(SystemMessage.ChaserCaughtUp message, CancellationToken token) {
-		if (_leader is null)
-			throw new Exception("_leader == null");
+		if (_leadershipCorrelator.LeaderIsUnknown)
+			throw new InvalidOperationException();
 
-		if (_stateCorrelationId != message.CorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message.CorrelationId, out var leader, out var correlationId))
 			return;
 
 		await _outputBus.DispatchAsync(message, token);
 		await _fsm.HandleAsync(
-			new ReplicationMessage.SubscribeToLeader(_stateCorrelationId, _leader.InstanceId, Guid.NewGuid()), token);
+			new ReplicationMessage.SubscribeToLeader(correlationId, leader.InstanceId, Guid.NewGuid()), token);
 	}
 
 	private ValueTask Handle(ReplicationMessage.ReconnectToLeader message, CancellationToken token) {
-		return _leader.InstanceId == message.Leader.InstanceId
+		return _leadershipCorrelator.TryGetLeaderInfo(out var leader) && leader.InstanceId == message.Leader.InstanceId
 			   && _leaderConnectionCorrelationId == message.ConnectionCorrelationId
 			? _outputBus.DispatchAsync(message, token)
 			: ValueTask.CompletedTask;
 	}
 
 	private ValueTask Handle(ReplicationMessage.LeaderConnectionFailed message, CancellationToken token) {
-		if (_leader.InstanceId != message.Leader.InstanceId ||
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out var leader) || leader.InstanceId != message.Leader.InstanceId ||
 			_leaderConnectionCorrelationId != message.LeaderConnectionCorrelationId)
 			return ValueTask.CompletedTask;
 
@@ -1423,13 +1405,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(ReplicationMessage.SubscribeToLeader message, CancellationToken token) {
-		if (message.LeaderId != _leader.InstanceId || _stateCorrelationId != message.StateCorrelationId)
+		if (!_leadershipCorrelator.IsCorrelatedWith(message.StateCorrelationId, out var leader, out var correlationId) || message.LeaderId != leader.InstanceId)
 			return;
 
 		_subscriptionId = message.SubscriptionId;
 		await _outputBus.DispatchAsync(message, token);
 
-		var msg = new ReplicationMessage.SubscribeToLeader(_stateCorrelationId, _leader.InstanceId, Guid.NewGuid());
+		var msg = new ReplicationMessage.SubscribeToLeader(correlationId, leader.InstanceId, Guid.NewGuid());
 		_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderSubscriptionTimeout, _publishEnvelope, msg));
 	}
 
@@ -1437,22 +1419,22 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		// ReplicaSubscriptionRetry means the node isn't ready to replicate yet or it wasn't the node we were intending
 		// to replicate from (the leaderId on the request didn't match the instanceId of the node)
 		// Therefore it is ok if the leaderId doesn't match; we don't need to ensure it, we just skip handling the message.
-		if (IsLegitimateReplicationMessage(message, ensureLeaderIdMatch: false)) {
+		if (IsLegitimateReplicationMessage(message, out var leader, out var correlationId, ensureLeaderIdMatch: false)) {
 			await _outputBus.DispatchAsync(message, token);
 
-			var msg = new ReplicationMessage.SubscribeToLeader(_stateCorrelationId, _leader.InstanceId,
+			var msg = new ReplicationMessage.SubscribeToLeader(correlationId, leader.InstanceId,
 				Guid.NewGuid());
 			_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderSubscriptionRetryDelay, _publishEnvelope, msg));
 		}
 	}
 
 	private async ValueTask Handle(ReplicationMessage.ReplicaSubscribed message, CancellationToken token) {
-		if (IsLegitimateReplicationMessage(message)) {
+		if (IsLegitimateReplicationMessage(message, out var leader, out var correlationId)) {
 			await _outputBus.DispatchAsync(message, token);
 
 			Message msg = _nodeInfo.IsReadOnlyReplica
-				? new SystemMessage.BecomeReadOnlyReplica(_stateCorrelationId, _leader)
-				: new SystemMessage.BecomeCatchingUp(_stateCorrelationId, _leader);
+				? new SystemMessage.BecomeReadOnlyReplica(correlationId, leader)
+				: new SystemMessage.BecomeCatchingUp(correlationId, leader);
 
 			await _fsm.HandleAsync(msg, token);
 		}
@@ -1460,7 +1442,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 
 	private ValueTask ForwardReplicationMessage<T>(T message, CancellationToken token) where T : Message, ReplicationMessage.IReplicationMessage {
 		try {
-			return IsLegitimateReplicationMessage(message)
+			return IsLegitimateReplicationMessage(message, out _, out _)
 				? _outputBus.DispatchAsync(message, token)
 				: ValueTask.CompletedTask;
 		} catch (Exception ex) {
@@ -1469,37 +1451,37 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(ReplicationMessage.FollowerAssignment message, CancellationToken token) {
-		if (IsLegitimateReplicationMessage(message)) {
+		if (IsLegitimateReplicationMessage(message, out var leader, out var correlationId)) {
 			Log.Information(
 				"========== [{httpEndPoint}] FOLLOWER ASSIGNMENT RECEIVED FROM [{replicationEndPoint},{leaderId:B}].",
 				_nodeInfo.HttpEndPoint,
-				_leader.ReplicationEndPoint,
+				leader.ReplicationEndPoint,
 				message.LeaderId);
 			await _outputBus.DispatchAsync(message, token);
-			await _fsm.HandleAsync(new SystemMessage.BecomeFollower(_stateCorrelationId, _leader), token);
+			await _fsm.HandleAsync(new SystemMessage.BecomeFollower(correlationId, leader), token);
 		}
 	}
 
 	private async ValueTask Handle(ReplicationMessage.CloneAssignment message, CancellationToken token) {
-		if (IsLegitimateReplicationMessage(message)) {
+		if (IsLegitimateReplicationMessage(message, out var leader, out var correlationId)) {
 			Log.Information(
 				"========== [{httpEndPoint}] CLONE ASSIGNMENT RECEIVED FROM [{replicationEndPoint},{leaderId:B}].",
 				_nodeInfo.HttpEndPoint,
-				_leader.ReplicationEndPoint,
+				leader.ReplicationEndPoint,
 				message.LeaderId);
 			await _outputBus.DispatchAsync(message, token);
-			await _fsm.HandleAsync(new SystemMessage.BecomeClone(_stateCorrelationId, _leader), token);
+			await _fsm.HandleAsync(new SystemMessage.BecomeClone(correlationId, leader), token);
 		}
 	}
 
 	private ValueTask Handle(ReplicationMessage.DropSubscription message, CancellationToken token) {
 		ValueTask task;
 		try {
-			if (IsLegitimateReplicationMessage(message)) {
+			if (IsLegitimateReplicationMessage(message, out var leader, out _)) {
 				Log.Information(
 					"========== [{httpEndPoint}] DROP SUBSCRIPTION REQUEST RECEIVED FROM [{replicationEndPoint},{leaderId:B}]. THIS MEANS THAT THERE IS A SURPLUS OF NODES IN THE CLUSTER, SHUTTING DOWN.",
 					_nodeInfo.HttpEndPoint,
-					_leader.ReplicationEndPoint,
+					leader.ReplicationEndPoint,
 					message.LeaderId);
 				task = _outputBus.DispatchAsync(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true), token);
 			} else {
@@ -1512,7 +1494,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		return task;
 	}
 
-	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message, bool ensureLeaderIdMatch = true) {
+	private bool IsLegitimateReplicationMessage(ReplicationMessage.IReplicationMessage message, out MemberInfoLite leader, out Guid correlationId, bool ensureLeaderIdMatch = true) {
+		leader = default;
+		correlationId = default;
 		if (message.SubscriptionId == Guid.Empty)
 			throw new Exception("IReplicationMessage with empty SubscriptionId provided.");
 		if (message.SubscriptionId != _subscriptionId) {
@@ -1522,19 +1506,19 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			return false;
 		}
 
-		if (_leader == null || _leader.InstanceId != message.LeaderId) {
+		if (!_leadershipCorrelator.TryGetLeaderInfo(out leader, out correlationId) || leader.InstanceId != message.LeaderId) {
 			// it is ok for instanceId not to match for ReplicaSubscriptionRetry
 			Log.Write(
 				ensureLeaderIdMatch ? LogEventLevel.Fatal : LogEventLevel.Debug,
 				"{messageType} message passed SubscriptionId check, but leader is either null or wrong. " +
 				"Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
-				message.GetType().Name, message.LeaderId, _leader);
+				message.GetType().Name, message.LeaderId, leader);
 
 			if (ensureLeaderIdMatch) {
 				Application.Exit(ExitCode.Error, string.Format(
 					"{0} message passed SubscriptionId check, but leader is either null or wrong. " +
 					"Message.Leader: [{1:B}], VNode Leader: {2}.",
-					message.GetType().Name, message.LeaderId, _leader));
+					message.GetType().Name, message.LeaderId, leader));
 			}
 
 			return false;
@@ -1576,7 +1560,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		Debug.Assert(State is VNodeState.ShuttingDown);
 
 		await _db.Close(token);
-		await _fsm.HandleAsync(new SystemMessage.BecomeShutdown(_stateCorrelationId), token);
+		await _fsm.HandleAsync(new SystemMessage.BecomeShutdown(Guid.NewGuid()), token);
 	}
 
 	private static bool IsAliveLeader(MemberInfo member)
