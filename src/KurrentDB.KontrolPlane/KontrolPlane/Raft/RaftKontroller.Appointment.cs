@@ -207,24 +207,18 @@ partial class RaftKontroller {
 		     nodes.Count > 0 && await BumpEpochAsync(databaseId, currentEpoch, ref newEpoch, token);
 		     responses.Clear()) {
 			int quorum;
-			using (var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token)) {
-				await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes,
-					               tokenSource.Token)) {
-					try {
-						var pair = await task;
-						responses.Add(pair.Key, pair.Value);
 
-						if (responses.Count >= quorum) {
-							// Don't break the loop, we want to make sure
-							// that all background tasks related to the network access are finished
-							await tokenSource.CancelAsync();
-						}
-					} catch (Exception) when (token.IsCancellationRequested) {
-						responses.Clear();
-						goto exit; // cancellation requested, abort appointment
-					} catch (Exception) {
-						// member is unavailable, don't add it to a collection of successful responses
-					}
+			// Do not wait for quorum, because this violates the data consistency, since DPlane Follower can send ACK
+			// back to DPlane leader before the flush.
+			await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes, token)) {
+				try {
+					var pair = await task;
+					responses.Add(pair.Key, pair.Value);
+				} catch (Exception) when (token.IsCancellationRequested) {
+					responses.Clear();
+					goto exit; // cancellation requested, abort appointment
+				} catch (Exception) {
+					// member is unavailable, don't add it to a collection of successful responses
 				}
 			}
 
