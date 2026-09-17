@@ -81,7 +81,7 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 			var result = new List<EndPoint>(addresses.Count) { kplaneLeader };
 
 			for (var i = 0; i < addresses.Count; i++) {
-				var address = addresses[0].ToEndPoint();
+				var address = addresses[i].ToEndPoint();
 				if (!address.Equals(kplaneLeader))
 					result.Add(address);
 			}
