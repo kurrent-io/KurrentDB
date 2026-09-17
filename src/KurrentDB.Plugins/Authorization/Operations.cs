@@ -80,6 +80,16 @@ public static class Operations {
 			public static readonly OperationDefinition ClientRead = new($"{Resource}/client", "read");
 		}
 
+		public static class KontrolPlane {
+			const string Resource = $"{Node.Resource}/kontrolPlane";
+			public static readonly OperationDefinition Access = new(Resource, "access");
+		}
+
+		public static class DataPlane {
+			const string Resource = $"{Node.Resource}/dataPlane";
+			public static readonly OperationDefinition Access = new(Resource, "access");
+		}
+
 		public static class Transform {
 			const string Resource = "transform";
 			public static readonly OperationDefinition Set = new(Resource, "set");

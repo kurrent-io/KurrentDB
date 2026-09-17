@@ -166,11 +166,11 @@ public class MemberInfo : IEquatable<MemberInfo> {
 
 	public bool Is(EndPoint endPoint) {
 		return endPoint != null
-			   && HttpEndPoint.EndPointEquals(endPoint)
+			   && (HttpEndPoint.EndPointEquals(endPoint)
 				  || (InternalTcpEndPoint != null && InternalTcpEndPoint.EndPointEquals(endPoint))
 				  || (InternalSecureTcpEndPoint != null && InternalSecureTcpEndPoint.EndPointEquals(endPoint))
 				  || (ExternalTcpEndPoint != null && ExternalTcpEndPoint.EndPointEquals(endPoint))
-				  || (ExternalSecureTcpEndPoint != null && ExternalSecureTcpEndPoint.EndPointEquals(endPoint));
+				  || (ExternalSecureTcpEndPoint != null && ExternalSecureTcpEndPoint.EndPointEquals(endPoint)));
 	}
 
 	public MemberInfo Updated(DateTime utcNow,
@@ -217,6 +217,21 @@ public class MemberInfo : IEquatable<MemberInfo> {
 			$"Version: {ESVersion}] " +
 			$"{LastCommitPosition}/{WriterCheckpoint}/{ChaserCheckpoint}/E{EpochNumber}@{EpochPosition}:{EpochId:B} | {TimeStamp:yyyy-MM-dd HH:mm:ss.fff}";
 	}
+
+	public MemberInfoLite ToLite() => new() {
+		InstanceId = InstanceId,
+		HttpEndPoint = HttpEndPoint,
+		ReplicationEndPoint = InternalTcpEndPoint ?? InternalSecureTcpEndPoint,
+		ClientHttpEndPoint = MemberInfoLite.ToClientEndPoint(
+			endPoint: HttpEndPoint,
+			advertiseHost: AdvertiseHostToClientAs,
+			advertisePort: AdvertiseHttpPortToClientAs),
+		ClientTcpPort = MemberInfoLite.ToClientTcpPort(
+			endPoint: ExternalTcpEndPoint ?? ExternalSecureTcpEndPoint,
+			advertisePort: AdvertiseTcpPortToClientAs),
+		ClientTcpApiIsSecure = ExternalSecureTcpEndPoint is not null,
+		EpochNumber = EpochNumber,
+	};
 
 	public bool Equals(MemberInfo other) {
 		// we ignore timestamp and checkpoints for equality comparison

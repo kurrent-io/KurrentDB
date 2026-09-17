@@ -73,9 +73,11 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	private void WriteStateCompleted(Action<ResolvedEvent, OperationResult> completed, ResolvedEvent ev,
 		ClientMessage.WriteEventsCompleted msg, DateTime parkedMessageAdded) {
 
-		_lastParkedEventNumber = msg.LastEventNumbers.Single;
-		if (_oldestParkedMessage == null)
-			_oldestParkedMessage = parkedMessageAdded.ToUniversalTime();
+		if (msg.Result == OperationResult.Success) {
+			_lastParkedEventNumber = msg.LastEventNumbers.Single;
+			_oldestParkedMessage ??= parkedMessageAdded.ToUniversalTime();
+		}
+
 		completed?.Invoke(ev, msg.Result);
 	}
 

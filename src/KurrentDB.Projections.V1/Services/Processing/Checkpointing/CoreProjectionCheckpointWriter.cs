@@ -172,7 +172,10 @@ public class CoreProjectionCheckpointWriter {
 		_writeRequestId = _ioDispatcher.WriteEvent(
 			_projectionCheckpointStreamId, _lastWrittenCheckpointEventNumber, _checkpointEventToBePublished,
 			SystemAccounts.System,
-			msg => WriteCheckpointEventCompleted(_projectionCheckpointStreamId, msg.Result, msg.FirstEventNumbers.Single));
+			msg => {
+				var eventNumber = msg.Result == OperationResult.Success ? msg.FirstEventNumbers.Single : EventNumber.Invalid;
+				WriteCheckpointEventCompleted(_projectionCheckpointStreamId, msg.Result, eventNumber);
+			});
 	}
 
 	private void CheckpointSizeCheck() {

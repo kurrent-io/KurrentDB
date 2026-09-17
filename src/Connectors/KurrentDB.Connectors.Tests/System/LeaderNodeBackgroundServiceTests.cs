@@ -72,7 +72,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuting();
 
-			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
@@ -113,7 +113,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuting();
 
-			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 			await sut.WaitUntilExecuted();
 			await Task.Delay(1000, cancellator.Token);
@@ -122,7 +122,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuting();
 
-			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 			await sut.WaitUntilExecuted();
 			await Task.Delay(1000, cancellator.Token);
@@ -272,7 +272,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuting();
 
-			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 			await sut.WaitUntilExecuted();
 

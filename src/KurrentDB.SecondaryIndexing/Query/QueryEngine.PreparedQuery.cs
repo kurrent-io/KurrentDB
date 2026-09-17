@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using DotNext.IO;
 using DotNext.Text;
 

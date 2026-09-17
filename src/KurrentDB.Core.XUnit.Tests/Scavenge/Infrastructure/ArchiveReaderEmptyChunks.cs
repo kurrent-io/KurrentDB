@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Core.Services.Archive.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;

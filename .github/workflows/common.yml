@@ -79,6 +79,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     -  
       name: Docker Compose Smoke Test
+      env:
+        KURRENTDB__LICENSING__LICENSE_KEY: ${{ secrets.KURRENTDB_TEST_LICENSE_KEY }}
       run: |
         RUNTIME=linux-amd64 docker compose build
         docker compose up --detach

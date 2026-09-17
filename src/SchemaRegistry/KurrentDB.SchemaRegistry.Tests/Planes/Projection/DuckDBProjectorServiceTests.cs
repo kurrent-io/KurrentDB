@@ -40,7 +40,7 @@ public class DuckDBProjectorServiceTests : SchemaApplicationTestFixture {
 		executing.IsCancellationRequested.ShouldBeFalse();
 
 		// Act
-		MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
+		MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo.ToLite()));
 
 		await Task.Delay(1000, cancellationToken);
 

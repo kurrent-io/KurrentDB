@@ -11,6 +11,8 @@
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="RestSharp" />
     <PackageReference Include="Testcontainers" />
+    <!-- Override vulnerable transitive (pulled by Testcontainers). -->
+    <PackageReference Include="SSH.NET" />
     <PackageReference Include="Grpc.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

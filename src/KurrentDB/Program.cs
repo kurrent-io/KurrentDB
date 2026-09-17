@@ -318,6 +318,9 @@ try {
 			builder.Services.AddSingleton<PluginsService>();
 			builder.Services.AddScoped<UserManagementService>();
 			builder.Services.AddScoped<ClusterOperationsService>();
+			// Optional resolution: IKontroller is only registered on a Kontrol Plane node.
+			builder.Services.AddScoped(sp =>
+				new KontrolPlaneService(sp.GetService<KurrentDB.KontrolPlane.IKontroller>()));
 			// Process-wide node-role tracker (subscribes to $mem-node-state); shared by all UI circuits.
 			builder.Services.AddSingleton<KurrentDB.Components.Cluster.GossipMonitor>();
 			builder.Services.AddSingleton<IHostedService>(sp =>
@@ -351,6 +354,11 @@ try {
 			builder.Services.Decorate<IHostedService, HostedServiceLifecycleDecorator>();
 
 			var app = builder.Build();
+
+			// ahead of Startup.Configure, which sets up routing and the endpoints: a Blazor circuit request
+			// would otherwise be handled by its endpoint before reaching this middleware
+			if (!options.Interface.DisableAdminUi)
+				app.UseMiddleware<BlazorShutdownMiddleware>();
 
 			hostedService.Node.Startup.Configure(app);
 			if (!options.Interface.DisableAdminUi) {

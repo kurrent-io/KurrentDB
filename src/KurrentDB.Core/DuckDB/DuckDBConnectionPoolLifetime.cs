@@ -78,6 +78,10 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 			["temp_directory"] = _tempDirectory,
+			// security settings
+			["allow_community_extensions"] = "false",
+			["enable_external_access"] = "false",
+			["lock_configuration"] = "true",
 		};
 
 		if (_maxTempDirectorySizeBytes > 0L)

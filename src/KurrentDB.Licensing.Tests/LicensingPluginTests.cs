@@ -23,9 +23,11 @@ public sealed class LicensingPluginTests : IAsyncLifetime {
 
 	public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
+	// isSingleNode: these tests are about the /license endpoint, not the multi-node cluster
+	// entitlement check (see MultiNodeClusterLicenseMonitorTests).
 	private static LicensingPlugin CreateUnLicensedSutAsync() {
 		return new LicensingPlugin(
-			isSingleNode: false,
+			isSingleNode: true,
 			ex => { },
 			new AdHocLicenseProvider(new Exception("license is expired, say")));
 	}
@@ -33,7 +35,7 @@ public sealed class LicensingPluginTests : IAsyncLifetime {
 	private static async Task<LicensingPlugin> CreateLicensedSutAsync(Dictionary<string, object> claims) {
 		var license = await License.CreateAsync(claims);
 		return new LicensingPlugin(
-			isSingleNode: false,
+			isSingleNode: true,
 			ex => { },
 			new AdHocLicenseProvider(license));
 	}

@@ -46,7 +46,9 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.DataPlane\KurrentDB.DataPlane.csproj" />
 		<ProjectReference Include="..\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" />
+		<ProjectReference Include="..\KurrentDB.KontrolPlane\KurrentDB.KontrolPlane.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
 		<ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />

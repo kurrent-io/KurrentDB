@@ -10,9 +10,9 @@ namespace KurrentDB.Core.Messages;
 public static partial class LeaderDiscoveryMessage {
 	[DerivedMessage(CoreMessage.LeaderDiscovery)]
 	public partial class LeaderFound : Message {
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 
-		public LeaderFound(MemberInfo leader) {
+		public LeaderFound(MemberInfoLite leader) {
 			Ensure.NotNull(leader, "leader");
 			Leader = leader;
 		}

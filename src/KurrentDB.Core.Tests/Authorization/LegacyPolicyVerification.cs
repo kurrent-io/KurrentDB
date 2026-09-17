@@ -370,6 +370,8 @@ public class LegacyPolicyVerification {
 			yield return CreateOperation(Operations.Node.Elections.LeaderIsResigning);
 			yield return CreateOperation(Operations.Node.Elections.LeaderIsResigningOk);
 			yield return CreateOperation(Operations.Node.Gossip.Read);
+			yield return CreateOperation(Operations.Node.KontrolPlane.Access);
+			yield return CreateOperation(Operations.Node.DataPlane.Access);
 		}
 
 		IEnumerable<(Operation, string, StorageMessage.EffectiveAcl)> AdminOperations() {

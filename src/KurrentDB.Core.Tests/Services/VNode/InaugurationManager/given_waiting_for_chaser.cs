@@ -11,7 +11,7 @@ namespace KurrentDB.Core.Tests.Services.VNode.InaugurationManager;
 [TestFixture]
 public class given_waiting_for_chaser : InaugurationManagerTests {
 	protected override void Given() {
-		_sut.Handle(new ElectionMessage.ElectionsDone(123, _epochNumber, _leader));
+		_sut.Handle(new ElectionMessage.ElectionsDone(123, _epochNumber, _leader.ToLite()));
 		_sut.Handle(new SystemMessage.BecomePreLeader(_correlationId1));
 		_publisher.Messages.Clear();
 	}

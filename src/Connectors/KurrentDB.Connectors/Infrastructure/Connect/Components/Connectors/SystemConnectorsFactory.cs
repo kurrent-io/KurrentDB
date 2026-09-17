@@ -45,8 +45,6 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     SystemConnectorsFactoryOptions Options  { get; } = options;
     IServiceProvider               Services { get; } = services;
 
-    static DisposeCallback? OnDisposeCallback;
-
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
         var options       = configuration.GetRequiredOptions<ConnectorOptions>();
         var validator     = Services.GetRequiredService<IConnectorValidator>();
@@ -86,29 +84,37 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
                 connector = new SqlReducerSink(connector, reducer);
 	        }
 
-	        ConnectorMetrics.TrackSinkConnectorCreated(connector.GetType(), connectorId);
+	        Type instanceType = connector.GetType();
 
-	        OnDisposeCallback = () => ConnectorMetrics.TrackSinkConnectorClosed(connector.GetType(), connectorId);
+	        ConnectorMetrics.TrackSinkConnectorCreated(instanceType, connectorId);
 
 	        var sinkProxy = new SinkProxy(connectorId, connector, config, Services);
 
 	        var processor = ConfigureSinkProcessor(connectorId, Options.Interceptors, sinkOptions, sinkProxy);
 
-	        return new SinkConnector(processor, sinkProxy);
+	        return new SinkConnector(
+		        processor,
+		        sinkProxy,
+		        () => ConnectorMetrics.TrackSinkConnectorClosed(instanceType, connectorId)
+	        );
         }
 
         SourceConnector CreateSourceConnector() {
 	        var sourceOptions = configuration.GetRequiredOptions<SourceOptions>();
 
-	        ConnectorMetrics.TrackSourceConnectorCreated(connector.GetType(), connectorId);
+	        Type instanceType = connector.GetType();
 
-	        OnDisposeCallback = () => ConnectorMetrics.TrackSourceConnectorClosed(connector.GetType(), connectorId);
+	        ConnectorMetrics.TrackSourceConnectorCreated(instanceType, connectorId);
 
 	        var sourceProxy = new SourceProxy(connectorId, connector, configuration, Services);
 
 	        var processor = ConfigureSourceProcessor(connectorId, Options.Interceptors, sourceOptions, sourceProxy);
 
-	        return new SourceConnector(connectorId, processor);
+	        return new SourceConnector(
+		        connectorId,
+		        processor,
+		        () => ConnectorMetrics.TrackSourceConnectorClosed(instanceType, connectorId)
+	        );
         }
 
         dynamic CreateConnectorInstance(string connectorTypeName) {
@@ -215,7 +221,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         return new SourceProcessor(connectorId, interceptors, producer, sourceProxy, loggingOptions);
     }
 
-    sealed class SinkConnector(IProcessor processor, SinkProxy sinkProxy) : IConnector {
+    sealed class SinkConnector(IProcessor processor, SinkProxy sinkProxy, DisposeCallback disposeCallback) : IConnector {
         public ConnectorId    ConnectorId { get; } = ConnectorId.From(processor.ProcessorId);
         public ConnectorState State       { get; } = (ConnectorState)processor.State;
 
@@ -227,28 +233,47 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         }
 
         public async ValueTask DisposeAsync() {
-            await sinkProxy.DisposeAsync();
-            await processor.DisposeAsync();
-            OnDisposeCallback?.Invoke();
+            // the processor is disposed even when the sink fails to close, and the
+            // connector stops counting as active either way, otherwise a sink that
+            // cannot be closed leaves work running and is counted forever
+            try {
+                await sinkProxy.DisposeAsync();
+            }
+            finally {
+                try {
+                    await processor.DisposeAsync();
+                }
+                finally {
+                    disposeCallback.Invoke();
+                }
+            }
         }
     }
 
-    sealed class SourceConnector(ConnectorId connectorId, IProcessor SourceProcessor) : BackgroundService, IConnector {
+    sealed class SourceConnector(ConnectorId connectorId, IProcessor sourceProcessor, DisposeCallback disposeCallback) : BackgroundService, IConnector {
         public ConnectorId    ConnectorId { get; } = ConnectorId.From(connectorId);
-        public ConnectorState State       => (ConnectorState)SourceProcessor.State;
+        public ConnectorState State       => (ConnectorState)sourceProcessor.State;
 
-        public Task Stopped => SourceProcessor.Stopped;
+        public Task Stopped => sourceProcessor.Stopped;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) =>
-            await SourceProcessor.Activate(stoppingToken).ConfigureAwait(false);
+            await sourceProcessor.Activate(stoppingToken).ConfigureAwait(false);
 
         public async Task Connect(CancellationToken stoppingToken) =>
             await StartAsync(stoppingToken).ConfigureAwait(false);
 
         public async ValueTask DisposeAsync() {
-            await StopAsync(CancellationToken.None).ConfigureAwait(false);
-            await SourceProcessor.DisposeAsync().ConfigureAwait(false);
-            OnDisposeCallback?.Invoke();
+            try {
+                await StopAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            finally {
+                try {
+                    await sourceProcessor.DisposeAsync().ConfigureAwait(false);
+                }
+                finally {
+                    disposeCallback.Invoke();
+                }
+            }
         }
     }
 }
