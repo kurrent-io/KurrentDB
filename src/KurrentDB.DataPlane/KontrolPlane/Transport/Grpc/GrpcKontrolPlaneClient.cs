@@ -52,14 +52,16 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 
 					// we have a result, update list of KPlane nodes
 					var response = call.ResponseStream.Current;
-					_kontrollerNodes = [.. response.KontrollerNodes.Select(EndPointExtensions.ToEndPoint)];
 
 					// KPlane informed us about a new KPlane leader, switch to it
 					if (!response.KontrollerLeader.IsEmpty) {
 						currentAddress = response.KontrollerLeader.ToEndPoint();
 						redirected = true;
-						break;
+						_kontrollerNodes = GetKontrollerNodes(currentAddress, response.KontrollerNodes);
 					}
+
+					if (redirected)
+						break;
 
 					yield return response.Cluster.ToEntity();
 				}
@@ -72,6 +74,19 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 			// locally the OS bypasses the connection timeout so we have a small delay here as a baseline.
 			if (!redirected && start.ElapsedMilliseconds < 10)
 				await Task.Delay(50, token);
+		}
+
+		// sort kontroller nodes in a way where the address at index 0 is KPlane leader
+		static IReadOnlyList<EndPoint> GetKontrollerNodes(EndPoint kplaneLeader, IReadOnlyList<ByteString> addresses) {
+			var result = new List<EndPoint>(addresses.Count) { kplaneLeader };
+
+			for (var i = 0; i < addresses.Count; i++) {
+				var address = addresses[0].ToEndPoint();
+				if (!address.Equals(kplaneLeader))
+					result.Add(address);
+			}
+
+			return result;
 		}
 	}
 
@@ -131,4 +146,8 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 			}
 		}
 	}
+}
+
+file static class EndPointHelpers {
+	public static bool NotEquals(this EndPoint x, EndPoint y) => !x.Equals(y);
 }
