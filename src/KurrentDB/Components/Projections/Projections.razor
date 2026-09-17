@@ -3,6 +3,7 @@
 
 @page "/ui/projections"
 @attribute [Authorize]
+@using KurrentDB.Components.Shared
 @using KurrentDB.Core.Data
 @using KurrentDB.UI.Theme
 @using Microsoft.AspNetCore.Authorization
@@ -45,6 +46,20 @@
 			<MudLink Href="@_leaderUrl">Open projections on the leader</MudLink>
 		</MudAlert>
 	} else {
+
+	@* Inside this branch so it never stacks under the "not enabled" or "go to the leader" notices. The link
+	   wraps the whole alert: Color.Inherit and Typo.inherit override MudLink's Primary/body1 defaults, and the
+	   hover affordance is in app.css. *@
+	<MudLink Href="@GafferLink.For("projections_list")" Target="_blank"
+	         Underline="Underline.None" Color="Color.Inherit" Typo="Typo.inherit"
+	         Class="gaffer-ribbon d-block">
+		<MudAlert Severity="Severity.Normal" Dense="true" Icon="@KurrentIcons.Gaffer">
+			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+				<span><strong>Gaffer</strong>: author, debug, test and deploy projections</span>
+				<MudIcon Icon="@Icons.Material.Filled.OpenInNew" Style="font-size: 1rem;"/>
+			</MudStack>
+		</MudAlert>
+	</MudLink>
 
 	@if (_error != null) {
 		<MudAlert Severity="Severity.Error">@_error</MudAlert>

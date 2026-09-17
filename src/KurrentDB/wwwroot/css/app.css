@@ -76,6 +76,16 @@ html.theme-light {
     height: 200px;
 }
 
+/* Gaffer ribbon (Components/Projections/Projections.razor): the alert is wrapped in a link carrying no link
+   colour or underline, so hover is the only affordance. */
+.gaffer-ribbon .mud-alert {
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gaffer-ribbon:hover .mud-alert {
+    background-color: var(--mud-palette-action-default-hover);
+}
+
 @font-face {
     font-family: "Solina";
     src: url("/fonts/Solina-Light.woff2") format("woff2"),
