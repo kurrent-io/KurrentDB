@@ -57,9 +57,9 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 					if (!response.KontrollerLeader.IsEmpty) {
 						currentAddress = response.KontrollerLeader.ToEndPoint();
 						redirected = true;
-						_kontrollerNodes = GetKontrollerNodes(currentAddress, response.KontrollerNodes);
 					}
 
+					_kontrollerNodes = GetKontrollerNodes(currentAddress, response.KontrollerNodes);
 					if (redirected)
 						break;
 
