@@ -35,12 +35,15 @@ partial class GrpcKontrolPlaneClient {
 
 	private EndPoint ReplaceAddress(EndPoint oldAddress, EndPoint newAddress) {
 		var result = _current;
-		if (result is null || result.Equals(oldAddress)) {
-			var tmp = Interlocked.CompareExchange(ref _current, newAddress, result);
-			result = ReferenceEquals(tmp, result) ? newAddress : tmp;
+		for (EndPoint? tmp; result is null || oldAddress.Equals(result); result = tmp) {
+			tmp = Interlocked.CompareExchange(ref _current, newAddress, result);
+			if (ReferenceEquals(tmp, result)) {
+				result = newAddress;
+				break;
+			}
 		}
 
-		return result ?? newAddress;
+		return result;
 	}
 
 	private EndPoint NextAddress(EndPoint address) {
