@@ -4,7 +4,6 @@
 using System.Text;
 using DuckDB.NET.Data;
 using Kurrent.Quack;
-using KurrentDB.SecondaryIndexing.Indexes.User;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
@@ -29,7 +28,7 @@ partial class IndexingDbSchema {
 		foreach (var tableNameUtf8 in connection.GetTables()) {
 			var tableName = Encoding.UTF8.GetString(tableNameUtf8);
 
-			if (UserIndexSql.IsUserIndexTable(tableName))
+			if (tableName.StartsWith("idx_user__", StringComparison.Ordinal))
 				RenameUserIndexColumns(connection, tableName);
 		}
 
