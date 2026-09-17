@@ -66,7 +66,7 @@ partial class MigrationTests {
 		// 1_Schema.sql contains no user index tables - they are created on demand - so create one the
 		// way production does, giving the comparison something to hold the migrated one against. The
 		// index name and field type must match the table SetupV0Schema creates.
-		new UserIndexSql<Int32Field>(UserIndexName, UserIndexFieldName).CreateUserIndex(connection);
+		new UserIndexSql(UserIndexName, [new Int32Field(UserIndexFieldName, UserIndexFieldName, optimizeLookups: false)]).CreateUserIndex(connection);
 
 		return ReadShape(connection);
 	}
