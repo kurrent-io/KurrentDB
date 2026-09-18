@@ -147,7 +147,3 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 		}
 	}
 }
-
-file static class EndPointHelpers {
-	public static bool NotEquals(this EndPoint x, EndPoint y) => !x.Equals(y);
-}

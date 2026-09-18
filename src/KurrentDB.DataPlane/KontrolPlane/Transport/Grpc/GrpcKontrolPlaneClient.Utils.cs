@@ -33,11 +33,15 @@ partial class GrpcKontrolPlaneClient {
 		return result;
 	}
 
+	// Tries to transition _current from oldAddress to newAddress
+	// Give up if another thread changes _current to an endpoint which does not `.Equals` oldAddress.
+	// Returns the new value of _current for the caller to use.
 	private EndPoint ReplaceAddress(EndPoint oldAddress, EndPoint newAddress) {
 		var result = _current;
 		for (EndPoint? tmp; result is null || oldAddress.Equals(result); result = tmp) {
 			tmp = Interlocked.CompareExchange(ref _current, newAddress, result);
 			if (ReferenceEquals(tmp, result)) {
+				// successful CAS
 				result = newAddress;
 				break;
 			}
