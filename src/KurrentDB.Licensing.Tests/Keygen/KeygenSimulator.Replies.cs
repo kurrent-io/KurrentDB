@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -9,12 +10,13 @@ using KurrentDB.Licensing.Keygen;
 namespace KurrentDB.Licensing.Tests.Keygen;
 
 partial class KeygenSimulator {
-	public async Task ReplyWith_ValidationResponse(string code) => await Send(
+	public async Task ReplyWith_ValidationResponse(string code, DateTimeOffset? expiry = null) => await Send(
 		HttpStatusCode.OK,
 		new Models.ValidateLicenseResponse {
 			Data = new() {
 				Attributes = new() {
 					Name = "the name of the license",
+					Expiry = expiry,
 					Metadata = new() {
 						{ "trial", "false" }
 					}
