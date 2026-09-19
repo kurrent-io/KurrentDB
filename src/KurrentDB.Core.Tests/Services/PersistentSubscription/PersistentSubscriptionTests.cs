@@ -2428,6 +2428,337 @@ public class RemoveClientTests {
 [TestFixture(EventSource.SingleStream)]
 [TestFixture(EventSource.AllStream)]
 [TestFixture(EventSource.FilteredAllStream)]
+public class StopClientTests {
+	private readonly EventSource _eventSource;
+	public StopClientTests(EventSource eventSource) {
+		_eventSource = eventSource;
+	}
+
+	private KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription BuildSubscription(
+		FakePushScheduler pushScheduler,
+		FakeMessageParker parker = null,
+		Action<IPersistentSubscriptionStreamPosition> onCheckpoint = null) {
+		var reader = new FakeCheckpointReader();
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithMessageParker(parker ?? new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
+				.PreferRoundRobin()
+				.StartFromCurrent()
+				.WithCheckpointWriter(new FakeCheckpointWriter(onCheckpoint ?? (_ => { }))));
+		reader.Load(null);
+		return sub;
+	}
+
+	[Test]
+	public void stopping_unknown_correlation_id_returns_false() {
+		var sub = BuildSubscription(new FakePushScheduler());
+		Assert.IsFalse(sub.StopClient(Guid.NewGuid()));
+	}
+
+	[Test]
+	public void stopping_a_client_returns_true() {
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+		var corrId = Guid.NewGuid();
+		sub.AddClient(corrId, Guid.NewGuid(), "connection-1", new FakeEnvelope(), 10, "foo", "bar");
+
+		Assert.IsTrue(sub.StopClient(corrId));
+	}
+
+	[Test]
+	public void stopping_a_client_keeps_it_in_the_collection() {
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+		var corrId = Guid.NewGuid();
+		sub.AddClient(corrId, Guid.NewGuid(), "connection-1", new FakeEnvelope(), 10, "foo", "bar");
+
+		sub.StopClient(corrId);
+
+		// The client object still belongs to the subscription so it can keep
+		// processing acks/nacks for in-flight events.
+		Assert.IsTrue(sub.HasClients);
+		Assert.AreEqual(1, sub.ClientCount);
+	}
+
+	[Test]
+	public void stopping_a_client_does_not_send_drop_notification() {
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+		var envelope = new FakeEnvelope();
+		var corrId = Guid.NewGuid();
+		sub.AddClient(corrId, Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
+
+		sub.StopClient(corrId);
+
+		Assert.IsFalse(envelope.Replies.OfType<ClientMessage.SubscriptionDropped>().Any());
+	}
+
+	[Test]
+	public void stopping_a_client_twice_is_idempotent() {
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+		var corrId = Guid.NewGuid();
+		sub.AddClient(corrId, Guid.NewGuid(), "connection-1", new FakeEnvelope(), 10, "foo", "bar");
+
+		Assert.IsTrue(sub.StopClient(corrId));
+		Assert.DoesNotThrow(() => sub.StopClient(corrId));
+		Assert.IsTrue(sub.StopClient(corrId));
+	}
+
+	[Test]
+	public void stopped_client_does_not_receive_new_events() {
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.StopClient(stoppedId);
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		// Both events should land on the live consumer; the stopped one stays silent.
+		Assert.AreEqual(0, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(2, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+	}
+
+	[Test]
+	public void stopping_does_not_retry_in_flight_events_to_others() {
+		// Contrast with RemoveClientByCorrelationId, which retries unconfirmed
+		// events immediately. Stop leaves them with the original consumer so
+		// it can finish processing them.
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(1, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(1, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+
+		// Stop should not schedule any redistribution of in-flight events; the
+		// stopped client keeps them until it acks/nacks or the timeout fires.
+		sub.StopClient(stoppedId);
+
+		Assert.AreEqual(1, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(1, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+	}
+
+	[Test]
+	public void stopped_client_can_still_ack_in_flight_events() {
+		IPersistentSubscriptionStreamPosition cp = null;
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var reader = new FakeCheckpointReader();
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
+				.PreferRoundRobin()
+				.StartFromCurrent()
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(2)
+				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i)));
+		reader.Load(null);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(2, sub.OutstandingMessageCount);
+
+		sub.StopClient(stoppedId);
+
+		// Ack arrives over the still-open connection from the stopped client.
+		sub.AcknowledgeMessagesProcessed(stoppedId, new[] { Helper.GetEventIdFor(0) });
+		sub.AcknowledgeMessagesProcessed(Guid.NewGuid(), new[] { Helper.GetEventIdFor(1) });
+
+		Assert.AreEqual(0, sub.OutstandingMessageCount);
+		// Both events were acked, so the checkpoint should advance.
+		Assert.IsNotNull(cp);
+	}
+
+	[Test]
+	public void stopped_client_can_still_nack_in_flight_events() {
+		var parker = new FakeMessageParker();
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler, parker);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		sub.StopClient(stoppedId);
+
+		// Nack with park from the stopped client should still land in the parker.
+		sub.NotAcknowledgeMessagesProcessed(stoppedId, new[] { Helper.GetEventIdFor(0) }, NakAction.Park, "stopped consumer parking");
+
+		Assert.AreEqual(1, parker.ParkedEvents.Count);
+		Assert.AreEqual(Helper.GetEventIdFor(0), parker.ParkedEvents[0].OriginalEvent.EventId);
+	}
+
+	[Test]
+	public void stopped_clients_in_flight_event_eventually_times_out_to_live_consumer() {
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var reader = new FakeCheckpointReader();
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
+				.WithMessageTimeoutOf(TimeSpan.FromMilliseconds(1))
+				.PreferRoundRobin()
+				.StartFromCurrent()
+				.WithCheckpointWriter(new FakeCheckpointWriter(_ => { })));
+		reader.Load(null);
+
+		var stoppedId = Guid.NewGuid();
+		var liveId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(liveId, Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(1, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(1, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+
+		// Ack the live consumer's event so only the stopped client has anything in flight.
+		sub.AcknowledgeMessagesProcessed(liveId, new[] { Helper.GetEventIdFor(1) });
+
+		sub.StopClient(stoppedId);
+
+		// After the message timeout the stopped client's in-flight event is
+		// retried — and routes to the only remaining active consumer.
+		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(1));
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(2, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(1, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+	}
+
+	[Test]
+	public void disconnect_after_stop_does_not_double_remove_from_strategy() {
+		// RoundRobin throws InvalidOperationException if ClientRemoved is called
+		// twice for the same client. Stop must mark the client so the eventual
+		// disconnect path skips the second strategy removal.
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var corrId = Guid.NewGuid();
+		var connectionId = Guid.NewGuid();
+		sub.AddClient(corrId, connectionId, "connection-1", new FakeEnvelope(), 10, "foo", "bar");
+
+		sub.StopClient(corrId);
+
+		Assert.DoesNotThrow(() => sub.RemoveClientByCorrelationId(corrId, sendDropNotification: false));
+		Assert.IsFalse(sub.HasClients);
+	}
+
+	[Test]
+	public void disconnect_after_stop_via_connection_id_does_not_throw() {
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var corrId = Guid.NewGuid();
+		var connectionId = Guid.NewGuid();
+		sub.AddClient(corrId, connectionId, "connection-1", new FakeEnvelope(), 10, "foo", "bar");
+
+		sub.StopClient(corrId);
+
+		Assert.DoesNotThrow(() => sub.RemoveClientByConnectionId(connectionId));
+		Assert.IsFalse(sub.HasClients);
+	}
+
+	[Test]
+	public void disconnect_after_stop_retries_unconfirmed_events_to_others() {
+		// Acks/nacks may never arrive after a stop (e.g. crashing client). Once
+		// the connection drops, any still-unconfirmed events should be retried
+		// to other consumers via the normal disconnect path.
+		var stoppedEnvelope = new FakeEnvelope();
+		var liveEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
+
+		var liveCountBeforeStop = liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count();
+
+		sub.StopClient(stoppedId);
+		sub.RemoveClientByCorrelationId(stoppedId, sendDropNotification: false);
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(liveCountBeforeStop + 1,
+			liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+		Assert.AreEqual(1,
+			((ClientMessage.PersistentSubscriptionStreamEventAppeared)liveEnvelope.Replies.Last()).RetryCount);
+	}
+
+	[Test]
+	public void stopping_only_consumer_holds_new_events_until_a_consumer_joins() {
+		var stoppedEnvelope = new FakeEnvelope();
+		var pushScheduler = new FakePushScheduler();
+		var sub = BuildSubscription(pushScheduler);
+
+		var stoppedId = Guid.NewGuid();
+		sub.AddClient(stoppedId, Guid.NewGuid(), "connection-stopped", stoppedEnvelope, 10, "foo", "bar");
+		sub.StopClient(stoppedId);
+
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(0, stoppedEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+
+		// A new active consumer joining should pick up the buffered event.
+		var liveEnvelope = new FakeEnvelope();
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-live", liveEnvelope, 10, "foo", "bar");
+		pushScheduler.Push(sub);
+
+		Assert.AreEqual(1, liveEnvelope.Replies.OfType<ClientMessage.PersistentSubscriptionStreamEventAppeared>().Count());
+	}
+}
+
+[TestFixture(EventSource.SingleStream)]
+[TestFixture(EventSource.AllStream)]
+[TestFixture(EventSource.FilteredAllStream)]
 public class ParkTests {
 	private readonly EventSource _eventSource;
 	public ParkTests(EventSource eventSource) {

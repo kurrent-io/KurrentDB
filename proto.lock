@@ -3059,6 +3059,11 @@
                 "id": 3,
                 "name": "nack",
                 "type": "Nack"
+              },
+              {
+                "id": 4,
+                "name": "stop",
+                "type": "Stop"
               }
             ],
             "messages": [
@@ -3150,6 +3155,9 @@
                     "type": "string"
                   }
                 ]
+              },
+              {
+                "name": "Stop"
               }
             ]
           },
