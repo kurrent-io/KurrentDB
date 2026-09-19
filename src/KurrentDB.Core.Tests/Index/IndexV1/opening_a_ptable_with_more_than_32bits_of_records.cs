@@ -13,8 +13,8 @@ using MD5 = KurrentDB.Core.Hashing.MD5;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
 
-[TestFixture(PTable.IndexEntryV1Size), Explicit, Ignore("Long running, unsafe")]
-public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWithFilePerTestFixture {
+[TestFixture(TypeArgs = [typeof(IndexEntry.V1)]), Explicit, Ignore("Long running, unsafe")]
+public class opening_a_ptable_with_more_than_32bits_of_records<TIndexEntry> : SpecificationWithFilePerTestFixture where TIndexEntry : struct, IndexEntry.ILayout<TIndexEntry> {
 	public const int MD5Size = 16;
 	public const byte Version = 1;
 	public const int DefaultSequentialBufferSize = 65536;
@@ -23,11 +23,10 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 	private long _size;
 	private long _ptableCount;
 
-	protected int _indexEntrySize = PTable.IndexEntryV1Size;
+	protected readonly int _indexEntrySize = TIndexEntry.Size;
 
-	public opening_a_ptable_with_more_than_32bits_of_records(int indexEntrySize) {
+	public opening_a_ptable_with_more_than_32bits_of_records() {
 		Assert.Inconclusive("Explicit test, Test setup never returns");
-		_indexEntrySize = indexEntrySize;
 	}
 
 	public override async Task TestFixtureSetUp() {
@@ -58,8 +57,8 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 			using (var cs = new CryptoStream(fs, md5, CryptoStreamMode.Write))
 			using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 				// WRITE HEADER
-				var headerBytes = new PTableHeader(Version).AsByteArray();
-				cs.Write(headerBytes, 0, headerBytes.Length);
+				var header = new PTableHeader(Version);
+				header.WriteTo(cs);
 
 				// WRITE INDEX ENTRIES
 				var buffer = new byte[indexEntrySize];
