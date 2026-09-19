@@ -49,13 +49,21 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 				meter.CreateObservableGauge(metricName, dims.GenObserve(), "bytes");
 	}
 
-	public void CreateDiskMetric(string metricName, string dbPath, Dictionary<SystemTracker, string> dimNames) {
+	public void CreateDiskMetric(string metricName, IReadOnlyList<string> paths, Func<string, DriveData> getDriveInfo, Dictionary<SystemTracker, string> dimNames) {
 		var dims = new Dimensions<SystemTracker, long>(config, dimNames, tag => new());
 
-		var getDriveInfo = Functions.Debounce(() => DriveStats.GetDriveInfo(dbPath), timeout);
+		// Multiple paths (db, index, logs) may live on the same drive. Resolve each to its drive
+		// and register only once per distinct drive so we don't emit duplicate (kind, disk) series.
+		var seenDisks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+		foreach (var path in paths) {
+			var diskName = getDriveInfo(path).DiskName;
+			if (!seenDisks.Add(diskName))
+				continue;
 
-		dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(info => info.UsedBytes));
-		dims.Register(SystemTracker.DriveTotalBytes, GenMeasure(info => info.TotalBytes));
+			var debouncedDriveInfo = Functions.Debounce(() => getDriveInfo(path), timeout);
+			dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(debouncedDriveInfo, info => info.UsedBytes));
+			dims.Register(SystemTracker.DriveTotalBytes, GenMeasure(debouncedDriveInfo, info => info.TotalBytes));
+		}
 
 		if (dims.AnyRegistered())
 			if (legacyNames)
@@ -65,8 +73,8 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 
 		return;
 
-		Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {
-			var info = getDriveInfo();
+		static Func<string, Measurement<long>> GenMeasure(Func<DriveData> getInfo, Func<DriveData, long> func) => tag => {
+			var info = getInfo();
 
 			return new(
 				func(info),
