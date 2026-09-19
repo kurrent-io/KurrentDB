@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using System.IO;
 using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Core;
@@ -23,6 +24,11 @@ public partial record ClusterVNodeOptions {
 	private static readonly IEnumerable<Type> OptionSections;
 	public static readonly string HelpText;
 	public string GetComponentName() => $"{Interface.NodeIp}-{Interface.NodePort}-cluster-node";
+
+	// The directory this node writes its own log files to (component-specific subdirectory of the
+	// configured log path). Shared by the log endpoint, the SQL-over-logs feature, and the DuckDB
+	// pool's file-access allow-list.
+	public string GetLogsDirectory() => Path.GetFullPath(Path.Combine(Logging.Log, GetComponentName()));
 	public static readonly List<SectionMetadata> Metadata;
 
 	static ClusterVNodeOptions() {

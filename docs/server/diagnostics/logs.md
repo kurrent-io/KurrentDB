@@ -211,6 +211,12 @@ You can completely disable logging to a file by changing the `DisableLogFile` op
 
 **Default**: `false`
 
+## Querying logs with SQL
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+A node's logs can be queried through the Arrow Flight SQL endpoint, as the `kdb.logs` and `kdb.stats` tables, without requiring file system access. Queries are read-only and node-local. See [SQL over logs](../features/queries/flightsql.md#querying-node-logs) for the table columns and query examples.
+
 ## Logs download
 
 <Badge type="info" vertical="middle" text="License Required"/>
