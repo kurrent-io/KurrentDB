@@ -77,8 +77,6 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 		_cpuChart.AddData(_cpu);
 		_ramChart.AddData(_ram);
 
-		_disk = (double)InternalExporter.Snapshot.DiskUsedBytes / InternalExporter.Snapshot.DiskTotalBytes * 100;
-
 		_eventsRead.AddData(InternalExporter.Snapshot.EventsRead);
 		_eventsWritten.AddData(InternalExporter.Snapshot.EventsWritten);
 		_eventBytesRead.AddData((double)InternalExporter.Snapshot.EventBytesRead / 1024);
@@ -169,7 +167,14 @@ public sealed partial class Cluster : WithLicense, IDisposable {
 	static string LocalOs => RuntimeInformation.OSDescription;
 	double _cpu;
 	double _ram;
-	double _disk;
+
+	IEnumerable<(string Label, double Usage)> Disks {
+		get {
+			var disks = InternalExporter.Snapshot.Disks;
+			foreach (var disk in disks)
+				yield return (disk.Name, disk.UsagePercent);
+		}
+	}
 
 	bool IsLocalNode(ClientClusterInfo.ClientMemberInfo member) =>
 		member.HttpEndPointIp == _clusterInfo?.ServerIp && member.HttpEndPointPort == _clusterInfo?.ServerPort;

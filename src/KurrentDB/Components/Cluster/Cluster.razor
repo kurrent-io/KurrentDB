@@ -130,9 +130,11 @@
 	<MudItem Style="flex: 0 0 300px;">
 		<MetricDonut Value="@_ram" Name="Memory"></MetricDonut>
 	</MudItem>
-	<MudItem Style="flex: 0 0 300px;">
-		<MetricDonut Value="@_disk" Name="Disk"></MetricDonut>
-	</MudItem>
+	@foreach (var disk in Disks) {
+		<MudItem Style="flex: 0 0 300px;" @key="disk.Label">
+			<MetricDonut Value="@disk.Usage" Name="@disk.Label"></MetricDonut>
+		</MudItem>
+	}
 	<LicensedContent>
 		<MudItem xs="6">
 			<MudPaper Outlined="true">
