@@ -14,28 +14,28 @@ public class NodeHttpClientFactory(
 	string uriScheme,
 	CertificateDelegates.ServerCertificateValidator nodeCertificateValidator,
 	Func<X509Certificate> clientCertificateSelector,
-	string clusterSecret) : INodeHttpClientFactory {
+	string clusterSecret,
+	TimeSpan? connectTimeout)
+	: INodeHttpClientFactory {
 
 	public HttpClient CreateHttpClient(string[] additionalCertificateNames) {
-		HttpMessageHandler httpMessageHandler;
+		SocketsHttpHandler socketsHttpHandler = new();
+
+		if (connectTimeout is { } timeout)
+			socketsHttpHandler.ConnectTimeout = timeout;
+
 		if (uriScheme == Uri.UriSchemeHttps) {
-			var socketsHttpHandler = new SocketsHttpHandler {
-				// TargetHost is provided later by SocketsHttpHandler according to the host of the request.
-				// We will accept the server identifying as that target or any of the additionalCertificateNames.
-				SslOptions = NodeSslOptions.CreateUntargetedClientOptions(
+			// TargetHost is provided later by SocketsHttpHandler according to the host of the request.
+			// We will accept the server identifying as that target or any of the additionalCertificateNames.
+			socketsHttpHandler.SslOptions = NodeSslOptions.CreateUntargetedClientOptions(
 					serverCertificateValidator: nodeCertificateValidator,
 					clientCertificateSelector: clientCertificateSelector,
 					additionalCertificateNames: additionalCertificateNames,
-					enabledSslProtocols: NodeTlsPolicy.SystemSslProtocols),
-				PooledConnectionLifetime = ESConsts.HttpClientConnectionLifeTime,
-			};
-
-			httpMessageHandler = socketsHttpHandler;
-		} else {
-			httpMessageHandler = new SocketsHttpHandler();
+					enabledSslProtocols: NodeTlsPolicy.SystemSslProtocols);
+			socketsHttpHandler.PooledConnectionLifetime = ESConsts.HttpClientConnectionLifeTime;
 		}
 
-		var client = new HttpClient(httpMessageHandler);
+		var client = new HttpClient(socketsHttpHandler);
 		if (uriScheme != Uri.UriSchemeHttps && !string.IsNullOrWhiteSpace(clusterSecret)) {
 			// In cleartext (--disable-tls) the node cannot present a client certificate.
 			// Carry the shared cluster secret instead so peers can authenticate us as system.

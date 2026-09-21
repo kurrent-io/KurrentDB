@@ -221,7 +221,6 @@ public class ClusterVNode<TStreamId> :
 	private readonly CertificateProvider _certificateProvider;
 	private readonly ClusterVNodeStartup<TStreamId> _startup;
 	private readonly Func<CancellationToken, ValueTask> _start;
-	private readonly INodeHttpClientFactory _nodeHttpClientFactory;
 	private readonly EventStoreClusterClientCache _eventStoreClusterClientCache;
 
 	// In KPlane mode these are null or not null according to what component(s) the node is running
@@ -591,17 +590,25 @@ public class ClusterVNode<TStreamId> :
 		var clusterDns = options.Cluster.DiscoverViaDns ? options.Cluster.ClusterDns : null;
 		var clusterSecret = options.Application.UsesClusterSecret() ? options.Cluster.ClusterSecret : "";
 
-		_nodeHttpClientFactory = new NodeHttpClientFactory(
+		var nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,
 			_internalServerCertificateValidator,
 			_certificateSelector,
-			clusterSecret);
+			clusterSecret,
+			connectTimeout: null);
+
+		var kplaneHttpClientFactory = new NodeHttpClientFactory(
+			uriScheme,
+			_internalServerCertificateValidator,
+			_certificateSelector,
+			clusterSecret,
+			connectTimeout: TimeSpan.FromMilliseconds(options.KontrolPlane.KontrolPlaneAppointmentTimeoutMs) / 4);
 
 		_eventStoreClusterClientCache = new EventStoreClusterClientCache(_mainQueue,
 			(endpoint, publisher) =>
 				new EventStoreClusterClient(
 					publisher, uriScheme,
-					endpoint, _nodeHttpClientFactory, clusterDns,
+					endpoint, nodeHttpClientFactory, clusterDns,
 					gossipSendTracker: trackers.GossipTrackers.PushToPeer,
 					gossipGetTracker: trackers.GossipTrackers.PullFromPeer));
 
@@ -1683,7 +1690,7 @@ public class ClusterVNode<TStreamId> :
 								serverCertificateSelector: _certificateSelector),
 					}
 			}) {
-				DataPlaneClientFactory = () => new DataPlaneClient(_nodeHttpClientFactory, uriScheme),
+				DataPlaneClientFactory = () => new DataPlaneClient(kplaneHttpClientFactory, uriScheme),
 			};
 		} else if (Directory.Exists(kontrollerPath)) {
 			// The Kontrol Plane only bootstraps against an already-populated database while its own
@@ -1740,7 +1747,7 @@ public class ClusterVNode<TStreamId> :
 				RenewalRate = ESConsts.KPlaneRenewalRate,
 			}) {
 				DatabaseHandler = databaseStateHandler,
-				KontrolPlane = new KontrolPlaneClient(_nodeHttpClientFactory, uriScheme) {
+				KontrolPlane = new KontrolPlaneClient(kplaneHttpClientFactory, uriScheme) {
 					KontrolPlaneNodes = kontrolPlaneNodes,
 				}
 			};
@@ -1780,7 +1787,7 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
 						X509Certificate2Collection Roots)>>
 					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
-				.AddSingleton(_nodeHttpClientFactory)
+				.AddSingleton<INodeHttpClientFactory>(nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
 				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
 				.AddSingleton(dbConfig);
