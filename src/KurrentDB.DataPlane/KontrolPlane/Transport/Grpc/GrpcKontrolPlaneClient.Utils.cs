@@ -21,19 +21,33 @@ partial class GrpcKontrolPlaneClient {
 	private EndPoint CurrentAddress => _current ?? _kontrollerNodes[0];
 
 	private EndPoint MarkAsUnavailable(EndPoint currentAddress, EndPoint? newAddress) {
-		var result = newAddress is null ? EraseAddress(currentAddress) : ReplaceAddress(currentAddress, newAddress);
+		var result = newAddress is null
+			? EraseAddress(currentAddress)
+			: ReplaceAddress(currentAddress, newAddress);
 
-		// address is switched, dispose the associated channel
-		if (!Equals(result, currentAddress) && _clients.TryRemove(currentAddress, out var entry)) {
+		// the address is switched, dispose the associated channel
+		if (!currentAddress.Equals(result) && _clients.TryRemove(currentAddress, out var entry)) {
 			entry.Release();
 		}
 
 		return result;
 	}
 
+	// Tries to transition _current from oldAddress to newAddress
+	// Give up if another thread changes _current to an endpoint which does not `.Equals` oldAddress.
+	// Returns the new value of _current for the caller to use.
 	private EndPoint ReplaceAddress(EndPoint oldAddress, EndPoint newAddress) {
-		var result = Interlocked.CompareExchange(ref _current, newAddress, oldAddress);
-		return result is null || oldAddress.Equals(result) ? newAddress : result;
+		var result = _current;
+		for (EndPoint? tmp; result is null || oldAddress.Equals(result); result = tmp) {
+			tmp = Interlocked.CompareExchange(ref _current, newAddress, result);
+			if (ReferenceEquals(tmp, result)) {
+				// successful CAS
+				result = newAddress;
+				break;
+			}
+		}
+
+		return result;
 	}
 
 	private EndPoint NextAddress(EndPoint address) {
@@ -49,7 +63,7 @@ partial class GrpcKontrolPlaneClient {
 
 		static int IndexOf(IReadOnlyList<EndPoint> seed, EndPoint address) {
 			for (var i = 0; i < seed.Count; i++) {
-				if (Equals(seed[i], address))
+				if (seed[i].Equals(address))
 					return i;
 			}
 

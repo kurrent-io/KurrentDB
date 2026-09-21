@@ -208,8 +208,9 @@ partial class RaftKontroller {
 		     responses.Clear()) {
 			int quorum;
 
-			// Do not wait for quorum, because this violates the data consistency, since DPlane Follower can send ACK
+			// Do not wait _only_ for quorum, because this violates the data consistency, since DPlane Follower can send ACK
 			// back to DPlane leader before the flush.
+			// Instead wait for timeout to give all nodes a chance to participate.
 			await foreach (var task in FenceDatabaseAsync(dataPlane, nodes, newEpoch, out quorum, requiresAllNodes, token)) {
 				try {
 					var pair = await task;
