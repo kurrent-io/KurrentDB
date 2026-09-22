@@ -16,8 +16,16 @@ namespace KurrentDB.Projections.Core.Services.Processing.V2;
 /// </summary>
 public sealed class PartitionProcessingException : Exception {
 	public PartitionProcessingException(string projectionName, Type handlerType, string eventPosition, Exception inner)
-		: base(string.Format(
-			"The {0} projection failed to process an event.\r\nHandler: {1}\r\nEvent Position: {2}\r\n\r\nMessage:\r\n\r\n{3}",
-			projectionName, handlerType.Namespace + "." + handlerType.Name, eventPosition, inner.Message), inner) {
+		: base(
+			$"""
+			The {projectionName} projection failed to process an event.
+			Handler: {handlerType.Namespace}.{handlerType.Name}
+			Event Position: {eventPosition}
+
+			Message:
+
+			{inner.Message}
+			""",
+			inner) {
 	}
 }
