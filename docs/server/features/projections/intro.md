@@ -48,8 +48,8 @@ meet the criteria. The output of all queries is a stream, you can listen to this
 There are two types of projections in KurrentDB:
 
 - [Built in (system) projections](system.md)
-- [User-defined JavaScript projections](custom.md) which you create via the API or the admin
-  UI
+- [User-defined JavaScript projections](custom.md), which you write yourself and create through the
+  API, a client library, or the embedded UI
 
 ## Engine versions
 
@@ -57,6 +57,20 @@ KurrentDB ships two projection execution engines. V1 is the default. V2 is opt-i
 `engineversion` option at creation time and targets parallel-partitioned workloads. V2 uses an incompatible
 checkpoint format and omits some V1 features (notably `outputState()` result streams and
 `trackemittedstreams`). See [Projections Engine V2](./engine-v2.md).
+
+## Tooling
+
+Kurrent maintains tooling for developing user-defined projections:
+
+- **[gaffer](https://gaffer.kurrent.io)**, a command-line tool, runs a projection on your machine against
+  a file of sample events or subscribed to one of your databases. It deploys the projection to a server
+  when you are ready, and can run it with a debugger attached so you can step through a handler and watch
+  the state change. See [Your first projection](https://gaffer.kurrent.io/getting-started/first-projection/).
+- **[The VS Code extension](https://gaffer.kurrent.io/extension/vs-code/)** drives the same runs and
+  breakpoints from the editor, and shows which of your projections are deployed where. Other DAP-aware
+  editors can attach to the debugger too.
+- **[The testing library](https://gaffer.kurrent.io/testing/nodejs/)** feeds events to a projection from
+  a JavaScript test suite and hands back the state at each step for your tests to assert on.
 
 ## Performance impact
 

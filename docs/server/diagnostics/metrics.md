@@ -282,6 +282,7 @@ Persistent subscription metrics track the statistics for the persistent subscrip
 | `kurrentdb_persistent_sub_checkpointed_event_number`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`             | [Gauge](#common-types)   | Last checkpointed event number (streams other than `$all)`     |
 | `kurrentdb_persistent_sub_checkpointed_event_commit_position`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`    | [Gauge](#common-types)   | Last checkpointed event's commit position (`$all` stream only) |
 | `kurrentdb_persistent_sub_parked_message_replays`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                | [Gauge](#common-types)   | Number of replays requested                                    |
+| `kurrentdb_persistent_sub_parked_message_truncations`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`            | [Gauge](#common-types)   | Number of truncations requested                                |
 | `kurrentdb_persistent_sub_park_message_requests`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>,reason=<REASON>}` | [Gauge](#common-types)   | Number of messages that have been parked. Reason can be `client-nak` or `max-retries` |
 
 Example configuration:

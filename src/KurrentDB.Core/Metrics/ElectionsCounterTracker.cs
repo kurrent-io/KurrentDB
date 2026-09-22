@@ -6,7 +6,9 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Metrics;
 
-public interface IElectionCounterTracker : IHandle<ElectionMessage.ElectionsDone> {
+public interface IElectionCounterTracker :
+	IHandle<ElectionMessage.ElectionsDone>,
+	IHandle<ElectionMessage.LeaderAppointed> {
 }
 
 public class ElectionsCounterTracker : IElectionCounterTracker {
@@ -20,8 +22,15 @@ public class ElectionsCounterTracker : IElectionCounterTracker {
 		_electionsCounter.Add(1);
 	}
 
+	public void Handle(ElectionMessage.LeaderAppointed message) {
+		_electionsCounter.Add(1);
+	}
+
 	public class NoOp : IElectionCounterTracker {
 		public void Handle(ElectionMessage.ElectionsDone message) {
+		}
+
+		public void Handle(ElectionMessage.LeaderAppointed message) {
 		}
 	}
 }

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using KurrentDB.Core.Bus;
@@ -67,6 +68,8 @@ public static class MetricsBootstrapper {
 	public static void Bootstrap(
 		Conf conf,
 		TFChunkDbConfig dbConfig,
+		string indexPath,
+		string logPath,
 		Trackers trackers) {
 
 		OptionsFormatter.LogConfig("Metrics", conf);
@@ -181,6 +184,7 @@ public static class MetricsBootstrapper {
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-last-known-event-commit-position", tracker.ObserveLastKnownEventCommitPosition);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-park-message-requests", tracker.ObserveParkMessageRequests);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-parked-message-replays", tracker.ObserveParkedMessageReplays);
+			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-parked-message-truncations", tracker.ObserveParkedMessageTruncations);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-number", tracker.ObserveLastCheckpointedEvent);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-commit-position", tracker.ObserveLastCheckpointedEventCommitPosition);
 
@@ -282,7 +286,7 @@ public static class MetricsBootstrapper {
 			{ Conf.SystemTracker.TotalMem, "total" },
 		});
 
-		systemMetrics.CreateDiskMetric($"{serviceName}-sys-disk", dbConfig.Path, new() {
+		systemMetrics.CreateDiskMetric($"{serviceName}-sys-disk", [dbConfig.Path, indexPath, logPath], DriveStats.GetDriveInfo, new() {
 			{ Conf.SystemTracker.DriveTotalBytes, "total" },
 			{ Conf.SystemTracker.DriveUsedBytes, "used" },
 		});

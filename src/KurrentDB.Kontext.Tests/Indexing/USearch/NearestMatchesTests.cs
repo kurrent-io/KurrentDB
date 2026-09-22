@@ -46,6 +46,6 @@ public class NearestMatchesTests {
 		var matches = new NearestMatches();
 		matches.Offer(1, 0.1f);
 		matches.Offer(2, 0.2f);
-		await Assert.That(matches.Nearest(100)).HasCount().EqualTo(2);
+		await Assert.That(matches.Nearest(100)).Count().IsEqualTo(2);
 	}
 }

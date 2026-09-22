@@ -37,6 +37,7 @@ static partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly int _readBatchSize;
 		private readonly CancellationTokenSource _cts;
+		private readonly CancellationToken _cancellationToken;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;
 
@@ -67,6 +68,7 @@ static partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_readBatchSize = readBatchSize;
+			_cancellationToken = cancellationToken;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_channel = CreateCatchUpChannel(catchUpBufferSize);
 			_liveEvents = CreateLiveChannel<(ulong, ResolvedEvent)>(liveBufferSize);
@@ -94,35 +96,39 @@ static partial class Enumerator {
 		}
 
 		public override async ValueTask<bool> MoveNextAsync() {
+			try {
 ReadLoop:
 
-			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
-				return false;
-			}
-
-			var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
-
-			if (readResponse is ReadResponse.EventReceived eventReceived) {
-				var @event = eventReceived.Event;
-				var streamRevision = StreamRevision.FromInt64(@event.OriginalEventNumber);
-
-				if (_currentRevision.HasValue && streamRevision <= _currentRevision.Value) {
-					// this should no longer happen
-					Log.Warning(
-						"Subscription {subscriptionId} to {streamName} skipping event {streamRevision} as it is less than {currentRevision}.",
-						_subscriptionId, _streamName, streamRevision, _currentRevision);
-
-					goto ReadLoop;
+				if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
+					return false;
 				}
 
-				_currentRevision = streamRevision;
+				var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
 
-				Log.Verbose("Subscription {subscriptionId} to {streamName} seen event {streamRevision}.", _subscriptionId, _streamName, streamRevision);
+				if (readResponse is ReadResponse.EventReceived eventReceived) {
+					var @event = eventReceived.Event;
+					var streamRevision = StreamRevision.FromInt64(@event.OriginalEventNumber);
+
+					if (_currentRevision.HasValue && streamRevision <= _currentRevision.Value) {
+						// this should no longer happen
+						Log.Warning(
+							"Subscription {subscriptionId} to {streamName} skipping event {streamRevision} as it is less than {currentRevision}.",
+							_subscriptionId, _streamName, streamRevision, _currentRevision);
+
+						goto ReadLoop;
+					}
+
+					_currentRevision = streamRevision;
+
+					Log.Verbose("Subscription {subscriptionId} to {streamName} seen event {streamRevision}.", _subscriptionId, _streamName, streamRevision);
+				}
+
+				_current = readResponse;
+
+				return true;
+			} catch (OperationCanceledException ex) when (ex.CancellationToken == _cts.Token && _cancellationToken.IsCancellationRequested) {
+				throw new OperationCanceledException(ex.Message, ex, _cancellationToken);
 			}
-
-			_current = readResponse;
-
-			return true;
 		}
 
 		private void Subscribe(StreamRevision? checkpoint, CancellationToken ct) {

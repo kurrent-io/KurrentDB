@@ -12,7 +12,7 @@ public class StreamsToolTests {
 
 		var result = await StreamsTool.Streams(search, new FakeWorkspaceContext(), keywords: "alice");
 
-		await Assert.That(result.Streams).HasCount().EqualTo(2);
+		await Assert.That(result.Streams).Count().IsEqualTo(2);
 		await Assert.That(result.Streams[0].Name).IsEqualTo("alice-hobbies");
 		await Assert.That(result.Streams[0].Score).IsEqualTo(0.9f);
 	}

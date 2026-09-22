@@ -23,6 +23,7 @@ public class RequireStreamReadAssertion : IAssertion {
 	public ValueTask<bool> Evaluate(ClaimsPrincipal cp, Operation operation, PolicyInformation policy,
 		EvaluationContext context) {
 		if (operation == Operations.Subscriptions.ProcessMessages ||
+			operation == Operations.Subscriptions.TruncateParked ||
 			operation == Operations.Subscriptions.ReplayParked) {
 			var stream = FindStreamId(operation.Parameters.Span);
 			return _streamAssertion.Evaluate(cp,

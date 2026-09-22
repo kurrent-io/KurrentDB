@@ -10,6 +10,7 @@ COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.md .
 COPY ./global.json .
+COPY ./KurrentDB.slnx .
 
 WORKDIR /build/ci
 COPY ./ci ./
@@ -20,11 +21,11 @@ COPY ./proto ./
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
 COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
-COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
+COPY ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
 RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
-    for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
-    dotnet restore
+    for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
+RUN dotnet restore /build/KurrentDB.slnx
 COPY ./src .
 
 WORKDIR /build/.git
@@ -33,12 +34,6 @@ COPY ./.git/ .
 # "test" image
 FROM mcr.microsoft.com/dotnet/sdk:10.0-${CONTAINER_RUNTIME} AS test
 ARG CONTAINER_RUNTIME=noble
-# libgomp (the OpenMP runtime) is required by Kontext's USearch native library
-RUN if [ "${CONTAINER_RUNTIME}" = "alpine" ]; then \
-        apk add --no-cache libgomp; \
-    else \
-        apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*; \
-    fi
 WORKDIR /build
 COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
@@ -47,6 +42,7 @@ COPY --from=build ./build/LICENSE.md ./LICENSE.md
 COPY --from=build ./build/NOTICE.md ./NOTICE.md
 COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
 COPY --from=build ./build/global.json ./global.json
+COPY --from=build ./build/KurrentDB.slnx ./KurrentDB.slnx
 COPY --from=build ./build/src/KurrentDB.Core.Testing/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
 RUN mkdir ./test-results
 
@@ -65,19 +61,16 @@ ARG RUNTIME=linux-x64
 ARG UID=1001
 ARG GID=1001
 
-# libgomp (the OpenMP runtime) is required by Kontext's USearch native library
 RUN if [[ "${RUNTIME}" = "linux-musl-x64" ]];\
     then \
         apk update && \
         apk add --no-cache \
-        curl \
-        libgomp; \
+        curl; \
     else \
         apt update && \
         apt install -y \
         adduser \
-        curl \
-        libgomp1 && \
+        curl && \
         rm -rf /var/lib/apt/lists/*; \
     fi
 

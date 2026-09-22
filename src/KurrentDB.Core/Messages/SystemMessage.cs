@@ -12,22 +12,31 @@ using EndPoint = System.Net.EndPoint;
 namespace KurrentDB.Core.Messages;
 
 public static partial class SystemMessage {
+	// Notice that the system is initializing
+	// Core services handle by initialising and sending ServiceInitialized
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemInit : Message {
 	}
 
+	// After a select subset of core services are initialised we send this
+	// Notice that the system is starting
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemStart : Message {
 	}
 
+	// Notice that we are ready to start subsystems
+	// - AuthenticationProvider is initialized
+	// - ClusterVNodeController is no longer in Initializing state
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemCoreReady : Message {
 	}
 
+	// Notice that subsystems are started
 	[DerivedMessage(CoreMessage.System)]
 	public partial class SystemReady : Message {
 	}
 
+	// Core service response to SystemInit
 	[DerivedMessage(CoreMessage.System)]
 	public partial class ServiceInitialized : Message {
 		public readonly string ServiceName;
@@ -64,6 +73,9 @@ public static partial class SystemMessage {
 	public partial class RequestQueueDrained : Message {
 	}
 
+	// These trigger state changes, they are not requests for state changes.
+	// These should only be emitted by the ClusterVNodeController so that it is
+	// in full control of the transitions.
 	[DerivedMessage]
 	public abstract partial class StateChangeMessage : Message {
 		public readonly Guid CorrelationId;
@@ -130,9 +142,9 @@ public static partial class SystemMessage {
 
 	[DerivedMessage]
 	public abstract partial class ReplicaStateMessage : StateChangeMessage {
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 
-		protected ReplicaStateMessage(Guid correlationId, VNodeState state, MemberInfo leader)
+		protected ReplicaStateMessage(Guid correlationId, VNodeState state, MemberInfoLite leader)
 			: base(correlationId, state) {
 			Ensure.NotNull(leader, "leader");
 			Leader = leader;
@@ -143,7 +155,7 @@ public static partial class SystemMessage {
 	public partial class BecomePreReplica : ReplicaStateMessage {
 		public readonly Guid LeaderConnectionCorrelationId;
 
-		public BecomePreReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfo leader)
+		public BecomePreReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.PreReplica, leader) {
 			LeaderConnectionCorrelationId = leaderConnectionCorrelationId;
 		}
@@ -151,20 +163,20 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeCatchingUp : ReplicaStateMessage {
-		public BecomeCatchingUp(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.CatchingUp,
+		public BecomeCatchingUp(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.CatchingUp,
 			leader) {
 		}
 	}
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeClone : ReplicaStateMessage {
-		public BecomeClone(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.Clone, leader) {
+		public BecomeClone(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.Clone, leader) {
 		}
 	}
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeFollower : ReplicaStateMessage {
-		public BecomeFollower(Guid correlationId, MemberInfo leader) : base(correlationId, VNodeState.Follower,
+		public BecomeFollower(Guid correlationId, MemberInfoLite leader) : base(correlationId, VNodeState.Follower,
 			leader) {
 		}
 	}
@@ -180,7 +192,7 @@ public static partial class SystemMessage {
 	public partial class BecomePreReadOnlyReplica : ReplicaStateMessage {
 		public readonly Guid LeaderConnectionCorrelationId;
 
-		public BecomePreReadOnlyReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfo leader)
+		public BecomePreReadOnlyReplica(Guid correlationId, Guid leaderConnectionCorrelationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.PreReadOnlyReplica, leader) {
 			LeaderConnectionCorrelationId = leaderConnectionCorrelationId;
 		}
@@ -188,7 +200,7 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class BecomeReadOnlyReplica : ReplicaStateMessage {
-		public BecomeReadOnlyReplica(Guid correlationId, MemberInfo leader)
+		public BecomeReadOnlyReplica(Guid correlationId, MemberInfoLite leader)
 			: base(correlationId, VNodeState.ReadOnlyReplica, leader) {
 		}
 	}
@@ -306,6 +318,17 @@ public static partial class SystemMessage {
 
 	[DerivedMessage(CoreMessage.System)]
 	public partial class NoQuorumMessage : Message {
+	}
+
+	// Asks the node to stop taking part in replication.
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Freeze(IEnvelope<Frozen> envelope) : Message {
+		public IEnvelope<Frozen> Envelope => envelope;
+	}
+
+	[DerivedMessage(CoreMessage.System)]
+	public partial class Frozen : Message {
+		public static readonly Frozen Instance = new();
 	}
 
 	[DerivedMessage(CoreMessage.System)]

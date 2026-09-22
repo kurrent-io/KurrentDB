@@ -30,6 +30,7 @@ static partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly int _readBatchSize;
 		private readonly CancellationTokenSource _cts;
+		private readonly CancellationToken _cancellationToken;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;
 
@@ -58,6 +59,7 @@ static partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_readBatchSize = Ensure.Positive(readBatchSize);
+			_cancellationToken = cancellationToken;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_channel = CreateCatchUpChannel(catchUpBufferSize);
 			_liveEvents = CreateLiveChannel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)>(liveBufferSize);
@@ -84,33 +86,37 @@ static partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+			try {
+ReadLoop:
 
-			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
-				return false;
-			}
-
-			var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
-
-			if (readResponse is ReadResponse.EventReceived eventReceived) {
-				var eventPos = eventReceived.Event.OriginalPosition!.Value;
-				var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
-
-				if (_currentPosition.HasValue && position <= _currentPosition.Value) {
-					// this should no longer happen
-					Log.Warning("Subscription {subscriptionId} to $all skipping event {position} as it is less than {currentPosition}.",
-						_subscriptionId, position, _currentPosition);
-					goto ReadLoop;
+				if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
+					return false;
 				}
 
-				Log.Verbose("Subscription {subscriptionId} to $all seen event {position}.", _subscriptionId, position);
+				var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
 
-				_currentPosition = position;
+				if (readResponse is ReadResponse.EventReceived eventReceived) {
+					var eventPos = eventReceived.Event.OriginalPosition!.Value;
+					var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
+
+					if (_currentPosition.HasValue && position <= _currentPosition.Value) {
+						// this should no longer happen
+						Log.Warning("Subscription {subscriptionId} to $all skipping event {position} as it is less than {currentPosition}.",
+							_subscriptionId, position, _currentPosition);
+						goto ReadLoop;
+					}
+
+					Log.Verbose("Subscription {subscriptionId} to $all seen event {position}.", _subscriptionId, position);
+
+					_currentPosition = position;
+				}
+
+				_current = readResponse;
+
+				return true;
+			} catch (OperationCanceledException ex) when (ex.CancellationToken == _cts.Token && _cancellationToken.IsCancellationRequested) {
+				throw new OperationCanceledException(ex.Message, ex, _cancellationToken);
 			}
-
-			_current = readResponse;
-
-			return true;
 		}
 
 		private void Subscribe(Position? checkpoint, CancellationToken ct) {

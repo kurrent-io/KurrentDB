@@ -10,65 +10,56 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal abstract class UserIndexReader(DuckDBConnectionPool sharedPool, IReadIndex<string> index)
-	: SecondaryIndexReaderBase(sharedPool, index) {
-	internal abstract BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection);
-}
-
-internal class UserIndexReader<TField>(
+internal sealed class UserIndexReader(
 	DuckDBConnectionPool sharedPool,
 	UserIndexProcessor processor,
+	IReadOnlyList<IField> fields,
 	IReadIndex<string> index
-) : UserIndexReader(sharedPool, index) where TField : IField<TField> {
+) : SecondaryIndexReaderBase(sharedPool, index) {
 
+	// the raw field-constraint suffix is used as the id; it is parsed against the index's fields in the overrides below
 	protected override string? GetId(string indexStream) {
-		// the field is used as the ID. null when there is no field
-		// it is only used for passing into the overrides defined in this class
-		UserIndexHelpers.ParseQueryStreamName(indexStream, out _, out var field);
-		return field;
+		UserIndexHelpers.ParseQueryStreamName(indexStream, out _, out var suffix);
+		return suffix?.ToString() ?? null;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
-		if (!TryGetField(id, out var field))
-			return [];
+		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
+		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
+			throw new InvalidOperationException($"Failed to parse already-validated field constraints for index read (id: '{id}').");
 
 		var args = new ReadUserIndexQueryArgs {
 			StartPosition = startPosition,
 			ExcludeFirst = excludeFirst,
 			Count = maxCount,
-			Field = id is null ? NullField.Instance : field!
+			Constraints = constraints
 		};
 
 		var records = new List<IndexQueryRecord>(maxCount);
-		using (db.Rent(out var connection)) {
-			using (processor.CaptureSnapshot(connection)) {
-				processor.Sql.ReadUserIndexForwardsQuery(connection, args, records);
-			}
+		using (db.Rent(out var connection))
+		using (processor.CaptureSnapshot(connection)) {
+			processor.Sql.ReadUserIndexForwardsQuery(connection, args, records);
 		}
 
 		return records;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db,
-		string? id,
-		long startPosition,
-		int maxCount,
-		bool excludeFirst) {
-		if (!TryGetField(id, out var field))
-			return [];
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
+		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
+		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
+			throw new InvalidOperationException($"Failed to parse already-validated field constraints for index read (id: '{id}').");
 
 		var args = new ReadUserIndexQueryArgs {
 			StartPosition = startPosition,
-			Count = maxCount,
 			ExcludeFirst = excludeFirst,
-			Field = id is null ? NullField.Instance : field!
+			Count = maxCount,
+			Constraints = constraints
 		};
 
 		var records = new List<IndexQueryRecord>(maxCount);
-		using (db.Rent(out var connection)) {
-			using (processor.CaptureSnapshot(connection)) {
-				processor.Sql.ReadUserIndexBackwardsQuery(connection, args, records);
-			}
+		using (db.Rent(out var connection))
+		using (processor.CaptureSnapshot(connection)) {
+			processor.Sql.ReadUserIndexBackwardsQuery(connection, args, records);
 		}
 
 		return records;
@@ -77,21 +68,6 @@ internal class UserIndexReader<TField>(
 	public override TFPos GetLastIndexedPosition(string _) => throw new InvalidOperationException(); // never called
 	public override bool CanReadIndex(string _) => throw new InvalidOperationException(); // never called
 
-	internal override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
+	internal BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
 		=> processor.CaptureSnapshot(connection);
-
-	private static bool TryGetField(string? id, out TField? field) {
-		field = default;
-
-		if (id is null)
-			return true;
-
-		try {
-			field = TField.ParseFrom(id);
-			return true;
-		} catch {
-			// invalid field
-			return false;
-		}
-	}
 }

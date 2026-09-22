@@ -33,6 +33,11 @@ fromStream('account-1')
     .outputState()
 ```
 
+::: tip
+Kurrent's [gaffer](https://gaffer.kurrent.io) tooling runs projections like this one on your machine and
+deploys them to a server.
+:::
+
 ## Projections API
 
 Below, you can find the JavaScript API for user defined projections.
@@ -111,9 +116,8 @@ handler. The event provided through the handler contains the following propertie
 
 ## Debugging
 
-User projections have a bonus that debugging is easier
-via any browser that ships with debugging capabilities. The screenshots in this document show the use of
-Chrome, but we have tested debugging with all major browsers including Firefox, Edge and Safari.
+A projection can log from inside a handler, and you can step through one before it goes anywhere near a
+server. Both are covered below.
 
 ### Logging from a projection
 
@@ -178,10 +182,13 @@ V2 is a parallel-partitioned engine with an incompatible checkpoint format and a
 Before selecting it, read [Projections Engine V2](./engine-v2.md) — in particular, V2 does not emit
 `outputState()` result streams and does not support `trackemittedstreams`.
 
-### Debugging projections
+### Stepping through a projection
 
-To develop and debug projections, use [Gaffer](https://github.com/kurrent-io/gaffer) — a standalone tool
-for authoring, running, and stepping through KurrentDB projections.
+The [gaffer](https://gaffer.kurrent.io) command line runs a projection on your machine with a debugger
+attached, against a file of sample events or against one of your databases, so you can set breakpoints,
+step through a handler and inspect the state as it changes without deploying anything. The
+[VS Code extension](https://gaffer.kurrent.io/extension/vs-code/) drives it from the editor, and any
+DAP-aware editor can attach to it.
 
 ## Configuring projections
 

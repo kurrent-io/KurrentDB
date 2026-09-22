@@ -26,26 +26,26 @@ public class leader_info_provider {
 				Expected: new (TcpEndPoint: null)),
 			new ("Leader: TcpEndPoint",
 				Given: new (Leader: new(TcpEndPoint: "1.1.1.1:1")),
-				Expected: new (TcpEndPoint: "1.1.1.1:1", IsTcpSecure: false)),
+				Expected: new (TcpEndPoint: "9.9.9.9:1", IsTcpSecure: false)),
 			new ("Leader: SecureTcpEndPoint",
 				Given: new (Leader: new(SecureTcpEndPoint: "2.2.2.2:2")),
-				Expected: new (TcpEndPoint: "2.2.2.2:2", IsTcpSecure: true)),
+				Expected: new (TcpEndPoint: "9.9.9.9:2", IsTcpSecure: true)),
 			new ("Leader: TcpEndPoint + SecureTcpEndPoint",
 				Given: new (Leader: new(TcpEndPoint: "1.1.1.1:1", SecureTcpEndPoint: "2.2.2.2:2")),
-				Expected: new (TcpEndPoint: "1.1.1.1:1", IsTcpSecure: true)),
+				Expected: new (TcpEndPoint: "9.9.9.9:1", IsTcpSecure: true)),
 			// AdvertiseTcpPort
 			new ("Leader: AdvertiseTcpPort & NoEndPoints",
 				Given: new (Leader: new(AdvertiseTcpPort: 9)),
 				Expected: new (TcpEndPoint: null, IsTcpSecure: false)),
 			new ("Leader: AdvertiseTcpPort & TcpEndPoint",
 				Given: new (Leader: new(AdvertiseTcpPort: 9, TcpEndPoint: "1.1.1.1:1")),
-				Expected: new (TcpEndPoint: "1.1.1.1:9")),
+				Expected: new (TcpEndPoint: "9.9.9.9:9")),
 			new ("Leader: AdvertiseTcpPort & SecureTcpEndPoint",
 				Given: new (Leader: new(AdvertiseTcpPort: 9, SecureTcpEndPoint: "2.2.2.2:2")),
-				Expected: new (TcpEndPoint: "2.2.2.2:9", IsTcpSecure: true)),
+				Expected: new (TcpEndPoint: "9.9.9.9:9", IsTcpSecure: true)),
 			new ("Leader: AdvertiseTcpPort & TcpEndPoint + SecureTcpEndPoint",
 				Given: new (Leader: new(TcpEndPoint: "1.1.1.1:1", SecureTcpEndPoint: "2.2.2.2:2", AdvertiseTcpPort: 9)),
-				Expected: new (TcpEndPoint: "1.1.1.1:9", IsTcpSecure: true)),
+				Expected: new (TcpEndPoint: "9.9.9.9:9", IsTcpSecure: true)),
 			// AdvertiseHost
 			new ("Leader: AdvertiseHost & NoEndPoints",
 				Given: new (Leader: new(AdvertiseHost: "host", HttpEndPoint: "3.3.3.3:3")),
@@ -120,7 +120,7 @@ public class leader_info_provider {
 
 		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(
 			given.GossipInfo,
-			given.LeaderInfo,
+			given.LeaderInfo?.ToLite(),
 			NodeInstanceId);
 
 		var result = leaderInfoProvider.GetLeaderInfoEndPoints();

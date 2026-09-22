@@ -86,6 +86,8 @@ public class LegacyPolicySelectorFactory : IPolicySelectorFactory {
 		policy.Add(Operations.Node.Elections.LeaderIsResigningOk, isSystem);
 		policy.Add(Operations.Node.Gossip.Update, isSystem);
 		policy.Add(Operations.Node.Gossip.Read, isSystem);
+		policy.Add(Operations.Node.KontrolPlane.Access, isSystem);
+		policy.Add(Operations.Node.DataPlane.Access, isSystem);
 
 		policy.AddMatchAnyAssertion(Operations.Node.Shutdown, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.ReloadConfiguration, Grant.Allow, OperationsOrAdmins);
@@ -111,6 +113,7 @@ public class LegacyPolicySelectorFactory : IPolicySelectorFactory {
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.Restart, Grant.Allow, OperationsOrAdmins);
 		policy.Add(Operations.Subscriptions.ProcessMessages, subscriptionAccess);
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.ReplayParked, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Subscriptions.TruncateParked, Grant.Allow, OperationsOrAdmins);
 
 		IAssertion streamAssertion = _allowAnonymousStreamAccess
 			? legacyStreamAssertion

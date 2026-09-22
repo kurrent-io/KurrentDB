@@ -370,6 +370,8 @@ public class LegacyPolicyVerification {
 			yield return CreateOperation(Operations.Node.Elections.LeaderIsResigning);
 			yield return CreateOperation(Operations.Node.Elections.LeaderIsResigningOk);
 			yield return CreateOperation(Operations.Node.Gossip.Read);
+			yield return CreateOperation(Operations.Node.KontrolPlane.Access);
+			yield return CreateOperation(Operations.Node.DataPlane.Access);
 		}
 
 		IEnumerable<(Operation, string, StorageMessage.EffectiveAcl)> AdminOperations() {
@@ -401,6 +403,8 @@ public class LegacyPolicyVerification {
 			yield return CreateOperation(Operations.Node.Information.ReadLogs);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
+			yield return (new Operation(Operations.Subscriptions.TruncateParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
+			yield return (new Operation(Operations.Subscriptions.TruncateParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
 
 			yield return CreateOperation(Operations.Projections.UpdateConfiguration);
 

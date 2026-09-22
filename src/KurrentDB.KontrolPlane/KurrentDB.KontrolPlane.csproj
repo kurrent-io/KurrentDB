@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<GitVersion>false</GitVersion>
+		<RootNamespace>KurrentDB</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.KontrolPlane.ObjectModel\KurrentDB.KontrolPlane.ObjectModel.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DotNext.Net.Cluster" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+		<PackageReference Include="Kurrent.Quack" />
+		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="KontrolPlane\Raft\StateMachine\LogEntries\wal.proto">
+			<Access>Internal</Access>
+			<GrpcServices>None</GrpcServices>
+		</Protobuf>
+	</ItemGroup>
+</Project>

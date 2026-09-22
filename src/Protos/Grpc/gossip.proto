@@ -4,6 +4,8 @@ option java_package = "com.eventstore.dbclient.proto.gossip";
 
 import "shared.proto";
 
+// This is the client-facing gossip service. The gossip service for use between nodes
+// is defined in cluster.proto
 service Gossip {
 	rpc Read (event_store.client.Empty) returns (ClusterInfo);
 }

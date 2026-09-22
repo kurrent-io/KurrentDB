@@ -36,7 +36,7 @@ public class WhenExpectingDeleted {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeStream);
 		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
 	}
@@ -66,7 +66,7 @@ public class WhenExpectingDeleted {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
@@ -99,7 +99,7 @@ public class WhenExpectingDeleted {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
@@ -132,7 +132,7 @@ public class WhenExpectingDeleted {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);

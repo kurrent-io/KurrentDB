@@ -11,6 +11,7 @@ service PersistentSubscriptions {
 	rpc Read (stream ReadReq) returns (stream ReadResp);
 	rpc GetInfo (GetInfoReq) returns (GetInfoResp);
 	rpc ReplayParked (ReplayParkedReq) returns (ReplayParkedResp);
+	rpc TruncateParked (TruncateParkedReq) returns (TruncateParkedResp);
 	rpc List (ListReq) returns (ListResp);
 	rpc RestartSubsystem (event_store.client.Empty) returns (event_store.client.Empty);
 }
@@ -346,6 +347,25 @@ message ReplayParkedReq {
 }
 
 message ReplayParkedResp {
+}
+
+message TruncateParkedReq {
+	Options options = 1;
+
+	message Options {
+		string group_name = 1;
+		oneof stream_option {
+			event_store.client.StreamIdentifier stream_identifier = 2;
+			event_store.client.Empty all = 3;
+		}
+		oneof stop_at_option {
+			int64 stop_at = 4;
+			event_store.client.Empty no_limit = 5;
+		}
+	}
+}
+
+message TruncateParkedResp {
 }
 
 message ListReq {

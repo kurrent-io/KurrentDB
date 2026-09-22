@@ -15,10 +15,12 @@ public enum NodeType {
 	External,
 };
 
-public interface INode : IAsyncInitializer, IAsyncDisposable {
+public interface INode : IAsyncDisposable {
 	ClusterVNodeOptions ClusterVNodeOptions { get; }
 	IServiceProvider Services { get; }
 	Uri Uri { get; }
+
+	Task InitializeAsync();
 }
 
 static class INodeExtensions {

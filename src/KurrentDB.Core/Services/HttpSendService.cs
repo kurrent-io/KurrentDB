@@ -4,7 +4,6 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
@@ -29,7 +28,7 @@ public class HttpSendService : IHttpForwarder,
 	private readonly HttpMessagePipe _httpPipe;
 	private readonly bool _forwardRequests;
 	private readonly HttpClient _forwardClient;
-	private MemberInfo _leaderInfo;
+	private MemberInfoLite _leaderInfo;
 
 	public HttpSendService(HttpMessagePipe httpPipe, bool forwardRequests, CertificateDelegates.ServerCertificateValidator externServerCertValidator) {
 		_httpPipe = Ensure.NotNull(httpPipe);
@@ -37,15 +36,10 @@ public class HttpSendService : IHttpForwarder,
 
 		var socketsHttpHandler = new SocketsHttpHandler {
 			SslOptions = {
-				CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-				RemoteCertificateValidationCallback = (_, certificate, chain, errors) => {
-					var (isValid, error) = externServerCertValidator(certificate, chain, errors, _leaderInfo?.HttpEndPoint.GetOtherNames());
-					if (!isValid && error != null) {
-						Log.Error("Server certificate validation error: {e}", error);
-					}
-
-					return isValid;
-				}
+				CertificateRevocationCheckMode = NodeTlsPolicy.CertificateRevocationCheckMode,
+				RemoteCertificateValidationCallback = NodeTlsPolicy.ForServerCertificate(
+					externServerCertValidator,
+					() => _leaderInfo?.HttpEndPoint.GetOtherNames()),
 			},
 			PooledConnectionLifetime = ESConsts.HttpClientConnectionLifeTime
 		};

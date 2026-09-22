@@ -101,6 +101,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
 		bool disableTls = false,
 		bool insecure = false,
+		bool kontrolPlaneMode = false,
 		SecondaryIndexReaders secondaryIndexReaders = null) {
 
 		_httpClientTimeoutSec = httpClientTimeoutSec;
@@ -113,6 +114,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int extTcpPort = tcpPort ?? PortsHelper.GetAvailablePort(ip);
 		int httpEndPointPort = httpPort ?? PortsHelper.GetAvailablePort(ip);
 		int intTcpPort = PortsHelper.GetAvailablePort(ip);
+		int kontrollerPort = PortsHelper.GetAvailablePort(ip);
 
 		if (string.IsNullOrEmpty(dbPath)) {
 			DbPath = Path.Combine(pathname,
@@ -145,11 +147,16 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				EnableAtomPubOverHttp = true
 			},
 			Cluster = new() {
-				ClusterSecret = disableTls && !insecure ? "we enjoy network partitions for the peace and quiet" : "",
+				ClusterSecret = disableTls && !insecure ? "we-enjoy-network-partitions-for-the-peace-and-quiet" : "",
 				DiscoverViaDns = false,
 				ReadOnlyReplica = isReadOnlyReplica,
 				Archiver = false,
 				StreamInfoCacheCapacity = 10_000
+			},
+			KontrolPlane = new() {
+				IsKontrolPlaneNode = kontrolPlaneMode,
+				IsDataPlaneNode = kontrolPlaneMode,
+				KontrollerPort = kontrollerPort,
 			},
 			Database = new() {
 				ChunkSize = chunkSize,

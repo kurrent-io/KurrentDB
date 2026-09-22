@@ -158,7 +158,7 @@ public class AppendRecordsRequestValidatorTests {
 		var result = Validator.Validate(request);
 
 		await Assert.That(result.IsValid).IsTrue();
-		await Assert.That(request.Checks).HasCount(0);
+		await Assert.That(request.Checks).Count().IsEqualTo(0);
 	}
 
 	static AppendRecordsRequest CreateValidRequest() {

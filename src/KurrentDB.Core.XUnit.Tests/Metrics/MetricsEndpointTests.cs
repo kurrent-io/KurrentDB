@@ -80,7 +80,9 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 						: "KurrentDB.Projections.Core"),
 				]))
 			.Build();
-		await using var sut = new MiniNode<LogFormat.V2, string>(Fixture.Directory, configuration: configuration);
+		// On disk, not in memory: an in-memory node creates no db directory, so the sys-disk metric
+		// has no drive to resolve and does not appear.
+		await using var sut = new MiniNode<LogFormat.V2, string>(Fixture.Directory, configuration: configuration, inMemDb: false);
 		await sut.Start();
 
 		await CreatePersistentSubscription(sut.Node.MainQueue);

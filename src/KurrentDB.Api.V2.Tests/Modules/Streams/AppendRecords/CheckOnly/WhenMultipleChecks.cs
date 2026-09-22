@@ -45,7 +45,7 @@ public class WhenMultipleChecks {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeStream);
 		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
 	}
@@ -87,7 +87,7 @@ public class WhenMultipleChecks {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeStream);
 		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
 	}
@@ -127,7 +127,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(1);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStreamB);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(5L);
@@ -168,7 +168,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(2);
+		await Assert.That(details!.Violations).Count().IsEqualTo(2);
 
 		var violationA = details.Violations.First(v => v.StreamState.Stream == checkStreamA);
 		var violationB = details.Violations.First(v => v.StreamState.Stream == checkStreamB);
@@ -225,7 +225,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(3);
+		await Assert.That(details!.Violations).Count().IsEqualTo(3);
 
 		var deletedViolation = details.Violations.First(v => v.StreamState.Stream == deletedStream);
 		var tombstonedViolation = details.Violations.First(v => v.StreamState.Stream == tombstonedStream);
@@ -274,7 +274,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStreamA);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(3L);
@@ -324,7 +324,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(2);
+		await Assert.That(details!.Violations).Count().IsEqualTo(2);
 
 		var violationB = details.Violations.First(v => v.StreamState.Stream == checkStreamB);
 		var violationC = details.Violations.First(v => v.StreamState.Stream == checkStreamC);
@@ -372,7 +372,7 @@ public class WhenMultipleChecks {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(5L);

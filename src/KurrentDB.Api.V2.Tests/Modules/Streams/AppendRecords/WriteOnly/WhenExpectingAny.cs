@@ -27,7 +27,7 @@ public class WhenExpectingAny {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
 	}
 
@@ -42,7 +42,7 @@ public class WhenExpectingAny {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
 	}
 
@@ -58,7 +58,7 @@ public class WhenExpectingAny {
 			cancellationToken: ct
 		);
 
-		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions).Count().IsEqualTo(1);
 		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
 	}
 
@@ -79,7 +79,7 @@ public class WhenExpectingAny {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details!.Violations).Count().IsEqualTo(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Any);

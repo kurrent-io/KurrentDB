@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<GitVersion>false</GitVersion>
+		<RootNamespace>KurrentDB</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DotNext.Threading"/>
+		<PackageReference Include="Serilog"/>
+		<ProjectReference Include="..\KurrentDB.KontrolPlane.ObjectModel\KurrentDB.KontrolPlane.ObjectModel.csproj" />
+	</ItemGroup>
+</Project>

@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 

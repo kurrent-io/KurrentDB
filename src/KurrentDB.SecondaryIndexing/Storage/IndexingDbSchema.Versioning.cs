@@ -9,11 +9,16 @@ namespace KurrentDB.SecondaryIndexing.Storage;
 // 1. Add migration action to MigrationActions with appropriate version
 // 2. Modify DDL (*.sql files or in-place SQL statements)
 // 3. Bump TargetVersion constant below
+//
+// Do not edit migrations that have been shipped.
+// If a migration must be patched, create a new one with B/C/D suffix and ensure all upgrade
+// path variations are covered in MigrationTests.SchemaParity
 partial class IndexingDbSchema {
-	private const int TargetVersion = 1;
+	internal const int TargetVersion = 2;
 
-	private static SortedDictionary<int, Action<DuckDBAdvancedConnection>> MigrationActions
+	internal static SortedDictionary<int, Action<DuckDBAdvancedConnection>> MigrationActions
 		=> new() {
-			{ 1, UpgradeToV1 }
+			{ 1, UpgradeToV1B }, // V1 renamed to V1A and replaced with V1B
+			{ 2, UpgradeToV2 },
 		};
 }

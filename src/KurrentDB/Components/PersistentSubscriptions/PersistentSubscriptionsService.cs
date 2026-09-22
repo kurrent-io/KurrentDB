@@ -168,12 +168,13 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 		}
 	}
 
-	public async ValueTask ReplayParkedAsync(ClaimsPrincipal principal, string streamId, string groupName, CancellationToken ct) {
+	public async ValueTask ReplayParkedAsync(ClaimsPrincipal principal, string streamId, string groupName,
+		CancellationToken ct, long? stopAt = null) {
 		await Authorize(principal, Scoped(Operations.Subscriptions.ReplayParked, streamId, groupName), ct);
 		var corrId = Guid.NewGuid();
 		var envelope = new TcsEnvelope<Message>();
 		publisher.Publish(new ClientMessage.ReplayParkedMessages(
-			corrId, corrId, envelope, streamId, groupName, stopAt: null, user: principal));
+			corrId, corrId, envelope, streamId, groupName, stopAt: stopAt, user: principal));
 
 		switch (await envelope.Task.WaitAsync(ct)) {
 			case ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success }:
@@ -182,8 +183,36 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 				throw new PersistentSubscriptionsException("Subscription does not exist.");
 			case ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied }:
 				throw new PersistentSubscriptionsException("Access denied.");
+			case ClientMessage.ReplayMessagesReceived { Reason: var reason }:
+				throw new PersistentSubscriptionsException($"Failed to replay parked messages: {reason}");
+			case ClientMessage.NotHandled:
+				throw new PersistentSubscriptionsException("The subscription is not ready. Please try again.");
 			default:
 				throw new PersistentSubscriptionsException("Failed to replay parked messages.");
+		}
+	}
+
+	public async ValueTask TruncateParkedAsync(ClaimsPrincipal principal, string streamId, string groupName,
+		CancellationToken ct, long? stopAt = null) {
+		await Authorize(principal, Scoped(Operations.Subscriptions.TruncateParked, streamId, groupName), ct);
+		var corrId = Guid.NewGuid();
+		var envelope = new TcsEnvelope<Message>();
+		publisher.Publish(new ClientMessage.TruncateParkedMessages(
+			corrId, corrId, envelope, streamId, groupName, stopAt: stopAt, user: principal));
+
+		switch (await envelope.Task.WaitAsync(ct)) {
+			case ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success }:
+				return;
+			case ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist }:
+				throw new PersistentSubscriptionsException("Subscription does not exist.");
+			case ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied }:
+				throw new PersistentSubscriptionsException("Access denied.");
+			case ClientMessage.TruncateParkedMessagesCompleted { Reason: var reason }:
+				throw new PersistentSubscriptionsException($"Failed to truncate parked messages: {reason}");
+			case ClientMessage.NotHandled:
+				throw new PersistentSubscriptionsException("The subscription is not ready. Please try again.");
+			default:
+				throw new PersistentSubscriptionsException("Failed to truncate parked messages.");
 		}
 	}
 

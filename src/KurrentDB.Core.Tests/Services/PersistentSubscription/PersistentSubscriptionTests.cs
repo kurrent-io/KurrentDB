@@ -2588,6 +2588,121 @@ public class ParkTests {
 		Assert.AreEqual(7, sub.OutstandingMessageCount);
 
 	}
+
+	[Test]
+	public void truncating_parked_messages_truncates_all() {
+		var messageParker = new FakeMessageParker();
+		var reader = new FakeCheckpointReader();
+
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
+				.WithMessageParker(messageParker)
+				.StartFromBeginning()
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1));
+		reader.Load(null);
+
+		var parkedEvents = Enumerable.Range(0, 19)
+			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
+		foreach (var parkedEvent in parkedEvents) {
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
+		}
+
+		Assert.AreEqual(19, messageParker.ParkedMessageCount);
+
+		sub.TruncateParkedMessages(null);
+
+		Assert.AreEqual(19, messageParker.MarkedAsProcessed);
+	}
+
+	[Test]
+	public void truncating_parked_messages_with_stop_at_truncates_up_to_stop_at() {
+		var messageParker = new FakeMessageParker();
+		var reader = new FakeCheckpointReader();
+
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
+				.WithMessageParker(messageParker)
+				.StartFromBeginning()
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1));
+		reader.Load(null);
+
+		var parkedEvents = Enumerable.Range(0, 19)
+			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
+		foreach (var parkedEvent in parkedEvents) {
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
+		}
+
+		sub.TruncateParkedMessages(10);
+
+		Assert.AreEqual(10, messageParker.MarkedAsProcessed);
+	}
+
+	[Test]
+	public void truncating_parked_messages_while_replaying_is_rejected() {
+		var messageParker = new FakeMessageParker();
+		var reader = new FakeCheckpointReader();
+
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader()) // no-op reader: the replay never completes, so it stays in progress
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
+				.WithMessageParker(messageParker)
+				.StartFromBeginning()
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1));
+		reader.Load(null);
+
+		var parkedEvents = Enumerable.Range(0, 5)
+			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
+		foreach (var parkedEvent in parkedEvents) {
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
+		}
+
+		// start a replay; with the no-op stream reader it stays in progress
+		sub.RetryParkedMessages(null);
+
+		// a truncate issued while the replay is in progress is rejected and doesn't touch the truncate-before
+		Assert.AreEqual(ParkedMessageOperationResult.AlreadyInProgress, sub.TruncateParkedMessages(null));
+		Assert.AreEqual(0, messageParker.MarkedAsProcessed);
+	}
+
+	[Test]
+	public void replaying_parked_messages_while_replaying_is_rejected() {
+		var messageParker = new FakeMessageParker();
+		var reader = new FakeCheckpointReader();
+
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
+				.WithEventLoader(new FakeStreamReader()) // no-op reader: the replay never completes, so it stays in progress
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
+				.WithMessageParker(messageParker)
+				.StartFromBeginning()
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1));
+		reader.Load(null);
+
+		var parkedEvents = Enumerable.Range(0, 5)
+			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
+		foreach (var parkedEvent in parkedEvents) {
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
+		}
+
+		// the first replay stays in progress (no-op stream reader)
+		Assert.AreEqual(ParkedMessageOperationResult.Started, sub.RetryParkedMessages(null));
+
+		// a second replay issued while the first is in progress is rejected
+		Assert.AreEqual(ParkedMessageOperationResult.AlreadyInProgress, sub.RetryParkedMessages(null));
+	}
 }
 
 [Ignore("very long test")]
@@ -2959,8 +3074,15 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 			completed(_lastParkedEventNumber);
 	}
 
-	public void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? dateTime, bool updateOldestParkedMessage) {
+	public void NotifyReplay() {
+	}
+
+	public void NotifyTruncate() {
+	}
+
+	public void BeginMarkParkedMessagesReprocessed(long sequence, Action completed) {
 		MarkedAsProcessed = sequence;
+		completed?.Invoke();
 	}
 
 	public void BeginDelete(Action<IPersistentSubscriptionMessageParker> completed) {
@@ -2983,6 +3105,7 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 	public long ParkedDueToClientNak { get; }
 	public long ParkedDueToMaxRetries { get; }
 	public long ParkedMessageReplays { get; }
+	public long ParkedMessageTruncations { get; }
 }
 
 

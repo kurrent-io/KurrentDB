@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package kurrent.data_plane;
+
+option csharp_namespace = "KurrentDB.DataPlane.Transport.Grpc";
+
+service DataPlaneNode
+{
+  rpc Fence(FenceRequest) returns (FenceResponse);
+}
+
+message FenceRequest
+{
+  uint64 currentEpoch = 1;
+}
+
+message FenceResponse
+{
+  uint64 epoch = 1;
+  int64 writerCheckpoint = 2;
+  int64 chaserCheckpoint = 3;
+  int32 priority = 4;
+  bytes instanceId = 5;
+}

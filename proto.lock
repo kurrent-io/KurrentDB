@@ -4069,6 +4069,51 @@
             "name": "ReplayParkedResp"
           },
           {
+            "name": "TruncateParkedReq",
+            "fields": [
+              {
+                "id": 1,
+                "name": "options",
+                "type": "Options"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Options",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "group_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "stream_identifier",
+                    "type": "event_store.client.StreamIdentifier"
+                  },
+                  {
+                    "id": 3,
+                    "name": "all",
+                    "type": "event_store.client.Empty"
+                  },
+                  {
+                    "id": 4,
+                    "name": "stop_at",
+                    "type": "int64"
+                  },
+                  {
+                    "id": 5,
+                    "name": "no_limit",
+                    "type": "event_store.client.Empty"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TruncateParkedResp"
+          },
+          {
             "name": "ListReq",
             "fields": [
               {
@@ -4157,6 +4202,11 @@
                 "name": "ReplayParked",
                 "in_type": "ReplayParkedReq",
                 "out_type": "ReplayParkedResp"
+              },
+              {
+                "name": "TruncateParked",
+                "in_type": "TruncateParkedReq",
+                "out_type": "TruncateParkedResp"
               },
               {
                 "name": "List",

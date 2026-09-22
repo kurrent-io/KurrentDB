@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsKurrentTUnit>true</IsKurrentTUnit>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+	</PropertyGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+	</ItemGroup>
+</Project>

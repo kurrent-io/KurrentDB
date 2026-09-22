@@ -54,6 +54,29 @@
 			document.documentElement.classList.toggle("theme-dark", m !== "light");
 		}
 	};
+
+	// Hand a kurrentdb:// connection string to the OS so an installed Navigator opens on this node. No
+	// browser API reports whether a protocol handler ran, so the page losing focus is taken as the signal
+	// that something claimed the scheme; still focused after the timeout means nothing did, and we offer the
+	// download instead. The timeout stays short so the fallback still counts as gesture-driven to popup
+	// blockers. A handler dialog the user then cancels also blurs us, so no fallback opens in that case -
+	// which is right, since the app is evidently installed.
+	window.kurrentNavigator = {
+		open: (deepLink, fallbackUrl) => {
+			let handedOff = false;
+			const claimed = () => { handedOff = true; };
+			document.addEventListener("visibilitychange", claimed);
+			window.addEventListener("blur", claimed);
+
+			location.href = deepLink;
+
+			setTimeout(() => {
+				document.removeEventListener("visibilitychange", claimed);
+				window.removeEventListener("blur", claimed);
+				if (!handedOff) window.open(fallbackUrl, "_blank", "noopener");
+			}, 1000);
+		}
+	};
 </script>
 </body>
 

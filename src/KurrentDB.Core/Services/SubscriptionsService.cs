@@ -27,7 +27,8 @@ public enum SubscriptionDropReason {
 	NotFound = 2,
 	PersistentSubscriptionDeleted = 3,
 	SubscriberMaxCountReached = 4,
-	StreamDeleted = 5
+	StreamDeleted = 5,
+	InvalidArgument = 6
 }
 
 public abstract class SubscriptionsService {
@@ -60,6 +61,8 @@ public class SubscriptionsService<TStreamId> :
 	private static readonly char[] LinkToSeparator = ['@'];
 
 	private readonly Dictionary<string, List<Subscription>> _subscriptionTopics = new();
+	private readonly Dictionary<string, List<Subscription>> _indexSubscriptions = new();
+	private readonly Dictionary<string, string> _indexFieldValues = new(StringComparer.Ordinal);
 	private readonly Dictionary<Guid, Subscription> _subscriptionsById = new();
 	private readonly Dictionary<string, List<PollSubscription>> _pollTopics = new();
 
@@ -106,40 +109,46 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	public void Handle(TcpMessage.ConnectionClosed message) {
-		List<string> subscriptionGroupsToRemove = null;
-		foreach (var (key, subscriptions) in _subscriptionTopics) {
+		RemoveSubscriptionsForConnection(_subscriptionTopics, message.Connection.ConnectionId);
+		RemoveSubscriptionsForConnection(_indexSubscriptions, message.Connection.ConnectionId);
+	}
+
+	private void RemoveSubscriptionsForConnection(Dictionary<string, List<Subscription>> topics, Guid connectionId) {
+		List<string> topicsToRemove = null;
+		foreach (var (key, subscriptions) in topics) {
 			for (int i = 0, n = subscriptions.Count; i < n; ++i) {
-				if (subscriptions[i].ConnectionId == message.Connection.ConnectionId)
+				if (subscriptions[i].ConnectionId == connectionId)
 					_subscriptionsById.Remove(subscriptions[i].CorrelationId);
 			}
 
-			subscriptions.RemoveAll(x => x.ConnectionId == message.Connection.ConnectionId);
+			subscriptions.RemoveAll(x => x.ConnectionId == connectionId);
 			if (subscriptions.Count == 0) // schedule removal of list instance
 			{
-				subscriptionGroupsToRemove ??= [];
-				subscriptionGroupsToRemove.Add(key);
+				topicsToRemove ??= [];
+				topicsToRemove.Add(key);
 			}
 		}
 
-		if (subscriptionGroupsToRemove != null) {
-			for (int i = 0, n = subscriptionGroupsToRemove.Count; i < n; ++i) {
-				_subscriptionTopics.Remove(subscriptionGroupsToRemove[i]);
+		if (topicsToRemove != null) {
+			for (int i = 0, n = topicsToRemove.Count; i < n; ++i) {
+				topics.Remove(topicsToRemove[i]);
 			}
 		}
 	}
 
 	void IHandle<ClientMessage.SubscribeToIndex>.Handle(ClientMessage.SubscribeToIndex msg) {
-		var isIndexStream = SystemStreams.IsIndexStream(msg.IndexName);
-		var canRead = isIndexStream && _secondaryIndexReaders.CanReadIndex(msg.IndexName);
-
-		if (!canRead) {
-			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
-			return;
+		switch (_secondaryIndexReaders.TryParseIndexSubscription(msg.IndexName, out var indexKey, out var constraints)) {
+			case IndexSubscriptionResult.NotFound:
+				msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+				return;
+			case IndexSubscriptionResult.InvalidConstraints:
+				msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.InvalidArgument));
+				return;
 		}
 
 		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName).CommitPosition;
 
-		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, false, lastIndexedPos, null, msg.User, null);
+		SubscribeToIndex(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, indexKey, constraints, lastIndexedPos, msg.User);
 
 		var subscribedMessage = new ClientMessage.SubscriptionConfirmation(msg.CorrelationId, lastIndexedPos, null);
 		msg.Envelope.ReplyWith(subscribedMessage);
@@ -225,6 +234,30 @@ public class SubscriptionsService<TStreamId> :
 		_subscriptionsById[correlationId] = subscription;
 	}
 
+	private void SubscribeToIndex(Guid correlationId, IEnvelope envelope, Guid connectionId, string indexStream,
+		string indexKey, IReadOnlyList<KeyValuePair<string, string>> constraints, long lastIndexedPosition, ClaimsPrincipal user) {
+		if (!_indexSubscriptions.TryGetValue(indexKey, out var subscribers)) {
+			subscribers = [];
+			_indexSubscriptions.Add(indexKey, subscribers);
+		}
+
+		var subscription = new Subscription(correlationId,
+			envelope,
+			connectionId,
+			indexStream,
+			resolveLinkTos: false,
+			lastIndexedPosition,
+			lastEventNumber: -1,
+			user,
+			eventFilter: null,
+			checkpointInterval: null,
+			checkpointIntervalCurrent: 0,
+			indexKey: indexKey,
+			indexConstraints: constraints);
+		subscribers.Add(subscription);
+		_subscriptionsById[correlationId] = subscription;
+	}
+
 	private void DropSubscription(Guid subscriptionId, SubscriptionDropReason dropReason) {
 		if (_subscriptionsById.TryGetValue(subscriptionId, out var subscription))
 			DropSubscription(subscription, dropReason, sendDropNotification: true);
@@ -234,13 +267,21 @@ public class SubscriptionsService<TStreamId> :
 		if (sendDropNotification)
 			subscription.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(subscription.CorrelationId, dropReason));
 
-		if (_subscriptionTopics.TryGetValue(subscription.EventStreamId, out var subscriptions)) {
-			subscriptions.Remove(subscription);
-			if (subscriptions.Count == 0)
-				_subscriptionTopics.Remove(subscription.EventStreamId);
-		}
+		if (subscription.IndexKey is { } indexKey)
+			RemoveFromTopic(_indexSubscriptions, indexKey, subscription);
+		else
+			RemoveFromTopic(_subscriptionTopics, subscription.EventStreamId, subscription);
 
 		_subscriptionsById.Remove(subscription.CorrelationId);
+	}
+
+	private static void RemoveFromTopic(Dictionary<string, List<Subscription>> topics, string topicKey, Subscription subscription) {
+		if (!topics.TryGetValue(topicKey, out var subscriptions))
+			return;
+
+		subscriptions.Remove(subscription);
+		if (subscriptions.Count == 0)
+			topics.Remove(topicKey);
 	}
 
 	/* LONG POLL SECTION */
@@ -335,40 +376,59 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(StorageMessage.SecondaryIndexCommitted message, CancellationToken token) {
-		if (ProcessSecondaryIndexEvent(message.IndexName, message.Event)) {
-			return ValueTask.CompletedTask;
-		}
+		var logPosition = _lastSeenSecondaryIndexLogPosition = message.Event.Event.LogPosition;
 
-		ReissueReadsFor(message.IndexName, message.Event.Event.LogPosition, long.MaxValue);
-		return ValueTask.CompletedTask;
-
-		bool ProcessSecondaryIndexEvent(string indexName, ResolvedEvent resolvedEvent) {
-			var indexEvent = resolvedEvent.Event;
-			var logPosition = _lastSeenSecondaryIndexLogPosition = indexEvent.LogPosition;
-
-			if (!_subscriptionTopics.TryGetValue(indexName, out var subscriptions))
-				return true;
+		if (_indexSubscriptions.TryGetValue(message.IndexName, out var subscriptions)) {
+			var lookupReady = false;
 
 			for (int i = 0, n = subscriptions.Count; i < n; i++) {
 				var sub = subscriptions[i];
 				if (logPosition <= sub.LastIndexedPosition)
 					continue;
 
-				sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, resolvedEvent));
-			}
+				var constraints = sub.IndexConstraints!;
+				if (constraints.Count > 0) {
+					if (!lookupReady) {
+						PopulateCommittedFieldValues(message.FieldValues);
+						lookupReady = true;
+					}
 
-			return false;
+					if (!ConstraintsSatisfied(constraints, _indexFieldValues))
+						continue;
+				}
+
+				sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, message.Event));
+			}
 		}
+
+		ReissueReadsFor(message.IndexName, logPosition, long.MaxValue);
+		return ValueTask.CompletedTask;
+	}
+
+	private void PopulateCommittedFieldValues(IReadOnlyList<KeyValuePair<string, string>> fieldValues) {
+		_indexFieldValues.Clear();
+		for (int i = 0, n = fieldValues.Count; i < n; i++)
+			_indexFieldValues[fieldValues[i].Key] = fieldValues[i].Value;
+	}
+
+	private static bool ConstraintsSatisfied(IReadOnlyList<KeyValuePair<string, string>> constraints, Dictionary<string, string> fieldValues) {
+		if (constraints.Count > fieldValues.Count)
+			return false;
+
+		for (int i = 0, n = constraints.Count; i < n; i++) {
+			var constraint = constraints[i];
+			if (!fieldValues.TryGetValue(constraint.Key, out var value) || value != constraint.Value)
+				return false;
+		}
+
+		return true;
 	}
 
 	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexDeleted>.HandleAsync(StorageMessage.SecondaryIndexDeleted message, CancellationToken token) {
-		var subscriptionsToDrop = new List<Subscription>();
-		foreach (var (streamId, subscriptions) in _subscriptionTopics) {
-			if (message.StreamIdRegex.IsMatch(streamId))
-				subscriptionsToDrop.AddRange(subscriptions);
-		}
+		if (!_indexSubscriptions.TryGetValue(message.IndexKey, out var subscriptions))
+			return ValueTask.CompletedTask;
 
-		foreach (var subscription in subscriptionsToDrop) {
+		foreach (var subscription in subscriptions.ToArray()) {
 			// we use `SubscriptionDropReason.NotFound` for consistency with reads which also return `Not Found`
 			// when an index is deleted while being read. SubscriptionDropReason.StreamDeleted is currently only used for Tombstones
 			DropSubscription(subscription, SubscriptionDropReason.NotFound, sendDropNotification: true);
@@ -430,6 +490,11 @@ public class SubscriptionsService<TStreamId> :
 			return;
 
 		foreach (var subscriptions in _subscriptionTopics.Values) {
+			foreach (var subscription in subscriptions.ToArray())
+				Authorize(subscription);
+		}
+
+		foreach (var subscriptions in _indexSubscriptions.Values) {
 			foreach (var subscription in subscriptions.ToArray())
 				Authorize(subscription);
 		}
@@ -534,7 +599,9 @@ public class SubscriptionsService<TStreamId> :
 		ClaimsPrincipal user,
 		IEventFilter eventFilter,
 		int? checkpointInterval,
-		int checkpointIntervalCurrent) {
+		int checkpointIntervalCurrent,
+		string indexKey = null,
+		IReadOnlyList<KeyValuePair<string, string>> indexConstraints = null) {
 		public readonly Guid CorrelationId = correlationId;
 		public readonly IEnvelope Envelope = envelope;
 		public readonly Guid ConnectionId = connectionId;
@@ -546,6 +613,11 @@ public class SubscriptionsService<TStreamId> :
 		public readonly IEventFilter EventFilter = eventFilter;
 		public readonly int? CheckpointInterval = checkpointInterval;
 		public int CheckpointIntervalCurrent = checkpointInterval == null ? 0 : checkpointIntervalCurrent;
+
+		// When set, this is a live subscription to a user index: it lives in _indexSubscriptions keyed by IndexKey (the
+		// base index stream) and is matched by IndexConstraints containment rather than by exact EventStreamId.
+		public readonly string IndexKey = indexKey;
+		public readonly IReadOnlyList<KeyValuePair<string, string>> IndexConstraints = indexConstraints;
 	}
 
 	private class PollSubscription(

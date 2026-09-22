@@ -10,6 +10,8 @@
 	<ItemGroup>
 		<PackageReference Include="RestSharp" />
 		<PackageReference Include="Testcontainers" />
+		<!-- Override vulnerable transitive (pulled by Testcontainers). -->
+		<PackageReference Include="SSH.NET" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" />
 	</ItemGroup>
 

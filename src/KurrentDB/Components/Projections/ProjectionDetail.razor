@@ -3,6 +3,7 @@
 
 @page "/ui/projections/{Name}"
 @attribute [Authorize]
+@using KurrentDB.Components.Shared
 @using KurrentDB.UI.Theme
 @using Microsoft.AspNetCore.Authorization
 
@@ -68,7 +69,21 @@
 		</MudSimpleTable>
 
 		@if (!string.IsNullOrEmpty(_query)) {
-			<MudText Typo="Typo.h6">Source</MudText>
+			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+				<MudText Typo="Typo.h6">Source</MudText>
+				@* A link rather than a MudButton: MudBlazor uppercases button labels, which beside this
+				   read-only source reads as an action on this projection instead of a link out. *@
+				@if (!IsSystemProjection) {
+					<MudLink Href="@GafferLink.For("projection_detail")" Target="_blank"
+					         Typo="Typo.body2" Class="d-inline-flex">
+						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+							<MudIcon Icon="@KurrentIcons.Gaffer" Style="font-size: 1rem;"/>
+							<span>Debug and deploy projections</span>
+							<MudIcon Icon="@Icons.Material.Filled.OpenInNew" Style="font-size: 1rem;"/>
+						</MudStack>
+					</MudLink>
+				}
+			</MudStack>
 			<MudPaper Class="pa-4" Outlined="true">
 				<pre style="white-space: pre-wrap; word-break: break-all; margin: 0; font-family: monospace;">@_query</pre>
 			</MudPaper>

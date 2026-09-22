@@ -61,7 +61,7 @@ partial class IndexingDbSchema {
 		}
 	}
 
-	private static void PerformMigration(
+	internal static void PerformMigration(
 		int baseVersion,
 		int targetVersion,
 		DuckDBAdvancedConnection connection,

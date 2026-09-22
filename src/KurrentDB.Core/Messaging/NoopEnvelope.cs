@@ -4,6 +4,7 @@
 namespace KurrentDB.Core.Messaging;
 
 public class NoopEnvelope : IEnvelope {
+	public static readonly NoopEnvelope Instance = new();
 	public void ReplyWith<T>(T message) where T : Message {
 	}
 }

@@ -27,6 +27,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Licensing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -69,6 +70,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
 		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
 		bool disableTls = false, string clusterSecret = "",
+		bool kontrolPlaneMode = false,
+		int kontrollerPort = 0,
+		EndPoint[] kontrolPlaneBootstrapSeed = null,
+		int clusterSize = 3,
 		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -110,7 +115,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				DiscoverViaDns = false,
 				ClusterDns = string.Empty,
 				GossipSeed = gossipSeeds,
-				ClusterSize = 3,
+				ClusterSize = clusterSize,
 				NodePriority = nodePriority,
 				ClusterSecret = clusterSecret,
 				GossipIntervalMs = 2_000,
@@ -150,6 +155,16 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			},
 			Projection = new() {
 				RunProjections = ProjectionType.None
+			},
+			// A node in Kontrol Plane mode is both planes: it runs a Kontroller and has its own leader
+			// appointed by the Kontrol Plane. Both flags off is the legacy elections mechanism, which is
+			// what every other cluster test wants. No KontrolPlaneApiSeed is needed because a node that
+			// runs a Kontroller bootstraps against its own API and is redirected to the leader.
+			KontrolPlane = new() {
+				IsKontrolPlaneNode = kontrolPlaneMode,
+				IsDataPlaneNode = kontrolPlaneMode,
+				KontrollerPort = kontrollerPort,
+				KontrolPlaneBootstrapSeed = kontrolPlaneBootstrapSeed ?? [],
 			},
 			PlugableComponents = subsystems
 		};
@@ -199,8 +214,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			[],
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,
-			expiryStrategy,
-			Guid.NewGuid(), debugIndex);
+			licenseProvider: new TestLicenseProvider(MultiNodeClusterLicenseMonitor.Entitlement),
+			expiryStrategy: expiryStrategy,
+			instanceId: Guid.NewGuid(),
+			debugIndex: debugIndex);
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 
 		var builder = WebApplication.CreateBuilder();

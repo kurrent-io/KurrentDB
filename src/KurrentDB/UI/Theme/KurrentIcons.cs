@@ -88,6 +88,14 @@ public static class KurrentIcons {
 		$"<path {Stroke} d=\"M12 18c5.5 0 10-6 10-6s-4.5-6-10-6-10 6-10 6 4.5 6 10 6z\"/>" +
 		$"<path {Stroke} d=\"M12 14.5c1.4 0 2.5-1.1 2.5-2.5S13.4 9.5 12 9.5 9.5 10.6 9.5 12s1.1 2.5 2.5 2.5z\"/>";
 
+	// Gaffer logomark from Navigator. The transform maps its "327 34 52 52" source viewBox onto MudIcon's
+	// 24x24; the clip id is shared across instances, whose <defs> are identical.
+	public const string Gaffer =
+		"<g transform=\"matrix(0.463348 0 0 0.463348 -151.4834 -15.7538)\" clip-path=\"url(#kurrent-gaffer-clip)\">" +
+		"<path fill=\"currentColor\" d=\"M327 22.3v142.737l4.287-19.329V41.628zm6.767 0v142.737l4.287-26.764v-89.21zm6.766 142.737V22.299l4.287 34.198v74.342zM347.3 22.3v142.737l4.287-41.632V63.931zm6.766 142.737V22.299l4.287 49.066v44.606zM360.833 22.3v142.737l4.287-56.501V78.799zm6.766 142.737V22.299l4.287 63.935v14.868zm11.054-71.369-4.287-71.369v142.738z\"/>" +
+		"</g>" +
+		"<defs><clipPath id=\"kurrent-gaffer-clip\"><circle cx=\"352.898\" cy=\"59.898\" r=\"25.898\"/></clipPath></defs>";
+
 	// Fill-based icons (no stroke). MudIcon's default svg uses fill="currentColor".
 	public const string Check =
 		"<path d=\"M9.7 18.9c-.4 0-.7-.1-1-.4L3.2 13c-.5-.5-.5-1.4 0-2 .5-.5 1.4-.5 2 0l4.6 4.6L19.9 5.5c.5-.5 1.4-.5 2 0 .5.5.5 1.4 0 2l-11.2 11c-.3.3-.6.4-1 .4z\"/>";

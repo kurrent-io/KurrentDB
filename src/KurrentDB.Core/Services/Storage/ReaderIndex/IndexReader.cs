@@ -11,7 +11,6 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using ILogger = Serilog.ILogger;

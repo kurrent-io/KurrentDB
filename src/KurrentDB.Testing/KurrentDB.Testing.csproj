@@ -2,7 +2,6 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -35,7 +34,8 @@
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="System.Reactive" />
-    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+    <PackageReference Include="TUnit.Core" />
     <PackageReference Include="WaffleGenerator.Bogus" />
     <PackageReference Include="Grpc.StatusProto" />
   </ItemGroup>

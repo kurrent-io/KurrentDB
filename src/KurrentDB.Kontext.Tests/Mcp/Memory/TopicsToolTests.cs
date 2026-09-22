@@ -33,7 +33,7 @@ public class TopicsToolTests {
 
 		var result = await TopicsTool.Topics(search, client, Workspace(), TestWorkspace.Registry(), keywords: "alice");
 
-		await Assert.That(result.Topics).HasCount().EqualTo(2);
+		await Assert.That(result.Topics).Count().IsEqualTo(2);
 		await Assert.That(result.Topics[0].Topic).IsEqualTo("alice-current-employer");
 		await Assert.That(result.Topics[0].Score).IsEqualTo(0.9f);
 		await Assert.That(result.Topics[0].LatestFact).IsEqualTo("Alice works at Globex.");

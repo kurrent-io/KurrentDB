@@ -12,8 +12,10 @@ using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.Transforms.Identity;
+using KurrentDB.Licensing;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests;
@@ -95,6 +97,7 @@ public abstract class ClusterMemberScenario<TLogFormat, TStreamId> {
 					_options.Application.AllowAnonymousEndpointAccess,
 					_options.Application.AllowAnonymousStreamAccess,
 					_options.Application.OverrideAnonymousEndpointAccessForGossip).Create(c.MainQueue)]))),
+			licenseProvider: new TestLicenseProvider(MultiNodeClusterLicenseMonitor.Entitlement),
 			certificateProvider: new OptionsCertificateProvider());
 
 		_node.Db.TransformManager.LoadTransforms([new IdentityDbTransform()]);

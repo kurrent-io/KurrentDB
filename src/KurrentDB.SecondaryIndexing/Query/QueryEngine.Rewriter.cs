@@ -4,7 +4,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using DotNext.Buffers;
-using Kurrent.Quack;
 using Kurrent.Quack.Parser;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.User;
@@ -41,66 +40,60 @@ partial class QueryEngine {
 		}
 	}
 
-	private void RewriteNode(JsonNode ast, ref PreparedQueryBuilder builder) {
+	private void RewriteNode(JsonNode? ast, ref PreparedQueryBuilder builder) {
 		switch (ast) {
 			case JsonObject obj:
-				RewriteNode(obj, ref builder);
+				RewriteKnownNode(obj, ref builder);
+				foreach (var property in obj) {
+					RewriteNode(property.Value, ref builder);
+				}
+
 				break;
 			case JsonArray array:
-				RewriteNode(array, ref builder);
+				foreach (var element in array) {
+					RewriteNode(element, ref builder);
+				}
+
+				break;
+			default:
+				// string/number/true/false/null: no rewriting
 				break;
 		}
 	}
 
-	private void RewriteNode(JsonObject node, ref PreparedQueryBuilder builder) {
-		foreach (var (propertyName, propertyValue) in node) {
-			if (propertyValue is null) {
-				// nothing to do
-			} else if (propertyName is "from_table") {
-				RewriteFromClause(propertyValue, ref builder);
-			} else {
-				RewriteNode(propertyValue, ref builder);
-			}
-		}
-	}
-
-	private void RewriteNode(JsonArray array, ref PreparedQueryBuilder builder) {
-		foreach (var element in array) {
-			if (element is not null)
-				RewriteNode(element, ref builder);
-		}
-	}
-
-	private void RewriteFromClause(JsonNode fromClause, ref PreparedQueryBuilder builder) {
+	private void RewriteKnownNode(JsonObject ast, ref PreparedQueryBuilder builder) {
 		// https://duckdb.org/docs/stable/sql/query_syntax/from
 		// The following cases are possible:
 		// TABLE_FUNCTION - not allowed
 		// BASE_TABLE - allowed, the only allowed schemas are 'kdb' and 'usr'
 		// JOIN - contains 'left' and 'right' sub-objects, apply rewrite recursively
 		// SUBQUERY - allowed
+		// PIVOT/UNPIVOT - allowed, the source table is still subject to the same rules
+		//
+		// A BASE_TABLE/TABLE_FUNCTION reference can appear under any property name depending on the
+		// enclosing construct (e.g. PIVOT wraps its source under "source", not "from_table"), so the
+		// match below is keyed purely on the node's own "type" and applies regardless of propertyName.
 
-		switch (fromClause["type"]?.ToString()) {
+		switch (ast["type"]?.ToString()) {
 			case "BASE_TABLE":
-				RewriteTableReference(fromClause, ref builder);
+				RewriteTableReference(ast, ref builder);
 				break;
-			case "JOIN":
-				var left = fromClause["left"] ?? throw QuerySyntaxException.InvalidAst();
-				var right = fromClause["right"] ?? throw QuerySyntaxException.InvalidAst();
-				RewriteNode(left, ref builder);
-				RewriteNode(right, ref builder);
+			case "TABLE_FUNCTION":
+				throw new UnsupportedQueryDataSourceTypeException("TABLE_FUNCTION");
+			default:
 				break;
-			case "SUBQUERY":
-				var subQuery = fromClause["subquery"] ?? throw QuerySyntaxException.InvalidAst();
-				RewriteNode(subQuery, ref builder);
-				break;
-			case var sourceType:
-				throw new UnsupportedQueryDataSourceTypeException(sourceType);
 		}
 	}
 
 	private void RewriteTableReference(JsonNode tableReference, ref PreparedQueryBuilder builder) {
+		const string catalogNameProperty = "catalog_name";
 		const string schemaNameProperty = "schema_name";
 		const string tableNameProperty = "table_name";
+
+		// reject any explicit catalog qualifier (e.g. "memory.kdb.records" or an attached database);
+		// unqualified references always serialize catalog_name as an empty string
+		if (tableReference[catalogNameProperty]?.ToString() is { Length: > 0 } catalogName)
+			throw new UnsupportedCatalogException(catalogName);
 
 		// validate schema name
 		switch (tableReference[schemaNameProperty]?.ToString()) {

@@ -34,7 +34,6 @@ jobs:
     -  
       name: Scan for Vulnerabilities
       run: |
-        cd src
         dotnet restore
         dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerabilities.txt
         # Advisories consciously accepted while awaiting an upstream fix.
@@ -69,9 +68,6 @@ jobs:
       name: Checkout
       uses: actions/checkout@v4
     -  
-      name: Restore Cached Kontext Models
-      uses: ./.github/actions/cache-kontext-models
-    -  
       name: Github Registry Docker Login
       uses: azure/docker-login@v1
       with:
@@ -80,6 +76,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     -  
       name: Docker Compose Smoke Test
+      env:
+        KURRENTDB__LICENSING__LICENSE_KEY: ${{ secrets.KURRENTDB_TEST_LICENSE_KEY }}
       run: |
         RUNTIME=linux-amd64 docker compose build
         docker compose up --detach

@@ -50,6 +50,8 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.AllowAnonymous(Operations.Node.Gossip.Read);
 		policy.AllowAnonymous(Operations.Node.Gossip.ClientRead);
 		policy.Add(Operations.Node.Gossip.Update, isSystem);
+		policy.Add(Operations.Node.KontrolPlane.Access, isSystem);
+		policy.Add(Operations.Node.DataPlane.Access, isSystem);
 
 		policy.AddMatchAnyAssertion(Operations.Node.Shutdown, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.MergeIndexes, Grant.Allow, OperationsOrAdmins);
@@ -70,6 +72,7 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.Delete, Grant.Allow, OperationsOrAdmins);
 		policy.Add(Operations.Subscriptions.ProcessMessages, subscriptionAccess);
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.ReplayParked, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Subscriptions.TruncateParked, Grant.Allow, OperationsOrAdmins);
 
 		policy.Add(Operations.Streams.Read, streamAssertion);
 		policy.Add(Operations.Streams.Write, streamAssertion);

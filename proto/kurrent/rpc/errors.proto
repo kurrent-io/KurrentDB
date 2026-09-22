@@ -78,11 +78,10 @@ enum ServerError {
     status_code: DEADLINE_EXCEEDED
   }];
 
-  // The server is starting up or shutting down and cannot process requests.
+  // The server is starting up and cannot process requests.
   //
   // Common causes:
   // - Server is initializing (loading indexes, recovering state)
-  // - Server is performing graceful shutdown
   // - Server is performing maintenance operations
   //
   // Client action: Retry with exponential backoff. Wait for server to become ready.
@@ -118,6 +117,19 @@ enum ServerError {
   // May be retriable, but likely indicates a server-side issue requiring investigation.
   SERVER_ERROR_SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
     status_code: INTERNAL
+  }];
+
+  // The server is shutting down and can no longer handle requests.
+  //
+  // Common causes:
+  // - Graceful shutdown or restart
+  //
+  // Client action: Retry with exponential backoff. For single node clusters, consider
+  //   delaying longer to give the node time to restart.
+  // Retriable - the server will become available after restarting or the client
+  //   connects to another node.
+  SERVER_ERROR_SERVER_SHUTTING_DOWN = 10 [(kurrent.rpc.error) = {
+    status_code: UNAVAILABLE
   }];
 }
 

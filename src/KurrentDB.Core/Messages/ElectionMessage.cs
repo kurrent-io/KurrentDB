@@ -10,6 +10,12 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Messages;
 
 public static partial class ElectionMessage {
+	// Triggered by
+	//  - Unknown node state
+	//  - Gossip says:
+	//      - Multiple live leaders
+	//      - 0 live leaders
+	//      - the node we think is the leader is no longer in a leader related state.
 	[DerivedMessage(CoreMessage.Election)]
 	public partial class StartElections : Message {
 		public override string ToString() {
@@ -333,9 +339,9 @@ public static partial class ElectionMessage {
 	public partial class ElectionsDone : Message {
 		public readonly int InstalledView;
 		public readonly int ProposalNumber;
-		public readonly MemberInfo Leader;
+		public readonly MemberInfoLite Leader;
 
-		public ElectionsDone(int installedView, int proposalNumber, MemberInfo leader) {
+		public ElectionsDone(int installedView, int proposalNumber, MemberInfoLite leader) {
 			Ensure.Nonnegative(installedView, "installedView");
 			Ensure.NotNull(leader, "leader");
 			InstalledView = installedView;
@@ -346,5 +352,28 @@ public static partial class ElectionMessage {
 		public override string ToString() {
 			return $"---- ElectionsDone: installedView {InstalledView}, proposal number {ProposalNumber}, leader {Leader}";
 		}
+	}
+
+	// KPlane equivalent of ElectionsDone.
+	// When the appointed node is this one, Envelope is answered with LeadershipEnded once the node
+	// leaves the leader states again.
+	[DerivedMessage(CoreMessage.Election)]
+	public partial class LeaderAppointed(
+		int epochNumber,
+		MemberInfoLite leader,
+		IEnvelope<LeadershipEnded> envelope = null) : Message {
+
+		public int EpochNumber => epochNumber;
+		public MemberInfoLite Leader => leader;
+		public IEnvelope<LeadershipEnded> Envelope => envelope ?? NoopEnvelope.Instance;
+
+		public override string ToString() {
+			return $"---- LeaderAppointed: epoch number {EpochNumber}, leader {Leader}";
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Election)]
+	public partial class LeadershipEnded : Message {
+		public static readonly LeadershipEnded Instance = new();
 	}
 }
