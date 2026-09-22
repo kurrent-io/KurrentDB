@@ -147,36 +147,36 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 
 		Exception partitionFault = null;
 		try {
-			// Race the read loop against the first partition exit: partition processors
-			// only complete early when they fault, and a continuous projection's read
-			// loop never completes, so awaiting the read loop alone left processor
-			// faults unobserved - the projection reported Running forever with no
-			// checkpoints, no persistence, and nothing logged (DB-2159).
+			// Fault the projection if a partitionTask completes unexpectedly.
 			using var readCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 			using var drainCts = new CancellationTokenSource();
 			var readLoop = RunReadLoop(checkpoint, dispatcher, coordinator, readCts.Token, drainCts.Token);
-			var firstPartitionExit = Task.WhenAny(partitionTasks);
+			var exited = await Task.WhenAny([readLoop, ..partitionTasks]);
 
-			var winner = await Task.WhenAny(readLoop, firstPartitionExit);
-			if (winner == firstPartitionExit) {
-				var exited = await firstPartitionExit;
-				if (exited.IsFaulted) {
-					partitionFault = exited.Exception!.InnerException ?? exited.Exception;
-					Log.Error(partitionFault, "ProjectionEngineV2 {Name} partition processor failed", _config.ProjectionName);
-					// Cancelling both tokens is what stops the read loop: every await
-					// in it is token-governed, including the final checkpoint marker
-					// (drain token), which must not wait on a checkpoint the dead
-					// partition will never ack. Completing the channels is what lets
-					// the sibling processors exit; doing it before awaiting the read
-					// loop is deliberate redundancy - if a future await in the read
-					// loop misses a token, channel closure still unblocks the writer
-					// instead of wedging the fault path again.
-					await readCts.CancelAsync();
-					await drainCts.CancelAsync();
-					dispatcher.Complete(partitionFault);
-					await readLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-					ExceptionDispatchInfo.Capture(partitionFault).Throw();
-				}
+			if (exited != readLoop) {
+				// a partition task exited.
+				// it can fault due to user javascript throwing, but it should never complete successfully before readLoop
+				// and it should never be cancelled (we run them with ct.None);
+				partitionFault = exited.IsFaulted
+					? exited.Exception!.InnerException ?? exited.Exception
+					: new InvalidOperationException(
+							$"Partition processor for projection {_config.ProjectionName} completed in an unexpected status: {exited.Status}");
+
+				Log.Error(partitionFault, "ProjectionEngineV2 {Name} partition processor stopped", _config.ProjectionName);
+
+				// Cancelling both tokens is what stops the read loop: every await
+				// in it is token-governed, including the final checkpoint marker
+				// (drain token), which must not wait on a checkpoint the dead
+				// partition will never ack. Completing the channels is what lets
+				// the sibling processors exit; doing it before awaiting the read
+				// loop is deliberate redundancy - if a future await in the read
+				// loop misses a token, channel closure still unblocks the writer
+				// instead of wedging the fault path again.
+				await readCts.CancelAsync();
+				await drainCts.CancelAsync();
+				dispatcher.Complete(partitionFault);
+				await readLoop.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+				ExceptionDispatchInfo.Capture(partitionFault).Throw();
 			}
 
 			await readLoop;
@@ -199,7 +199,7 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 				// processors failing during drain must not replace it. WhenAll only
 				// surfaces its first fault, so log distinct siblings off the tasks.
 				foreach (var task in partitionTasks) {
-					if (task.IsFaulted && !ReferenceEquals(task.Exception?.InnerException, partitionFault))
+					if (task.IsFaulted && !ReferenceEquals(task.Exception?.GetBaseException(), partitionFault))
 						Log.Warning(task.Exception?.InnerException, "ProjectionEngineV2 {Name} sibling partition processor failed during drain", _config.ProjectionName);
 				}
 			}
