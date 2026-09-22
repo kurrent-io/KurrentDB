@@ -9,6 +9,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
@@ -52,25 +53,14 @@ public class PartitionProcessor(
 		}
 	}
 
-	// Wraps a state-handler invocation so a throw faults the projection with a
-	// debuggable fault reason: projection name, handler type, event position, and
-	// the handler's message. Only handler invocations are wrapped - infrastructure
-	// failures (state-stream reads, cache writes) propagate raw rather than
-	// blaming the user's handler.
-	private T InvokeHandler<T>(TFPos position, Func<T> invoke) {
-		try {
-			return invoke();
-		} catch (Exception ex) {
-			var tag = CheckpointTag.FromPosition(0, position.CommitPosition, position.PreparePosition);
-			throw new PartitionProcessingException(projectionName, stateHandler.GetType(), tag.ToString(), ex);
-		}
+	// Builds the fault that a throwing state handler surfaces as: projection name,
+	// handler type, event position, and the handler's message. Only handler
+	// invocations are wrapped - infrastructure failures (state-stream reads, cache
+	// writes) propagate raw rather than blaming the user's handler.
+	private PartitionProcessingException HandlerFault(TFPos position, Exception inner) {
+		var tag = CheckpointTag.FromPosition(0, position.CommitPosition, position.PreparePosition);
+		return new(projectionName, stateHandler.GetType(), tag.ToString(), inner);
 	}
-
-	private void InvokeHandler(TFPos position, Action invoke) =>
-		InvokeHandler<object?>(position, () => {
-			invoke();
-			return null;
-		});
 
 	/// <summary>
 	/// Loads partition state into the state handler from cache, persisted result stream, or initializes fresh.
@@ -80,7 +70,11 @@ public class PartitionProcessor(
 		if (_stateCache.TryGet(partitionKey, out var cachedState)) {
 			// A null cached state means the handler explicitly set state to null (e.g. JS null).
 			// Load "null" so the handler gets JS null, not a fresh $init state.
-			InvokeHandler(position, () => stateHandler.Load(cachedState ?? "null"));
+			try {
+				stateHandler.Load(cachedState ?? "null");
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			return false;
 		}
 
@@ -88,12 +82,20 @@ public class PartitionProcessor(
 		if (persistedState is not null) {
 			Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
 				partitionKey, projectionName);
-			InvokeHandler(position, () => stateHandler.Load(persistedState));
+			try {
+				stateHandler.Load(persistedState);
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			await _stateCache.Set(partitionKey, persistedState, ct);
 			return false;
 		}
 
-		InvokeHandler(position, stateHandler.Initialize);
+		try {
+			stateHandler.Initialize();
+		} catch (Exception ex) {
+			throw HandlerFault(position, ex);
+		}
 		return true;
 	}
 
@@ -102,10 +104,18 @@ public class PartitionProcessor(
 		if (!isBiState) return;
 
 		if (!_sharedStateInitialized) {
-			InvokeHandler(position, stateHandler.InitializeShared);
+			try {
+				stateHandler.InitializeShared();
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			_sharedStateInitialized = true;
 		} else if (_sharedState != null) {
-			InvokeHandler(position, () => stateHandler.LoadShared(_sharedState));
+			try {
+				stateHandler.LoadShared(_sharedState);
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 		}
 	}
 
@@ -119,10 +129,13 @@ public class PartitionProcessor(
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 
-		var (processed, newState) = InvokeHandler(pe.LogPosition, () => {
-			var p = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var state);
-			return (p, state);
-		});
+		bool processed;
+		string newState;
+		try {
+			processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out newState);
+		} catch (Exception ex) {
+			throw HandlerFault(pe.LogPosition, ex);
+		}
 
 		if (processed) {
 			await _stateCache.Set(partitionKey, newState, ct);
@@ -149,25 +162,32 @@ public class PartitionProcessor(
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 
 		if (isNewPartition) {
-			var createdEmittedEvents = InvokeHandler(pe.LogPosition, () => {
-				stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out var created);
-				return created;
-			});
+			EmittedEventEnvelope[] createdEmittedEvents;
+			try {
+				stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out createdEmittedEvents);
+			} catch (Exception ex) {
+				throw HandlerFault(pe.LogPosition, ex);
+			}
 			if (emitEnabled)
 				_activeBuffer.AddEmittedEvents(createdEmittedEvents);
 		}
 
-		var (processed, newState, newSharedState, emittedEvents) = InvokeHandler(pe.LogPosition, () => {
-			var p = stateHandler.ProcessEvent(
+		bool processed;
+		string newState;
+		string newSharedState;
+		EmittedEventEnvelope[] emittedEvents;
+		try {
+			processed = stateHandler.ProcessEvent(
 				partitionKey,
 				checkpointTag,
 				category: null, // todo: is this an important gap?
 				projEvent,
-				out var state,
-				out var sharedState,
-				out var emitted);
-			return (p, state, sharedState, emitted);
-		});
+				out newState,
+				out newSharedState,
+				out emittedEvents);
+		} catch (Exception ex) {
+			throw HandlerFault(pe.LogPosition, ex);
+		}
 
 		if (processed) {
 			await _stateCache.Set(partitionKey, newState, ct);
