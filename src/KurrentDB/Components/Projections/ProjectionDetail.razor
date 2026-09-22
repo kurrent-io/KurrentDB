@@ -58,10 +58,28 @@
 			<tr><td>Status</td><td style="font-family: monospace;">@_stats.Status</td></tr>
 			<tr><td>Mode</td><td style="font-family: monospace;">@_stats.Mode</td></tr>
 			<tr><td>Engine</td><td style="font-family: monospace;">@($"v{_stats.EngineVersion}")</td></tr>
-			<tr><td>Progress</td><td style="font-family: monospace;">@($"{_stats.Progress:F6}%")</td></tr>
+			<tr><td>Progress</td><td style="font-family: monospace;">
+				@if (_stats.Reports(ProjectionStat.Progress)) {
+					@($"{_stats.Progress:F6}%")
+				} else {
+					<NotReported/>
+				}
+			</td></tr>
 			<tr><td>Records Processed</td><td style="font-family: monospace;">@_stats.EventsProcessedAfterRestart.ToString("N0")</td></tr>
-			<tr><td>Buffered Records</td><td style="font-family: monospace;">@_stats.BufferedEvents.ToString("N0")</td></tr>
-			<tr><td>Checkpoint Status</td><td style="font-family: monospace;">@_stats.CheckpointStatus</td></tr>
+			<tr><td>Buffered Records</td><td style="font-family: monospace;">
+				@if (_stats.Reports(ProjectionStat.BufferedEvents)) {
+					@_stats.BufferedEvents.ToString("N0")
+				} else {
+					<NotReported/>
+				}
+			</td></tr>
+			<tr><td>Checkpoint Status</td><td style="font-family: monospace;">
+				@if (_stats.Reports(ProjectionStat.CheckpointStatus)) {
+					@_stats.CheckpointStatus
+				} else {
+					<NotReported/>
+				}
+			</td></tr>
 			@if (!string.IsNullOrEmpty(_stats.StateReason)) {
 				<tr><td>State Reason</td><td style="font-family: monospace;">@_stats.StateReason</td></tr>
 			}
