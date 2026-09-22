@@ -22,6 +22,8 @@ public sealed partial class NodeShim {
 				{ "KurrentDB:Certificate:TrustedRootCertificatesPath", options.Embedded.TrustedRootCertificatesPath },
 				{ "KurrentDB:CertificateFile:CertificateFile", options.Embedded.CertificateFile },
 				{ "KurrentDB:CertificateFile:CertificatePrivateKeyFile", options.Embedded.CertificatePrivateKeyFile },
+				{ "KurrentDB:Database:PrepareTimeoutMs", 5_000 },
+				{ "KurrentDB:Database:CommitTimeoutMs", 5_000 },
 				{ "KurrentDB:Connectors:DataProtection:Token", "the-token" },
 				{ "KurrentDB:Projection:RunProjections", options.Embedded.RunProjections },
 				{ "KurrentDB:Projection:StartStandardProjections", options.Embedded.StartStandardProjections },
