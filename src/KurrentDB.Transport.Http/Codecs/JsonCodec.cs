@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
@@ -67,17 +68,17 @@ public class JsonCodec : ICodec {
 					   || string.Equals(component.Subtype, "json", StringComparison.OrdinalIgnoreCase)));
 	}
 
-	public T From<T>(string text) {
+	public T From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string text) {
 		try {
 			return JsonConvert.DeserializeObject<T>(text, FromSettings);
 		} catch (Exception e) {
 			Log.Error(e, "'{text}' is not a valid serialized {type}", text, typeof(T).FullName);
-			return default(T);
+			return default;
 		}
 	}
 
-	public string To<T>(T value) {
-		if (value == null)
+	public string To<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T value) {
+		if (value is null)
 			return "";
 
 		if ((object)value == Empty.Result)

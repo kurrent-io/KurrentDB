@@ -8,9 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
@@ -63,15 +65,8 @@ public partial record ClusterVNodeOptions {
 	public static ClusterVNodeOptions FromConfiguration(IConfigurationRoot configurationRoot) {
 		var configuration = configurationRoot.GetRequiredSection(KurrentConfigurationKeys.Prefix);
 
-		// required because of a bug in the configuration system that
-		// is not reading the attribute from the property itself
-		TypeDescriptor.AddAttributes(typeof(EndPoint[]), new TypeConverterAttribute(typeof(GossipSeedConverter)));
-		TypeDescriptor.AddAttributes(typeof(EndPoint), new TypeConverterAttribute(typeof(GossipEndPointConverter)));
-		TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressConverter)));
-
 		// with full keys we would not even need to do all these binds, just a single one
 		// configurationRoot.BindOptions<ClusterVNodeOptions>();
-
 		var options = new ClusterVNodeOptions {
 			Application = configuration.BindOptions<ApplicationOptions>(),
 			DevMode = configuration.BindOptions<DevModeOptions>(),
@@ -97,83 +92,89 @@ public partial record ClusterVNodeOptions {
 	}
 
 	[Description("Default User Options")]
-	public record DefaultUserOptions {
+	public record DefaultUserOptions : IConfigurationBinder<DefaultUserOptions> {
 		[Description("Admin Default password"), Sensitive, EnvironmentOnly("The Admin user password can only be set using Environment Variables")]
-		public string DefaultAdminPassword { get; init; } = "changeit";
+		public string DefaultAdminPassword { get; set; } = "changeit";
 
 		[Description("Ops Default password"), Sensitive, EnvironmentOnly("The Ops user password can only be set using Environment Variables")]
-		public string DefaultOpsPassword { get; init; } = "changeit";
+		public string DefaultOpsPassword { get; set; } = "changeit";
+
+		static DefaultUserOptions IConfigurationBinder<DefaultUserOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<DefaultUserOptions>()!;
 	}
 
 	[Description("Dev Mode Options")]
-	public record DevModeOptions {
+	public record DevModeOptions : IConfigurationBinder<DevModeOptions> {
 		[Description("Runs KurrentDB in dev mode. This will create and add dev certificates to your certificate store, enable atompub over http, and run standard projections.")]
-		public bool Dev { get; init; } = false;
+		public bool Dev { get; set; } = false;
 
 		[Description("Removes any dev certificates installed on this computer without starting KurrentDB.")]
-		public bool RemoveDevCerts { get; init; } = false;
+		public bool RemoveDevCerts { get; set; } = false;
 
 		[Description("Path to a PFX file where the dev certificate is stored. " +
 					 "If the file exists, the certificate is loaded from it. " +
 					 "If not, a new certificate is generated and saved there. " +
 					 "A .crt file with the public certificate is also written alongside for client trust. " +
 					 "Useful in containers where the home directory may not be writable.")]
-		public string? DevCertPath { get; init; }
+		public string? DevCertPath { get; set; }
+
+		static DevModeOptions IConfigurationBinder<DevModeOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<DevModeOptions>()!;
 	}
 
 	[Description("Application Options")]
-	public record ApplicationOptions {
-		[Description("Show help.")] public bool Help { get; init; } = false;
+	public record ApplicationOptions : IConfigurationBinder<ApplicationOptions> {
+		[Description("Show help.")] public bool Help { get; set; } = false;
 
-		[Description("Show version.")] public bool Version { get; init; } = false;
+		[Description("Show version.")] public bool Version { get; set; } = false;
 
 		[Description("Configuration files.")]
-		public string Config { get; init; } = DefaultFiles.DefaultConfigPath;
+		public string Config { get; set; } = DefaultFiles.DefaultConfigPath;
 
 		[Description("Print effective configuration to console and then exit.")]
-		public bool WhatIf { get; init; } = false;
+		public bool WhatIf { get; set; } = false;
 
 		[Description("Allows KurrentDB to run with unknown configuration options present.")]
-		public bool AllowUnknownOptions { get; init; } = false;
+		public bool AllowUnknownOptions { get; set; } = false;
 
-		[Description("Disable HTTP caching.")] public bool DisableHttpCaching { get; init; } = false;
+		[Description("Disable HTTP caching.")] public bool DisableHttpCaching { get; set; } = false;
 
 		[Description("The number of seconds between statistics gathers."),
 		 Unit("s")]
-		public int StatsPeriodSec { get; init; } = 30;
+		public int StatsPeriodSec { get; set; } = 30;
 
 		[Description("The number of threads to use for pool of worker services. Set to '0' to scale automatically (Default)")]
 		[Deprecated("This setting no longer has an effect. The workers automatically scale as necessary")]
-		public int WorkerThreads { get; init; } = 0;
+		public int WorkerThreads { get; set; } = 0;
 
 		[Description("Enables the tracking of various histograms in the backend, " +
 					 "typically only used for debugging, etc.")]
 		[Deprecated("The EnableHistograms setting has been deprecated as of version 24.10.0 and currently has no effect. " +
 					"Please contact Kurrent if this feature is of interest to you.")]
-		public bool EnableHistograms { get; init; } = false;
+		public bool EnableHistograms { get; set; } = false;
 
 		[Description("Log Http Requests and Responses before processing them.")]
-		public bool LogHttpRequests { get; init; } = false;
+		public bool LogHttpRequests { get; set; } = false;
 
 		[Description("Log the failed authentication attempts.")]
-		public bool LogFailedAuthenticationAttempts { get; init; } = false;
+		public bool LogFailedAuthenticationAttempts { get; set; } = false;
 
 		[Description("Skip Index Scan on Reads. This skips the index scan which was used " +
 					 "to stop reading duplicates.")]
-		public bool SkipIndexScanOnReads { get; init; } = false;
+		public bool SkipIndexScanOnReads { get; set; } = false;
 
 		[Description("The maximum size of appends, in bytes. This is the total size of all records in the append request. May not exceed 256MB.")]
-		public int MaxAppendSize { get; init; } = TFConsts.ChunkSize;
+		public int MaxAppendSize { get; set; } = TFConsts.ChunkSize;
 
 		[Description("The maximum size of an individual record in an append request received over gRPC or HTTP, in bytes.")]
-		public int MaxAppendEventSize { get; init; } = TFConsts.MaxLogRecordSize;
+		public int MaxAppendEventSize { get; set; } = TFConsts.MaxLogRecordSize;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
-		public bool Insecure { get; init; } = false;
+		public bool Insecure { get; set; } = false;
 
 		[Description("Disable TLS on all TCP/HTTP interfaces. Authentication and authorization remain active. " +
 		             "Credentials will be transmitted in cleartext. A --cluster-secret is required when --disable-tls is true.")]
-		public bool DisableTls { get; init; } = false;
+		public bool DisableTls { get; set; } = false;
 
 		public bool TlsDisabled() => Insecure || DisableTls;
 		public bool AuthDisabled() => Insecure;
@@ -189,308 +190,366 @@ public partial record ClusterVNodeOptions {
 		public bool UsesClusterSecret() => TlsDisabled() && !AuthDisabled();
 
 		[Description("Allow anonymous access to HTTP API endpoints.")]
-		public bool AllowAnonymousEndpointAccess { get; init; } = false;
+		public bool AllowAnonymousEndpointAccess { get; set; } = false;
 
 		[Description("Allow anonymous access to streams.")]
-		public bool AllowAnonymousStreamAccess { get; init; } = false;
+		public bool AllowAnonymousStreamAccess { get; set; } = false;
 
 		[Description("Overrides anonymous access for the gossip endpoint. If set to true, the gossip endpoint will accept anonymous access. " +
 					 $"Otherwise anonymous access will be dis/allowed based on the value of the '{nameof(AllowAnonymousEndpointAccess)}' option")]
-		public bool OverrideAnonymousEndpointAccessForGossip { get; init; } = true;
+		public bool OverrideAnonymousEndpointAccessForGossip { get; set; } = true;
 
 		[Description("Disable telemetry data collection."), EnvironmentOnly("You can only opt-out of telemetry using Environment Variables")]
-		public bool TelemetryOptout { get; init; } = false;
+		public bool TelemetryOptout { get; set; } = false;
+
+		static ApplicationOptions IConfigurationBinder<ApplicationOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<ApplicationOptions>()!;
 	}
 
 	[Description("Authentication/Authorization Options")]
-	public record AuthOptions {
+	public record AuthOptions : IConfigurationBinder<AuthOptions> {
 		[Description("The type of authorization to use.")]
-		public string AuthorizationType { get; init; } = "internal";
+		public string AuthorizationType { get; set; } = "internal";
 
 		[Description("Path to the configuration file for authorization configuration (if applicable).")]
-		public string? AuthorizationConfig { get; init; }
+		public string? AuthorizationConfig { get; set; }
 
 		[Description("The type of Authentication to use.")]
-		public string AuthenticationType { get; init; } = "internal";
+		public string AuthenticationType { get; set; } = "internal";
 
 		[Description("Path to the configuration file for Authentication configuration (if applicable).")]
-		public string? AuthenticationConfig { get; init; }
+		public string? AuthenticationConfig { get; set; }
+
+		static AuthOptions IConfigurationBinder<AuthOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<AuthOptions>()!;
 	}
 
 	[Description("Certificate Options (from file)")]
-	public record CertificateFileOptions {
+	public record CertificateFileOptions : IConfigurationBinder<CertificateFileOptions> {
 		[Description("The path to a PKCS #12 (.p12/.pfx) or an X.509 (.pem, .crt, .cer, .der) certificate file. " +
 					 "If you have intermediate certificates, they should be bundled together in a PEM or PKCS #12 file containing the node's certificate followed by the intermediate certificates.")]
-		public string? CertificateFile { get; init; }
+		public string? CertificateFile { get; set; }
 
 		[Description("The path to the certificate private key file (.key) if an X.509 (.pem, .crt, .cer, .der) " +
 					 "certificate file is provided.")]
-		public string? CertificatePrivateKeyFile { get; init; }
+		public string? CertificatePrivateKeyFile { get; set; }
 
 		[Description("The password to the certificate if a PKCS #12 (.p12/.pfx) certificate file is provided."),
 		 Sensitive]
-		public string? CertificatePassword { get; init; }
+		public string? CertificatePassword { get; set; }
 
 		[Description("The password to the certificate private key file if an encrypted PKCS #8 private key file is provided."),
 		 Sensitive]
-		public string? CertificatePrivateKeyPassword { get; init; }
+		public string? CertificatePrivateKeyPassword { get; set; }
+
+		static CertificateFileOptions IConfigurationBinder<CertificateFileOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<CertificateFileOptions>()!;
 	}
 
 	[Description("Certificate Options")]
-	public record CertificateOptions {
+	public record CertificateOptions : IConfigurationBinder<CertificateOptions> {
 		[Description("The path to a directory which contains trusted X.509 (.pem, .crt, .cer, .der) " +
 					 "root certificate files.")]
-		public string? TrustedRootCertificatesPath { get; init; } =
+		public string? TrustedRootCertificatesPath { get; set; } =
 			Locations.DefaultTrustedRootCertificateDirectory;
 
 		[Description("The pattern the CN (Common Name) of a connecting KurrentDB node must match to be authenticated. A wildcard FQDN can be specified if using wildcard certificates or if the CN is not the same on all nodes. Leave empty to automatically use the CN of this node's certificate.")]
-		public string CertificateReservedNodeCommonName { get; init; } = string.Empty;
+		public string CertificateReservedNodeCommonName { get; set; } = string.Empty;
 
 		[Description(
 			"When set to true, incoming connections will be successfully authenticated as nodes even if their certificate does not " +
 			"have the clientAuth EKU. The chain of trust, expiration, and common name of the certificate will still be validated. " +
 			"Please consider whether this is appropriate for your deployment. " +
 			"This allows KurrentDB to operate using certificates signed by public CAs that no longer issue certificates with the clientAuth EKU.")]
-		public bool DisableClientAuthEkuValidation { get; init; } = false;
+		public bool DisableClientAuthEkuValidation { get; set; } = false;
+
+		static CertificateOptions IConfigurationBinder<CertificateOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<CertificateOptions>()!;
 	}
 
 	[Description("Certificate Options (from store)")]
-	public record CertificateStoreOptions {
+	public record CertificateStoreOptions : IConfigurationBinder<CertificateStoreOptions> {
 		[Description("The certificate store location name.")]
-		public string CertificateStoreLocation { get; init; } = string.Empty;
+		public string CertificateStoreLocation { get; set; } = string.Empty;
 
 		[Description("The certificate store name.")]
-		public string CertificateStoreName { get; init; } = string.Empty;
+		public string CertificateStoreName { get; set; } = string.Empty;
 
 		[Description("The certificate store subject name.")]
-		public string CertificateSubjectName { get; init; } = string.Empty;
+		public string CertificateSubjectName { get; set; } = string.Empty;
 
 		[Description("The certificate fingerprint/thumbprint.")]
-		public string CertificateThumbprint { get; init; } = string.Empty;
+		public string CertificateThumbprint { get; set; } = string.Empty;
 
 		[Description("The name of the certificate store that contains the trusted root certificate.")]
-		public string TrustedRootCertificateStoreName { get; init; } = string.Empty;
+		public string TrustedRootCertificateStoreName { get; set; } = string.Empty;
 
 		[Description("The certificate store location that contains the trusted root certificate.")]
-		public string TrustedRootCertificateStoreLocation { get; init; } = string.Empty;
+		public string TrustedRootCertificateStoreLocation { get; set; } = string.Empty;
 
 		[Description("The trusted root certificate subject name.")]
-		public string TrustedRootCertificateSubjectName { get; init; } = string.Empty;
+		public string TrustedRootCertificateSubjectName { get; set; } = string.Empty;
 
 		[Description("The trusted root certificate fingerprint/thumbprint.")]
-		public string TrustedRootCertificateThumbprint { get; init; } = string.Empty;
+		public string TrustedRootCertificateThumbprint { get; set; } = string.Empty;
+
+		static CertificateStoreOptions IConfigurationBinder<CertificateStoreOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<CertificateStoreOptions>()!;
 	}
 
 	[Description("Kontrol Plane Options")]
-	public record KontrolPlaneOptions {
+	public record KontrolPlaneOptions : IConfigurationBinder<KontrolPlaneOptions> {
+		private IReadOnlyList<EndPoint> _bootstrapSeed = [];
+		private IReadOnlyList<EndPoint> _apiSeed = [];
+
 		[Description($"Sets this node as a Kontrol Plane node. Defaults to false. " +
-					 $"If neither {nameof(IsKontrolPlaneNode)} nor {nameof(IsDataPlaneNode)} are true, the legacy elections mechanism is used.")]
-		public bool IsKontrolPlaneNode { get; init; } = false;
+		             $"If neither {nameof(IsKontrolPlaneNode)} nor {nameof(IsDataPlaneNode)} are true, the legacy elections mechanism is used.")]
+		public bool IsKontrolPlaneNode { get; set; } = false;
 
 		[Description($"Sets this node as a Data Plane node. Defaults to false. " +
 					 $"If neither {nameof(IsKontrolPlaneNode)} nor {nameof(IsDataPlaneNode)} are true, the legacy elections mechanism is used.")]
-		public bool IsDataPlaneNode { get; init; } = false;
+		public bool IsDataPlaneNode { get; set; } = false;
 
 		[Description("The TCP port used by Kontrol Plane for replication.")]
-		public int KontrollerPort { get; init; } = 3113;
+		public int KontrollerPort { get; set; } = 3113;
 
 		[Description("Host name other Kontrol Plane nodes can reach this one on.")]
-		public string? KontrollerHostAdvertiseAs { get; init; } = null;
+		public string? KontrollerHostAdvertiseAs { get; set; } = null;
 
 		[Description("Port other Kontrol Plane Nodes can reach this one on.")]
-		public int KontrollerPortAdvertiseAs { get; init; } = 0;
+		public int KontrollerPortAdvertiseAs { get; set; } = 0;
 
 		[Description("Kontrol Plane TCP endpoints for Kontrol Plane nodes to discover each other during bootstrapping.")]
-		public EndPoint[] KontrolPlaneBootstrapSeed { get; init; } = [];
+		public string KontrolPlaneBootstrapSeed {
+			get => GossipSeedConverter.ToString(_bootstrapSeed);
+			set => _bootstrapSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
+		}
+
+		internal IReadOnlyList<EndPoint> GetKontrolPlaneBootstrapSeed()
+			=> _bootstrapSeed;
 
 		[Description("Kontrol Plane gRPC API endpoints for discovery by Data Plane nodes.")]
-		public EndPoint[] KontrolPlaneApiSeed { get; init; } = [];
+		public string KontrolPlaneApiSeed {
+			get => GossipSeedConverter.ToString(_apiSeed);
+			set => _apiSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
+		}
+
+		internal IReadOnlyList<EndPoint> GetKontrolPlaneApiSeed()
+			=> _apiSeed;
 
 		[Description("The lower bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
-					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
+		             "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneLowerElectionTimeoutMs { get; init; } = 700;
+		public int KontrolPlaneLowerElectionTimeoutMs { get; set; } = 700;
 
 		[Description("The upper bound, in ms, of the election timeout for the Kontrol Plane's own Raft " +
 					 "cluster. Each node picks a timeout at random between the lower and upper bounds."),
 		 Unit("ms")]
-		public int KontrolPlaneUpperElectionTimeoutMs { get; init; } = 1_000;
+		public int KontrolPlaneUpperElectionTimeoutMs { get; set; } = 1_000;
 
 		[Description("Kontrol Plane will appoint another database leader if the current leader does not " +
 					 "renew its appointment within this many milliseconds. Renewal rate is 50% of this."),
 		 Unit("ms")]
-		public int KontrolPlaneAppointmentTimeoutMs { get; init; } = 1_000;
+		public int KontrolPlaneAppointmentTimeoutMs { get; set; } = 1_000;
+
+		static KontrolPlaneOptions IConfigurationBinder<KontrolPlaneOptions>.Bind(IConfiguration configuration) {
+			var options = configuration.Get<KontrolPlaneOptions>()!;
+
+			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(KontrolPlaneBootstrapSeed))) is { Count: > 0 } bootstrapSeed)
+				options._bootstrapSeed = bootstrapSeed;
+
+			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(KontrolPlaneApiSeed))) is { Count: > 0 } apiSeed)
+				options._apiSeed = apiSeed;
+
+			return options;
+		}
 	}
 
 	[Description("Cluster Options")]
-	public record ClusterOptions {
+	public record ClusterOptions : IConfigurationBinder<ClusterOptions> {
+		private IReadOnlyList<EndPoint> _gossipSeed = [];
+
 		[Description("The maximum number of entries to keep in the stream info cache.")]
-		public int StreamInfoCacheCapacity { get; init; } = 100_000;
+		public int StreamInfoCacheCapacity { get; set; } = 100_000;
 
 		[Description("The number of nodes in the cluster.")]
-		public int ClusterSize { get; init; } = 1;
+		public int ClusterSize { get; set; } = 1;
 
 		[Description("The node priority used during leader election. This is a hint to the election algorithm but does not guarantee the outcome of the election.")]
-		public int NodePriority { get; init; } = 0;
+		public int NodePriority { get; set; } = 0;
 
 		[Description("Whether to use DNS lookup to discover other cluster nodes.")]
-		public bool DiscoverViaDns { get; init; } = true;
+		public bool DiscoverViaDns { get; set; } = true;
 
 		[Description("DNS name from which other nodes can be discovered.")]
-		public string ClusterDns { get; init; } = "fake.dns";
+		public string ClusterDns { get; set; } = "fake.dns";
 
 		[Description("The port on which cluster nodes' managers are running.")]
-		public int ClusterGossipPort { get; init; } = 2113;
+		public int ClusterGossipPort { get; set; } = 2113;
 
 		[Description("Endpoints for other cluster nodes from which to seed gossip.")]
-		public EndPoint[] GossipSeed { get; init; } = [];
+		public string GossipSeed {
+			get => GossipSeedConverter.ToString(_gossipSeed);
+			set => _gossipSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
+		}
+
+		internal IReadOnlyList<EndPoint> GetGossipSeed() => _gossipSeed;
 
 		[Description("Shared secret used by cluster nodes to authenticate with each other when TLS is disabled. " +
 		             "Required when --disable-tls is set. Has no effect when TLS is enabled (nodes will authenticate by mTLS). " +
 		             "Note that since TLS is disabled the secret will be sent in clear text.")]
 		[Sensitive]
-		public string ClusterSecret { get; init; } = "";
+		public string ClusterSecret { get; set; } = "";
 
 		[Description("The interval, in ms, nodes should try to gossip with each other."),
 		 Unit("ms")]
-		public int GossipIntervalMs { get; init; } = 2_000;
+		public int GossipIntervalMs { get; set; } = 2_000;
 
 		[Description("The amount of drift, in ms, between clocks on nodes allowed before gossip is rejected."),
 		 Unit("ms")]
-		public int GossipAllowedDifferenceMs { get; init; } = 60_000;
+		public int GossipAllowedDifferenceMs { get; set; } = 60_000;
 
 		[Description("The timeout, in ms, on gossip to another node."),
 		 Unit("ms")]
-		public int GossipTimeoutMs { get; init; } = 2_500;
+		public int GossipTimeoutMs { get; set; } = 2_500;
 
 		[Description("Sets this node as a read only replica that is not allowed to participate in elections " +
 					 "or accept writes from clients.")]
-		public bool ReadOnlyReplica { get; init; } = false;
+		public bool ReadOnlyReplica { get; set; } = false;
 
 		[Description("Sets this node as an Archiver node. Requires ReadOnlyReplica to be true. Experimental.")]
-		public bool Archiver { get; init; } = false;
+		public bool Archiver { get; set; } = false;
 
 		[Description("Allow more nodes than the cluster size to join the cluster as clones. " +
 					 "(UNSAFE: can cause data loss if a clone is promoted as leader)")]
-		public bool UnsafeAllowSurplusNodes { get; init; } = false;
+		public bool UnsafeAllowSurplusNodes { get; set; } = false;
 
 		[Description("The number of seconds a dead node will remain in the gossip before being pruned."),
 		 Unit("s")]
-		public int DeadMemberRemovalPeriodSec { get; init; } = 1_800;
+		public int DeadMemberRemovalPeriodSec { get; set; } = 1_800;
 
 		[Description("The timeout, in milliseconds, on election messages to other nodes."),
 		 Unit("ms")]
-		public int LeaderElectionTimeoutMs { get; init; } = 1_000;
+		public int LeaderElectionTimeoutMs { get; set; } = 1_000;
 
 		public int QuorumSize => ClusterSize == 1 ? 1 : ClusterSize / 2 + 1;
+
+		static ClusterOptions IConfigurationBinder<ClusterOptions>.Bind(IConfiguration configuration) {
+			var options = configuration.Get<ClusterOptions>()!;
+
+			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(GossipSeed))) is { Count: > 0 } gossipSeed)
+				options._gossipSeed = gossipSeed;
+
+			return options;
+		}
 	}
 
 	[Description("Database Options")]
-	public record DatabaseOptions {
+	public record DatabaseOptions : IConfigurationBinder<DatabaseOptions> {
 		[Description("The minimum flush delay in milliseconds."),
 		 Unit("ms")]
-		public double MinFlushDelayMs { get; init; } = TFConsts.MinFlushDelayMs.TotalMilliseconds;
+		public double MinFlushDelayMs { get; set; } = TFConsts.MinFlushDelayMs.TotalMilliseconds;
 
 		[Description("Disables the merging of chunks when scavenge is running.")]
-		public bool DisableScavengeMerging { get; init; } = false;
+		public bool DisableScavengeMerging { get; set; } = false;
 
 		[Description("The number of days to keep scavenge history."),
 		Unit("d")]
-		public int ScavengeHistoryMaxAge { get; init; } = 30;
+		public int ScavengeHistoryMaxAge { get; set; } = 30;
 
 		[Description("The number of chunks to cache in unmanaged memory.")]
-		public int CachedChunks { get; init; } = -1;
+		public int CachedChunks { get; set; } = -1;
 
 		[Description("The amount of unmanaged memory to use for caching chunks in bytes.")]
-		public long ChunksCacheSize { get; init; } = TFConsts.ChunksCacheSize;
+		public long ChunksCacheSize { get; set; } = TFConsts.ChunksCacheSize;
 
 		[Description("Adjusts the maximum size of a mem table.")]
-		public int MaxMemTableSize { get; init; } = 1_000_000;
+		public int MaxMemTableSize { get; set; } = 1_000_000;
 
 		[Description("The number of events to read per candidate in the case of a hash collision.")]
-		public int HashCollisionReadLimit { get; init; } = 100;
+		public int HashCollisionReadLimit { get; set; } = 100;
 
 		[Description("The path the db should be loaded/saved to.")]
-		public string Db { get; init; } = Locations.DefaultDataDirectory;
+		public string Db { get; set; } = Locations.DefaultDataDirectory;
 
 		[Description("The path the index should be loaded/saved to.")]
-		public string? Index { get; init; } = null;
+		public string? Index { get; set; } = null;
 
 		[Description("The type of transformation to apply to the database.")]
-		public string Transform { get; init; } = "identity";
+		public string Transform { get; set; } = "identity";
 
 		[Description("Keep everything in memory, no directories or files are created.")]
 		[Deprecated("MemDb is deprecated and will be removed in a future version. Please contact Kurrent if your use case requires it.")]
-		public bool MemDb { get; init; } = false;
+		public bool MemDb { get; set; } = false;
 
 		[Description("Creates a Bloom filter file for each new index file to speed up index reads.")]
-		public bool UseIndexBloomFilters { get; init; } = true;
+		public bool UseIndexBloomFilters { get; set; } = true;
 
 		[Description("The maximum number of entries to keep in each index cache.")]
-		public int IndexCacheSize { get; init; } = 0;
+		public int IndexCacheSize { get; set; } = 0;
 
 		[Description("Bypasses the checking of file hashes of database during startup " +
 					 "(allows for faster startup).")]
-		public bool SkipDbVerify { get; init; } = false;
+		public bool SkipDbVerify { get; set; } = false;
 
 		[Description("Enables Write Through when writing to the file system, this bypasses filesystem caches.")]
-		public bool WriteThrough { get; init; } = false;
+		public bool WriteThrough { get; set; } = false;
 
 		[Description("Enables Unbuffered/DirectIO when writing to the file system, this bypasses filesystem " +
 					 "caches.")]
 		[Deprecated("The Unbuffered setting has been deprecated as of version 24.6.0 and currently has no effect. " +
 					"Please contact Kurrent if this feature is of interest to you.")]
-		public bool Unbuffered { get; init; } = false;
+		public bool Unbuffered { get; set; } = false;
 
 		[Description("The initial number of readers to start when opening a TFChunk.")]
 		[Deprecated("The ChunkInitialReaderCount parameter has been deprecated as of version 24.6.0 and currently has no effect.")]
-		public int ChunkInitialReaderCount { get; init; } = 5;
+		public int ChunkInitialReaderCount { get; set; } = 5;
 
 		[Description("Prepare timeout (in milliseconds)."),
 		 Unit("ms")]
-		public int PrepareTimeoutMs { get; init; } = 2_000;
+		public int PrepareTimeoutMs { get; set; } = 2_000;
 
 		[Description("Commit timeout (in milliseconds)."),
 		 Unit("ms")]
-		public int CommitTimeoutMs { get; init; } = 2_000;
+		public int CommitTimeoutMs { get; set; } = 2_000;
 
 		[Description("Write timeout (in milliseconds)."),
 		 Unit("ms")]
-		public int WriteTimeoutMs { get; init; } = 2_000;
+		public int WriteTimeoutMs { get; set; } = 2_000;
 
 		[Description("Disable flushing to disk. (UNSAFE: on power off)")]
-		public bool UnsafeDisableFlushToDisk { get; init; }
+		public bool UnsafeDisableFlushToDisk { get; set; }
 
 		[Description("Disables Hard Deletes. (UNSAFE: use to remove hard deletes)")]
 		[Deprecated("This setting is unsafe and not recommended")]
-		public bool UnsafeIgnoreHardDelete { get; init; } = false;
+		public bool UnsafeIgnoreHardDelete { get; set; } = false;
 
 		[Description("Bypasses the checking of file hashes of indexes during startup and after index merges " +
 					 "(allows for faster startup and less disk pressure after merges).")]
-		public bool SkipIndexVerify { get; init; } = false;
+		public bool SkipIndexVerify { get; set; } = false;
 
 		[Description("Sets the depth to cache for the mid point cache in index.")]
-		public int IndexCacheDepth { get; init; } = 16;
+		public int IndexCacheDepth { get; set; } = 16;
 
 		[Description("Change the way the DB files are opened to reduce their stickiness in the system file cache.")]
-		public bool ReduceFileCachePressure { get; init; } = false;
+		public bool ReduceFileCachePressure { get; set; } = false;
 
 		[Description("Number of threads to be used to initialize the database. " +
 					 "Will be capped at host processor count.")]
-		public int InitializationThreads { get; init; } = 1;
+		public int InitializationThreads { get; set; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
-		public int ReaderThreadsCount { get; init; } = 0;
+		public int ReaderThreadsCount { get; set; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
 					 "index file level for which automatic merges should happen. Merging indexes above this level " +
 					 "should be done manually.")]
-		public int MaxAutoMergeIndexLevel { get; init; } = int.MaxValue;
+		public int MaxAutoMergeIndexLevel { get; set; } = int.MaxValue;
 
 		[Description("Set this option to write statistics to the database.")]
 		public bool WriteStatsToDb {
 			get => (StatsStorage.Stream & StatsStorage) != 0;
-			init => StatsStorage =
+			set => StatsStorage =
 				value
 					? StatsStorage.StreamAndFile
 					: StatsStorage.File; // TODO SS: not sure if we should do this here
@@ -500,153 +559,175 @@ public partial record ClusterVNodeOptions {
 					 "This is a safety check to ensure large amounts of data truncation does not happen " +
 					 "accidentally. This value should be set in the low 10,000s for allow for " +
 					 "standard cluster recovery operations. -1 is no max.")]
-		public long MaxTruncation { get; init; } = 256 * 1_024 * 1_024;
+		public long MaxTruncation { get; set; } = 256 * 1_024 * 1_024;
 
-		public int ChunkSize { get; init; } = TFConsts.ChunkSize;
+		public int ChunkSize { get; set; } = TFConsts.ChunkSize;
 
-		public StatsStorage StatsStorage { get; init; } = StatsStorage.File;
+		public StatsStorage StatsStorage { get; set; } = StatsStorage.File;
 
 		[Description("The log format version to use for storing the event log. " +
 					 "V3 is currently in development and should only be used for testing purposes.")]
-		public DbLogFormat DbLogFormat { get; init; } = DbLogFormat.V2;
+		public DbLogFormat DbLogFormat { get; set; } = DbLogFormat.V2;
 
 		[Description("The amount of memory & disk space, in bytes, to use for the stream existence filter. " +
 					 "This should be set to roughly the maximum number of streams you expect to have in your database, " +
 					 "i.e if you expect to have a max of 500 million streams, use a value of 500 megabytes. " +
 					 "The value you select should also fit entirely in memory to avoid any performance degradation. " +
 					 "Use 0 to disable the filter. Resizing the filter will cause a full rebuild.")]
-		public long StreamExistenceFilterSize { get; init; } = Opts.StreamExistenceFilterSizeDefault;
+		public long StreamExistenceFilterSize { get; set; } = Opts.StreamExistenceFilterSizeDefault;
 
 		[Description("The page size of the scavenge database.")]
-		public int ScavengeBackendPageSize { get; init; } = Opts.ScavengeBackendPageSizeDefault;
+		public int ScavengeBackendPageSize { get; set; } = Opts.ScavengeBackendPageSizeDefault;
 
 		[Description("The amount of memory to use for backend caching in bytes.")]
-		public long ScavengeBackendCacheSize { get; init; } = Opts.ScavengeBackendCacheSizeDefault;
+		public long ScavengeBackendCacheSize { get; set; } = Opts.ScavengeBackendCacheSizeDefault;
 
 		[Description("The number of stream hashes to remember when checking for collisions.")]
-		public int ScavengeHashUsersCacheCapacity { get; init; } = Opts.ScavengeHashUsersCacheCapacityDefault;
+		public int ScavengeHashUsersCacheCapacity { get; set; } = Opts.ScavengeHashUsersCacheCapacityDefault;
 
 		[Description($"The amount of disk space in bytes that can be allocated by embedded DuckDB for temporary files. " +
 					 $"Defaults to 90% of the available disk space on the {nameof(SqlEngineTempDirectory)} volume.")]
-		public long SqlEngineTempDirectorySizeLimit { get; init; }
+		public long SqlEngineTempDirectorySizeLimit { get; set; }
 
 		[Description("Directory for embedded DuckDB to write temp files. " +
 					 "Must not be used for other files, *.tmp files will automatically be removed. " +
 					 "Defaults to <DB Directory>/kurrent.ddb.tmp/")]
-		public string SqlEngineTempDirectory { get; init; } = "";
+		public string SqlEngineTempDirectory { get; set; } = "";
+
+		static DatabaseOptions IConfigurationBinder<DatabaseOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<DatabaseOptions>()!;
 	}
 
 	[Description("gRPC Options")]
-	public record GrpcOptions {
+	public record GrpcOptions : IConfigurationBinder<GrpcOptions> {
 		[Description("The gzip compression level applied to gRPC responses. Higher levels reduce network traffic at the cost of more CPU. " +
 					 "Allowed values: 'NoCompression', 'Fastest', 'Optimal', 'SmallestSize'. " +
 					 "Only applies when the client advertises gzip support.")]
-		public CompressionLevel CompressionLevel { get; init; } = CompressionLevel.Optimal;
+		public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;
 
 		[Description("Controls the period (in milliseconds) after which a keepalive ping " +
 					 "is sent on the transport."),
 		 Unit("ms")]
-		public int KeepAliveInterval { get; init; } = 10_000;
+		public int KeepAliveInterval { get; set; } = 10_000;
 
 		[Description("Controls the amount of time (in milliseconds) the sender of the keepalive ping waits " +
 					 "for an acknowledgement. If it does not receive an acknowledgment within this time, " +
 					 "it will close the connection."),
 		 Unit("ms")]
-		public int KeepAliveTimeout { get; init; } = 10_000;
+		public int KeepAliveTimeout { get; set; } = 10_000;
 
 		internal static GrpcOptions FromConfiguration(IConfiguration configurationRoot) => new() {
 			CompressionLevel = configurationRoot.GetValue<CompressionLevel>(nameof(CompressionLevel)),
 			KeepAliveInterval = configurationRoot.GetValue<int>(nameof(KeepAliveInterval)),
 			KeepAliveTimeout = configurationRoot.GetValue<int>(nameof(KeepAliveTimeout))
 		};
+
+		static GrpcOptions IConfigurationBinder<GrpcOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<GrpcOptions>()!;
 	}
 
 	[Description("Interface Options")]
-	public record InterfaceOptions {
+	public record InterfaceOptions : IConfigurationBinder<InterfaceOptions> {
+		private IPAddress _replicationIp = IPAddress.Loopback;
+		private IPAddress _nodeIp = IPAddress.Loopback;
+
 		[Description("The IP Address used by internal replication between nodes in the cluster.")]
-		public IPAddress ReplicationIp { get; init; } = IPAddress.Loopback;
+		public string ReplicationIp {
+			get =>  _replicationIp.ToString();
+			set => _replicationIp = IPAddress.ParseConfigurationValue(value);
+		}
+
+		internal IPAddress GetReplicationIp() => _replicationIp;
 
 		[Description("The IP Address for the node.")]
-		public IPAddress NodeIp { get; init; } = IPAddress.Loopback;
+		public string NodeIp {
+			get => _nodeIp.ToString();
+			set => _nodeIp = IPAddress.ParseConfigurationValue(value);
+		}
+
+		public IPAddress GetNodeIp() => _nodeIp;
 
 		[Description("The Port to run the HTTP server on.")]
-		public int NodePort { get; init; } = 2113;
+		public int NodePort { get; set; } = 2113;
 
 		[Description("The TCP port used by internal replication between nodes in the cluster.")]
-		public int ReplicationPort { get; init; } = 1112;
+		public int ReplicationPort { get; set; } = 1112;
 
 		[Description("Advertise the Node's host name to other nodes and external clients as.")]
-		public string? NodeHostAdvertiseAs { get; init; } = null;
+		public string? NodeHostAdvertiseAs { get; set; } = null;
 
 		[Description("Advertise the Replication host name to other nodes in the cluster as.")]
-		public string? ReplicationHostAdvertiseAs { get; init; } = null;
+		public string? ReplicationHostAdvertiseAs { get; set; } = null;
 
 		[Description("Advertise Host in Gossip to Client As.")]
-		public string? AdvertiseHostToClientAs { get; init; } = null;
+		public string? AdvertiseHostToClientAs { get; set; } = null;
 
 		[Description("Advertise Node Port in Gossip to Client As.")]
-		public int AdvertiseNodePortToClientAs { get; init; } = 0;
+		public int AdvertiseNodePortToClientAs { get; set; } = 0;
 
 		[Description("Advertise Http Port As.")]
-		public int NodePortAdvertiseAs { get; init; } = 0;
+		public int NodePortAdvertiseAs { get; set; } = 0;
 
 		[Description("Advertise Replication Tcp Port As.")]
-		public int ReplicationTcpPortAdvertiseAs { get; init; } = 0;
+		public int ReplicationTcpPortAdvertiseAs { get; set; } = 0;
 
 		[Description("Heartbeat timeout for Replication TCP sockets."),
 		 Unit("ms")]
-		public int ReplicationHeartbeatTimeout { get; init; } = 700;
+		public int ReplicationHeartbeatTimeout { get; set; } = 700;
 
 		[Description("Heartbeat interval for Replication TCP sockets."),
 		 Unit("ms")]
-		public int ReplicationHeartbeatInterval { get; init; } = 700;
+		public int ReplicationHeartbeatInterval { get; set; } = 700;
 
 		[Description("Whether to allow local connections via a UNIX domain socket.")]
-		public bool EnableUnixSocket { get; init; } = false;
+		public bool EnableUnixSocket { get; set; } = false;
 
 		[Description("The maximum number of pending send bytes allowed before a connection is closed.")]
-		public int ConnectionPendingSendBytesThreshold { get; init; } = 10 * 1_024 * 1_024;
+		public int ConnectionPendingSendBytesThreshold { get; set; } = 10 * 1_024 * 1_024;
 
 		[Description("The maximum number of pending connection operations allowed before a connection is closed.")]
-		public int ConnectionQueueSizeThreshold { get; init; } = 50_000;
+		public int ConnectionQueueSizeThreshold { get; set; } = 50_000;
 
 		[Description("Disables the admin HTTP API and the embedded UI.")]
-		public bool DisableAdminUi { get; init; } = false;
+		public bool DisableAdminUi { get; set; } = false;
 
 		[Description("Disables statistics and metrics requests on the HTTP endpoint.")]
-		public bool DisableStatsOnHttp { get; init; } = false;
+		public bool DisableStatsOnHttp { get; set; } = false;
 
 		[Description("Disables gossip requests on the HTTP endpoint.")]
-		public bool DisableGossipOnHttp { get; init; } = false;
+		public bool DisableGossipOnHttp { get; set; } = false;
 
 		[Description("Enables trusted authentication by an intermediary in the HTTP.")]
-		public bool EnableTrustedAuth { get; init; } = false;
+		public bool EnableTrustedAuth { get; set; } = false;
 
 		[Description("Enable AtomPub over HTTP Interface."),
 		 Deprecated("AtomPub over HTTP Interface has been deprecated as of version 20.6.0. It is recommended to use gRPC instead")]
-		public bool EnableAtomPubOverHttp { get; init; } = false;
+		public bool EnableAtomPubOverHttp { get; set; } = false;
+
+		static InterfaceOptions IConfigurationBinder<InterfaceOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<InterfaceOptions>()!;
 	}
 
 	[Description("Projection Options")]
-	public record ProjectionOptions {
+	public record ProjectionOptions : IConfigurationBinder<ProjectionOptions> {
 		public const int DefaultProjectionExecutionTimeout = 250;
 		[Description("Enables the running of projections. System runs built-in projections, " +
 					 "All runs user projections.")]
-		public ProjectionType RunProjections { get; init; }
+		public ProjectionType RunProjections { get; set; }
 
 		[Description("Start the built in system projections.")]
-		public bool StartStandardProjections { get; init; } = false;
+		public bool StartStandardProjections { get; set; } = false;
 
 		[Description("The number of threads to use for projections.")]
-		public int ProjectionThreads { get; init; } = 3;
+		public int ProjectionThreads { get; set; } = 3;
 
 		[Description("The number of minutes a query can be idle before it expires."),
 		 Unit("m")]
-		public int ProjectionsQueryExpiry { get; init; } = 5;
+		public int ProjectionsQueryExpiry { get; set; } = 5;
 
 		[Description("Fault the projection if the Event number that was expected in the stream differs " +
 					 "from what is received. This may happen if events have been deleted or expired.")]
-		public bool FaultOutOfOrderProjections { get; init; } = false;
+		public bool FaultOutOfOrderProjections { get; set; } = false;
 
 		[Description("The time in milliseconds allowed for the compilation phase of user projections"),
 		 Unit("ms")]
@@ -661,7 +742,10 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Maximum number of partition-state entries cached in memory per V2 projection cache " +
 		             "(one per partition slot plus a shared engine-wide cache).")]
-		public int MaxPartitionStateCacheSize { get; init; } = Opts.MaxPartitionStateCacheSizeDefault;
+		public int MaxPartitionStateCacheSize { get; set; } = Opts.MaxPartitionStateCacheSizeDefault;
+
+		static ProjectionOptions IConfigurationBinder<ProjectionOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<ProjectionOptions>()!;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
@@ -726,3 +810,32 @@ public partial record ClusterVNodeOptions {
 	}
 }
 
+file static class IPAddressParser {
+	extension(IPAddress) {
+		public static IPAddress ParseConfigurationValue(string value,
+			[ConstantExpected] [CallerMemberName] string? configProperty = null) {
+			return IPAddress.TryParse(value, out var result)
+				? result
+				: throw new ArgumentOutOfRangeException(nameof(value),
+					$"Failed to convert configuration value '{value}' at '{KurrentConfigurationKeys.Prefix}:{configProperty}' to type 'System.Net.IPAddress'. An invalid IP address was specified.");
+		}
+	}
+}
+
+file static class EndPointListParser {
+	extension(IReadOnlyList<EndPoint>) {
+		public static IReadOnlyList<EndPoint> ParseConfigurationValue(string value,
+			[ConstantExpected] [CallerMemberName] string? configProperty = null) {
+			IReadOnlyList<EndPoint> result;
+			try {
+				result = GossipSeedConverter.Parse(value);
+			} catch (Exception e) {
+				throw new ArgumentException(
+					$"Failed to convert configuration value '{value}' at '{KurrentConfigurationKeys.Prefix}:{configProperty}' to type 'System.Net.EndPoint[]'.",
+					e);
+			}
+
+			return result;
+		}
+	}
+}

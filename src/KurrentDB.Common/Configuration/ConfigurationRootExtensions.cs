@@ -14,7 +14,7 @@ public static class ConfigurationRootExtensions {
 	private static readonly string[] INVALID_DELIMITERS = [";", "\t"];
 
 	public static string[] GetCommaSeparatedValueAsArray(this IConfiguration configuration, string key) {
-		var value = configuration.GetValue<string?>(key);
+		var value = configuration.GetSection(key).Value;
 		if (string.IsNullOrEmpty(value)) {
 			return [];
 		}
@@ -28,10 +28,11 @@ public static class ConfigurationRootExtensions {
 		return value.Split(',', StringSplitOptions.RemoveEmptyEntries);
 	}
 
-	public static T BindOptions<T>(this IConfiguration configuration) where T : new() {
+	public static T BindOptions<T>(this IConfiguration configuration)
+		where T : class, IConfigurationBinder<T> ,new() {
 		try {
-			return configuration.Get<T>() ?? new T();
-		} catch (InvalidOperationException ex) {
+			return T.Bind(configuration) ?? new T();
+		} catch (Exception ex) {
 			var messages = new[] { ex.Message, ex.InnerException?.Message }
 				.Where(x => !string.IsNullOrWhiteSpace(x))
 				.Select(x => x?.TrimEnd('.'));

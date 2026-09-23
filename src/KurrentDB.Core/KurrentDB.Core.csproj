@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

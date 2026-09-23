@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -1140,11 +1141,11 @@ internal class HtmlFeedCodec : ICodec, IRichAtomCodec {
 					   string.Equals(component.Subtype, "html", StringComparison.OrdinalIgnoreCase)));
 	}
 
-	public T From<T>(string text) {
+	public T From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string text) {
 		throw new NotImplementedException();
 	}
 
-	public string To<T>(T value) {
+	public string To<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T value) {
 		return @"
             <!DOCTYPE html>
             <html>

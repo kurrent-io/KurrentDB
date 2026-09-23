@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -41,9 +42,11 @@ public class XmlCodec : ICodec {
 					   || string.Equals(component.Subtype, "xml", StringComparison.OrdinalIgnoreCase)));
 	}
 
-	public T From<T>(string text) {
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "T's members are preserved via the DynamicallyAccessedMembers annotation on the type parameter.")]
+	public T From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]T>(string text) {
 		if (string.IsNullOrEmpty(text))
-			return default(T);
+			return default;
 
 		try {
 			using (var reader = new StringReader(text)) {
@@ -55,31 +58,34 @@ public class XmlCodec : ICodec {
 		}
 	}
 
-	public string To<T>(T value) {
-		if ((object)value == null)
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "T's members are preserved via the DynamicallyAccessedMembers annotation on the type parameter.")]
+	public string To<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]T>(T value) {
+		if (value is null)
 			return null;
 
 		if ((object)value == Empty.Result)
 			return Empty.Xml;
 
+		var memory = new MemoryStream();
+		var writer = new XmlTextWriter(memory, Helper.UTF8NoBom);
 		try {
-			using (var memory = new MemoryStream())
-			using (var writer = new XmlTextWriter(memory, Helper.UTF8NoBom)) {
-				var serializable = value as IXmlSerializable;
-				if (serializable != null) {
-					writer.WriteStartDocument();
-					serializable.WriteXml(writer);
-					writer.WriteEndDocument();
-				} else {
-					new XmlSerializer(typeof(T)).Serialize(writer, value);
-				}
-
-				writer.Flush();
-				return Helper.UTF8NoBom.GetString(memory.GetBuffer(), 0, (int)memory.Length);
+			if (value is IXmlSerializable serializable) {
+				writer.WriteStartDocument();
+				serializable.WriteXml(writer);
+				writer.WriteEndDocument();
+			} else {
+				new XmlSerializer(typeof(T)).Serialize(writer, value);
 			}
+
+			writer.Flush();
+			return Helper.UTF8NoBom.GetString(memory.GetBuffer(), 0, (int)memory.Length);
 		} catch (Exception exc) {
 			Log.Error(exc, "Error serializing object of type {type}", value.GetType().FullName);
 			return null;
+		} finally {
+			writer.Dispose();
+			memory.Dispose();
 		}
 	}
 }

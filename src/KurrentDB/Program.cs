@@ -282,7 +282,7 @@ try {
 					server.Limits.Http2.KeepAlivePingDelay = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveInterval);
 					server.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveTimeout);
 
-					server.Listen(options.Interface.NodeIp, options.Interface.NodePort, listenOptions =>
+					server.Listen(options.Interface.GetNodeIp(), options.Interface.NodePort, listenOptions =>
 						KestrelHelpers.ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
 
 					if (hostedService.Node.EnableUnixSocket)

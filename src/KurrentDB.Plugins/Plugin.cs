@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using Microsoft.AspNetCore.Builder;
@@ -180,6 +181,8 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// </summary>
 	/// <param name="eventData">The data to publish.</param>
 	/// <param name="mode">The mode of data collection for a plugin event.</param>
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "PluginDiagnosticsData's public properties are read directly by PluginDiagnosticsDataCollector, so they are always preserved.")]
 	protected internal void PublishDiagnosticsData(Dictionary<string, object?> eventData, PluginDiagnosticsDataCollectionMode mode = Partial) {
 		var value = new PluginDiagnosticsData {
 			Source = DiagnosticsName,
@@ -198,6 +201,8 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// <param name="eventName">The name of the event to publish.</param>
 	/// <param name="eventData">The data to publish.</param>
 	/// <param name="mode">The mode of data collection for a plugin event.</param>
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "PluginDiagnosticsData's public properties are read directly by PluginDiagnosticsDataCollector, so they are always preserved.")]
 	protected internal void PublishDiagnosticsData(string eventName, Dictionary<string, object?> eventData, PluginDiagnosticsDataCollectionMode mode = Event) {
 		if (eventName == nameof(PluginDiagnosticsData))
 			throw new ArgumentException("Event name cannot be PluginDiagnosticsData", nameof(eventName));
@@ -218,7 +223,9 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// </summary>
 	/// <param name="pluginEvent"></param>
 	/// <typeparam name="T"></typeparam>
-	protected internal void PublishDiagnosticsEvent<T>(T pluginEvent) =>
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "T's public properties are preserved via the DynamicallyAccessedMembers annotation on the type parameter.")]
+	protected internal void PublishDiagnosticsEvent<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]T>(T pluginEvent) =>
 		DiagnosticListener.Write(typeof(T).Name, pluginEvent);
 
 	/// <inheritdoc />

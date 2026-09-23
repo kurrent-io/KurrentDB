@@ -3,6 +3,7 @@
 
 #nullable enable
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -40,8 +41,10 @@ public class ConfigParser(ILogger logger) {
 	///     (relative to <c>KurrentDB:</c>) used when falling back to <paramref name="configuration"/>.
 	/// </param>
 	/// <typeparam name="T">The settings type to deserialize into.</typeparam>
+	[RequiresUnreferencedCode("Binding a plugin's settings type from configuration requires reflection over the target type and its members.")]
+	[RequiresDynamicCode("Binding a plugin's settings type from configuration may require generating dynamic code at runtime for generic types.")]
 	public T ReadConfiguration<T>(IConfiguration configuration, string configFileKey, string sectionName) {
-		var configPath = configuration.GetValue<string>($"KurrentDB:{configFileKey}");
+		var configPath = configuration.GetSection($"KurrentDB:{configFileKey}")?.Value;
 		var result = string.IsNullOrEmpty(configPath)
 			? ReadConfigurationFromIConfiguration<T>(configuration, $"KurrentDB:{sectionName}")
 			: ReadConfigurationFromPath<T>(configPath, sectionName);
@@ -49,6 +52,8 @@ public class ConfigParser(ILogger logger) {
 		return result ?? throw new Exception($"Could not read {sectionName} configuration from {configPath ?? "main configuration"}");
 	}
 
+	[RequiresUnreferencedCode("Binding a plugin's settings type from configuration requires reflection over the target type and its members.")]
+	[RequiresDynamicCode("Binding a plugin's settings type from configuration may require generating dynamic code at runtime for generic types.")]
 	private T? ReadConfigurationFromIConfiguration<T>(IConfiguration configuration, string sectionName) {
 		logger.LogInformation("Reading {SectionName} configuration from main configuration", sectionName);
 		return configuration.GetSection(sectionName).Get<T>();

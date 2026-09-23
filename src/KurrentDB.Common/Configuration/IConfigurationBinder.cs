@@ -5,9 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Common.Configuration;
 
-public class ExperimentalOptions : IConfigurationBinder<ExperimentalOptions> {
-	public bool AsyncIO { get; set; }
-
-	static ExperimentalOptions IConfigurationBinder<ExperimentalOptions>.Bind(IConfiguration configuration)
-		=> configuration.Get<ExperimentalOptions>()!;
+public interface IConfigurationBinder<out TSelf>
+	where TSelf : class, new() {
+	public static abstract TSelf Bind(IConfiguration configuration);
 }

@@ -44,7 +44,7 @@ public static class VersionInfo {
 			// In tests, AppDomain.CurrentDomain.BaseDirectory is `bin/` instead of `bin/<tfm>/`,
 			// so use a path relative to the current assembly as a fallback.
 			versionFilePath = Path.Join(
-				Path.GetDirectoryName(typeof(VersionInfo).Assembly.Location),
+				Path.GetDirectoryName(AppContext.BaseDirectory),
 				VersionPropertiesFileName
 			);
 		}

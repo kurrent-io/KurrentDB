@@ -110,7 +110,7 @@ public class ElectionsServiceUnitTests {
 			return null;
 		}
 
-		public EndPoint[] EndGetHostEndpoints(IAsyncResult asyncResult) {
+		public IReadOnlyList<EndPoint> EndGetHostEndpoints(IAsyncResult asyncResult) {
 			return _ipEndPoints.ToArray();
 		}
 	}

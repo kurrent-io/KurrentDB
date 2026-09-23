@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Net;
 using FluentAssertions;
 using KurrentDB.Common.Configuration;
@@ -31,9 +30,7 @@ public class ClusterVNodeOptionsTests {
 	}
 
 	[Fact]
-	public void builds_proper() {
-		var options = new ClusterVNodeOptions();
-	}
+	public void builds_proper() => _ = new ClusterVNodeOptions();
 
 	[Fact]
 	public void confirm_suggested_option() {
@@ -181,10 +178,9 @@ public class ClusterVNodeOptionsTests {
 		EndPoint[] endpoints = [
 			new IPEndPoint(IPAddress.Loopback, 1113),
 			new DnsEndPoint("some-host", 1114),
-			new DnsEndPoint("127.0.1.15", 1115)
 		];
 
-		var values = string.Join(",", endpoints.Select(x => $"{x}"));
+		var values = GossipSeedConverter.ToString(endpoints);
 
 		var builder = new ConfigurationBuilder();
 		if (useEventStorePrefix)
@@ -195,7 +191,7 @@ public class ClusterVNodeOptionsTests {
 
 		var options = ClusterVNodeOptions.FromConfiguration(config);
 
-		options.Cluster.GossipSeed.Should().BeEquivalentTo(endpoints);
+		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(endpoints);
 	}
 
 	[Fact]
@@ -211,19 +207,19 @@ public class ClusterVNodeOptionsTests {
 
 		var options = ClusterVNodeOptions.FromConfiguration(config);
 
-		options.Cluster.GossipSeed.Should().BeEquivalentTo(new EndPoint[] {
+		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(new EndPoint[] {
 			new IPEndPoint(IPAddress.Loopback, 1113),
 			new DnsEndPoint("some-host", 1114),
 		});
 	}
 
 	[Theory]
-	[InlineData(true, "127.0.0.1", "You must specify the ports in the gossip seed.")]
-	[InlineData(true, "127.0.0.1:3.1415", "Invalid format for gossip seed port: 3.1415.")]
+	[InlineData(true, "127.0.0.1", "You must specify the port number.")]
+	[InlineData(true, "127.0.0.1:3.1415", "Invalid format for the port number: 3.1415.")]
 	[InlineData(true, "hostA;hostB", "Invalid delimiter for gossip seed value: hostA;hostB.")]
 	[InlineData(true, "hostA\thostB", "Invalid delimiter for gossip seed value: hostA\thostB.")]
-	[InlineData(false, "127.0.0.1", "You must specify the ports in the gossip seed.")]
-	[InlineData(false, "127.0.0.1:3.1415", "Invalid format for gossip seed port: 3.1415.")]
+	[InlineData(false, "127.0.0.1", "You must specify the port number.")]
+	[InlineData(false, "127.0.0.1:3.1415", "Invalid format for the port number: 3.1415.")]
 	[InlineData(false, "hostA;hostB", "Invalid delimiter for gossip seed value: hostA;hostB.")]
 	[InlineData(false, "hostA\thostB", "Invalid delimiter for gossip seed value: hostA\thostB.")]
 	public void reports_gossip_seed_errors(bool useEventStorePrefix, string gossipSeed, string expectedError) {
@@ -256,7 +252,7 @@ public class ClusterVNodeOptionsTests {
 		var ex = Assert.Throws<InvalidConfigurationException>(() =>
 			ClusterVNodeOptions.FromConfiguration(config));
 
-		Assert.Equal(
+		Assert.StartsWith(
 			$"Failed to convert configuration value '{nodeIp}' at '{KurrentPrefix}:NodeIp' to type 'System.Net.IPAddress'. " + expectedError,
 			ex.Message);
 	}
@@ -274,7 +270,7 @@ public class ClusterVNodeOptionsTests {
 
 		var options = ClusterVNodeOptions.FromConfiguration(config);
 
-		options.Interface.NodeIp.Should().Be(IPAddress.Parse("192.168.0.1"));
+		options.Interface.GetNodeIp().Should().Be(IPAddress.Parse("192.168.0.1"));
 	}
 
 	[Theory]

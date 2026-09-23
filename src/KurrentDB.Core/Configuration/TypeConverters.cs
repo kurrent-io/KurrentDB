@@ -4,10 +4,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Core.Configuration;
 
@@ -17,46 +19,59 @@ public class GossipEndPointConverter : TypeConverter {
 
 	public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) =>
 		value is string stringValue
-			? ParseGossipEndPoint(stringValue)
+			? Parse(stringValue)
 			: base.ConvertFrom(context, culture, value);
 
-	private static EndPoint ParseGossipEndPoint(string value) {
-		var parts = value.Split(':', 2);
+	public static EndPoint Parse(string value) {
+		if (value.Split(':', 2) is not [var address, var portStr])
+			throw new("You must specify the port number.");
 
-		if (parts.Length != 2)
-			throw new("You must specify the ports in the gossip seed");
+		if (!int.TryParse(portStr, out var port))
+			throw new($"Invalid format for the port number: {portStr}");
 
-		if (!int.TryParse(parts[1], out var port))
-			throw new($"Invalid format for gossip seed port: {parts[1]}");
-
-		return IPAddress.TryParse(parts[0], out var ip)
+		return IPAddress.TryParse(address, out var ip)
 			? new IPEndPoint(ip, port)
-			: new DnsEndPoint(parts[0], port);
+			: new DnsEndPoint(address, port);
 	}
+
+	public static string ToString(EndPoint ep) => ep switch {
+		IPEndPoint ip => $"{ip.Address}:{ip.Port}",
+		DnsEndPoint dns => $"{dns.Host}:{dns.Port}",
+		_ => ep.ToString() ?? string.Empty,
+	};
 }
 
 public class GossipSeedConverter : ArrayConverter {
 	private static readonly char[] InvalidDelimiters = [';', '\t'];
 
-	private static readonly GossipEndPointConverter _gossipEndPointConverter = new();
-
 	public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) =>
 		sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
 
-	public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) {
-		if (value is not string stringValue)
-			return base.ConvertFrom(context, culture, value);
+	public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value)
+		=> value is string { } stringValue
+			? Parse(stringValue)
+			: base.ConvertFrom(context, culture, value);
 
-		if (stringValue.Any(c => InvalidDelimiters.Contains(c)))
-			throw new ArgumentException($"Invalid delimiter for gossip seed value: {stringValue}");
+	public static string ToString(IReadOnlyList<EndPoint> endPoints)
+		=> string.Join(',', endPoints.Select(GossipEndPointConverter.ToString));
 
-		var values = stringValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+	public static IReadOnlyList<EndPoint> Parse(string value) {
+		if (value.Any(c => InvalidDelimiters.Contains(c)))
+			throw new ArgumentException($"Invalid delimiter for gossip seed value: {value}");
+
+		var values = value.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
 		var gossipEndPoints = values
-			.Select(x => (EndPoint)_gossipEndPointConverter.ConvertFrom(context, culture, x)!)
+			.Select(GossipEndPointConverter.Parse)
 			.ToArray();
 
 		return gossipEndPoints;
+	}
+
+	public static IReadOnlyList<EndPoint> Parse(IConfigurationSection section) {
+		return section.Get<string[]>() is { Length: > 0 } elements
+			? Array.ConvertAll(elements, GossipEndPointConverter.Parse)
+			: [];
 	}
 }
 
