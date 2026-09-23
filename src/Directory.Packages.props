@@ -59,18 +59,22 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.72" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.72" />
+    <!-- Prototype Surge line (kurrent-io/surge). The next-gen Surge (kurrent-io/kurrent-surge) publishes
+         2.x under the same ids with a different surface. This server stays on 1.x until it is refactored
+         to the new one. The upper bound is 2.0.0-0, not 2.0.0: a prerelease such as 2.0.0-preview.384
+         sorts below 2.0.0, so "< 2.0.0" still admits it. 2.0.0-0 is the lowest 2.0.0 prerelease. -->
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.Sql" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Surge" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="[1.1.1-alpha.1.72, 2.0.0-0)" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.193" />
     <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.193" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
