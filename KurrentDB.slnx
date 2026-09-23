@@ -98,17 +98,12 @@
   <Project Path="src/KurrentDB.Common/KurrentDB.Common.csproj" />
   <Project Path="src/KurrentDB.Core/KurrentDB.Core.csproj" />
   <Project Path="src/KurrentDB.DuckDB/KurrentDB.DuckDB.csproj" />
-  <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
-  <Project Path="src/KurrentDB.Kontext.Tests/KurrentDB.Kontext.Tests.csproj" />
-  <Project Path="src/KurrentDB.Kontext/KurrentDB.Kontext.csproj" />
   <Project Path="src/KurrentDB.Licensing/KurrentDB.Licensing.csproj" />
   <Project Path="src/KurrentDB.LogCommon/KurrentDB.LogCommon.csproj" />
   <Project Path="src/KurrentDB.Logging/KurrentDB.Logging.csproj" />
   <Project Path="src/KurrentDB.MicroBenchmarks/KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src/KurrentDB.NETCore.Compatibility/KurrentDB.NETCore.Compatibility.csproj" />
   <Project Path="src/KurrentDB.PluginHosting/KurrentDB.PluginHosting.csproj" />
-  <Project Path="src/KurrentDB.Plugins.Kontext.Tests/KurrentDB.Plugins.Kontext.Tests.csproj" />
-  <Project Path="src/KurrentDB.Plugins.Kontext/KurrentDB.Plugins.Kontext.csproj" />
   <Project Path="src/KurrentDB.POC.IO.Core/KurrentDB.POC.IO.Core.csproj" />
   <Project Path="src/KurrentDB.Scripting/KurrentDB.Scripting.csproj" />
   <Project Path="src/KurrentDB.SourceGenerators/KurrentDB.SourceGenerators.csproj" />

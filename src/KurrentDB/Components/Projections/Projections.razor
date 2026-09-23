@@ -75,26 +75,46 @@
 		<PropertyColumn Property="x => x.Status" Title="Status"/>
 		<TemplateColumn Title="Checkpoint Status">
 			<CellTemplate>
-				@(string.IsNullOrEmpty(context.Item.CheckpointStatus) ? "-" : context.Item.CheckpointStatus)
+				@if (context.Item.Reports(ProjectionStat.CheckpointStatus)) {
+					@(string.IsNullOrEmpty(context.Item.CheckpointStatus) ? "-" : context.Item.CheckpointStatus)
+				} else {
+					<NotReported/>
+				}
 			</CellTemplate>
 		</TemplateColumn>
 		<PropertyColumn Property="x => x.Mode" Title="Mode" Sortable="false" Filterable="false"/>
 		<TemplateColumn Title="Done">
 			<CellTemplate>
-				@($"{context.Item.Progress:F6}%")
+				@if (context.Item.Reports(ProjectionStat.Progress)) {
+					@($"{context.Item.Progress:F6}%")
+				} else {
+					<NotReported/>
+				}
 			</CellTemplate>
 		</TemplateColumn>
 		<TemplateColumn Title="Read / Write in Progress">
 			<CellTemplate>
-				@($"{context.Item.ReadsInProgress} / {context.Item.WritesInProgress}")
+				@if (context.Item.Reports(ProjectionStat.ReadsWrites)) {
+					@($"{context.Item.ReadsInProgress} / {context.Item.WritesInProgress}")
+				} else {
+					<NotReported/>
+				}
 			</CellTemplate>
 		</TemplateColumn>
 		<TemplateColumn Title="Write Queues">
 			<CellTemplate>
-				@($"{context.Item.WritePendingEventsAfterCheckpoint} / {context.Item.WritePendingEventsBeforeCheckpoint}")
+				@if (context.Item.Reports(ProjectionStat.WriteQueues)) {
+					@($"{context.Item.WritePendingEventsAfterCheckpoint} / {context.Item.WritePendingEventsBeforeCheckpoint}")
+				} else {
+					<NotReported/>
+				}
 			</CellTemplate>
 		</TemplateColumn>
-		<PropertyColumn Property="x => x.PartitionsCached" Title="Partitions Cached" Sortable="false" Filterable="false"/>
+		<TemplateColumn Title="Partitions Cached" Sortable="false" Filterable="false">
+			<CellTemplate>
+				@context.Item.CachedPartitions().ToString("N0")
+			</CellTemplate>
+		</TemplateColumn>
 		<TemplateColumn Title="Rate (records/s)">
 			<CellTemplate>
 				@RateFor(context.Item.Name).ToString("N1")
@@ -107,7 +127,11 @@
 		</TemplateColumn>
 		<TemplateColumn Title="Records Buffered">
 			<CellTemplate>
-				@context.Item.BufferedEvents.ToString("N0")
+				@if (context.Item.Reports(ProjectionStat.BufferedEvents)) {
+					@context.Item.BufferedEvents.ToString("N0")
+				} else {
+					<NotReported/>
+				}
 			</CellTemplate>
 		</TemplateColumn>
 	</Columns>

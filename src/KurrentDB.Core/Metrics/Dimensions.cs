@@ -24,7 +24,9 @@ internal class Dimensions<TTracker, TData> where TTracker : notnull where TData 
 		_genTag = genTag;
 	}
 
-	public bool AnyRegistered() => _funcs.Any();
+	public bool AnyEnabled() => _enabledDimensions.Count is not 0;
+
+	public bool AnyRegistered() => _funcs.Count is not 0;
 
 	public void Register(TTracker tracker, Func<TData> func) {
 		if (!_enabledDimensions.TryGetValue(tracker, out var dimension))
