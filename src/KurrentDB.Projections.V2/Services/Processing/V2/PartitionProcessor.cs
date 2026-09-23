@@ -9,6 +9,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
@@ -52,15 +53,28 @@ public class PartitionProcessor(
 		}
 	}
 
+	// Builds the fault that a throwing state handler surfaces as: projection name,
+	// handler type, event position, and the handler's message. Only handler
+	// invocations are wrapped - infrastructure failures (state-stream reads, cache
+	// writes) propagate raw rather than blaming the user's handler.
+	private PartitionProcessingException HandlerFault(TFPos position, Exception inner) {
+		var tag = CheckpointTag.FromPosition(0, position.CommitPosition, position.PreparePosition);
+		return new(projectionName, stateHandler.GetType(), tag.ToString(), inner);
+	}
+
 	/// <summary>
 	/// Loads partition state into the state handler from cache, persisted result stream, or initializes fresh.
 	/// Returns true if the partition is new (not previously seen in this run or persisted).
 	/// </summary>
-	private async ValueTask<bool> LoadPartitionState(string partitionKey, CancellationToken ct) {
+	private async ValueTask<bool> LoadPartitionState(string partitionKey, TFPos position, CancellationToken ct) {
 		if (_stateCache.TryGet(partitionKey, out var cachedState)) {
 			// A null cached state means the handler explicitly set state to null (e.g. JS null).
 			// Load "null" so the handler gets JS null, not a fresh $init state.
-			stateHandler.Load(cachedState ?? "null");
+			try {
+				stateHandler.Load(cachedState ?? "null");
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			return false;
 		}
 
@@ -68,24 +82,40 @@ public class PartitionProcessor(
 		if (persistedState is not null) {
 			Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
 				partitionKey, projectionName);
-			stateHandler.Load(persistedState);
+			try {
+				stateHandler.Load(persistedState);
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			await _stateCache.Set(partitionKey, persistedState, ct);
 			return false;
 		}
 
-		stateHandler.Initialize();
+		try {
+			stateHandler.Initialize();
+		} catch (Exception ex) {
+			throw HandlerFault(position, ex);
+		}
 		return true;
 	}
 
 	// Loads the shared state into the state handler
-	private void LoadSharedState() {
+	private void LoadSharedState(TFPos position) {
 		if (!isBiState) return;
 
 		if (!_sharedStateInitialized) {
-			stateHandler.InitializeShared();
+			try {
+				stateHandler.InitializeShared();
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 			_sharedStateInitialized = true;
 		} else if (_sharedState != null) {
-			stateHandler.LoadShared(_sharedState);
+			try {
+				stateHandler.LoadShared(_sharedState);
+			} catch (Exception ex) {
+				throw HandlerFault(position, ex);
+			}
 		}
 	}
 
@@ -94,12 +124,18 @@ public class PartitionProcessor(
 
 		Log.Debug("Processing partition deleted partition={Partition}", partitionKey);
 
-		await LoadPartitionState(partitionKey, ct);
-		LoadSharedState();
+		await LoadPartitionState(partitionKey, pe.LogPosition, ct);
+		LoadSharedState(pe.LogPosition);
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 
-		var processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var newState);
+		bool processed;
+		string newState;
+		try {
+			processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out newState);
+		} catch (Exception ex) {
+			throw HandlerFault(pe.LogPosition, ex);
+		}
 
 		if (processed) {
 			await _stateCache.Set(partitionKey, newState, ct);
@@ -120,25 +156,38 @@ public class PartitionProcessor(
 		Log.Verbose("Processing event stream={Stream} type={EventType} partition={Partition}",
 			projEvent.EventStreamId, projEvent.EventType, partitionKey);
 
-		var isNewPartition = await LoadPartitionState(partitionKey, ct);
-		LoadSharedState();
+		var isNewPartition = await LoadPartitionState(partitionKey, pe.LogPosition, ct);
+		LoadSharedState(pe.LogPosition);
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 
 		if (isNewPartition) {
-			stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out var createdEmittedEvents);
+			EmittedEventEnvelope[] createdEmittedEvents;
+			try {
+				stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out createdEmittedEvents);
+			} catch (Exception ex) {
+				throw HandlerFault(pe.LogPosition, ex);
+			}
 			if (emitEnabled)
 				_activeBuffer.AddEmittedEvents(createdEmittedEvents);
 		}
 
-		var processed = stateHandler.ProcessEvent(
-			partitionKey,
-			checkpointTag,
-			category: null, // todo: is this an important gap?
-			projEvent,
-			out var newState,
-			out var newSharedState,
-			out var emittedEvents);
+		bool processed;
+		string newState;
+		string newSharedState;
+		EmittedEventEnvelope[] emittedEvents;
+		try {
+			processed = stateHandler.ProcessEvent(
+				partitionKey,
+				checkpointTag,
+				category: null, // todo: is this an important gap?
+				projEvent,
+				out newState,
+				out newSharedState,
+				out emittedEvents);
+		} catch (Exception ex) {
+			throw HandlerFault(pe.LogPosition, ex);
+		}
 
 		if (processed) {
 			await _stateCache.Set(partitionKey, newState, ct);
