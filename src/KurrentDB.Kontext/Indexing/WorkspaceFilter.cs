@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Text.Json;
 using Jint;
 using Jint.Native.Function;
 using KurrentDB.Core.Data;
@@ -18,8 +17,6 @@ public enum FilterResult {
 }
 
 public sealed class WorkspaceFilter {
-	static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-
 	readonly record struct Rule(string StreamPrefix, Function? Filter);
 
 	readonly Rule[] _rules;
@@ -37,7 +34,7 @@ public sealed class WorkspaceFilter {
 		foreach (var rule in rules)
 			if (!string.IsNullOrWhiteSpace(rule.Filter)) {
 				engine = JintEngineFactory.CreateEngine();
-				evaluator = new JsRecordEvaluator(engine, JsonOptions);
+				evaluator = new JsRecordEvaluator(engine);
 				break;
 			}
 

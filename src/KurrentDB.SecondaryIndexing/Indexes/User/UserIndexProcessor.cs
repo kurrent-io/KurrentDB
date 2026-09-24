@@ -12,7 +12,6 @@ using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
-using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -77,9 +76,7 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 		_engine.SetValue("skip", new object());
 		_skip = _engine.Evaluate("skip");
 
-		var serializerOptions = SystemJsonSchemaSerializerOptions.Default;
-
-		_evaluator = new JsRecordEvaluator(_engine, serializerOptions);
+		_evaluator = new JsRecordEvaluator(_engine);
 
 		_filter = JsRecordEvaluator.Compile(_engine, jsEventFilter);
 		_fieldSelectors = new Function?[fields.Count];

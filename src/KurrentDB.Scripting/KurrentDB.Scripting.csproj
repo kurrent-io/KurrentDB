@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsTrimmable>true</IsTrimmable>
     <Description>Shared JavaScript scripting primitives (Jint engine factory + record evaluator) used by both user-defined indexes and Kontext workspace filters.</Description>
   </PropertyGroup>
 

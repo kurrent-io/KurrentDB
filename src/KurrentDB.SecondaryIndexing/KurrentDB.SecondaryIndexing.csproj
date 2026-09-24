@@ -3,8 +3,9 @@
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 		<NoWarn>$(NoWarn);DuckDBNET001</NoWarn>
 	</PropertyGroup>
 
