@@ -22,7 +22,9 @@ public class ConfigParser(ILogger logger) {
 	/// <param name="configPath">The path to the YAML configuration file.</param>
 	/// <param name="sectionName">The section within the file to deserialize. If not found, the whole file is used.</param>
 	/// <typeparam name="T">The settings type to deserialize into.</typeparam>
-	public static T? ReadConfiguration<T>(string configPath, string sectionName) where T : class {
+	public static T? ReadConfiguration<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string configPath,
+		string sectionName)
+		where T : class, IPluginConfigurationBinder<T>, new() {
 		return new ConfigParser(NullLogger.Instance).ReadConfigurationFromPath<T>(configPath, sectionName);
 	}
 
@@ -42,9 +44,9 @@ public class ConfigParser(ILogger logger) {
 	/// </param>
 	/// <typeparam name="T">The settings type to deserialize into.</typeparam>
 	[RequiresUnreferencedCode("Binding a plugin's settings type from configuration requires reflection over the target type and its members.")]
-	[RequiresDynamicCode("Binding a plugin's settings type from configuration may require generating dynamic code at runtime for generic types.")]
-	public T ReadConfiguration<T>(IConfiguration configuration, string configFileKey, string sectionName) {
-		var configPath = configuration.GetSection($"KurrentDB:{configFileKey}")?.Value;
+	public T ReadConfiguration<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IConfiguration configuration, string configFileKey, string sectionName)
+		where T : class, IPluginConfigurationBinder<T>, new(){
+		var configPath = configuration.GetSection($"KurrentDB:{configFileKey}").Value;
 		var result = string.IsNullOrEmpty(configPath)
 			? ReadConfigurationFromIConfiguration<T>(configuration, $"KurrentDB:{sectionName}")
 			: ReadConfigurationFromPath<T>(configPath, sectionName);
@@ -52,11 +54,10 @@ public class ConfigParser(ILogger logger) {
 		return result ?? throw new Exception($"Could not read {sectionName} configuration from {configPath ?? "main configuration"}");
 	}
 
-	[RequiresUnreferencedCode("Binding a plugin's settings type from configuration requires reflection over the target type and its members.")]
-	[RequiresDynamicCode("Binding a plugin's settings type from configuration may require generating dynamic code at runtime for generic types.")]
-	private T? ReadConfigurationFromIConfiguration<T>(IConfiguration configuration, string sectionName) {
+	private T? ReadConfigurationFromIConfiguration<T>(IConfiguration configuration, string sectionName)
+		where T : class, IPluginConfigurationBinder<T>, new() {
 		logger.LogInformation("Reading {SectionName} configuration from main configuration", sectionName);
-		return configuration.GetSection(sectionName).Get<T>();
+		return T.Bind(configuration.GetSection(sectionName));
 	}
 
 	/// <summary>
@@ -65,7 +66,8 @@ public class ConfigParser(ILogger logger) {
 	/// <param name="configPath">The path to the configuration file</param>
 	/// <param name="sectionName">The section to deserialize</param>
 	/// <typeparam name="T">The type of settings object to create from the configuration</typeparam>
-	private T? ReadConfigurationFromPath<T>(string configPath, string sectionName) {
+	private T? ReadConfigurationFromPath<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string configPath, string sectionName)
+		where T : class, IPluginConfigurationBinder<T>, new() {
 		logger.LogInformation("Reading {SectionName} configuration from yaml file {ConfigPath}", sectionName, configPath);
 
 		if (!File.Exists(configPath))

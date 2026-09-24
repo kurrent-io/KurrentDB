@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
@@ -15,6 +16,17 @@ internal sealed class AssertionComparer : IComparer<IAssertion> {
 
 	public static IComparer<IAssertion> Instance { get; } = new AssertionComparer();
 
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AllowAnonymousAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AndAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ClaimMatchAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ClaimValueMatchesParameterValueAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(LegacyStreamPermissionAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(MultipleClaimMatchAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(OrAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(RequireAuthenticatedAssertion))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(RequireStreamReadAssertion))]
+	[UnconditionalSuppressMessage("Trimming", "IL2060",
+		Justification = "All implementers of IAssertion are specified as DynamicDependency.")]
 	public int Compare(IAssertion x, IAssertion y) {
 		var grant = x.Grant.CompareTo(y.Grant);
 		if (grant != 0)

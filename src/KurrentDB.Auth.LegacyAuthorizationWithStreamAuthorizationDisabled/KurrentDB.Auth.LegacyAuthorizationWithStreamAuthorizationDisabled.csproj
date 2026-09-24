@@ -5,6 +5,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<IsPlugin>true</IsPlugin>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

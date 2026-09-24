@@ -3,6 +3,8 @@
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<IsPlugin>true</IsPlugin>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
@@ -62,6 +63,8 @@ public class OAuthAuthenticationPlugin(IConfiguration configuration, string conf
 	public string Version { get; } = typeof(OAuthAuthenticationPlugin).Assembly.GetName().Version!.ToString();
 	public string CommandLineName { get; } = "oauth";
 
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "Settings and dependent types are preserved.")]
 	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string _) {
 		var logger = loggerFactory.CreateLogger<OAuthAuthenticationPlugin>();
 
@@ -506,7 +509,7 @@ public class OAuthAuthenticationPlugin(IConfiguration configuration, string conf
 		public ILogger Logger { get; set; } = NullLogger.Instance;
 	}
 
-	public class Settings {
+	public class Settings : IPluginConfigurationBinder<Settings> {
 		public string Audience { get; set; } = null!;
 		public string Issuer { get; set; } = null!;
 
@@ -520,5 +523,8 @@ public class OAuthAuthenticationPlugin(IConfiguration configuration, string conf
 		public string ClientId { get; set; } = null!;
 		public string ClientSecret { get; set; } = null!;
 		public string[] AdditionalEndpointBaseAddresses { get; set; } = { };
+
+		static Settings? IPluginConfigurationBinder<Settings>.Bind(IConfiguration configuration)
+			=> configuration.Get<Settings>();
 	}
 }

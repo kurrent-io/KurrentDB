@@ -2,10 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
+using EventStore.Plugins;
+using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Auth.Ldaps;
 
-public class LdapsSettings {
+public class LdapsSettings : IPluginConfigurationBinder<LdapsSettings> {
 	public string Host { get; set; }
 	public int Port { get; set; }
 	public bool ValidateServerCertificate { get; set; }
@@ -37,4 +39,7 @@ public class LdapsSettings {
 		UseSSL = true;
 		LdapOperationTimeout = 5000;
 	}
+
+	static LdapsSettings IPluginConfigurationBinder<LdapsSettings>.Bind(IConfiguration configuration)
+		=> configuration.Get<LdapsSettings>()!;
 }

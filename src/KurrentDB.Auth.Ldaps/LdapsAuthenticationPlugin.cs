@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.ComponentModel.Composition;
+using System.Diagnostics.CodeAnalysis;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -18,11 +19,13 @@ public class LdapsAuthenticationPlugin(
 	public string Name { get { return "LDAPS"; } }
 
 	public string Version {
-		get { return typeof(LdapsAuthenticationPlugin).Assembly.GetName().Version.ToString(); }
+		get { return typeof(LdapsAuthenticationPlugin).Assembly.GetName().Version?.ToString() ?? string.Empty; }
 	}
 
 	public string CommandLineName { get { return "ldaps"; } }
 
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "LdapsSettings and dependent types are preserved.")]
 	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string _) {
 		var logger = loggerFactory.CreateLogger<LdapsAuthenticationPlugin>();
 
