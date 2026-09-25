@@ -5,8 +5,8 @@ namespace KurrentDB.Licensing.Keygen;
 
 public static class Models {
 	public record ValidateLicenseRequest(ValidateLicenseRequest.RequestMeta Meta) {
-		public record RequestMeta(string? Key, FingerprintScope Scope);
-		public record FingerprintScope(string Fingerprint);
+		public record RequestMeta(string? Key, RequestScopes Scope);
+		public record RequestScopes(string Fingerprint, string? Policy = null);
 	}
 
 	// Is a given license currently valid for use with a given machine?
@@ -51,7 +51,7 @@ public static class Models {
 		public DateTimeOffset? Expiry { get; set; }
 		public string Status { get; set; } = null!;
 		public bool Suspended { get; set; } = true;
-		public int MaxMachines { get; set; }
+		public int? MaxMachines { get; set; }
 		public int? MaxCores { get; set; }
 		public bool RequiresHeartbeat { get; set; }
 	}
