@@ -15,6 +15,7 @@
     <PackageReference Include="Kurrent.Quack" />
     <PackageReference Include="Kurrent.Surge.DuckDB" />
     <PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="Dapper" />
     <PackageReference Include="NJsonSchema" />
   </ItemGroup>
 
