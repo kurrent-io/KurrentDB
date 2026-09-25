@@ -102,18 +102,3 @@ public class SchemaExportTests {
         actualResult.ShouldBeEquivalentTo(expectedResult);
     }
 }
-
-record SchemaTestSubject {
-    public string                     String     { get; set; } = null!;
-    public int                        Int        { get; set; }
-    public double                     Double     { get; set; }
-    public bool                       Bool       { get; set; }
-    public DateTime                   DateTime   { get; set; }
-    public Guid                       Guid       { get; set; }
-    public Uri                        Uri        { get; set; } = null!;
-    public byte[]                     Bytes      { get; set; } = null!;
-    public string[]                   Array      { get; set; } = null!;
-    public List<string>               List       { get; set; } = null!;
-    public Dictionary<string, string> Dictionary { get; set; } = null!;
-    public SchemaTestSubject          Nested     { get; set; } = null!;
-}
