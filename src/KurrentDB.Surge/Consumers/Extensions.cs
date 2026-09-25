@@ -71,6 +71,9 @@ public static class ResolvedEventExtensions {
     public static ValueTask<SurgeRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, int nextSequenceId) =>
         resolvedEvent.ToRecord(deserialize, () => SequenceId.From((ulong)nextSequenceId));
 
+    public static ValueTask<SurgeRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize) =>
+        resolvedEvent.ToRecord(deserialize, () => SequenceId.None);
+
     static SurgeRecord ToRecord(
         this ResolvedEvent resolvedEvent,
         Headers headers,
