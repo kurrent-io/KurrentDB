@@ -2,8 +2,6 @@
 title: "RabbitMQ Sink"
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 This sink is responsible for sending messages to a RabbitMQ exchange using a specified routing key. It efficiently

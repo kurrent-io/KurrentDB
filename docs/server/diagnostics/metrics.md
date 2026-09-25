@@ -6,7 +6,7 @@ order: 2
 
 KurrentDB collects metrics in [Prometheus format](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format), available on the `/metrics` endpoint. Prometheus can be configured to scrape this endpoint directly. The metrics are configured in `metricsconfig.json` which is located in the installation directory.
 
-In addition, KurrentDB can actively export metrics to a specified endpoint using the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP). <Badge type="info" text="License Required" vertical="middle"></Badge>
+In addition, KurrentDB can actively export metrics to a specified endpoint using the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP).
 
 A [Cluster Summary](https://grafana.com/grafana/dashboards/22824) Grafana dashboard is available, as well as [miscellaneous panels](https://grafana.com/grafana/dashboards/22823).
 

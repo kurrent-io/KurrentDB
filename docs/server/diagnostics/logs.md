@@ -213,8 +213,6 @@ You can completely disable logging to a file by changing the `DisableLogFile` op
 
 ## Logs download
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The _Logs Download_ feature provides HTTP access to KurrentDB logs so that they can be viewed without requiring file system access.
 
 You require a [license key](../quick-start/installation.md#license-keys) to use this feature.

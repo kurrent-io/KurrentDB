@@ -2,8 +2,6 @@
 title: 'Kafka Source'
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The Kafka Source Connector enables you to consume messages from an existing

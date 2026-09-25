@@ -4,8 +4,6 @@ order: 4
 
 # Redaction
 
-<Badge text="License Required" type="info" vertical="middle"/>
-
 In KurrentDB, events are immutable and cannot be changed after they are written. Usually, when you have an event with data that needs to be deleted you should take the following steps:
 
 - Rewrite the stream to a new stream without the data to be removed.

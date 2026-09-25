@@ -178,8 +178,6 @@ programmatically.
 
 ### Stream policy authorization
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 This allows administrators to define stream access policies for KurrentDB based on stream prefixes.
 
 #### Enabling

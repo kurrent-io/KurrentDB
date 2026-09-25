@@ -77,8 +77,6 @@ Use the following option to enable this feature:
 
 ## User X.509 Certificates 
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The User Certificates feature allows authentication through an X.509 user certificate in addition to username and password. User certificates work across any cluster that shares a trusted root Certificate Authority (CA) with the user's certificate. This means that you can have a single user certificate that is valid across multiple clusters.
 
 ### Configuration steps
@@ -256,8 +254,6 @@ Signature Hash: 6d922badaba2372070f13c69b620286262eab1d8d2d2156a271a1d73aaaf64e4
 
 ## LDAP authentication 
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The LDAP Authentication feature enables KurrentDB to use LDAP-based directory services for authentication.
 
 ### Configuration
@@ -346,8 +342,6 @@ If you encounter issues, check the server's log. Common problems include:
 | No Errors in Server Logs But Cannot Login                                                   | <ul><li>Verify that the user is part of the group specified by `RequiredGroupDn` and that the LDAP record has `GroupMembershipAttribute` set to `memberOf`.</li><li>Verify the `ObjectClass` and `Filter` parameters.</li><li>If you have set `RequireGroupMembership` to `true`, verify that the user is part of the group specified by `RequiredGroupDn` and that the LDAP record has `GroupMembershipAttribute` set to `memberOf`.</li></ul> |
 
 ## OAuth Authentication
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The OAuth feature allows KurrentDB to connect to an identity server and authenticate users based on a JWT rather than username and password.
 

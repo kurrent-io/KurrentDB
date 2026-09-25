@@ -3,8 +3,6 @@ title: 'Elasticsearch Sink'
 order: 1
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The Elasticsearch sink retrieves messages from a KurrentDB stream and stores them in

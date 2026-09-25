@@ -367,8 +367,6 @@ You can also disable the gossip protocol on the HTTP interface by setting `Disab
 
 ## External TCP
 
-<wbr><Badge type="info" text="License Required" vertical="middle"/>
-
 The TCP client protocol plugin enables client applications based on the external TCP API to run without any changes. This provides developers a mechanism to migrate to gRPC clients. This bridge solution enables development teams to plan for the End Of Life (EOL) of the external TCP API. Past the EOL, the external TCP API will no longer be supported.
 
 ### Configuration

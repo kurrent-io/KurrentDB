@@ -4,8 +4,6 @@ order: 2
 
 # Auto-Scavenge
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The Auto-scavenge feature automatically schedules and coordinates _cluster scavenges_ which are composed of multiple _node scavenges_ run across all of the nodes in the cluster. The feature ensures that only one node scavenge is executed at a time in the cluster, and handles restarting or cancelling scavenges if a node is lost.
 
 Cluster scavenges are configured to run on a set schedule with a CRON expression, and cluster scavenges can be paused and resumed if needed.

@@ -2,8 +2,6 @@
 title: 'Sql Sink'
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The SQL sink connector writes events from KurrentDB to SQL databases by executing configurable SQL statements. You can define mappings between event types and SQL statement templates to control how events are persisted.
