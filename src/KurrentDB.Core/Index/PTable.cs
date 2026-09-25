@@ -17,6 +17,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
 using KurrentDB.Core.Exceptions;
+using Microsoft.Win32.SafeHandles;
 using ILogger = Serilog.ILogger;
 using MD5 = KurrentDB.Core.Hashing.MD5;
 using Range = KurrentDB.Core.Data.Range;
@@ -37,7 +38,7 @@ public class PTableVersions {
 	public const byte IndexV4 = 4;
 }
 
-public partial class PTable : ISearchTable, IDisposable {
+public sealed partial class PTable : ISearchTable, IDisposable {
 	public const int MD5Size = 16;
 	public const int DefaultBufferSize = 8192;
 	public const int DefaultSequentialBufferSize = 65536;
@@ -79,6 +80,7 @@ public partial class PTable : ISearchTable, IDisposable {
 
 	private readonly Guid _id;
 	private readonly string _filename;
+	private readonly SafeFileHandle _fileHandle;
 	private readonly long _count;
 	private readonly long _size;
 	private readonly UnmanagedMemoryAppendOnlyList<Midpoint> _midpoints = null;
@@ -90,12 +92,11 @@ public partial class PTable : ISearchTable, IDisposable {
 	private readonly LRUCache<StreamHash, bool> _lruConfirmedNotPresent;
 
 	private readonly IndexEntryKey _minEntry, _maxEntry;
-	private readonly ObjectPool<WorkItem> _workItems;
+	private readonly ObjectPool<PoolingBufferedStream> _workItems;
 	private readonly byte _version;
 
 	private readonly ManualResetEventSlim _destroyEvent = new ManualResetEventSlim(false);
 	private volatile bool _deleteFile;
-	private bool _disposed;
 
 	public ReadOnlySpan<Midpoint> GetMidPoints() {
 		if (_midpoints == null)
@@ -130,26 +131,25 @@ public partial class PTable : ISearchTable, IDisposable {
 			Path.GetFileName(Filename)
 		);
 		var sw = Stopwatch.StartNew();
-		_size = new FileInfo(_filename).Length;
 
 		Helper.EatException(_filename, static filename => {
 			// this action will fail if the file is created on a Unix system that does not have permissions to make files read-only
 			File.SetAttributes(filename, FileAttributes.ReadOnly | FileAttributes.NotContentIndexed);
 		});
 
-		_workItems = new ObjectPool<WorkItem>(string.Format("PTable {0} work items", _id),
-			initialReaders,
-			maxReaders,
-			() => new WorkItem(filename, DefaultBufferSize),
-			workItem => workItem.Dispose(),
-			pool => OnAllWorkItemsDisposed());
+		try {
+			_fileHandle = File.OpenHandle(filename, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.RandomAccess);
+			_size = RandomAccess.GetLength(_fileHandle);
+		} catch (FileNotFoundException) {
+			throw new CorruptIndexException(new PTableNotFoundException(filename));
+		}
+
+		using var rawStream = _fileHandle.AsUnbufferedStream(FileAccess.Read);
 
 		int indexEntrySize;
-		var readerWorkItem = GetWorkItem();
 		try {
-			var stream = readerWorkItem.Stream;
-			stream.Seek(0, SeekOrigin.Begin);
-			var header = PTableHeader.FromStream(stream);
+			// We don't create buffering wrapper here because we're doing non-overlapping random reads from the stream here
+			var header = PTableHeader.FromStream(rawStream);
 
 			var version = header.Version;
 			if (version == PTableVersions.IndexV1) {
@@ -169,8 +169,8 @@ public partial class PTable : ISearchTable, IDisposable {
 
 			if (_version == PTableVersions.IndexV4) {
 				//read the PTable footer
-				stream.Seek(_size - MD5Size - PTableFooter.GetSize(_version), SeekOrigin.Begin);
-				var footer = PTableFooter.FromStream(stream);
+				rawStream.Seek(_size - MD5Size - PTableFooter.GetSize(_version), SeekOrigin.Begin);
+				var footer = PTableFooter.FromStream(rawStream);
 				if (footer.Version != version)
 					throw new CorruptIndexException(
 						String.Format("PTable header/footer version mismatch: {0}/{1}", version,
@@ -212,23 +212,21 @@ public partial class PTable : ISearchTable, IDisposable {
 				_minEntry = new IndexEntryKey(ulong.MaxValue, long.MaxValue);
 				_maxEntry = new IndexEntryKey(ulong.MinValue, long.MinValue);
 			} else {
-				var minEntry = ReadEntry(Count - 1, stream);
+				var minEntry = ReadEntry(Count - 1, rawStream);
 				_minEntry = minEntry.Key;
-				var maxEntry = ReadEntry(0, stream);
+				var maxEntry = ReadEntry(0, rawStream);
 				_maxEntry = maxEntry.Key;
 			}
 		} catch (Exception) {
 			Dispose();
 			throw;
-		} finally {
-			ReturnWorkItem(readerWorkItem);
 		}
 
 		var calcdepth = GetDepth(_count * indexEntrySize, depth);
 		_midpoints = _version switch {
-			>= PTableVersions.IndexV3 => CacheMidpointsAndVerifyHash<IndexEntry.V3>(calcdepth, skipIndexVerify),
-			PTableVersions.IndexV2 => CacheMidpointsAndVerifyHash<IndexEntry.V2>(calcdepth, skipIndexVerify),
-			_ => CacheMidpointsAndVerifyHash<IndexEntry.V1>(calcdepth, skipIndexVerify)
+			>= PTableVersions.IndexV3 => CacheMidpointsAndVerifyHash<IndexEntry.V3>(rawStream, calcdepth, skipIndexVerify),
+			PTableVersions.IndexV2 => CacheMidpointsAndVerifyHash<IndexEntry.V2>(rawStream, calcdepth, skipIndexVerify),
+			_ => CacheMidpointsAndVerifyHash<IndexEntry.V1>(rawStream, calcdepth, skipIndexVerify)
 		};
 
 		if (_midpoints != null) {
@@ -256,17 +254,50 @@ public partial class PTable : ISearchTable, IDisposable {
 				+ "Performance hit will occur. OOM Exception.", Path.GetFileName(Filename), Count, depth);
 		}
 
+		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+			// On Windows, using one handle requires enabling overlapped I/O (async) mode.
+			// Otherwise, Windows serializes all reads from the same handle internally, and multi-thread scenarios
+			// actually become ~2 times slower with one shared handle. But enabling async mode makes synchronous Read calls even slower.
+			// So the best option here is to use one handle on Unix, but keep using many handles on Windows.
+			_workItems = new ObjectPool<PoolingBufferedStream>(
+				$"PTable {_id} work items",
+				initialReaders,
+				maxReaders,
+				() => {
+					var fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 0, FileOptions.RandomAccess);
+					return new PoolingBufferedStream(fileStream, leaveOpen: false) {
+						MaxBufferSize = DefaultBufferSize
+					};
+				},
+				s => s.Dispose(),
+				_ => OnAllWorkItemsDisposed()
+			);
+
+			// The handle is used only by this ctor on Windows, so we can free it already.
+			_fileHandle.Dispose();
+			_fileHandle = null;
+		} else {
+			_workItems = new ObjectPool<PoolingBufferedStream>(
+				$"PTable {_id} work items",
+				initialReaders,
+				maxReaders,
+				() => new PoolingBufferedStream(_fileHandle.AsUnbufferedStream(FileAccess.Read), leaveOpen: false) {
+					MaxBufferSize = DefaultBufferSize
+				},
+				s => s.Dispose(),
+				_ => OnAllWorkItemsDisposed()
+			);
+		}
+
 		Log.Debug(
 			"Loading PTable (Version: {version}) '{pTable}' ({count} entries, cache depth {depth}) done in {elapsed}.",
 			_version, Path.GetFileName(Filename), Count, calcdepth, sw.Elapsed);
 	}
 
-	~PTable() => Dispose(false);
-
-	private UnmanagedMemoryAppendOnlyList<Midpoint> CacheMidpointsAndVerifyHash<T>(int depth, bool skipIndexVerify)
+	private UnmanagedMemoryAppendOnlyList<Midpoint> CacheMidpointsAndVerifyHash<T>(Stream rawStream, int depth, bool skipIndexVerify)
 		where T : struct, IndexEntry.ILayout<T> {
-		if (depth < 0 || depth > 30)
-			throw new ArgumentOutOfRangeException("depth");
+		ArgumentOutOfRangeException.ThrowIfNegative(depth);
+		ArgumentOutOfRangeException.ThrowIfGreaterThan(depth, 30);
 
 		if (_count == 0 || depth == 0)
 			return null;
@@ -274,9 +305,6 @@ public partial class PTable : ISearchTable, IDisposable {
 		if (skipIndexVerify) {
 			Log.Debug("Disabling Verification of PTable");
 		}
-
-		var workItem = GetWorkItem();
-		var workItemStream = workItem.Stream;
 
 		UnmanagedMemoryAppendOnlyList<Midpoint> midpoints = null;
 
@@ -288,11 +316,21 @@ public partial class PTable : ISearchTable, IDisposable {
 				return null;
 			}
 
-			if (skipIndexVerify && (_version >= PTableVersions.IndexV4)) {
+			if (skipIndexVerify && _version >= PTableVersions.IndexV4) {
 				if (_midpointsCached == midpointsCount) {
 					//index verification is disabled and cached midpoints with the same depth requested are available
 					//so, we can load them directly from the PTable file
-					ReadCachedMidpoints(workItemStream, midpoints);
+
+					// Reading cached midpoints is a sequential scan, so we leverage a larger buffer size.
+					var bufferSize = (int)Math.Clamp(
+						value: _midpointsCacheSize,
+						min: 128,
+						max: DefaultSequentialBufferSize
+					);
+					using var midpointStream = new PoolingBufferedStream(rawStream, leaveOpen: true) {
+						MaxBufferSize = bufferSize,
+					};
+					ReadCachedMidpoints(midpointStream, midpoints);
 					return midpoints;
 				} else
 					Log.Debug(
@@ -304,15 +342,25 @@ public partial class PTable : ISearchTable, IDisposable {
 			// Two possible scenarios:
 			// - Verification enabled: we scan the entire file and compute its hash, recording midpoints.
 			// - Verification disabled: we just jump from midpoint to midpoint.
-			workItemStream.Seek(0, SeekOrigin.Begin);
+			rawStream.Seek(0, SeekOrigin.Begin);
 
 			if (skipIndexVerify) {
-				CollectMidpoints<T>(midpointsCount, workItemStream, midpoints);
+				// We determine the density of midpoints and either:
+				// - use a bigger buffer if midpoints are close to each other, and we effectively scan the file,
+				// - or disable buffering entirely if midpoints are too far from each other.
+				var approxDistBetweenMidpoints = _count * T.Size / midpointsCount;
+
+				using var contentStream = approxDistBetweenMidpoints > DefaultSequentialBufferSize / 2
+					? rawStream
+					: new PoolingBufferedStream(rawStream) {
+						MaxBufferSize = DefaultSequentialBufferSize
+					};
+				CollectMidpoints<T>(midpointsCount, contentStream, midpoints);
 				return midpoints;
 			}
 
 			// Prevent BufferedStream from reading the hash part and affecting the calculated hash.
-			using var segmentExcludingHash = new StreamSegment(workItemStream, leaveOpen: true) {
+			using var segmentExcludingHash = new StreamSegment(rawStream, leaveOpen: true) {
 				Range = (Offset: 0, Length: _size - MD5Size)
 			};
 
@@ -338,8 +386,8 @@ public partial class PTable : ISearchTable, IDisposable {
 
 			// Reading from `workItemStream` because `stream` has the `hash` segment trimmed.
 			Span<byte> fileHash = stackalloc byte[MD5Size];
-			workItemStream.Seek(-MD5Size, SeekOrigin.End);
-			workItemStream.ReadExactly(fileHash);
+			rawStream.Seek(-MD5Size, SeekOrigin.End);
+			rawStream.ReadExactly(fileHash);
 			ValidateHash(fileHash, md5.Hash);
 
 			return midpoints;
@@ -347,12 +395,10 @@ public partial class PTable : ISearchTable, IDisposable {
 			midpoints?.Dispose();
 			Dispose();
 			throw;
-		} finally {
-			ReturnWorkItem(workItem);
 		}
 	}
 
-	private void ReadCachedMidpoints(FileStream workItemStream, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints) {
+	private void ReadCachedMidpoints(PoolingBufferedStream workItemStream, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints) {
 		Log.Debug("Loading {midpointsCached} cached midpoints from PTable", _midpointsCached);
 
 		long startOffset = _size - MD5Size - PTableFooter.GetSize(_version) - _midpointsCacheSize;
@@ -372,7 +418,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 	}
 
-	private void CollectMidpoints<TEntry>(int midpointsCount, FileStream stream, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints)
+	private void CollectMidpoints<TEntry>(int midpointsCount, Stream stream, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints)
 		where TEntry : struct, IndexEntry.ILayout<TEntry> {
 		long previousNextIndex = long.MinValue;
 		var previousKey = new IndexEntryKey(long.MaxValue, long.MaxValue);
@@ -404,7 +450,7 @@ public partial class PTable : ISearchTable, IDisposable {
 	private void CollectMidpointsWithVerification<TEntry>(
 		int midpointsCount,
 		ref long position,
-		Stream stream,
+		BufferedStream stream,
 		byte[] buffer,
 		UnmanagedMemoryAppendOnlyList<Midpoint> midpoints
 	) where TEntry : struct, IndexEntry.ILayout<TEntry> {
@@ -521,15 +567,11 @@ public partial class PTable : ISearchTable, IDisposable {
 		};
 
 		static IEnumerable<IndexEntry> IterateAs<T>(PTable self) where T : struct, IndexEntry.ILayout<T> {
-			var workItem = self.GetWorkItem();
-			try {
-				workItem.Stream.Position = PTableHeader.Size;
+			using var workItem = self.AcquireWorkItem();
+			workItem.Stream.Position = PTableHeader.Size;
 
-				for (long i = 0, n = self.Count; i < n; i++) {
-					yield return IndexEntry.ReadFrom<T>(workItem.Stream);
-				}
-			} finally {
-				self.ReturnWorkItem(workItem);
+			for (long i = 0, n = self.Count; i < n; i++) {
+				yield return IndexEntry.ReadFrom<T>(workItem.Stream);
 			}
 		}
 	}
@@ -591,34 +633,30 @@ public partial class PTable : ISearchTable, IDisposable {
 		if (!MightContainStream(streamHash))
 			return null;
 
-		var workItem = GetWorkItem();
-		try {
-			var recordRange = LocateRecordRange(endKey, startKey, out var lowBoundsCheck, out var highBoundsCheck);
+		using var workItem = AcquireWorkItem();
+		var recordRange = LocateRecordRange(endKey, startKey, out var lowBoundsCheck, out var highBoundsCheck);
 
-			try {
-				return await TryGetLatestEntryFast<T>(
-					streamHash,
-					beforePosition,
-					isForThisStream,
-					recordRange,
-					lowBoundsCheck,
-					highBoundsCheck,
-					workItem,
-					token);
-			} catch (HashCollisionException) {
-				// fall back to linear search if there's a hash collision
-				return await TryGetLatestEntrySlow<T>(
-					streamHash,
-					beforePosition,
-					isForThisStream,
-					recordRange,
-					lowBoundsCheck,
-					highBoundsCheck,
-					workItem,
-					token);
-			}
-		} finally {
-			ReturnWorkItem(workItem);
+		try {
+			return await TryGetLatestEntryFast<T>(
+				streamHash,
+				beforePosition,
+				isForThisStream,
+				recordRange,
+				lowBoundsCheck,
+				highBoundsCheck,
+				workItem,
+				token);
+		} catch (HashCollisionException) {
+			// fall back to linear search if there's a hash collision
+			return await TryGetLatestEntrySlow<T>(
+				streamHash,
+				beforePosition,
+				isForThisStream,
+				recordRange,
+				lowBoundsCheck,
+				highBoundsCheck,
+				workItem,
+				token);
 		}
 	}
 
@@ -773,27 +811,23 @@ public partial class PTable : ISearchTable, IDisposable {
 			return false;
 		}
 
-		var workItem = GetWorkItem();
-		try {
-			var high = ChopForLatest(workItem, endKey);
-			var candEntry = ReadEntry(high, workItem.Stream);
-			var candKey = candEntry.Key;
+		using var workItem = AcquireWorkItem();
+		var high = ChopForLatest(workItem, endKey);
+		var candEntry = ReadEntry(high, workItem.Stream);
+		var candKey = candEntry.Key;
 
-			if (candKey.GreaterThan(endKey))
-				throw new MaybeCorruptIndexException(string.Format(
-					"candEntry ({0}@{1}) > startKey {2}, stream {3}, startNum {4}, endNum {5}, PTable: {6}.",
-					candEntry.Stream, candEntry.Version, startKey, stream, startNumber, endNumber, Filename));
-			if (candKey.SmallerThan(startKey)) {
-				offset = default;
-				return false;
-			}
-
-			entry = candEntry;
-			offset = high;
-			return true;
-		} finally {
-			ReturnWorkItem(workItem);
+		if (candKey.GreaterThan(endKey))
+			throw new MaybeCorruptIndexException(string.Format(
+				"candEntry ({0}@{1}) > startKey {2}, stream {3}, startNum {4}, endNum {5}, PTable: {6}.",
+				candEntry.Stream, candEntry.Version, startKey, stream, startNumber, endNumber, Filename));
+		if (candKey.SmallerThan(startKey)) {
+			offset = default;
+			return false;
 		}
+
+		entry = candEntry;
+		offset = high;
+		return true;
 	}
 
 	public bool TryGetOldestEntry(ulong stream, out IndexEntry entry) =>
@@ -854,26 +888,22 @@ public partial class PTable : ISearchTable, IDisposable {
 			return false;
 		}
 
-		var workItem = GetWorkItem();
-		try {
-			var high = ChopForOldest(workItem, startKey);
-			var candEntry = ReadEntry(high, workItem.Stream);
-			var candidateKey = candEntry.Key;
-			if (candidateKey.SmallerThan(startKey))
-				throw new MaybeCorruptIndexException(string.Format(
-					"candEntry ({0}@{1}) < startKey {2}, stream {3}, startNum {4}, endNum {5}, PTable: {6}.",
-					candEntry.Stream, candEntry.Version, startKey, stream, startNumber, endNumber, Filename));
-			if (candidateKey.GreaterThan(endKey)) {
-				offset = default;
-				return false;
-			}
-
-			entry = candEntry;
-			offset = high;
-			return true;
-		} finally {
-			ReturnWorkItem(workItem);
+		using var workItem = AcquireWorkItem();
+		var high = ChopForOldest(workItem, startKey);
+		var candEntry = ReadEntry(high, workItem.Stream);
+		var candidateKey = candEntry.Key;
+		if (candidateKey.SmallerThan(startKey))
+			throw new MaybeCorruptIndexException(string.Format(
+				"candEntry ({0}@{1}) < startKey {2}, stream {3}, startNum {4}, endNum {5}, PTable: {6}.",
+				candEntry.Stream, candEntry.Version, startKey, stream, startNumber, endNumber, Filename));
+		if (candidateKey.GreaterThan(endKey)) {
+			offset = default;
+			return false;
 		}
+
+		entry = candEntry;
+		offset = high;
+		return true;
 	}
 
 	public IReadOnlyList<IndexEntry> GetRange(ulong stream, long startNumber, long endNumber, int? limit = null) {
@@ -947,7 +977,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		return r;
 	}
 
-	private IndexEntry ReadEntry(long indexNum, FileStream stream) {
+	private IndexEntry ReadEntry(long indexNum, Stream stream) {
 		return _version switch {
 			>= PTableVersions.IndexV3 => ReadEntry<IndexEntry.V3>(indexNum, stream),
 			PTableVersions.IndexV2 => ReadEntry<IndexEntry.V2>(indexNum, stream),
@@ -964,26 +994,19 @@ public partial class PTable : ISearchTable, IDisposable {
 	}
 
 	private IndexEntry ReadEntry(long indexNum) {
-		var workItem = GetWorkItem();
-		try {
-			return ReadEntry(indexNum, workItem.Stream);
-		} finally {
-			ReturnWorkItem(workItem);
-		}
+		using var workItem = AcquireWorkItem();
+		return ReadEntry(indexNum, workItem.Stream);
 	}
 
-	private WorkItem GetWorkItem() {
+	private WorkItem AcquireWorkItem() {
 		try {
-			return _workItems.Get();
+			var stream = _workItems.Get();
+			return new WorkItem(stream, _workItems);
 		} catch (ObjectPoolDisposingException) {
 			throw new FileBeingDeletedException();
 		} catch (ObjectPoolMaxLimitReachedException) {
 			throw new Exception("Unable to acquire work item.");
 		}
-	}
-
-	private void ReturnWorkItem(WorkItem workItem) {
-		_workItems.Return(workItem);
 	}
 
 	public void MarkForDestruction() {
@@ -993,33 +1016,26 @@ public partial class PTable : ISearchTable, IDisposable {
 
 	public void Dispose() {
 		_deleteFile = false;
-		_workItems.MarkForDisposal();
-	}
-
-	protected virtual void Dispose(bool disposing) {
-		if (_disposed) {
-			return;
+		if (_workItems != null) {
+			_workItems.MarkForDisposal();
+		} else {
+			OnAllWorkItemsDisposed();
 		}
-
-		if (disposing) {
-			//dispose any managed objects here
-			_midpoints?.Dispose();
-			_bloomFilter?.Dispose();
-		}
-
-		_disposed = true;
 	}
 
 	private void OnAllWorkItemsDisposed() {
+		_fileHandle?.Dispose();
+
 		File.SetAttributes(_filename, FileAttributes.Normal);
+
+		_midpoints?.Dispose();
+		_bloomFilter?.Dispose();
+
 		if (_deleteFile) {
-			_bloomFilter?.Dispose();
 			File.Delete(_filename);
 			File.Delete(BloomFilterFilename);
 		}
 		_destroyEvent.Set();
-		Dispose(true);
-		GC.SuppressFinalize(this);
 	}
 
 	public void WaitForDisposal(int timeout) {
@@ -1070,8 +1086,8 @@ public partial class PTable : ISearchTable, IDisposable {
 		if (startKey.GreaterThan(_maxEntry) || endKey.SmallerThan(_minEntry))
 			return result;
 
-		var workItem = GetWorkItem();
 		try {
+			using var workItem = AcquireWorkItem();
 			var high = tableLatestOffset ?? ChopForLatest(workItem, endKey);
 			result = _version switch {
 				>= PTableVersions.IndexV3 => ReadForward<IndexEntry.V3>(workItem.Stream, high, startKey, endKey, limit),
@@ -1082,8 +1098,6 @@ public partial class PTable : ISearchTable, IDisposable {
 		} catch (MaybeCorruptIndexException ex) {
 			throw new MaybeCorruptIndexException(
 				$"{ex.Message}. stream {stream}, startNum {startNumber}, endNum {endNumber}, PTable: {Filename}.");
-		} finally {
-			ReturnWorkItem(workItem);
 		}
 	}
 
@@ -1262,12 +1276,10 @@ public partial class PTable : ISearchTable, IDisposable {
 
 		// with a workitem checked out the ptable (and bloom filter specifically)
 		// wont get disposed
-		var workItem = GetWorkItem();
-		try {
+		using (AcquireWorkItem())
+		{
 			var streamHash = stream.Hash;
 			return _bloomFilter.MightContain(GetSpan(ref streamHash));
-		} finally {
-			ReturnWorkItem(workItem);
 		}
 	}
 
@@ -1410,16 +1422,13 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 	}
 
-	private class WorkItem : IDisposable {
-		public readonly FileStream Stream;
-
-		public WorkItem(string filename, int bufferSize) {
-			Stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize,
-				FileOptions.RandomAccess);
-		}
+	private readonly struct WorkItem(PoolingBufferedStream stream, ObjectPool<PoolingBufferedStream> pool) : IDisposable {
+		public readonly PoolingBufferedStream Stream = stream;
 
 		public void Dispose() {
-			Stream.Dispose();
+			// return buffer to the pool
+			Stream.Reset();
+			pool.Return(Stream);
 		}
 	}
 }
