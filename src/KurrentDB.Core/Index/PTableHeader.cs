@@ -1,7 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using KurrentDB.Core.Exceptions;
 
 namespace KurrentDB.Core.Index;
@@ -17,11 +19,15 @@ public class PTableHeader {
 		Version = version;
 	}
 
-	public byte[] AsByteArray() {
-		var array = new byte[Size];
-		array[0] = (byte)FileType.PTableFile;
-		array[1] = Version;
-		return array;
+	[SkipLocalsInit]
+	public void WriteTo(Stream stream) {
+		Span<byte> buffer = stackalloc byte[Size];
+		buffer.Clear();
+
+		buffer[0] = (byte)FileType.PTableFile;
+		buffer[1] = Version;
+
+		stream.Write(buffer);
 	}
 
 	public static PTableHeader FromStream(Stream stream) {
