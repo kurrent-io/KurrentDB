@@ -2,29 +2,24 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Concurrent;
+using DotNext.Patterns;
 using NJsonSchema;
-using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 
 namespace Kurrent.Surge.Schema.Validation;
 
 [PublicAPI]
-public class NJsonSchemaAgent : ISchemaAgent {
-    public static readonly ISchemaAgent Instance = new NJsonSchemaAgent();
+public class NJsonSchemaAgent : ISchemaAgent, ISingleton<NJsonSchemaAgent> {
+	public static NJsonSchemaAgent Instance { get; } = new();
 
-    public NJsonSchemaAgent(SystemTextJsonSchemaGeneratorSettings? generatorSettings = null, JsonSchemaValidatorSettings? validatorSettings = null) {
-        GeneratorSettings = generatorSettings ?? new() {
-        };
-
+    public NJsonSchemaAgent(JsonSchemaValidatorSettings? validatorSettings = null) {
         ValidatorSettings = validatorSettings ?? new();
     }
 
-    SystemTextJsonSchemaGeneratorSettings GeneratorSettings { get; }
-    JsonSchemaValidatorSettings           ValidatorSettings { get; }
+    public JsonSchemaValidatorSettings           ValidatorSettings { get; }
 
     // Caches for parsed and extracted schemas (not really sure about caching the parsed schemas)
     ConcurrentDictionary<uint, MessageSchema> ParsedSchemaCache    { get; } = new();
-    ConcurrentDictionary<Type, MessageSchema> ExtractedSchemaCache { get; } = new();
 
     public MessageSchema ParseSchema(ReadOnlySpan<char> schemaDefinition) {
         var definition = schemaDefinition.ToString();
@@ -38,19 +33,6 @@ public class NJsonSchemaAgent : ISchemaAgent {
                 var schema = JsonSchema.FromJsonAsync(state.Definition).GetAwaiter().GetResult();
                 return new NJsonMessageSchema(
                     state.Definition, schema,
-                    state.ValidatorSettings
-                );
-            };
-    }
-
-    public MessageSchema ExportSchema(Type type) {
-        return ExtractedSchemaCache.GetOrAdd(type, CreateSchema(), (ValidatorSettings, GeneratorSettings));
-
-        static Func<Type, (JsonSchemaValidatorSettings ValidatorSettings, SystemTextJsonSchemaGeneratorSettings GeneratorSettings), MessageSchema> CreateSchema() =>
-            static (type, state) => {
-                var schema = JsonSchema.FromType(type, state.GeneratorSettings);
-                return new NJsonMessageSchema(
-                    schema.ToJson(), schema,
                     state.ValidatorSettings
                 );
             };

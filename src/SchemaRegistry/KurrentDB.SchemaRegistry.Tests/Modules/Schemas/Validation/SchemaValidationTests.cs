@@ -23,7 +23,7 @@ public class SchemaValidationTests {
             .RuleFor(x => x.Unit, "celsius")
             .Generate();
 
-        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
         var content      = JsonSerializer.Serialize(sample, SystemJsonSchemaSerializerOptions.Default);
         var actualResult = schema.Validate(content);
 
@@ -41,7 +41,7 @@ public class SchemaValidationTests {
             .RuleFor(x => x.Unit, "celsius")
             .Generate();
 
-        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
         var content      = JsonSerializer.SerializeToUtf8Bytes(sample, SystemJsonSchemaSerializerOptions.Default).AsSpan();
         var actualResult = schema.Validate(content);
 
@@ -72,7 +72,7 @@ public class SchemaValidationTests {
             //  }
         );
 
-        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
         var content      = JsonSerializer.Serialize(sample, SystemJsonSchemaSerializerOptions.Default);
         var actualResult = schema.Validate(content);
 

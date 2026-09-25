@@ -15,13 +15,6 @@ public interface ISchemaAgent
     /// <param name="schemaDefinition">The schema definition as a ReadOnlySpan of characters.</param>
     /// <returns>A MessageSchema representing the parsed schema.</returns>
     MessageSchema ParseSchema(ReadOnlySpan<char> schemaDefinition);
-
-    /// <summary>
-    /// Exports a message schema based on the provided Type.
-    /// </summary>
-    /// <param name="type">The Type for which to export the schema.</param>
-    /// <returns>A MessageSchema representing the exported schema.</returns>
-    MessageSchema ExportSchema(Type type);
 }
 
 public abstract class MessageSchema(string schemaDefinition) {
@@ -32,9 +25,4 @@ public abstract class MessageSchema(string schemaDefinition) {
     public abstract SchemaValidationResult Validate(ReadOnlySpan<byte> data);
 
     public override string ToString() => Definition;
-}
-
-public static class SchemaAgentExtensions {
-    public static MessageSchema ExportSchema<T>(this ISchemaAgent agent) =>
-        agent.ExportSchema(typeof(T));
 }
