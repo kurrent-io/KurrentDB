@@ -1521,6 +1521,194 @@ public static partial class ClientMessage {
 		}
 	}
 
+	// Index persistent subscriptions
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class ConnectToPersistentSubscriptionToIndex : ReadRequestMessage {
+		public readonly Guid ConnectionId;
+		public readonly string ConnectionName;
+		public readonly string GroupName;
+		public readonly string IndexName;
+		public readonly int AllowedInFlightMessages;
+		public readonly string From;
+
+		public ConnectToPersistentSubscriptionToIndex(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			Guid connectionId, string connectionName, string groupName, string indexName,
+			int allowedInFlightMessages, string from, ClaimsPrincipal user, DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			GroupName = Ensure.NotNullOrEmpty(groupName);
+			IndexName = Ensure.NotNullOrEmpty(indexName);
+			ConnectionId = Ensure.NotEmptyGuid(connectionId);
+			ConnectionName = connectionName;
+			AllowedInFlightMessages = Ensure.Nonnegative(allowedInFlightMessages);
+			From = from;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class CreatePersistentSubscriptionToIndex : ReadRequestMessage {
+		public readonly TFPos StartFrom;
+		public readonly int MessageTimeoutMilliseconds;
+		public readonly bool RecordStatistics;
+
+		public readonly bool ResolveLinkTos;
+		public readonly int MaxRetryCount;
+		public readonly int BufferSize;
+		public readonly int LiveBufferSize;
+		public readonly int ReadBatchSize;
+
+		public readonly string GroupName;
+		public readonly string IndexName;
+		public readonly int MaxSubscriberCount;
+		public readonly string NamedConsumerStrategy;
+		public readonly int MaxCheckPointCount;
+		public readonly int MinCheckPointCount;
+		public readonly int CheckPointAfterMilliseconds;
+
+		public CreatePersistentSubscriptionToIndex(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			string groupName, string indexName, bool resolveLinkTos, TFPos startFrom,
+			int messageTimeoutMilliseconds, bool recordStatistics, int maxRetryCount, int bufferSize,
+			int liveBufferSize, int readBatchSize,
+			int checkPointAfterMilliseconds, int minCheckPointCount, int maxCheckPointCount,
+			int maxSubscriberCount, string namedConsumerStrategy, ClaimsPrincipal user, DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			ResolveLinkTos = resolveLinkTos;
+			GroupName = groupName;
+			IndexName = indexName;
+			StartFrom = startFrom;
+			MessageTimeoutMilliseconds = messageTimeoutMilliseconds;
+			RecordStatistics = recordStatistics;
+			MaxRetryCount = maxRetryCount;
+			BufferSize = bufferSize;
+			LiveBufferSize = liveBufferSize;
+			ReadBatchSize = readBatchSize;
+			MaxCheckPointCount = maxCheckPointCount;
+			MinCheckPointCount = minCheckPointCount;
+			CheckPointAfterMilliseconds = checkPointAfterMilliseconds;
+			MaxSubscriberCount = maxSubscriberCount;
+			NamedConsumerStrategy = namedConsumerStrategy;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class CreatePersistentSubscriptionToIndexCompleted : ReadResponseMessage {
+		public readonly Guid CorrelationId;
+		public readonly string Reason;
+		public readonly CreatePersistentSubscriptionToIndexResult Result;
+
+		public CreatePersistentSubscriptionToIndexCompleted(Guid correlationId, CreatePersistentSubscriptionToIndexResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Result = result;
+			Reason = reason;
+		}
+
+		public enum CreatePersistentSubscriptionToIndexResult {
+			Success = 0,
+			AlreadyExists = 1,
+			Fail = 2,
+			AccessDenied = 3
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class UpdatePersistentSubscriptionToIndex : ReadRequestMessage {
+		public readonly TFPos StartFrom;
+		public readonly int MessageTimeoutMilliseconds;
+		public readonly bool RecordStatistics;
+
+		public readonly bool ResolveLinkTos;
+		public readonly int MaxRetryCount;
+		public readonly int BufferSize;
+		public readonly int LiveBufferSize;
+		public readonly int ReadBatchSize;
+
+		public readonly string GroupName;
+		public readonly string IndexName;
+		public readonly int MaxSubscriberCount;
+
+		public readonly int MaxCheckPointCount;
+		public readonly int MinCheckPointCount;
+		public readonly int CheckPointAfterMilliseconds;
+		public readonly string NamedConsumerStrategy;
+
+		public UpdatePersistentSubscriptionToIndex(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			string groupName, string indexName, bool resolveLinkTos, TFPos startFrom,
+			int messageTimeoutMilliseconds, bool recordStatistics, int maxRetryCount, int bufferSize,
+			int liveBufferSize, int readBatchSize, int checkPointAfterMilliseconds, int minCheckPointCount,
+			int maxCheckPointCount, int maxSubscriberCount, string namedConsumerStrategy, ClaimsPrincipal user,
+			DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			ResolveLinkTos = resolveLinkTos;
+			GroupName = groupName;
+			IndexName = indexName;
+			StartFrom = startFrom;
+			MessageTimeoutMilliseconds = messageTimeoutMilliseconds;
+			RecordStatistics = recordStatistics;
+			MaxRetryCount = maxRetryCount;
+			BufferSize = bufferSize;
+			LiveBufferSize = liveBufferSize;
+			ReadBatchSize = readBatchSize;
+			MaxCheckPointCount = maxCheckPointCount;
+			MinCheckPointCount = minCheckPointCount;
+			CheckPointAfterMilliseconds = checkPointAfterMilliseconds;
+			MaxSubscriberCount = maxSubscriberCount;
+			NamedConsumerStrategy = namedConsumerStrategy;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class UpdatePersistentSubscriptionToIndexCompleted : ReadResponseMessage {
+		public readonly Guid CorrelationId;
+		public readonly string Reason;
+		public readonly UpdatePersistentSubscriptionToIndexResult Result;
+
+		public UpdatePersistentSubscriptionToIndexCompleted(Guid correlationId, UpdatePersistentSubscriptionToIndexResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Result = result;
+			Reason = reason;
+		}
+
+		public enum UpdatePersistentSubscriptionToIndexResult {
+			Success = 0,
+			DoesNotExist = 1,
+			Fail = 2,
+			AccessDenied = 3
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class DeletePersistentSubscriptionToIndex : ReadRequestMessage {
+		public readonly string GroupName;
+		public readonly string IndexName;
+
+		public DeletePersistentSubscriptionToIndex(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			string indexName, string groupName, ClaimsPrincipal user, DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			GroupName = groupName;
+			IndexName = indexName;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class DeletePersistentSubscriptionToIndexCompleted : ReadResponseMessage {
+		public readonly Guid CorrelationId;
+		public readonly string Reason;
+		public readonly DeletePersistentSubscriptionToIndexResult Result;
+
+		public DeletePersistentSubscriptionToIndexCompleted(Guid correlationId, DeletePersistentSubscriptionToIndexResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Result = result;
+			Reason = reason;
+		}
+
+		public enum DeletePersistentSubscriptionToIndexResult {
+			Success = 0,
+			DoesNotExist = 1,
+			Fail = 2,
+			AccessDenied = 3
+		}
+	}
+
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class PersistentSubscriptionAckEvents : ReadRequestMessage {
 		public readonly string SubscriptionId;
