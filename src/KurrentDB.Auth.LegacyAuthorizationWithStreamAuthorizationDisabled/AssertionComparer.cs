@@ -9,24 +9,11 @@ using System.Reflection;
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 
 internal sealed class AssertionComparer : IComparer<IAssertion> {
-	private static readonly MethodInfo OpenTypeComparer =
-		new Func<IAssertion, IAssertion, int>(Compare<object>).Method.GetGenericMethodDefinition();
 
 	private AssertionComparer() { }
 
 	public static IComparer<IAssertion> Instance { get; } = new AssertionComparer();
 
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AllowAnonymousAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AndAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ClaimMatchAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(ClaimValueMatchesParameterValueAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(LegacyStreamPermissionAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(MultipleClaimMatchAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(OrAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(RequireAuthenticatedAssertion))]
-	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(RequireStreamReadAssertion))]
-	[UnconditionalSuppressMessage("Trimming", "IL2060",
-		Justification = "All implementers of IAssertion are specified as DynamicDependency.")]
 	public int Compare(IAssertion x, IAssertion y) {
 		var grant = x.Grant.CompareTo(y.Grant);
 		if (grant != 0)
@@ -36,15 +23,9 @@ internal sealed class AssertionComparer : IComparer<IAssertion> {
 		if (type != 0)
 			return type;
 
-		var closed = (Func<IAssertion, IAssertion, int>)OpenTypeComparer.MakeGenericMethod(x.GetType())
-			.CreateDelegate(typeof(Func<IAssertion, IAssertion, int>));
-		return closed(x, y);
-	}
-
-	private static int Compare<T>(IAssertion x, IAssertion y) {
-		if (x is IComparable<T> comparable)
-			return comparable.CompareTo((T)y);
-		throw new NotSupportedException(
-			"Assertion classes must implement IComparable<T> where T is the Assertion class");
+		return x is IComparable<IAssertion> comparable
+			? comparable.CompareTo(y)
+			: throw new NotSupportedException(
+				"Assertion classes must implement IComparable");
 	}
 }
