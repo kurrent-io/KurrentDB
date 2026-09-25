@@ -45,6 +45,10 @@ public static partial class ClientMessage {
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class ReloadConfig : Message;
 
+	public abstract class MessageWithResult(OperationResult result) : Message {
+		public OperationResult Result => result;
+	}
+
 	[DerivedMessage]
 	public abstract partial class WriteRequestMessage : Message {
 		public readonly Guid InternalCorrId;
@@ -292,9 +296,8 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class WriteEventsCompleted : Message {
+	public partial class WriteEventsCompleted : MessageWithResult {
 		public readonly Guid CorrelationId;
-		public readonly OperationResult Result;
 		public readonly string Message;
 		// For all streams S: LastEventNumber - FirstEventNumber + 1 == NumEventsWritten to S
 		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
@@ -308,7 +311,7 @@ public static partial class ClientMessage {
 			Guid correlationId,
 			LowAllocReadOnlyMemory<long> firstEventNumbers,
 			LowAllocReadOnlyMemory<long> lastEventNumbers,
-			long preparePosition, long commitPosition) {
+			long preparePosition, long commitPosition) : base(OperationResult.Success) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 
 			for (var i = 0; i < firstEventNumbers.Length; i++) {
@@ -321,7 +324,6 @@ public static partial class ClientMessage {
 			}
 
 			CorrelationId = correlationId;
-			Result = OperationResult.Success;
 			Message = null;
 			FirstEventNumbers = firstEventNumbers;
 			LastEventNumbers = lastEventNumbers;
@@ -331,13 +333,13 @@ public static partial class ClientMessage {
 
 		/// <summary>Failure constructor</summary>
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures = default) {
+			LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures = default)
+		: base(result){
 
-			if (result == OperationResult.Success)
+			if (result is OperationResult.Success)
 				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
 
 			CorrelationId = correlationId;
-			Result = result;
 			Message = message;
 			FirstEventNumbers = [];
 			LastEventNumbers = [];
@@ -347,11 +349,11 @@ public static partial class ClientMessage {
 
 		private WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
 			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers, long preparePosition,
-			long commitPosition, LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures) {
+			long commitPosition, LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures)
+		: base(result){
 			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 
 			CorrelationId = correlationId;
-			Result = result;
 			Message = message;
 			FirstEventNumbers = firstEventNumbers;
 			LastEventNumbers = lastEventNumbers;
@@ -405,17 +407,15 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionStartCompleted : Message {
+	public partial class TransactionStartCompleted : MessageWithResult {
 		public readonly Guid CorrelationId;
 		public readonly long TransactionId;
-		public readonly OperationResult Result;
 		public readonly string Message;
 
 		public TransactionStartCompleted(Guid correlationId, long transactionId, OperationResult result,
-			string message) {
+			string message) : base(result) {
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
-			Result = result;
 			Message = message;
 		}
 
@@ -440,10 +440,9 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionWriteCompleted(Guid correlationId, long transactionId, OperationResult result, string message) : Message {
+	public partial class TransactionWriteCompleted(Guid correlationId, long transactionId, OperationResult result, string message) : MessageWithResult(result) {
 		public readonly Guid CorrelationId = correlationId;
 		public readonly long TransactionId = transactionId;
-		public readonly OperationResult Result = result;
 		public readonly string Message = message;
 
 		public TransactionWriteCompleted WithCorrelationId(Guid newCorrId) => new(newCorrId, TransactionId, Result, Message);
@@ -463,10 +462,9 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionCommitCompleted : Message {
+	public partial class TransactionCommitCompleted : MessageWithResult {
 		public readonly Guid CorrelationId;
 		public readonly long TransactionId;
-		public readonly OperationResult Result;
 		public readonly string Message;
 		public readonly long FirstEventNumber;
 		public readonly long LastEventNumber;
@@ -474,14 +472,13 @@ public static partial class ClientMessage {
 		public readonly long CommitPosition;
 
 		public TransactionCommitCompleted(Guid correlationId, long transactionId, long firstEventNumber,
-			long lastEventNumber, long preparePosition, long commitPosition) {
+			long lastEventNumber, long preparePosition, long commitPosition) : base(OperationResult.Success) {
 			if (firstEventNumber < -1)
 				throw new ArgumentOutOfRangeException(nameof(firstEventNumber), $"FirstEventNumber: {firstEventNumber}");
 			if (lastEventNumber - firstEventNumber + 1 < 0)
 				throw new ArgumentOutOfRangeException(nameof(lastEventNumber), $"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
-			Result = OperationResult.Success;
 			Message = string.Empty;
 			FirstEventNumber = firstEventNumber;
 			LastEventNumber = lastEventNumber;
@@ -490,13 +487,12 @@ public static partial class ClientMessage {
 		}
 
 		public TransactionCommitCompleted(Guid correlationId, long transactionId, OperationResult result,
-			string message) {
+			string message) : base(result) {
 			if (result == OperationResult.Success)
 				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
 
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
-			Result = result;
 			Message = message;
 			FirstEventNumber = EventNumber.Invalid;
 			LastEventNumber = EventNumber.Invalid;
@@ -504,10 +500,9 @@ public static partial class ClientMessage {
 
 		private TransactionCommitCompleted(Guid correlationId, long transactionId, OperationResult result,
 			string message,
-			long firstEventNumber, long lastEventNumber) {
+			long firstEventNumber, long lastEventNumber) : base(result) {
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
-			Result = result;
 			Message = message;
 			FirstEventNumber = firstEventNumber;
 			LastEventNumber = lastEventNumber;
@@ -538,18 +533,16 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class DeleteStreamCompleted : Message {
+	public partial class DeleteStreamCompleted : MessageWithResult {
 		public readonly Guid CorrelationId;
-		public readonly OperationResult Result;
 		public readonly string Message;
 		public readonly long PreparePosition;
 		public readonly long CommitPosition;
 		public readonly long CurrentVersion;
 
 		public DeleteStreamCompleted(Guid correlationId, OperationResult result, string message,
-			long currentVersion, long preparePosition, long commitPosition) {
+			long currentVersion, long preparePosition, long commitPosition) : base(result) {
 			CorrelationId = correlationId;
-			Result = result;
 			Message = message;
 			CurrentVersion = currentVersion;
 			PreparePosition = preparePosition;

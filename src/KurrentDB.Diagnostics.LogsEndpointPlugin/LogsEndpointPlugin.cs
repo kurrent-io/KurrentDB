@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -52,6 +53,9 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 		Enabled = false;
 	}
 
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PluginDiagnosticsData))]
+	[SuppressMessage("Trimming", "IL2026",
+		Justification = "PluginDiagnosticsData is preserved via DynamicDependency.")]
 	public void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var diagnosticListener = new DiagnosticListener(DiagnosticsName);
 		var value = new PluginDiagnosticsData {
@@ -139,7 +143,7 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 
 	public Task Stop() => Task.CompletedTask;
 
-	class KurrentDBOptions {
+	public class KurrentDBOptions {
 		public string Log { get; set; }
 		public string NodeIp { get; set; }
 		public string NodePort { get; set; }

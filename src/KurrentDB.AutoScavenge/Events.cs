@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json.Serialization;
+using KurrentDB.AutoScavenge.Converters;
 using KurrentDB.AutoScavenge.Domain;
 using NCrontab;
 
@@ -9,6 +10,7 @@ namespace KurrentDB.AutoScavenge;
 
 public class Events {
 	public class ConfigurationUpdated : IEvent {
+		[JsonConverter(typeof(CrontableScheduleJsonConverter))]
 		public required CrontabSchedule Schedule { get; init; }
 		public required DateTime UpdatedAt { get; init; }
 

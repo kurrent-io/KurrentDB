@@ -4,11 +4,18 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+		<EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.AutoScavenge.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>

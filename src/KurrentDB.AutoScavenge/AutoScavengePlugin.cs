@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
@@ -9,6 +10,7 @@ using KurrentDB.AutoScavenge.Clients;
 using KurrentDB.AutoScavenge.Converters;
 using KurrentDB.AutoScavenge.Domain;
 using KurrentDB.AutoScavenge.Scavengers;
+using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
@@ -27,15 +29,6 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengePlugin>();
 	private readonly CancellationTokenSource _cts = new();
 	private AutoScavengeService? _autoScavengeService;
-
-	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		Converters = {
-			new EnumConverterWithDefault<AutoScavengeStatus>(),
-			new EnumConverterWithDefault<AutoScavengeStatusResponse.Status>(),
-			new CrontableScheduleJsonConverter(),
-		},
-	};
 
 	private readonly Channel<ICommand> _commands = Channel.CreateBounded<ICommand>(
 		new BoundedChannelOptions(capacity: 32) {
@@ -152,7 +145,7 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 	/// </summary>
 	private IResult OnGetEnabled() =>
 		Results.Json(new GetAutoScavengeEnabledResult(
-			Enabled: Enabled));
+			Enabled: Enabled), AutoScavengeJsonContext.Default.GetAutoScavengeEnabledResult);
 
 	/// <summary>
 	/// Handles the POST request to resume the auto scavenge process.
@@ -189,7 +182,7 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 
 		if (runner.ParsePayload) {
 			try {
-				param = await context.Request.ReadFromJsonAsync<TParam>(JsonSerializerOptions);
+				param = (TParam?)await context.Request.ReadFromJsonAsync(typeof(TParam), AutoScavengeJsonContext.Default, context.RequestAborted);
 				if (param is null)
 					return Results.BadRequest("Invalid payload");
 			} catch (JsonException ex) {
@@ -206,7 +199,7 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 		}
 
 		return resp.Visit(
-			onSuccessful: static result => Results.Json(result, JsonSerializerOptions),
+			onSuccessful: static result => Results.Json(result, AutoScavengeJsonContext.Default),
 			onAccepted: static () => Results.Accepted(),
 			onRejected: static rejectedReason => Results.BadRequest(rejectedReason),
 			onServerError: static serverError => Results.Problem(serverError, statusCode: 500));
@@ -225,10 +218,11 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 	/// <summary>
 	/// JSON Payload for configuring the auto scavenge process.
 	/// </summary>
-	private class AutoScavengeConfigurationPayload {
+	internal class AutoScavengeConfigurationPayload {
+		[JsonConverter(typeof(CrontableScheduleJsonConverter))]
 		public required CrontabSchedule Schedule { get; init; }
 	}
 
-	record struct GetAutoScavengeEnabledResult(bool Enabled);
+	internal record struct GetAutoScavengeEnabledResult(bool Enabled);
 
 }

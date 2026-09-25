@@ -3,24 +3,25 @@
 
 using Grpc.Core;
 using KurrentDB.Api.Infrastructure.Errors;
+using KurrentDB.Api.Infrastructure.Protobuf;
 using KurrentDB.Protocol.V2.Indexes.Errors;
 
 namespace KurrentDB.Api.Errors;
 
 public static partial class ApiErrors {
-	public static RpcException IndexNotFound(string userIndexName) => RpcExceptions.FromError(
+	public static RpcException IndexNotFound(string userIndexName) => RpcExceptions.FromError<IndexesError, ErrorEnums>(
 		error: IndexesError.IndexNotFound,
 		message: $"Index '{userIndexName}' does not exist",
 		details: new IndexNotFoundErrorDetails { Name = userIndexName });
 
-	public static RpcException IndexAlreadyExists(string userIndexName) => RpcExceptions.FromError(
+	public static RpcException IndexAlreadyExists(string userIndexName) => RpcExceptions.FromError<IndexesError, ErrorEnums>(
 		error: IndexesError.IndexAlreadyExists,
 		message: $"Index '{userIndexName}' already exists",
 		details: new IndexAlreadyExistsErrorDetails { Name = userIndexName });
 
 	public static RpcException IndexesNotReady(long currentPosition, long targetPosition) {
 		var percent = 100 * ((double)currentPosition / targetPosition);
-		return RpcExceptions.FromError(
+		return RpcExceptions.FromError<IndexesError, ErrorEnums>(
 			error: IndexesError.IndexesNotReady,
 			message: $"Indexes are not ready. Current Position {currentPosition:N0}/{targetPosition:N0} ({percent:N2}%)",
 			details: new IndexesNotReadyErrorDetails {
@@ -29,7 +30,7 @@ public static partial class ApiErrors {
 			});
 	}
 
-	public static RpcException SecondaryIndexingDisabled() => RpcExceptions.FromError(
+	public static RpcException SecondaryIndexingDisabled() => RpcExceptions.FromError<IndexesError, ErrorEnums>(
 		error: IndexesError.SecondaryIndexingDisabled,
 		message: "Secondary indexing is disabled (configuration key KurrentDB::SecondaryIndexing::Enabled is false)");
 }

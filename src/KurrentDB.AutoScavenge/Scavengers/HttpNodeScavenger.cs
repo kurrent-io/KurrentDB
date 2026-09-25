@@ -4,6 +4,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.POC.IO.Core;
 using KurrentDB.POC.IO.Core.Serialization;
 using Serilog;
@@ -22,21 +24,13 @@ public class HttpNodeScavenger : INodeScavenger {
 		_client = client;
 	}
 
-	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		Converters = {
-			new EnumConverterWithDefault<ScavengeResult>(),
-			new EnumConverterWithDefault<LastScavengeStatus>(),
-		},
-	};
-
 	public async Task<Guid?> TryStartScavengeAsync(string host, int port, CancellationToken token) {
 		Log.Information("Starting node scavenge on node {Host}:{Port}...", host, port);
 
 		try {
 			var resp = await _wrapper.HttpClient.PostAsync($"{_wrapper.Protocol}://{host}:{port}/admin/scavenge", null, token);
 			resp.EnsureSuccessStatusCode();
-			var record = await resp.Content.ReadFromJsonAsync<ScavengeRecord>(JsonSerializerOptions, token);
+			var record = await resp.Content.ReadFromJsonAsync(AutoScavengeJsonContext.Default.ScavengeRecord, token);
 			var scavengeId = record?.ScavengeId;
 			Log.Information("Started node scavenge on node {Host}:{Port}. ScavengeId: {ScavengeId}", host, port, scavengeId);
 			return scavengeId;
@@ -55,7 +49,7 @@ public class HttpNodeScavenger : INodeScavenger {
 				token);
 
 			httpResponse.EnsureSuccessStatusCode();
-			var response = (await httpResponse.Content.ReadFromJsonAsync<LastScavengeStatusResponse>(JsonSerializerOptions, token))!;
+			var response = (await httpResponse.Content.ReadFromJsonAsync(AutoScavengeJsonContext.Default.LastScavengeStatusResponse, token))!;
 
 			if (response.ScavengeResult == LastScavengeStatus.Unknown) {
 				// the node was restarted. we don't know if our scavenge completed successfully, so we try to read its
@@ -130,7 +124,7 @@ public class HttpNodeScavenger : INodeScavenger {
 				continue;
 
 			var completed =
-				JsonSerializer.Deserialize<ScavengeRecordCompleted>(@event.Data.Span, JsonSerializerOptions)!;
+				JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.ScavengeRecordCompleted)!;
 
 			if (completed.ScavengeId != scavengeId) {
 				// ignore, malformed entry
@@ -162,7 +156,7 @@ public class HttpNodeScavenger : INodeScavenger {
 	}
 
 	// Names match the status in the $scavengeCompleted event from the server (apart from Unknown)
-	private enum ScavengeResult {
+	internal enum ScavengeResult {
 		Unknown,
 		Success,
 		Stopped,
@@ -170,17 +164,18 @@ public class HttpNodeScavenger : INodeScavenger {
 		Interrupted,
 	}
 
-	private class ScavengeRecord {
+	internal class ScavengeRecord {
 		public Guid? ScavengeId { get; init; }
 	}
 
-	private class ScavengeRecordCompleted {
+	internal class ScavengeRecordCompleted {
 		public required Guid ScavengeId { get; init; }
+		[JsonConverter(typeof(EnumConverterWithDefault<ScavengeResult>))]
 		public required ScavengeResult Result { get; init; }
 	}
 
 	// Names match the result from the server
-	private enum LastScavengeStatus {
+	internal enum LastScavengeStatus {
 		Unknown,
 		InProgress,
 		Success,
@@ -188,8 +183,9 @@ public class HttpNodeScavenger : INodeScavenger {
 		Errored,
 	}
 
-	private class LastScavengeStatusResponse {
+	internal class LastScavengeStatusResponse {
 		public Guid? ScavengeId { get; init; }
+		[JsonConverter(typeof(EnumConverterWithDefault<LastScavengeStatus>))]
 		public required LastScavengeStatus ScavengeResult { get; init; }
 	}
 }
