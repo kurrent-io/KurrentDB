@@ -184,6 +184,7 @@ public class SystemConsumer : IConsumer {
 				lastReadRecord = new SurgeRecord {
 					Id         = RecordId.From(Guid.NewGuid()),
 					Position   = LogPosition.From(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition != 0 ? checkpointReceived.PreparePosition : checkpointReceived.CommitPosition),
+					SequenceId = Options.AutoCommit.Enabled ? Sequence.FetchNext() : SequenceId.None,
 					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
 					ValueType  = typeof(ReadResponse.CheckpointReceived),
 					Value      = checkpointReceived,
@@ -193,7 +194,6 @@ public class SystemConsumer : IConsumer {
 				await Intercept(new RecordReceived(this, lastReadRecord));
 
 				if (Options.AutoCommit.Enabled) {
-					lastReadRecord = lastReadRecord with { SequenceId = Sequence.FetchNext() };
 					await CheckpointController.Track(lastReadRecord);
 					await Intercept(new RecordTracked(this, lastReadRecord));
 				}
