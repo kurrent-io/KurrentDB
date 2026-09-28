@@ -525,7 +525,6 @@ These are the new features that were added in EventStoreDB 24.10:
 We have improved and expanded on the Connectors preview introduced in 24.2.0.
 
 The Connectors feature is enabled by default.
-You can use the HTTP sink without a license, but a license is required for all other connectors.
 
 Refer to the [documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
 
@@ -598,7 +597,7 @@ See the [Data Protection documentation](../features/connectors/features.md#data-
 
 The auto-scavenge feature automatically schedules _cluster scavenges_ which are composed of multiple _node scavenges_. Only one node scavenge can be executed at a time in the cluster. The auto-scavenge feature allows the scheduling of said _cluster scavenges_.
 
-The auto-scavenge feature requires a license to use. EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
+EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
 
 Refer to the [documentation](../operations/auto-scavenge.md) for instructions on enabling and using this feature.
 
@@ -608,7 +607,7 @@ Define stream access policies in one place based on stream prefixes rather than 
 
 Stream access policies can be created to grant users or groups read, write, delete, or metadata access.  These policies can be applied to streams based on their prefix or to system or user streams.
 
-The Stream Policy feature requires a license to use. Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
+Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
 
 ### Encryption-at-rest
 
@@ -616,21 +615,6 @@ Encrypt EventStoreDB chunks to secure them against attackers with file access to
 
 This feature aims to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file-level encryption provides some protection for attacks against the live system or remote exploits, as the plaintext data is not directly readable.
 
-The Encryption-at-rest feature requires a license to use and is disabled by default.
 If Encryption-at-rest is enabled, it is impossible to roll back to an unencrypted database after a new chunk has been created or if a chunk has been scavenged.
 
 Refer to the [documentation](../security/README.md#encryption-at-rest) for more information about using and configuring this feature.
-
-### Enterprise features now require a license key
-
-Customers can unlock the enterprise features of EventStoreDB with a license key. This applies to the previous commercial plugins and several of the new features in this release.
-
-You will need to provide a license key if you want to enable or use the following features:
-* Auto-scavenge
-* Kafka connectors
-* Stream Policies
-* Encryption-at-rest
-* Ldaps authentication
-* OAuth authentication
-* Logs Endpoint
-* OTLP Endpoint

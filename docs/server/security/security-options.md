@@ -234,8 +234,6 @@ Note that KurrentDB will also likely run properly on FIPS 140-3 compliant operat
 
 The Encryption-At-Rest feature allows users to encrypt their KurrentDB database. Currently, only chunk files are encrypted - the indexes are not. The primary objective is to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file level encryption provides some degree of protection for attacks against the live system or remote exploits as the plaintext data is not directly readable. Protecting against memory-dump based attacks is out of the scope of this feature.
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 ### Encryption Algorithm
 
 Data is encrypted using a symmetric-key encryption algorithm.

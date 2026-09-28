@@ -8,13 +8,11 @@ The Auto-scavenge feature automatically schedules and coordinates _cluster scave
 
 Cluster scavenges are configured to run on a set schedule with a CRON expression, and cluster scavenges can be paused and resumed if needed.
 
-The Auto-scavenge does its best not to run the scavenge process on the leader node to minimise the impact a scavenge can have on your cluster. It does this by executing the scavenge on all of the non-leader nodes first. Once all of the other nodes have been scavenged, the leader of the cluster will resign before executing its own scavenge.
+The Auto-scavenge does its best not to run the scavenge process on the leader node to minimize the impact a scavenge can have on your cluster. It does this by executing the scavenge on all of the non-leader nodes first. Once all of the other nodes have been scavenged, the leader of the cluster will resign before executing its own scavenge.
 
 ### Configuration
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
-Auto-scavenge is automatically enabled by default when a valid license key is provided. It can be disabled with the following configuration. It will not run any scavenges until a schedule is set via the HTTP endpoint.
+Auto-scavenge is automatically enabled by default but will not run any scavenges until a schedule is set via the HTTP endpoint. It can be disabled with the following configuration.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
@@ -139,7 +137,6 @@ Requires `$ops` or `$admin` roles.
 ### Troubleshooting
 
 Check that
-- A valid license key is provided.
 - The server is not running in `dev` mode.
 - The server is not running in `mem-db` (i.e. with an in-memory database).
 - A schedule has been set via the HTTP endpoint.

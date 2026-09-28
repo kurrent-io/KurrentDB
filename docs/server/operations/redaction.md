@@ -20,14 +20,13 @@ Use the redactor as a last resort and only if you know what you're doing. Redact
 
 Using redaction has the following prerequisites:
 
-- A valid [license key](../quick-start/installation.md#license-keys).
 - If running on Windows, Windows Server 2019 or above is required.
 - Server configuration option: `EnableUnixSocket: True`.
 - The redactor tool (see steps below on how to get it).
 
 ## Getting the redactor
 
-Redaction requires a license key. Due to its sensitive nature, the tool is available only upon request. Please [contact us here](https://www.kurrent.io/talk_to_expert) if you do not have a support contract, or reach out to our support team if you do.
+Due to its sensitive nature, the tool is available only upon request. Please [contact us here](https://www.kurrent.io/talk_to_expert) if you do not have a support contract, or reach out to our support team if you do.
 
 ## Running the redactor
 

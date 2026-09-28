@@ -215,8 +215,6 @@ You can completely disable logging to a file by changing the `DisableLogFile` op
 
 The _Logs Download_ feature provides HTTP access to KurrentDB logs so that they can be viewed without requiring file system access.
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 ::: tip
 You can use this API to download log files from your managed KurrentDB clusters in Kurrent Cloud.
 :::
@@ -287,7 +285,5 @@ curl https://user:password@localhost:2113/admin/logs/log20240205.json --output l
 Logs can be exported via the [OpenTelemetry Integration](./integrations.md#opentelemetry-exporter).
 
 ### Troubleshooting
-
-- **404 Not Found:** Verify that you have a valid license key.
 
 - **401 Unauthorized:** Confirm the credentials are correct and the user belongs to the `$ops` or `$admins` group.

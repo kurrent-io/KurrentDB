@@ -81,8 +81,6 @@ The User Certificates feature allows authentication through an X.509 user certif
 
 ### Configuration steps
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 Sample configuration:
@@ -258,8 +256,6 @@ The LDAP Authentication feature enables KurrentDB to use LDAP-based directory se
 
 ### Configuration
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 1. Change the authentication type to `ldaps`.
@@ -352,8 +348,6 @@ With the default basic authentication, KurrentDB treats the username as a "role"
 :::
 
 ### Configuration
-
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 

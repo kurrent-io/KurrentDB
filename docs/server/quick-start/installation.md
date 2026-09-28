@@ -7,11 +7,11 @@ order: 3
 
 ## Quick start
 
-KurrentDB can run as a single node or as a highly-available cluster. For the cluster deployment, you'd need three server nodes.
+KurrentDB can run as a single node or as a highly-available cluster.
 
 The installation procedure consists of the following steps:
 
-- Create a configuration file for each cluster node. If you are using any licensed features, ensure that you configure a [license key](#license-keys).
+- Create a configuration file for each cluster node.
 - Install KurrentDB on each node using one of the available methods.
 - Obtain SSL certificates, either signed by a publicly trusted or private certificate authority.
 - Copy the configuration files and SSL certificates to each node.
@@ -27,7 +27,9 @@ The installation procedure consists of the following steps:
 
 ### License Keys
 
-Some features of KurrentDB require a license key to access. When you purchase an enterprise subscription, the license key will be sent to your company's designated license administrator. Existing customers who would like to upgrade to a 24.10+ enterprise license should contact their Kurrent (formerly Event Store) account manager or contact us [here](https://www.kurrent.io/talk_to_expert). As an existing customer, you can also try the enterprise features by signing up for a [free trial license key](https://www.kurrent.io/kurrent_free_trial).
+Multi-node clusters require a license key. [Contact us](https://www.kurrent.io/talk_to_expert) or sign up for a [free trial](https://kurrentdb.kurrent.io/trial-request/) to obtain a license key.
+
+Single-node deployments no longer require a license key, even to access enterprise features. See the [blog post](https://kurrentdb.kurrent.io/blog/licensing-in-kurrentdb-v26-2-and-beyond-what-s-free-and-what-s-licensed/) for more information.
 
 There are various ways to provide the license key to KurrentDB. For more information, refer to the [configuration guide](../configuration/README.md).
 
@@ -43,8 +45,6 @@ Environment variable:
 ```
 KURRENTDB_LICENSING__LICENSE_KEY
 ```
-
-For most features that require a license, KurrentDB will not start if the feature is enabled but the license key is not provided or is invalid.
 
 ## Package repositories
 

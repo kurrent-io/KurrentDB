@@ -30,8 +30,6 @@ A number of APM providers natively support ingesting data using the OTLP protoco
 
 ### Configuration
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 #### Metrics Export

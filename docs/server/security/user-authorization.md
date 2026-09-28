@@ -182,8 +182,6 @@ This allows administrators to define stream access policies for KurrentDB based 
 
 #### Enabling
 
-Using this feature requires a [license key](../quick-start/installation.md#license-keys).
-
 The last event in the `$authorization-policy-settings` stream configures the stream access policy.
 
 Enable stream policies by appending an event of type `$authorization-policy-changed` to the `$authorization-policy-settings` stream:
@@ -299,15 +297,6 @@ You can check that the feature is enabled by searching for the following log at 
 [22860,28,17:30:42.271,INF] StreamBasedPolicySelector      Subscribing to $policies at 0
 ```
 
-Stream policies will log the following error and not start if you do not have a valid license. KurrentDB will continue to run with the current policy type:
-
-```
-[22928, 1,17:31:56.879,INF] StreamPolicySelector           Stream Policies plugin is not licensed, stream policy authorization may not be enabled.
-...
-[22928,28,17:31:57.030,ERR] StreamPolicySelector           Stream Policies plugin is not licensed, cannot enable Stream policies
-[22928,28,17:31:57.030,ERR] StreamBasedAuthorizationPolicyRegistry Failed to enable policy selector plugin streampolicy. Authorization settings will not be applied
-```
-
 ::: note
 If you enable the Stream Policy feature, KurrentDB will not enforce [stream ACLs](#access-control-lists).
 :::
@@ -337,7 +326,7 @@ If the policy type configured in `Authorization:DefaultPolicyType` is not presen
 
 #### Fallback stream access policy
 
-If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin cannot be started (for example, due to it being unlicensed), KurrentDB will fall back to restricted access.
+If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin cannot be started, KurrentDB will fall back to restricted access.
 
 This locks down all stream access to admins only to prevent KurrentDB from returning to a more permissive policy such as ACLs.
 
@@ -674,27 +663,6 @@ Having metadata read or metadata write access to a stream does not grant read or
 
 
 #### Troubleshooting
-
-##### License is invalid or not found
-
-This feature requires a license to use. If a license is not found or the provided license is invalid, you will see the following log:
-
-```
-[INF] StreamPolicySelector           Stream Policies plugin is not licensed, stream policy authorization cannot be enabled.
-```
-
-Trying to enable the feature will give you the following errors, and the previous or default policy authorization settings will be used:
-
-```
-[ERR] StreamPolicySelector           Stream Policies plugin is not licensed, cannot enable Stream policies
-[ERR] StreamBasedAuthorizationPolicyRegistry Failed to enable policy selector plugin streampolicy. Authorization settings will not be applied.
-```
-
-If the `DefaultPolicyType` is set to `streampolicy`, the [fallback policy](#fallback-stream-access-policy) will be used, and stream access will be restricted to admins only:
-
-```
-[WRN] StreamBasedAuthorizationPolicyRegistry Could not load authorization policy settings. Restricting access to admins only.
-```
 
 #### The `$authorization-policy-settings` stream has been deleted
 

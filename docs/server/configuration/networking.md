@@ -371,8 +371,6 @@ The TCP client protocol plugin enables client applications based on the external
 
 ### Configuration
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
-
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 Sample configuration:
