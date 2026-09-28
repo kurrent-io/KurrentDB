@@ -42,13 +42,13 @@ If you want to retry the parked messages, you can `Replay` the parked messages f
 You can also specify the number of parked messages to replay over the HTTP endpoint. This can be done by providing the `stopAt` parameter when requesting to replay messages through the HTTP url. For example:
 
 ```bash:no-line-numbers
-curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupnanme}/replayParked?stopAt={numberofevents} -u "admin:changeit"
+curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupname}/replayParked?stopAt={offset} -u "admin:changeit"
 ```
 
 If you don't want to replay any parked messages for a subscription and want to clear them out, you can truncate them:
 
 ```bash:no-line-numbers
-curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupnanme}/truncateParked?stopAt={numberofevents} -u "admin:changeit"
+curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupname}/truncateParked?stopAt={offset} -u "admin:changeit"
 ```
 
 It is possible to delete the parked stream like a regular stream, but be aware that the metrics for the length of the parked stream will not be updated.

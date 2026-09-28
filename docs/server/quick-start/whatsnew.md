@@ -72,7 +72,7 @@ Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 And then query it:
 
 ```sql
-select * from 'usr.orders-by-country' where field_country = 'Mauritius' and field_total > 149.99 limit 10
+select * from usr."orders-by-country" where field_country = 'Mauritius' and field_total > 149.99 limit 10
 ```
 
 See the user defined index [documentation](../features/indexes/user-defined.md) for details.
