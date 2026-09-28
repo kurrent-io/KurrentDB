@@ -6,11 +6,21 @@ order: 2
 
 ## New in 26.2
 
-Features
-* [Kontrol Plane](#kontrol-plane)
-* [Disable TLS](#disable-tls)
-
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+* [Licensing Changes](#licensing-changes)
+* [Kontrol Plane](#kontrol-plane)
+* [Embedded UI Improvements](#embedded-ui)
+* [Multi-field User-defined Indexes](#multi-field-user-defined-indexes)
+* [Persistent Subscriptions Truncate API](#persistent-subscriptions-truncate-api)
+* [Disable TLS](#disable-tls)
+* [Miscellaneous](#miscellaneous-improvements-262)
+
+### Licensing Changes
+
+From 26.2, all multi-node deployments require a valid license key to be configured. Single-node deployments, however, now have unrestricted access to all licensed features out of the box (excluding features that require multiple nodes).
+
+See the [blog post](https://kurrentdb.kurrent.io/blog/licensing-in-kurrentdb-v26-2-and-beyond-what-s-free-and-what-s-licensed/) and [license key documentation](installation.md#license-keys) for details.
 
 ### Kontrol Plane
 
@@ -21,6 +31,58 @@ The Kontrol Plane is a significant step in our strategy to support multiple data
 The Kontrol Plane is off by default and changes nothing until you turn it on.
 
 See the Kontrol Plane [configuration guide](../configuration/kontrol-plane.md) for details.
+
+### Embedded UI
+
+The embedded web UI, which has been split for a little while between a 'new' UI and the older 'admin UI', has been unified and given a refresh with many small usability improvements including
+
+- Easier navigation in the stream browser.
+- One-click navigation between nodes.
+- Light and dark themes.
+- A friendly database name and a PRODUCTION warning shown in the top bar.
+
+See the embedded UI [documentation](../features/admin-ui.md) for details, as well as [Kurrent Navigator](https://navigator.kurrent.io/) and [Gaffer](https://gaffer.kurrent.io/).
+
+### Multi-field User-defined Indexes
+
+User defined indexes can now index multiple fields. For example, create an index:
+
+```http
+POST https://127.0.0.1:2113/v2/indexes/orders-by-country
+Content-Type: application/json
+Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
+
+{
+  "filter": "rec => rec.schema.name == 'OrderCreated'",
+  "fields": [
+    {
+      "name": "country",
+      "selector": "rec => rec.value.country",
+      "type": "INDEX_FIELD_TYPE_STRING"
+    },
+    {
+      "name": "total",
+      "selector": "rec => rec.value.total",
+      "type": "INDEX_FIELD_TYPE_DOUBLE"
+    }
+  ]
+}
+```
+
+And then query it:
+
+```sql
+select * from 'usr.orders-by-country' where field_country = 'Mauritius' and field_total > 149.99 limit 10
+```
+
+See the user defined index [documentation](../features/indexes/user-defined.md) for details.
+
+
+### Persistent Subscriptions Truncate API
+
+Previously, messages parked by a persistent subscription could be replayed, but discarding them was only possible by deleting the parked message stream. In 26.2 a `truncateParked` API has been added which works in the same way as the `replayParked` API, except that instead of sending the messages to the clients it simply discards them. The API is available via HTTP, gRPC, and in the embedded UI.
+
+See the parked messages [documentation](../features/persistent-subscriptions.md#parked-messages) for details.
 
 ### Disable TLS
 
@@ -35,6 +97,25 @@ When TLS is disabled, all traffic, including authentication credentials and the 
 :::
 
 See the [security documentation](../security/security-options.md#running-without-tls) for details.
+
+
+### Miscellaneous Improvements 26.2
+
+- Increased maximum number of chunks
+
+  The maximum number of logical chunks in a database has been raised from 400,000 to 600,000, increasing the maximum logical database size with the default 256 MB chunk size from roughly 100 TB to 150 TB. As before, the nodes log warnings and then errors as the limit is being approached.
+
+- Configurable gRPC response compression level
+
+  gRPC responses are gzip-compressed when the client supports it. The compression level, previously fixed at `Optimal`, can now be set with the `CompressionLevel` option. Allowed values are `NoCompression`, `Fastest`, `Optimal` (default), and `SmallestSize`; higher levels reduce network traffic at the cost of more CPU. See the [networking configuration](../configuration/networking.md#grpc-response-compression) for details.
+
+- Configurable location and size limit for SQL engine temporary files
+
+  Queries run by the embedded SQL engine (DuckDB) write intermediate results to disk when they don't fit in memory. The new `SqlEngineTempDirectory` option sets where these temporary files are written (default `kurrent.ddb.tmp` inside the database directory), and `SqlEngineTempDirectorySizeLimit` caps how much space they may use in bytes (default: 90% of the available space on that volume). Queries that would exceed the limit fail rather than filling the disk. See the [database configuration](../configuration/db-config.md#sql-engine-temporary-files) for details.
+
+- Disk usage metrics for index and log drives
+
+  The `kurrentdb_sys_disk_bytes` metric previously reported used and total bytes only for the drive holding the database. It now also reports the index and log drives when they are on different drives.
 
 ## New in 26.1
 

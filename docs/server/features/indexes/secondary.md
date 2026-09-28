@@ -1,6 +1,6 @@
 # Secondary indexes
 
-KurrentDB v25.1 introduces support for secondary indexes, allowing for efficient querying of event streams based on indexed fields.
+KurrentDB v25.1 introduced support for secondary indexes, allowing for efficient querying of event streams based on indexed fields.
 
 The initial version supports two default secondary indexes:
 - Category index: Indexes events by their category, enabling quick retrieval of all events within a specific category.
