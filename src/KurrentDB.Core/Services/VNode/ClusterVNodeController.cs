@@ -31,7 +31,6 @@ public abstract class ClusterVNodeController {
 
 public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	public static readonly TimeSpan LeaderReconnectionDelay = TimeSpan.FromMilliseconds(500);
-	private static readonly TimeSpan LeaderSubscriptionRetryDelay = TimeSpan.FromMilliseconds(500);
 	private static readonly TimeSpan LeaderSubscriptionTimeout = TimeSpan.FromMilliseconds(1000);
 	private static readonly TimeSpan LeaderDiscoveryTimeout = TimeSpan.FromMilliseconds(3000);
 
@@ -1422,9 +1421,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		if (IsLegitimateReplicationMessage(message, out var leader, out var correlationId, ensureLeaderIdMatch: false)) {
 			await _outputBus.DispatchAsync(message, token);
 
-			var msg = new ReplicationMessage.SubscribeToLeader(correlationId, leader.InstanceId,
-				Guid.NewGuid());
-			_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderSubscriptionRetryDelay, _publishEnvelope, msg));
+			// Do not schedule a SubscribeToLeader. We are already retrying once per second.
+			// If we retry here then a whole new SubscribeToLeader retry loop will take effect
+			// each time the leader tells us to retry.
 		}
 	}
 
