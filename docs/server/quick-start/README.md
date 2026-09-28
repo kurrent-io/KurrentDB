@@ -13,7 +13,7 @@ Welcome to the KurrentDB documentation.
 
 KurrentDB is a database that's engineered for modern software applications and event-driven architectures. Its event-native design simplifies data modeling and preserves data integrity while the integrated streaming engine solves distributed messaging challenges and ensures data consistency.
 
-KurrentDB is licensed under [Kurrent License v1 (KLv1)](https://github.com/kurrent-io/KurrentDB/blob/master/LICENSE.md), meaning that anyone can access and use it, additionally [enterprise features](https://www.kurrent.io/kurrent-platform-editions) can be enabled with a valid [license key](./installation.md#license-keys).
+KurrentDB is licensed under [Kurrent License v1 (KLv1)](https://github.com/kurrent-io/KurrentDB/blob/master/LICENSE.md). Single-node deployments are available for free for everyone, including features that used to require an enterprise license key. Multi-node clusters can be deployed with a valid [license key](./installation.md#license-keys). For more information about this change please see our [blog post](https://kurrentdb.kurrent.io/blog/licensing-in-kurrentdb-v26-2-and-beyond-what-s-free-and-what-s-licensed/).
 
 ::: note
 Although the source code for KurrentDB is available to view, the [KLv1 license](https://github.com/kurrent-io/KurrentDB/blob/master/LICENSE.md) is not an OSI-approved Open Source License.
@@ -46,8 +46,6 @@ When opening an issue, follow our [guidelines](https://github.com/EventStore/Eve
 ## Protocols, clients, and SDKs
 
 KurrentDB supports one client protocol, which is described below. The older TCP client API has been removed in KurrentDB. The final version with TCP API support is EventStoreDB version 23.10. More information can be found in our [blog post](https://www.kurrent.io/blog/sunsetting-eventstoredb-tcp-based-client-protocol).
-
-The legacy protocol is available for Kurrent customers as a [licensed plugin](../configuration/networking.md#external-tcp).
 
 ### Client protocol
 

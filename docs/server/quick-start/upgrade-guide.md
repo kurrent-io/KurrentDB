@@ -26,7 +26,7 @@ Follow the upgrade procedure below on each node, starting with a follower node:
 
 1. Stop the node.
 1. Uninstall any previous versions of EventStoreDB.
-1. Install the new version and update the configuration. If you use licensed features, ensure that you configure a [license key](../quick-start/installation.md#license-keys).
+1. Install the new version and update the configuration.
 1. Start the node.
 1. Wait for the node to become a follower or read-only replica.
 1. Repeat the process for the next node.

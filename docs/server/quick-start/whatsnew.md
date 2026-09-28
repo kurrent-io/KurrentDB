@@ -56,8 +56,6 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 
 ### SQL API
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 KurrentDB 26.1 introduces support for the [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol, giving general purpose Arrow Flight SQL clients an API to query the indexed event log.
 
 See the [documentation](../features/queries/flightsql.md) for details.
@@ -88,8 +86,6 @@ These improvements and fixes are being backported to 24.10 and 26.0.
 
 ### Per-signal OTLP Endpoint Configuration
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 Allow metrics and logs to be exported to different OTLP endpoints by adding optional per-signal OTLP overrides under the Metrics and Logs config sections. Unspecified properties inherit from the shared OpenTelemetry:Otlp section, preserving backwards compatibility.
 
 Also applies to Headers and other properties of OtlpExporterOptions
@@ -98,8 +94,6 @@ See the [documentation](../diagnostics/integrations.md#per-signal-otlp-endpoints
 
 ### OAuth Support for Microsoft Entra
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The new setting `OAuth:DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
 
 Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document.
@@ -107,8 +101,6 @@ Enable this when using an identity provider such as Microsoft Entra that support
 See the [documentation](../security/user-authentication.md#oauth-authentication) for details.
 
 ### OAuth and Ldap Plugin Configuration
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The OAuth and Ldap plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldap plugins could only take their configuration from a file.
 
@@ -125,8 +117,6 @@ See the [documentation](../security/protocol-security.md#disable-client-authenti
 JavaScript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
 
 ### Connectors: Webhook Source
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Webhook Source Connector receives HTTP requests from external systems and appends them as events to KurrentDB streams, enabling seamless integration with services that publish events via webhooks.
 
@@ -160,8 +150,6 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 KurrentDB 26.0 adds [user-defined secondary indexes](../features/indexes/user-defined.md), which advance the [secondary indexes](../features/indexes/secondary.md) added in 25.1. Users can now define custom secondary indexes from record content for fast, field-based reads, subscriptions, and UI queries (e.g. “orders-by-country”). Indexes follow the log and store their data separately on each node, so you get targeted access without increasing log size.
 
 ### Archiving support for GCP and Azure
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 Previously, only Amazon S3 could be used as the blob storage for archived chunks. Now Azure and GCP can be used.
 - [Azure Documentation](../features/archiving.md#microsoft-azure-configuration)
@@ -220,8 +208,6 @@ Under the hood, KurrentDB 26.0 uses the latest dotnet runtime: .NET 10.
 
 ### Connectors: Kafka Source
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The Kafka Source Connector consumes messages from Kafka topics and appends them to KurrentDB streams, enabling seamless integration between the two platforms.
 
 The connector supports consuming from multiple partitions concurrently and offers flexible routing options to control which KurrentDB streams receive the messages. 
@@ -229,8 +215,6 @@ The connector supports consuming from multiple partitions concurrently and offer
 Refer to the [documentation](../features/connectors/sources/kafka.md) for instructions on setting up a Kafka source connector.
 
 ### Connectors: SQL Sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The SQL Sink Connector writes events from KurrentDB to SQL databases (Microsoft SQL Server and PostgreSQL) by executing configurable SQL statements.
 
@@ -296,13 +280,9 @@ In client libraries, log record properties are surfaced as a dictionary-like str
 
 ### Database stats
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
 
 ### Ad-hoc SQL queries
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
 
@@ -311,8 +291,6 @@ The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL q
 KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
 
 ### OpenTelemetry logs export
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The [OpenTelemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
 
@@ -331,8 +309,6 @@ Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCap
 ### Connectors
 
 #### Pulsar sink connector
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Apache Pulsar sink connector writes events from your KurrentDB stream to a specified Pulsar topic. 
 
@@ -444,8 +420,6 @@ These are the new features in KurrentDB 25.0:
 
 ### Archiving
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 KurrentDB 25.0 introduces the initial release of Archiving: a new major feature to reduce costs and increase scalability of a KurrentDB cluster.
 
 With the new Archiving feature, data is uploaded to cheaper storage such as Amazon S3 and then can be removed from the volumes attached to the cluster nodes. The volumes can be correspondingly smaller and cheaper. The nodes are all able to read the archive, and when a read request from a client requires data that is stored in the archive, the node retrieves that data from the archive transparently to the client.
@@ -455,8 +429,6 @@ Refer to [the documentation](../features/archiving.md) for more information abou
 ### Connectors
 
 #### Elasticsearch sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
 an Elasticsearch index. The records will be serialized into JSON documents,
@@ -553,13 +525,10 @@ These are the new features that were added in EventStoreDB 24.10:
 We have improved and expanded on the Connectors preview introduced in 24.2.0.
 
 The Connectors feature is enabled by default.
-You can use the HTTP sink without a license, but a license is required for all other connectors.
 
 Refer to the [documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
 
 #### Elasticsearch sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
 an Elasticsearch index. The records will be serialized into JSON documents,
@@ -568,8 +537,6 @@ compatible with Elasticsearch's document structure.
 Refer to the [documentation](../features/connectors/sinks/elasticsearch.md) for instructions on setting up a Elasticsearch sink.
 
 #### Kafka sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Kafka sink writes events from EventStoreDB to a Kafka topic.
 
@@ -580,8 +547,6 @@ Refer to the [documentation](../features/connectors/sinks/kafka.md) for instruct
 
 #### MongoDB sink
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The MongoDB sink pulls messages from an EventStoreDB stream and stores the messages to a collection.
 
 It supports data transformation for modifying event data or metadata and the inclusion of additional headers before sending messages to the MongoDB collection. It also supports at-least-once delivery and resilience features to handle transient errors.
@@ -589,8 +554,6 @@ It supports data transformation for modifying event data or metadata and the inc
 Refer to the [documentation](../features/connectors/sinks/mongo.md) for instructions on setting up a MongoDB sink.
 
 #### RabbitMQ sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The RabbitMQ sink pulls messages from EventStoreDB and sends the messages to a RabbitMQ exchange using a specified routing key.
 
@@ -632,47 +595,26 @@ See the [Data Protection documentation](../features/connectors/features.md#data-
 
 ### Auto-scavenge
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The auto-scavenge feature automatically schedules _cluster scavenges_ which are composed of multiple _node scavenges_. Only one node scavenge can be executed at a time in the cluster. The auto-scavenge feature allows the scheduling of said _cluster scavenges_.
 
-The auto-scavenge feature requires a license to use. EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
+EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
 
 Refer to the [documentation](../operations/auto-scavenge.md) for instructions on enabling and using this feature.
 
 ### Stream policy
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 Define stream access policies in one place based on stream prefixes rather than using stream ACLs.
 
 Stream access policies can be created to grant users or groups read, write, delete, or metadata access.  These policies can be applied to streams based on their prefix or to system or user streams.
 
-The Stream Policy feature requires a license to use. Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
+Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
 
 ### Encryption-at-rest
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
 
 This feature aims to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file-level encryption provides some protection for attacks against the live system or remote exploits, as the plaintext data is not directly readable.
 
-The Encryption-at-rest feature requires a license to use and is disabled by default.
 If Encryption-at-rest is enabled, it is impossible to roll back to an unencrypted database after a new chunk has been created or if a chunk has been scavenged.
 
 Refer to the [documentation](../security/README.md#encryption-at-rest) for more information about using and configuring this feature.
-
-### Enterprise features now require a license key
-
-Customers can unlock the enterprise features of EventStoreDB with a license key. This applies to the previous commercial plugins and several of the new features in this release.
-
-You will need to provide a license key if you want to enable or use the following features:
-* Auto-scavenge
-* Kafka connectors
-* Stream Policies
-* Encryption-at-rest
-* Ldaps authentication
-* OAuth authentication
-* Logs Endpoint
-* OTLP Endpoint

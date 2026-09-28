@@ -22,8 +22,6 @@ Older versions can be monitored by Prometheus using the community-supported expo
 
 ## OpenTelemetry Exporter
 
-<wbr><Badge type="info" vertical="middle" text="License Required"/>
-
 KurrentDB passively exposes metrics for scraping on the `/metrics` endpoint. If you would like KurrentDB to actively export the metrics, the _OpenTelemetry Exporter_ feature can be used. This feature can now also be used to export log files.
 
 The OpenTelemetry Exporter feature allows you to export KurrentDB metrics and logs to a specified endpoint using the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP). The following instructions will help you set up the exporter and customize its configuration, so you can receive, process, export and monitor metrics and logs as needed.
@@ -31,8 +29,6 @@ The OpenTelemetry Exporter feature allows you to export KurrentDB metrics and lo
 A number of APM providers natively support ingesting data using the OTLP protocol, so you might be able to directly use the OpenTelemetry Exporter to send metrics and logs to your APM provider. Alternatively, you can export to the OpenTelemetry Collector, which can then be configured to send the data to a variety of backends. You can find out more about the [OpenTelemetry collector](https://opentelemetry.io/docs/collector/).
 
 ### Configuration
-
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 

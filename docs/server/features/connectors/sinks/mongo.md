@@ -2,8 +2,6 @@
 title: "MongoDB Sink"
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The MongoDB sink pulls messages from a KurrentDB stream and stores them in a

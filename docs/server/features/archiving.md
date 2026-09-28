@@ -10,8 +10,6 @@ KurrentDB 25.0 introduced the initial release of Archiving: a new major feature 
 
 Future releases of KurrentDB will build on and improve this feature.
 
-A [license key](../quick-start/installation.md#license-keys) is required to use this feature.
-
 ## Motivation
 
 KurrentDB databases can become very large. Typical KurrentDB deployments require low latency, high throughput access to the data, and so employ large, expensive volumes attached to each node in the cluster. The size of the database can be controlled by deleting data, but only if that data is no longer needed. Often, a large proportion of the data can become old enough that, although it is still required for occasional reads, it is not read frequently, and need not be read quickly. Until now, this 'cold' data has necessarily been stored on the same volumes as the hot data, taking up space and adding to the expense of running a high performance cluster.
@@ -62,9 +60,6 @@ Sample configuration:
 The following settings are required on all nodes (including the Archiver Node) to enable archiving:
 
 ```yaml
-Licensing:
-  LicenseKey: <your key>
-
 Archive:
   Enabled: true
 
