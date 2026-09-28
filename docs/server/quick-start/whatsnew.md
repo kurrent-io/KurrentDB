@@ -13,8 +13,8 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 * [Embedded UI Improvements](#embedded-ui)
 * [Multi-field User-defined Indexes](#multi-field-user-defined-indexes)
 * [Persistent Subscriptions Truncate API](#persistent-subscriptions-truncate-api)
-* [Disable TLS](#disable-tls)
-* [Miscellaneous](#miscellaneous-improvements-262)
+* [Disable TLS Option](#disable-tls)
+* [Miscellaneous](#miscellaneous-improvements-26-2)
 
 ### Licensing Changes
 
