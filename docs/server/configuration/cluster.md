@@ -5,7 +5,7 @@ order: 4
 
 # Highly-available cluster
 
-KurrentDB allows you to run more than one node in a cluster for high availability. Multi-node clusters require [license key](../quick-start/installation.md#license-keys).
+KurrentDB allows you to run more than one node in a cluster for high availability. Multi-node clusters require a [license key](../quick-start/installation.md#license-keys).
 
 ::: info Cluster member authentication
 KurrentDB starts in secure mode by default, which requires configuration [settings for certificates](../security/protocol-security.md#certificates-configuration).
