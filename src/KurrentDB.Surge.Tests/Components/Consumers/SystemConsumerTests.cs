@@ -306,4 +306,72 @@ public class SystemConsumerTests(ITestOutputHelper output, SystemComponentsAssem
 	    consumedRecords.Should()
 		    .HaveCountGreaterOrEqualTo(1, "because we should have received at least 10 CheckpointReceived events");
     }
+
+    [Fact]
+    public async Task does_not_track_checkpoints_when_auto_commit_is_disabled() {
+	    var filter = ConsumeFilter.FromRegex(ConsumeFilterScope.Stream, new Regex(Identifiers.GenerateShortId()));
+
+	    await Fixture.ProduceTestEvents(Identifiers.GenerateShortId("stream"), 1, 1000);
+
+	    using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+	    var checkpoints = 0;
+
+	    await using var consumer = Fixture.NewConsumer()
+		    .Filter(filter)
+		    .InitialPosition(SubscriptionInitialPosition.Earliest)
+		    .DisableAutoCommit()
+		    .AutoCommit(options => options with { RecordsThreshold = 100 })
+		    .Create();
+
+	    await foreach (var record in consumer.Records(cancellator.Token)) {
+		    if (record.Value is ReadResponse.CheckpointReceived) {
+			    checkpoints++;
+			    (await consumer.Track(record)).Should().BeEmpty();
+		    }
+		    else if (record.Value is ReadResponse.SubscriptionCaughtUp)
+			    await cancellator.CancelAsync();
+	    }
+
+	    checkpoints.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task commits_past_events_skipped_by_json_path_filter() {
+	    var streamId      = Identifiers.GenerateShortId("stream");
+	    var noise         = await Fixture.ProduceTestEvents(streamId);
+	    var startPosition = noise.Single().Position;
+
+	    await Fixture.ProduceTestEvents(streamId, 1, 5);
+
+	    var filter = ConsumeFilter.FromJsonPath($"$[?($.streamId == '{streamId}' && $.value.sequence != 2)]");
+
+	    using var cancellator = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+
+	    var consumedRecords = new List<SurgeRecord>();
+
+	    await using var consumer = Fixture.NewConsumer()
+		    .ConsumerId($"{streamId}-csr")
+		    .Filter(filter)
+		    .StartPosition(startPosition)
+		    .DisableAutoCommit()
+		    .Create();
+
+	    await foreach (var record in consumer.Records(cancellator.Token)) {
+		    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+			    continue;
+
+		    consumedRecords.Add(record);
+		    await consumer.Track(record);
+
+		    if (consumedRecords.Count == 4)
+			    await cancellator.CancelAsync();
+	    }
+
+	    await consumer.CommitAll();
+
+	    var positions = await consumer.GetLatestPositions();
+
+	    positions.Last().LogPosition.Should().BeEquivalentTo(consumedRecords.Last().LogPosition);
+    }
 }
