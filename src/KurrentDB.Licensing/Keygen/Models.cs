@@ -1,12 +1,17 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text.Json.Serialization;
+
 namespace KurrentDB.Licensing.Keygen;
 
 public static class Models {
 	public record ValidateLicenseRequest(ValidateLicenseRequest.RequestMeta Meta) {
 		public record RequestMeta(string? Key, RequestScopes Scope);
-		public record RequestScopes(string Fingerprint, string? Policy = null);
+		public record RequestScopes(
+			string Fingerprint,
+			[property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+			string? Policy = null);
 	}
 
 	// Is a given license currently valid for use with a given machine?
