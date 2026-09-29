@@ -4,6 +4,7 @@
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using KurrentDB.Common.Utils;
 using RestSharp;
 using Serilog;
 
@@ -18,6 +19,8 @@ namespace KurrentDB.Licensing.Keygen;
 // does not throw exceptions
 public sealed class KeygenClient : IDisposable {
 	const string ContentType = "application/vnd.api+json";
+	const string CommunityPolicyId = "7082fcc7-f4e1-49a0-baf8-d456925bb9b5";
+	public const string CommunityLicenseKey = "COMMUNITY";
 
 	static readonly ILogger Log = Serilog.Log.ForContext<KeygenClient>();
 
@@ -45,7 +48,11 @@ public sealed class KeygenClient : IDisposable {
 			.AddJsonBody(new Models.ValidateLicenseRequest(
 				Meta: new(
 					Key: _options.Licensing.LicenseKey,
-					Scope: new(Fingerprint: fingerprint))));
+					Scope: new(
+						Fingerprint: fingerprint,
+						Policy: _options.Licensing.LicenseKey == CommunityLicenseKey
+							? CommunityPolicyId
+							: null))));
 
 		var response = await _client.ExecutePostAsync<Models.ValidateLicenseResponse>(request, cancellationToken);
 		return response;
@@ -70,6 +77,7 @@ public sealed class KeygenClient : IDisposable {
 								["ram"] = ram.ToString(),
 								["readOnlyReplica"] = _options.ReadOnlyReplica.ToString().ToLower(),
 								["archiver"] = _options.Archiver.ToString().ToLower(),
+								["version"] = VersionInfo.Version,
 							},
 						},
 						relationships = new {

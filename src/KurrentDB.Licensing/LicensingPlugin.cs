@@ -73,6 +73,9 @@ public class LicensingPlugin : Plugin {
 
 		IObservable<LicenseInfo> licenses;
 
+		if (string.IsNullOrWhiteSpace(clientOptions.Licensing.LicenseKey) && _isSingleNode)
+			clientOptions.Licensing.LicenseKey = KeygenClient.CommunityLicenseKey;
+
 		if (string.IsNullOrWhiteSpace(clientOptions.Licensing.LicenseKey)) {
 			var sub = new Subject<LicenseInfo>();
 			sub.OnError(new NoLicenseKeyException());
@@ -95,7 +98,7 @@ public class LicensingPlugin : Plugin {
 		}
 
 		var licenseProvider = _licenseProvider ??
-			new SingleNodeFallbackLicenseProvider(new KeygenLicenseProvider(licenses), _isSingleNode);
+			new KeygenLicenseProvider(licenses);
 
 		services
 			// other components such as plugins can use this to subscribe to the licenses, inspect them, and reject them

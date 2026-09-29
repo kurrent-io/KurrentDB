@@ -1,12 +1,17 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text.Json.Serialization;
+
 namespace KurrentDB.Licensing.Keygen;
 
 public static class Models {
 	public record ValidateLicenseRequest(ValidateLicenseRequest.RequestMeta Meta) {
-		public record RequestMeta(string? Key, FingerprintScope Scope);
-		public record FingerprintScope(string Fingerprint);
+		public record RequestMeta(string? Key, RequestScopes Scope);
+		public record RequestScopes(
+			string Fingerprint,
+			[property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+			string? Policy = null);
 	}
 
 	// Is a given license currently valid for use with a given machine?
@@ -51,7 +56,7 @@ public static class Models {
 		public DateTimeOffset? Expiry { get; set; }
 		public string Status { get; set; } = null!;
 		public bool Suspended { get; set; } = true;
-		public int MaxMachines { get; set; }
+		public int? MaxMachines { get; set; }
 		public int? MaxCores { get; set; }
 		public bool RequiresHeartbeat { get; set; }
 	}
