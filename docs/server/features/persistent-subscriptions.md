@@ -35,17 +35,23 @@ Clients must acknowledge (or not acknowledge) messages as they are handled. If m
 
 ## Parked messages
 
-Messages that have been retried too many times will often be parked in the persistent subscription's parked message stream. This stream is named `$persistentsubscription-{streamname}::{groupname}-parked`. You can easily see the number of parked events in the persistent subscription statistics or browse the parked messages in the embedded UI.
+Messages that have been retried too many times will be parked in the persistent subscription's parked message stream. This stream is named `$persistentsubscription-{streamname}::{groupname}-parked`. You can easily see the number of parked events in the persistent subscription statistics or browse the parked messages in the embedded UI.
 
 If you want to retry the parked messages, you can `Replay` the parked messages for that subscription. This will push the parked messages to subscribers before any new events on the subscription.
 
 You can also specify the number of parked messages to replay over the HTTP endpoint. This can be done by providing the `stopAt` parameter when requesting to replay messages through the HTTP url. For example:
 
 ```bash:no-line-numbers
-curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupnanme}/replayParked?stopAt={numberofevents} -u "admin:changeit"
+curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupname}/replayParked?stopAt={offset} -u "admin:changeit"
 ```
 
-If you don't want to replay any parked messages for a subscription and want to clear them out, you can delete the parked stream like a regular stream.
+If you don't want to replay any parked messages for a subscription and want to clear them out, you can truncate them:
+
+```bash:no-line-numbers
+curl -i -X POST -d {} https://localhost:2113/subscriptions/{stream}/{groupname}/truncateParked?stopAt={offset} -u "admin:changeit"
+```
+
+It is possible to delete the parked stream like a regular stream, but be aware that the metrics for the length of the parked stream will not be updated.
 
 ## Checkpointing
 

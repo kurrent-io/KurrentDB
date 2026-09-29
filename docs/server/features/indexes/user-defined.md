@@ -1,6 +1,6 @@
 # User defined indexes
 
-KurrentDB v26.0 introduces support for user defined indexes, building on the [secondary indexes](./secondary.md) mechanism added in v25.1.
+KurrentDB v26.0 introduced support for user defined indexes, building on the [secondary indexes](./secondary.md) mechanism added in v25.1. Now in 26.2 user defined indexes can index multiple fields.
 
 ## Introduction
 
@@ -184,7 +184,7 @@ User defined indexes can be queried in the Query UI (e.g. `https://localhost:211
 
 e.g.
 ```sql
-select * from 'usr.orders-by-country' where field_country = 'Mauritius' and field_total = 149.99 limit 10
+select * from usr."orders-by-country" where field_country = 'Mauritius' and field_total = 149.99 limit 10
 ```
 
 Each field is a `field_<name>` column, so a multi-field index can be filtered on any combination of its fields.

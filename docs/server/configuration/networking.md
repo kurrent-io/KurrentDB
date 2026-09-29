@@ -82,6 +82,20 @@ After having pinged for keepalive check, the server waits for a duration of `kee
 
 As a general rule, we do not recommend putting KurrentDB behind a load balancer. However, if you are using it and want to benefit from the Keepalive feature, then you should make sure if the compatible settings are properly set. Some load balancers may also override the Keepalive settings. Most of them require setting the idle timeout larger/longer than the `keepAliveTimeout`. We suggest checking the load balancer documentation before using Keepalive pings.
 
+### gRPC response compression
+
+KurrentDB compresses gRPC responses with gzip when the client advertises gzip support. Higher levels reduce network traffic at the cost of higher CPU.
+
+| Format               | Syntax                          |
+|:---------------------|:--------------------------------|
+| Command line         | `--compression-level`           |
+| YAML                 | `CompressionLevel`              |
+| Environment variable | `KURRENTDB_COMPRESSION_LEVEL`   |
+
+Allowed values are `NoCompression`, `Fastest`, `Optimal` and `SmallestSize`. `NoCompression` turns off response compression entirely. Gzip-compressed requests from clients are still accepted whatever the level.
+
+**Default**: `Optimal`
+
 ### AtomPub
 
 The AtomPub application protocol over HTTP is disabled by default since v20. We plan to deprecate the AtomPub support in the future versions, but we aim to provide a replacement before we finally deprecate AtomPub.
