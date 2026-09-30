@@ -13,7 +13,6 @@ public class Locations {
 	public static readonly string ApplicationDirectory;
 	public static readonly string ProjectionsDirectory;
 	public static readonly string PreludeDirectory;
-	public static readonly string PluginsDirectory;
 	public static readonly string DefaultContentDirectory;
 	public static readonly string DefaultConfigurationDirectory;
 	public static readonly string DefaultDataDirectory;
@@ -30,7 +29,6 @@ public class Locations {
 		ApplicationDirectory = Path.GetDirectoryName(AppContext.BaseDirectory) ??
 							   Path.GetFullPath(".");
 
-		PluginsDirectory = Path.Combine(ApplicationDirectory, "plugins");
 		FallbackDefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");
 
 		switch (RuntimeInformation.OsPlatform) {
@@ -44,8 +42,6 @@ public class Locations {
 				LegacyLogDirectory = "/var/log/eventstore";
 				DefaultTrustedRootCertificateDirectory = "/etc/ssl/certs";
 				DefaultTestClientLogDirectory = Path.Combine(ApplicationDirectory, "testclientlog");
-				if (!Directory.Exists(PluginsDirectory))
-					PluginsDirectory = Path.Combine(DefaultContentDirectory, "plugins");
 				break;
 			case RuntimeOSPlatform.OSX:
 				DefaultContentDirectory = "/usr/local/share/kurrentdb";
@@ -56,8 +52,6 @@ public class Locations {
 				DefaultLogDirectory = "/var/log/kurrentdb";
 				LegacyLogDirectory = "/var/log/eventstore";
 				DefaultTestClientLogDirectory = Path.Combine(ApplicationDirectory, "testclientlog");
-				if (!Directory.Exists(PluginsDirectory))
-					PluginsDirectory = Path.Combine(DefaultContentDirectory, "plugins");
 				break;
 			default:
 				DefaultContentDirectory = ApplicationDirectory;

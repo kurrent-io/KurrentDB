@@ -15,7 +15,6 @@
     <Project Path="src/KurrentDB.OtlpExporterPlugin/KurrentDB.OtlpExporterPlugin.csproj" />
     <Project Path="src/KurrentDB.Plugins.Tests/KurrentDB.Plugins.Tests.csproj" />
     <Project Path="src/KurrentDB.Plugins/KurrentDB.Plugins.csproj" />
-    <Project Path="src/KurrentDB.POC.ConnectedSubsystemsPlugin/KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
     <Project Path="src/KurrentDB.Security.EncryptionAtRest.Tests/KurrentDB.Security.EncryptionAtRest.Tests.csproj" />
     <Project Path="src/KurrentDB.Security.EncryptionAtRest/KurrentDB.Security.EncryptionAtRest.csproj" />
     <Project Path="src/KurrentDB.TcpPlugin.Tests/KurrentDB.TcpPlugin.Tests.csproj" />
@@ -103,7 +102,6 @@
   <Project Path="src/KurrentDB.Logging/KurrentDB.Logging.csproj" />
   <Project Path="src/KurrentDB.MicroBenchmarks/KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src/KurrentDB.NETCore.Compatibility/KurrentDB.NETCore.Compatibility.csproj" />
-  <Project Path="src/KurrentDB.PluginHosting/KurrentDB.PluginHosting.csproj" />
   <Project Path="src/KurrentDB.POC.IO.Core/KurrentDB.POC.IO.Core.csproj" />
   <Project Path="src/KurrentDB.Scripting/KurrentDB.Scripting.csproj" />
   <Project Path="src/KurrentDB.SourceGenerators/KurrentDB.SourceGenerators.csproj" />
