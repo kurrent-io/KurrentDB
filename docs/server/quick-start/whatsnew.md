@@ -14,7 +14,6 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 * [Multi-field User-defined Indexes](#multi-field-user-defined-indexes)
 * [Persistent Subscriptions Truncate API](#persistent-subscriptions-truncate-api)
 * [Disable TLS Option](#disable-tls)
-* [Connectors: Reduced Disk Reads After Leader Election](#connectors-reduced-disk-reads-after-leader-election)
 * [Miscellaneous](#miscellaneous-improvements-26-2)
 
 ### Licensing Changes
@@ -99,13 +98,6 @@ When TLS is disabled, all traffic, including authentication credentials and the 
 
 See the [security documentation](../security/security-options.md#running-without-tls) for details.
 
-### Connectors: Reduced Disk Reads After Leader Election
-
-When a node becomes leader, it reads the log to determine which connectors should be running. Previously, it could reread a large portion of the log after each election, even when no connectors had changed or none were configured. On large databases this caused heavy disk reads.
-
-The leader now records its progress regularly while running, so a new leader only reads recent events.
-
-The first election after upgrading may still read from the last recorded position.
 
 ### Miscellaneous Improvements 26.2
 
@@ -124,6 +116,10 @@ The first election after upgrading may still read from the last recorded positio
 - Disk usage metrics for index and log drives
 
   The `kurrentdb_sys_disk_bytes` metric previously reported used and total bytes only for the drive holding the database. It now also reports the index and log drives when they are on different drives.
+
+- Reduced disk reads after leader election
+
+  When a node becomes leader, it reads the log to determine which connectors should be running. Previously, it could reread a large portion of the log after each election, even when no connectors had changed or none were configured. The leader now records its progress regularly, so a new leader only reads recent events. The first election after upgrading may still read from the last recorded position.
 
 ## New in 26.1
 
