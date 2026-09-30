@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using KurrentDB.Common.Configuration;
@@ -28,6 +29,8 @@ public class MessageLabelConfigurator {
 		Log.Information("Metrics created {count} message type labels", labels.Count);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2070",
+		Justification = "Message is annotated with DynamicallyAccessedMembers(PublicProperties), which preserves LabelStatic on every derived type")]
 	private static bool TryConfigureMessageType(
 		MetricsConfiguration.LabelMappingCase[] configuration,
 		Type messageType,

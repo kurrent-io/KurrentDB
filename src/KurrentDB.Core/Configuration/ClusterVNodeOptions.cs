@@ -32,6 +32,7 @@ using Quickenshtein;
 namespace KurrentDB.Core;
 
 [PublicAPI]
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public partial record ClusterVNodeOptions {
 	public ClusterVNodeOptions() => FileStreamExtensions.ConfigureFlush(Database.UnsafeDisableFlushToDisk);
 

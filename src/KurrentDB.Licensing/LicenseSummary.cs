@@ -73,8 +73,8 @@ public record LicenseSummary(
 		return daysRemaining;
 	}
 
-	public static Dictionary<string, object?> SelectForTelemetry(License license) {
-		var dict = new Dictionary<string, object?>();
+	public static Dictionary<string, IConvertible?> SelectForTelemetry(License license) {
+		var dict = new Dictionary<string, IConvertible?>();
 
 		AddString(nameof(LicenseId), license, dict);
 		AddBool(nameof(IsTrial), license, dict);
@@ -85,12 +85,12 @@ public record LicenseSummary(
 
 		AddBool(nameof(IsValid), license, dict);
 
-		static void AddString(string property, License license, Dictionary<string, object?> dict) {
+		static void AddString(string property, License license, Dictionary<string, IConvertible?> dict) {
 			if (TryGet(property, license, out var k, out var v))
 				dict[k] = v;
 		}
 
-		static void AddBool(string property, License license, Dictionary<string, object?> dict) {
+		static void AddBool(string property, License license, Dictionary<string, IConvertible?> dict) {
 			if (TryGet(property, license, out var k, out var v) && bool.TryParse(v, out var b))
 				dict[k] = b;
 		}

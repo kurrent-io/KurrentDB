@@ -101,7 +101,7 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 		Log.Information(msg);
 		Disable(msg);
 		PublishDiagnosticsData(
-			new Dictionary<string, object?>() { ["enabled"] = Enabled },
+			new Dictionary<string, IConvertible?>() { ["enabled"] = Enabled },
 			PluginDiagnosticsDataCollectionMode.Partial);
 		_ = Stop();
 	}

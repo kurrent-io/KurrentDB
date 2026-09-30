@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -275,7 +276,8 @@ public class ClusterVNode<TStreamId> :
 
 		ReloadLogOptions(options);
 
-		T GetOptions<T>(string subsection) where T : class, IConfigurationBinder<T>, new()
+		T GetOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string subsection)
+			where T : class, IConfigurationBinder<T>, new()
 			=> T.Bind(configuration
 				.GetSection($"{KurrentConfigurationKeys.Prefix}:{subsection}")) ?? new();
 

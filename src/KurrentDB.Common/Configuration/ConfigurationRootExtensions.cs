@@ -4,6 +4,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using KurrentDB.Common.Exceptions;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +29,7 @@ public static class ConfigurationRootExtensions {
 		return value.Split(',', StringSplitOptions.RemoveEmptyEntries);
 	}
 
-	public static T BindOptions<T>(this IConfiguration configuration)
+	public static T BindOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(this IConfiguration configuration)
 		where T : class, IConfigurationBinder<T> ,new() {
 		try {
 			return T.Bind(configuration) ?? new T();

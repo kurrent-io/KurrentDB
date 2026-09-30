@@ -183,7 +183,7 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// <param name="mode">The mode of data collection for a plugin event.</param>
 	[UnconditionalSuppressMessage("Trimming", "IL2026",
 		Justification = "PluginDiagnosticsData's public properties are read directly by PluginDiagnosticsDataCollector, so they are always preserved.")]
-	protected internal void PublishDiagnosticsData(Dictionary<string, object?> eventData, PluginDiagnosticsDataCollectionMode mode = Partial) {
+	protected internal void PublishDiagnosticsData(Dictionary<string, IConvertible?> eventData, PluginDiagnosticsDataCollectionMode mode = Partial) {
 		var value = new PluginDiagnosticsData {
 			Source = DiagnosticsName,
 			Data = eventData,
@@ -203,7 +203,7 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// <param name="mode">The mode of data collection for a plugin event.</param>
 	[UnconditionalSuppressMessage("Trimming", "IL2026",
 		Justification = "PluginDiagnosticsData's public properties are read directly by PluginDiagnosticsDataCollector, so they are always preserved.")]
-	protected internal void PublishDiagnosticsData(string eventName, Dictionary<string, object?> eventData, PluginDiagnosticsDataCollectionMode mode = Event) {
+	protected internal void PublishDiagnosticsData(string eventName, Dictionary<string, IConvertible?> eventData, PluginDiagnosticsDataCollectionMode mode = Event) {
 		if (eventName == nameof(PluginDiagnosticsData))
 			throw new ArgumentException("Event name cannot be PluginDiagnosticsData", nameof(eventName));
 

@@ -3,6 +3,7 @@
 
 using System.IO.Pipelines;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -42,10 +43,11 @@ public class ClearTextHttpMultiplexingMiddleware(ConnectionDelegate next) {
 	}
 
 	private static void SetProtocols(object target, HttpProtocols protocols) {
-		var field = target.GetType().GetField("_endpointDefaultProtocols", BindingFlags.Instance | BindingFlags.NonPublic);
-		if (field == null)
-			throw new RuntimeBinderException("Couldn't bind to Kestrel _endpointDefaultProtocols field");
-		field.SetValue(target, protocols);
+		GetProtocols(target) = protocols;
+
+		[UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_endpointDefaultProtocols")]
+		static extern ref HttpProtocols GetProtocols(
+			[UnsafeAccessorType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.HttpConnectionMiddleware`1[[Microsoft.AspNetCore.Hosting.HostingApplication+Context, Microsoft.AspNetCore.Hosting]], Microsoft.AspNetCore.Server.Kestrel.Core")]object target);
 	}
 
 	public async Task OnConnectAsync(ConnectionContext context) {

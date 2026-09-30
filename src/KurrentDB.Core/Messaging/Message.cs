@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Newtonsoft.Json;
 
@@ -23,6 +24,7 @@ public class DerivedMessageAttribute : Attribute {
 }
 
 [BaseMessage]
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public abstract partial class Message(CancellationToken token = default) {
 	internal static readonly object UnknownAffinity = new();
 	protected static readonly object StrongAffinity = new();

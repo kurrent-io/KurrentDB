@@ -20,16 +20,16 @@ using Microsoft.Extensions.Configuration;
 namespace KurrentDB.Core;
 
 public partial record ClusterVNodeOptions {
-	private static readonly IEnumerable<Type> OptionSections;
+	private static readonly IReadOnlyList<PropertyInfo> OptionGroups;
 	public static readonly string HelpText;
 	public string GetComponentName() => $"{Interface.NodeIp}-{Interface.NodePort}-cluster-node";
 	public static readonly List<SectionMetadata> Metadata;
 
 	static ClusterVNodeOptions() {
-		OptionSections = typeof(ClusterVNodeOptions)
+		OptionGroups = typeof(ClusterVNodeOptions)
 			.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 			.Where(p => p.GetCustomAttribute<OptionGroupAttribute>() != null)
-			.Select(p => p.PropertyType);
+			.ToList();
 
 		HelpText = GetHelpText();
 
@@ -39,11 +39,12 @@ public partial record ClusterVNodeOptions {
 			.Select(SectionMetadata.FromPropertyInfo)
 			.ToList();
 
-		DefaultValues = OptionSections.SelectMany(GetDefaultValues);
+		DefaultValues = OptionGroups.SelectMany(GetDefaultValues);
 
 		return;
 
-		static IEnumerable<KeyValuePair<string, object?>> GetDefaultValues(Type type) {
+		static IEnumerable<KeyValuePair<string, object?>> GetDefaultValues(PropertyInfo optionGroup) {
+			var type = SectionMetadata.GetSectionType(optionGroup);
 			var defaultInstance = Activator.CreateInstance(type)!;
 
 			return type.GetProperties().Select(property =>
@@ -57,6 +58,9 @@ public partial record ClusterVNodeOptions {
 
 	public static IEnumerable<KeyValuePair<string, object?>> DefaultValues { get; }
 
+	private static IEnumerable<PropertyInfo> GetAllOptions()
+		=> OptionGroups.SelectMany(static optionGroup => SectionMetadata.GetSectionType(optionGroup).GetProperties());
+
 	public string? DumpOptions() =>
 		ConfigurationRoot == null ? null : ClusterVNodeOptionsPrinter.Print(LoadedOptions);
 
@@ -66,11 +70,10 @@ public partial record ClusterVNodeOptions {
 	public string? GetDeprecationWarnings() {
 		var defaultValues = new Dictionary<string, object?>(DefaultValues, StringComparer.OrdinalIgnoreCase);
 
-		var deprecationWarnings = from section in OptionSections
-								  from option in section.GetProperties()
+		var deprecationWarnings = from option in GetAllOptions()
 								  let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
 								  where deprecationWarning is not null
-								  let value = ConfigurationRoot?.GetValue<string?>(KurrentConfigurationKeys.Normalize(option.Name))
+								  let value = ConfigurationRoot?[KurrentConfigurationKeys.Normalize(option.Name)]
 								  where defaultValues.TryGetValue(option.Name, out var defaultValue)
 										&& !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
 								  select deprecationWarning;
@@ -82,7 +85,7 @@ public partial record ClusterVNodeOptions {
 	}
 
 	public string? CheckForEnvironmentOnlyOptions() =>
-		ConfigurationRoot.CheckProvidersForEnvironmentVariables(OptionSections);
+		ConfigurationRoot.CheckProvidersForEnvironmentVariables(GetAllOptions());
 
 	public string[] CheckForLegacyEventStoreConfiguration() =>
 		ConfigurationRoot.CheckProvidersForLegacyEventStoreConfiguration();
@@ -160,12 +163,16 @@ public partial record ClusterVNodeOptions {
 		const string OPTION = nameof(OPTION);
 		const string DESCRIPTION = nameof(DESCRIPTION);
 
+		var defaultInstances = OptionGroups.ToDictionary(
+			static optionGroup => optionGroup.PropertyType,
+			static optionGroup => Activator.CreateInstance(SectionMetadata.GetSectionType(optionGroup))!);
+
 		var optionColumnWidth = Options().Max(o =>
 			OptionHeaderColumnWidth(o.Name, DefaultValue(o)));
 
 		var header = $"{OPTION.PadRight(optionColumnWidth, ' ')}{DESCRIPTION}";
 
-		var environmentOnlyOptions = OptionSections.SelectMany(section => section.GetProperties())
+		var environmentOnlyOptions = GetAllOptions()
 			.Where(option => option.GetCustomAttribute<EnvironmentOnlyAttribute>() != null)
 			.Select(option => option)
 			.ToList();
@@ -211,7 +218,7 @@ public partial record ClusterVNodeOptions {
 			return builder.ToString();
 		}
 
-		static IEnumerable<PropertyInfo> Options() => OptionSections.SelectMany(type => type.GetProperties());
+		static IEnumerable<PropertyInfo> Options() => GetAllOptions();
 
 		static int OptionWidth(string name, string @default) =>
 			(name + @default).Count(char.IsUpper) + 1 + 1 + (name + @default).Length;
@@ -219,8 +226,8 @@ public partial record ClusterVNodeOptions {
 		int OptionHeaderColumnWidth(string name, string @default) =>
 			Math.Max(OptionWidth(name, @default) + 1, OPTION.Length);
 
-		static string DefaultValue(PropertyInfo option) {
-			var value = option.GetValue(Activator.CreateInstance(option.DeclaringType!));
+		string DefaultValue(PropertyInfo option) {
+			var value = option.GetValue(defaultInstances[option.ReflectedType!]);
 			return (value, RuntimeInformation.IsWindows) switch {
 				(bool b, false) => b.ToString().ToLower(),
 				(bool b, true) => b.ToString(),

@@ -3,6 +3,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
