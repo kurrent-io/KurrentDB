@@ -4,6 +4,7 @@
 using System;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Standard;
 using Xunit;
 
@@ -38,7 +39,7 @@ public class ProjectionStateHandlerFactoryTests {
 	[Theory]
 	[MemberData(nameof(SystemProjectionsData))]
 	public void can_create_system_projections(string factoryType, string source, Type expectedType) {
-		var result = _sut.Create("projection", factoryType, source, true, 1000);
+		var result = _sut.Create("projection", factoryType, source, true, 1000, ProjectionCoreService.CreateSystemProjection);
 		Assert.IsType(expectedType, result);
 	}
 }

@@ -27,6 +27,7 @@ public class when_running_with_content_type_validation {
 				"projection", _projectionType, _projection,
 				enableContentTypeValidation: true,
 				null,
+				static (_, _, _) => null,
 				logger: (s, _) => {
 					if (s.StartsWith("P:"))
 						Console.WriteLine(s);
@@ -80,6 +81,7 @@ public class when_running_with_content_type_validation {
 				"projection", _projectionType, _projection,
 				enableContentTypeValidation: false,
 				projectionExecutionTimeout: null,
+				static (_, _, _) => null,
 				logger: (s, _) => {
 					if (s.StartsWith("P:"))
 						Console.WriteLine(s);
