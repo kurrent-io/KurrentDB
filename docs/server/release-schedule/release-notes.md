@@ -8,7 +8,7 @@ This page contains the release notes for KurrentDB v26.2.
 
 ## [26.2.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.0)
 
-29 September 2026
+30 September 2026
 
 ### What's new
 
