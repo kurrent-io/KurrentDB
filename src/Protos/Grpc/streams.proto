@@ -85,6 +85,10 @@ message ReadReq {
 			}
 		}
 		message ControlOption {
+			// The highest level of server behaviour that the client can handle. Each level includes the ones below it.
+			// 0: default.
+			// 1: stream reads also receive first_stream_position and last_stream_position.
+			// 2: subscriptions also receive fell_behind, which may or may not carry a checkpoint.
 			uint32 compatibility = 1;
 		}
 	}

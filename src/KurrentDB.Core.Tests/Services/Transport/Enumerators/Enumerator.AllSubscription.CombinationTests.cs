@@ -231,6 +231,7 @@ public partial class EnumeratorTests {
 		private async Task<int> ReadExpectedEvents(EnumeratorWrapper sub, int nextEventIndex, int lastEventIndex, bool shouldFallBehindThenCatchUp = false) {
 			var fellBehind = false;
 			var caughtUp = false;
+			TFPos? lastEventPos = null;
 
 			var numResponsesExpected = lastEventIndex - nextEventIndex + 1;
 			if (shouldFallBehindThenCatchUp)
@@ -243,13 +244,16 @@ public partial class EnumeratorTests {
 						var evtPos = _events[nextEventIndex++].OriginalPosition!.Value;
 						var evtTfPos = new TFPos(evtPos.CommitPosition, evtPos.PreparePosition);
 						Assert.AreEqual(evtTfPos, evt.EventPosition!.Value);
+						lastEventPos = evtTfPos;
 						break;
 					case FellBehind x:
 						if (!shouldFallBehindThenCatchUp)
 							Assert.Fail("Subscription fell behind.");
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
-						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						// the checkpoint to resume from is the last event that was sent before falling behind
+						Assert.NotNull(lastEventPos);
+						Assert.AreEqual(lastEventPos, x.Wrapped.AllCheckpoint);
 						Assert.Null(x.Wrapped.StreamCheckpoint);
 
 						fellBehind = true;
@@ -262,7 +266,8 @@ public partial class EnumeratorTests {
 							Assert.Fail("Subscription fell behind then caught up.");
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
-						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						Assert.NotNull(lastEventPos);
+						Assert.AreEqual(lastEventPos, x.Wrapped.AllCheckpoint);
 						Assert.Null(x.Wrapped.StreamCheckpoint);
 
 						caughtUp = true;
