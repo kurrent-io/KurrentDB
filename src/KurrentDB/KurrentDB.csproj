@@ -80,33 +80,4 @@
 		<IsMac>false</IsMac>
 		<IsMac Condition="('$(OS)' == 'Unix') And (Exists ('/Library/Frameworks'))">true</IsMac>
 	</PropertyGroup>
-
-	<!--
-		Plugin feature switches. All plugins are enabled by default. Pass e.g. -p:EnableConnectorsPlugin=false
-		to disable a plugin; with PublishTrimmed=true its code and exclusive dependencies are trimmed away.
-	-->
-	<ItemGroup>
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Connectors" Condition="'$(EnableConnectorsPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.SchemaRegistry" Condition="'$(EnableSchemaRegistryPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.APIV2" Condition="'$(EnableApiV2Plugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.AutoScavenge" Condition="'$(EnableAutoScavengePlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.TcpClientProtocol" Condition="'$(EnableTcpApiPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.EncryptionAtRest" Condition="'$(EnableEncryptionAtRestPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.OtlpExporter" Condition="'$(EnableOtlpExporterPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.LogsEndpoint" Condition="'$(EnableLogsEndpointPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.UserCertificates" Condition="'$(EnableUserCertificatesPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authentication.LDAPS" Condition="'$(EnableLdapsPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authentication.OAUTH" Condition="'$(EnableOAuthPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.LegacyAuthorizationWithStreamAuthorizationDisabled" Condition="'$(EnableLegacyAuthorizationPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.Policy" Condition="'$(EnableStreamPolicyPlugin)' == 'false'" Value="false" Trim="true" />
-		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.SecondaryIndexes" Condition="'$(EnableSecondaryIndexingPlugin)' == 'false'" Value="false" Trim="true" />
-	</ItemGroup>
-
-	<!-- Trimming removes only managed code; drop the Kafka native libraries explicitly when Connectors is disabled -->
-	<Target Name="_RemoveKafkaNativeAssets" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(EnableConnectorsPlugin)' == 'false'">
-		<ItemGroup>
-			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.NuGetPackageId)' == 'librdkafka.redist'" />
-		</ItemGroup>
-	</Target>
-
 </Project>
