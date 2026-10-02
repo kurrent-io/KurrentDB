@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 
@@ -54,12 +55,23 @@ public class ProjectionStateHandlerFactory {
 				rest = rest?.Replace("EventStore", "KurrentDB");
 
 				result = factory.Invoke(rest, source, logger)
+				         ?? TryLoadProjection(rest, source, logger)
 				         ?? throw new NotSupportedException($"Could not find type \"{rest}\"");
+
 				break;
 			default:
 				throw new NotSupportedException($"'{factoryType}' handler type is not supported");
 		}
 
 		return result;
+
+		[UnconditionalSuppressMessage("Trimming", "IL2057",
+			Justification = "Dynamic projection loading is for tests and backward compat only.")]
+		static IProjectionStateHandler TryLoadProjection(string typeName, string source, Action<string, object[]> logger) {
+			var projectionType = Type.GetType(typeName);
+			return typeof(IProjectionStateHandler).IsAssignableFrom(projectionType)
+				? Activator.CreateInstance(projectionType, source, logger) as IProjectionStateHandler
+				: null;
+		}
 	}
 }
