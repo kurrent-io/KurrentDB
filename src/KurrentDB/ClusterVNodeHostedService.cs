@@ -33,6 +33,7 @@ using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.Plugins.Api.V2;
 using KurrentDB.Plugins.Connectors;
 using KurrentDB.Plugins.SchemaRegistry;
+using KurrentDB.POC.ConnectedSubsystemsPlugin;
 using KurrentDB.Projections.Core;
 using KurrentDB.SecondaryIndexing;
 using KurrentDB.Security.EncryptionAtRest;
@@ -237,6 +238,8 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 			if (EncryptionAtRestPlugin.IsAllowed)
 				plugins.Add(new EncryptionAtRestPlugin());
+
+			plugins.Add(new ConnectedSubsystemsPlugin());
 
 			if (AutoScavengePlugin.IsAllowed)
 				plugins.Add(new AutoScavengePlugin());
