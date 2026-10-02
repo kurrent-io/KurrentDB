@@ -178,6 +178,7 @@ public class ClusterVNodeOptionsTests {
 		EndPoint[] endpoints = [
 			new IPEndPoint(IPAddress.Loopback, 1113),
 			new DnsEndPoint("some-host", 1114),
+			new IPEndPoint(IPAddress.IPv6Loopback, 1115),
 		];
 
 		var values = GossipSeedConverter.ToString(endpoints);
@@ -191,6 +192,20 @@ public class ClusterVNodeOptionsTests {
 
 		var options = ClusterVNodeOptions.FromConfiguration(config);
 
+		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(endpoints);
+	}
+
+	[Fact]
+	public void with_gossip_seeds_round_trips_ipv6_endpoints() {
+		EndPoint[] endpoints = [
+			new IPEndPoint(IPAddress.IPv6Loopback, 2113),
+			new IPEndPoint(IPAddress.Parse("fe80::1"), 2114),
+			new IPEndPoint(IPAddress.Loopback, 2115),
+		];
+
+		var options = new ClusterVNodeOptions().WithGossipSeeds(endpoints);
+
+		options.Cluster.GossipSeed.Should().Be("[::1]:2113,[fe80::1]:2114,127.0.0.1:2115");
 		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(endpoints);
 	}
 
@@ -222,6 +237,7 @@ public class ClusterVNodeOptionsTests {
 	[InlineData(false, "127.0.0.1:3.1415", "Invalid format for the port number: 3.1415.")]
 	[InlineData(false, "hostA;hostB", "Invalid delimiter for gossip seed value: hostA;hostB.")]
 	[InlineData(false, "hostA\thostB", "Invalid delimiter for gossip seed value: hostA\thostB.")]
+	[InlineData(false, "::1:2113", "IPv6 addresses must be enclosed in brackets, e.g. [::1]:2113: ::1:2113.")]
 	public void reports_gossip_seed_errors(bool useEventStorePrefix, string gossipSeed, string expectedError) {
 		var builder = new ConfigurationBuilder();
 		if (useEventStorePrefix)

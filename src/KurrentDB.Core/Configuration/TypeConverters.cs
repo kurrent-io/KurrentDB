@@ -22,20 +22,35 @@ public class GossipEndPointConverter : TypeConverter {
 			? Parse(stringValue)
 			: base.ConvertFrom(context, culture, value);
 
+	// Accepts "host:port", "ipv4:port" and "[ipv6]:port". IPv6 addresses must be bracketed, otherwise
+	// the colons inside the address are ambiguous with the port separator.
 	public static EndPoint Parse(string value) {
-		if (value.Split(':', 2) is not [var address, var portStr])
+		var separator = value.LastIndexOf(':');
+		if (separator < 0)
 			throw new("You must specify the port number.");
+
+		var address = value.AsSpan(0, separator);
+		var portStr = value.AsSpan(separator + 1);
 
 		if (!int.TryParse(portStr, out var port))
 			throw new($"Invalid format for the port number: {portStr}");
 
+		if (address is ['[', .. var bracketed, ']'])
+			return IPAddress.TryParse(bracketed, out var ipv6)
+				? new IPEndPoint(ipv6, port)
+				: throw new($"Invalid IPv6 address: {address}");
+
+		if (address.Contains(':'))
+			throw new($"IPv6 addresses must be enclosed in brackets, e.g. [::1]:2113: {value}");
+
 		return IPAddress.TryParse(address, out var ip)
 			? new IPEndPoint(ip, port)
-			: new DnsEndPoint(address, port);
+			: new DnsEndPoint(address.ToString(), port);
 	}
 
+	// IPEndPoint.ToString() brackets IPv6 addresses ("[::1]:2113"), which Parse accepts
 	public static string ToString(EndPoint ep) => ep switch {
-		IPEndPoint ip => $"{ip.Address}:{ip.Port}",
+		IPEndPoint ip => ip.ToString(),
 		DnsEndPoint dns => $"{dns.Host}:{dns.Port}",
 		_ => ep.ToString() ?? string.Empty,
 	};
