@@ -8,6 +8,7 @@
 		<Nullable>enable</Nullable>
 		<Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Surge.Core" />
