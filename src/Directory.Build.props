@@ -84,4 +84,14 @@
 		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
 		<Using Include="JetBrains.Annotations" />
 	</ItemGroup>
+
+	<ItemGroup Label="NuGet Audit Suppressions">
+		<!--
+		  CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
+		  pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
+		  The fixed package 2.1.12 relies on glibc 2.34 which is not present ootb on ubuntu 20.04 which some deployments are running on.
+		  The vulnerability poses no threat to KurrentDB, so we keep the reference as is in 26.1 in order to operate with ubuntu 20.04
+		-->
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+	</ItemGroup>
 </Project>
