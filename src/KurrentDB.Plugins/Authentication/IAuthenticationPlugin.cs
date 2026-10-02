@@ -4,6 +4,8 @@
 namespace EventStore.Plugins.Authentication;
 
 public interface IAuthenticationPlugin {
+	public const string FeatureNamePrefix = $"{IPlugableComponent.FeatureNamePrefix}.Authentication";
+
 	string Name { get; }
 	string Version { get; }
 	string CommandLineName { get; }

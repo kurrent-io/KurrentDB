@@ -2,9 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Serialization;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
@@ -15,19 +16,15 @@ public class NodeStateListenerService : IHandle<SystemMessage.StateChangeMessage
 
 	public SingleEventInMemoryStream Stream { get; }
 
-	private readonly JsonSerializerOptions _options = new() {
-		Converters = {
-			new JsonStringEnumConverter(),
-		},
-	};
-
 	public NodeStateListenerService(IPublisher publisher, InMemoryLog memLog) {
 		Stream = new(publisher, memLog, SystemStreams.NodeStateStream);
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
-		var payload = new { message.State };
-		var data = JsonSerializer.SerializeToUtf8Bytes(payload, _options);
+		var payload = new NodeStateChangedPayload(message.State);
+		var data = JsonSerializer.SerializeToUtf8Bytes(payload, CoreJsonContext.Default.NodeStateChangedPayload);
 		Stream.Write(EventType, data);
 	}
+
+	internal sealed record NodeStateChangedPayload(VNodeState State);
 }

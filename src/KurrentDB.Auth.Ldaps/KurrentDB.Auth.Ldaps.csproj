@@ -5,13 +5,14 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<IsPlugin>true</IsPlugin>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Novell.Directory.Ldap.NETStandard" />
-		<PackageReference Include="System.ComponentModel.Composition" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>
 </Project>

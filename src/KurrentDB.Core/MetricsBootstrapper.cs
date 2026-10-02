@@ -74,8 +74,7 @@ public static class MetricsBootstrapper {
 
 		OptionsFormatter.LogConfig("Metrics", conf);
 
-		MessageLabelConfigurator.ConfigureMessageLabels(
-			conf.MessageTypes, InMemoryBus.KnownMessageTypes);
+		MessageLabelConfigurator.ConfigureMessageLabels(conf.MessageTypes);
 
 		var useLegacyNames = conf.LegacyCoreNaming;
 		var serviceName = conf.ServiceName;
@@ -90,7 +89,6 @@ public static class MetricsBootstrapper {
 		var gossipProcessingMetric = new DurationMetric(coreMeter, $"{serviceName}-gossip-processing-duration", useLegacyNames);
 		var queueQueueingDurationMaxMetric = new DurationMaxMetric(coreMeter, $"{serviceName}-queue-queueing-duration-max", useLegacyNames);
 		var queueProcessingDurationMetric = new DurationMetric(coreMeter, $"{serviceName}-queue-processing-duration", useLegacyNames);
-		var queueBusyMetric = new AverageMetric(coreMeter, $"{serviceName}-queue-busy", "seconds", label => new("queue", label), useLegacyNames);
 		var byteMetric = new CounterMetric(coreMeter, $"{serviceName}-io-bytes", unit: useLegacyNames ? null : "bytes", legacyNames: false);
 		var eventMetric = new CounterMetric(coreMeter, $"{serviceName}-io-events", unit: useLegacyNames ? null : "events", legacyNames: false);
 		var recordReadDurationMetric = new DurationMetric(coreMeter, $"{serviceName}-io-record-read-duration", useLegacyNames);

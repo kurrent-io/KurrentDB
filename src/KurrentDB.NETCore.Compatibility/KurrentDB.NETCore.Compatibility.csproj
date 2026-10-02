@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="System.ServiceModel.Http" />

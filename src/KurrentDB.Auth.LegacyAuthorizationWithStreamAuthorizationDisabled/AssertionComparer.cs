@@ -3,13 +3,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 
 internal sealed class AssertionComparer : IComparer<IAssertion> {
-	private static readonly MethodInfo OpenTypeComparer =
-		new Func<IAssertion, IAssertion, int>(Compare<object>).Method.GetGenericMethodDefinition();
 
 	private AssertionComparer() { }
 
@@ -24,15 +23,9 @@ internal sealed class AssertionComparer : IComparer<IAssertion> {
 		if (type != 0)
 			return type;
 
-		var closed = (Func<IAssertion, IAssertion, int>)OpenTypeComparer.MakeGenericMethod(x.GetType())
-			.CreateDelegate(typeof(Func<IAssertion, IAssertion, int>));
-		return closed(x, y);
-	}
-
-	private static int Compare<T>(IAssertion x, IAssertion y) {
-		if (x is IComparable<T> comparable)
-			return comparable.CompareTo((T)y);
-		throw new NotSupportedException(
-			"Assertion classes must implement IComparable<T> where T is the Assertion class");
+		return x is IComparable<IAssertion> comparable
+			? comparable.CompareTo(y)
+			: throw new NotSupportedException(
+				"Assertion classes must implement IComparable");
 	}
 }

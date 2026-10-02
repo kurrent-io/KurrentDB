@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using FluentAssertions;
@@ -179,7 +180,7 @@ public class when_retrieving_gossip_seed_sources_and_gossip_seed_source_throws :
 			throw new NotImplementedException();
 		}
 
-		public EndPoint[] EndGetHostEndpoints(IAsyncResult asyncResult) {
+		public IReadOnlyList<EndPoint> EndGetHostEndpoints(IAsyncResult asyncResult) {
 			throw new NotImplementedException();
 		}
 	}

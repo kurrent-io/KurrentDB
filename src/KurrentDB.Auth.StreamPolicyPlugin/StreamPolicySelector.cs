@@ -106,10 +106,6 @@ public sealed class StreamPolicySelector : StreamBasedPolicySelector {
 			],
 		};
 
-	private static readonly JsonSerializerOptions SerializeOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-	};
-
 	private static bool TryParsePolicy(string eventType, ReadOnlySpan<byte> eventData, out ReadOnlyPolicy readOnlyPolicy) {
 		if (eventType != PolicyEventType) {
 			Logger.Error("Expected event type: {expectedEventType} but was {actualEventType}", PolicyEventType, eventType);
@@ -137,13 +133,14 @@ public sealed class StreamPolicySelector : StreamBasedPolicySelector {
 		return true;
 	}
 
-	public static byte[] SerializePolicy(Schema.Policy policy) => JsonSerializer.SerializeToUtf8Bytes(policy, SerializeOptions);
+	public static byte[] SerializePolicy(Schema.Policy policy) =>
+		JsonSerializer.SerializeToUtf8Bytes(policy, StreamPolicyJsonContext.Default.Policy);
 
 	private static bool TryParseStreamRules(ReadOnlySpan<byte> data, out Func<string, AccessPolicy> streamRules) {
 		streamRules = default!;
 
 		try {
-			var policy = JsonSerializer.Deserialize<Schema.Policy>(data, SerializeOptions)!;
+			var policy = JsonSerializer.Deserialize(data, StreamPolicyJsonContext.Default.Policy)!;
 
 			var streamPolicies = new Dictionary<string, AccessPolicy>();
 			foreach (var (name, accessPolicy) in policy.StreamPolicies) {

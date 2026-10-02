@@ -3,18 +3,12 @@
 
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using KurrentDB.AutoScavenge.Converters;
+using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.POC.IO.Core;
 
 namespace KurrentDB.AutoScavenge.Sources;
 
 public class ClientSource : ISource {
-	// todo - We should probably use the same serialization options across the board.
-	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		Converters = { new CrontableScheduleJsonConverter() }
-	};
-
 	private readonly IClient _client;
 
 	public ClientSource(IClient client) {
@@ -36,9 +30,9 @@ public class ClientSource : ISource {
 				throw new Exception($"Expected to find event of type {EventTypes.ConfigurationUpdated} but found {@event.EventType}");
 
 			var configurationUpdated =
-				JsonSerializer.Deserialize<Events.ConfigurationUpdated>(
+				JsonSerializer.Deserialize(
 					@event.Data.Span,
-					JsonSerializerOptions);
+					AutoScavengeJsonContext.Default.ConfigurationUpdated);
 
 			return configurationUpdated!;
 		}
@@ -73,15 +67,15 @@ public class ClientSource : ISource {
 				break;
 
 			IEvent? deserialized = @event.EventType switch {
-				EventTypes.ClusterMembersChanged => JsonSerializer.Deserialize<Events.ClusterMembersChanged>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.ClusterScavengeStarted => JsonSerializer.Deserialize<Events.ClusterScavengeStarted>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.ClusterScavengeCompleted => JsonSerializer.Deserialize<Events.ClusterScavengeCompleted>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.NodeDesignated => JsonSerializer.Deserialize<Events.NodeDesignated>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.NodeScavengeStarted => JsonSerializer.Deserialize<Events.NodeScavengeStarted>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.NodeScavengeCompleted => JsonSerializer.Deserialize<Events.NodeScavengeCompleted>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.PauseRequested => JsonSerializer.Deserialize<Events.PauseRequested>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.Paused => JsonSerializer.Deserialize<Events.Paused>(@event.Data.Span, JsonSerializerOptions),
-				EventTypes.Resumed => JsonSerializer.Deserialize<Events.Resumed>(@event.Data.Span, JsonSerializerOptions),
+				EventTypes.ClusterMembersChanged => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.ClusterMembersChanged),
+				EventTypes.ClusterScavengeStarted => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.ClusterScavengeStarted),
+				EventTypes.ClusterScavengeCompleted => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.ClusterScavengeCompleted),
+				EventTypes.NodeDesignated => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.NodeDesignated),
+				EventTypes.NodeScavengeStarted => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.NodeScavengeStarted),
+				EventTypes.NodeScavengeCompleted => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.NodeScavengeCompleted),
+				EventTypes.PauseRequested => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.PauseRequested),
+				EventTypes.Paused => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.Paused),
+				EventTypes.Resumed => JsonSerializer.Deserialize(@event.Data.Span, AutoScavengeJsonContext.Default.Resumed),
 				_ => null,
 			};
 

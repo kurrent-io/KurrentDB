@@ -3,7 +3,7 @@
 
 using System.Text;
 using System.Text.Json;
-using KurrentDB.AutoScavenge.Converters;
+using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.AutoScavenge.Sources;
 
 namespace KurrentDB.AutoScavenge.Tests;
@@ -22,22 +22,12 @@ public class FakeSource : ISource {
 	public IAsyncEnumerable<IEvent> ReadAutoScavengeEvents(CancellationToken token) => _clientSource.ReadAutoScavengeEvents(token);
 
 	public void AddConfigurationEvent(Events.ConfigurationUpdated @event) {
-		var serializerOptions = new JsonSerializerOptions() {
-			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-			Converters = { new CrontableScheduleJsonConverter() }
-		};
-
-		var data = JsonSerializer.Serialize(@event, serializerOptions);
+		var data = JsonSerializer.Serialize(@event, AutoScavengeJsonContext.Default.ConfigurationUpdated);
 		_fakeClient.AddEvent(StreamNames.AutoScavengeConfiguration, @event, Encoding.UTF8.GetBytes(data));
 	}
 
 	public void AddScavengeEvent(IEvent @event) {
-		var serializerOptions = new JsonSerializerOptions() {
-			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-			Converters = { new EventJsonConverter() }
-		};
-
-		var data = JsonSerializer.Serialize(@event, serializerOptions);
+		var data = JsonSerializer.Serialize(@event, AutoScavengeJsonContext.Default.IEvent);
 		_fakeClient.AddEvent(StreamNames.AutoScavenges, @event, Encoding.UTF8.GetBytes(data));
 	}
 }

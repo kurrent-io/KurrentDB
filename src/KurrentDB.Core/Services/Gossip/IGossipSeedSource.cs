@@ -2,11 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace KurrentDB.Core.Services.Gossip;
 
 public interface IGossipSeedSource {
 	IAsyncResult BeginGetHostEndpoints(AsyncCallback requestCallback, object state);
-	EndPoint[] EndGetHostEndpoints(IAsyncResult asyncResult);
+	IReadOnlyList<EndPoint> EndGetHostEndpoints(IAsyncResult asyncResult);
 }

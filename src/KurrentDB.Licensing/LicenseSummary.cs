@@ -23,7 +23,7 @@ public record LicenseSummary(
 	}
 
 	public void ExportClaims(in Dictionary<string, object> props) {
-		foreach (var property in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+		foreach (var property in GetProperties())
 			props.Add(ToCamelCase(property.Name), property.GetValue(this)!);
 	}
 
@@ -34,13 +34,15 @@ public record LicenseSummary(
 		return License.Create(claims);
 	}
 
-	public static HashSet<string> Properties { get; } =
-		typeof(LicenseSummary).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-			.Select(p => ToCamelCase(p.Name))
-			.ToHashSet();
+	private static IEnumerable<PropertyInfo> GetProperties()
+		=> typeof(LicenseSummary).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-	public static Dictionary<string, object?> SelectForEndpoint(License license) {
-		var dict = new Dictionary<string, object?>();
+	public static HashSet<string> Properties { get; } = GetProperties()
+		.Select(p => ToCamelCase(p.Name))
+		.ToHashSet();
+
+	public static Dictionary<string, string?> SelectForEndpoint(License license) {
+		var dict = new Dictionary<string, string?>();
 
 		dict[IsExpiredName] = "false";
 
@@ -71,8 +73,8 @@ public record LicenseSummary(
 		return daysRemaining;
 	}
 
-	public static Dictionary<string, object?> SelectForTelemetry(License license) {
-		var dict = new Dictionary<string, object?>();
+	public static Dictionary<string, IConvertible?> SelectForTelemetry(License license) {
+		var dict = new Dictionary<string, IConvertible?>();
 
 		AddString(nameof(LicenseId), license, dict);
 		AddBool(nameof(IsTrial), license, dict);
@@ -83,12 +85,12 @@ public record LicenseSummary(
 
 		AddBool(nameof(IsValid), license, dict);
 
-		static void AddString(string property, License license, Dictionary<string, object?> dict) {
+		static void AddString(string property, License license, Dictionary<string, IConvertible?> dict) {
 			if (TryGet(property, license, out var k, out var v))
 				dict[k] = v;
 		}
 
-		static void AddBool(string property, License license, Dictionary<string, object?> dict) {
+		static void AddBool(string property, License license, Dictionary<string, IConvertible?> dict) {
 			if (TryGet(property, license, out var k, out var v) && bool.TryParse(v, out var b))
 				dict[k] = b;
 		}

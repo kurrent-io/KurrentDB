@@ -71,14 +71,14 @@ public class SchemaExportTests {
             }
             """;
 
-        var extract = () => NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var extract = () => NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
         extract.ShouldNotThrow()
             .Definition.ShouldBeEquivalentTo(expectedDefinition);
     }
 
     [Test]
     public void parses_schema() {
-        var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+	    var schema = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
         var loadedSchema = NJsonSchemaAgent.Instance.ParseSchema(schema.Definition);
         loadedSchema.Definition.ShouldBeEquivalentTo(schema.Definition);
     }
@@ -95,29 +95,10 @@ public class SchemaExportTests {
             .Generate();
 
         var content         = JsonSerializer.Serialize(sample, SystemJsonSchemaSerializerOptions.Default);
-        var generatedSchema = NJsonSchemaExporter.Instance.GetJsonSchemaFromData(content, nameof(PowerConsumption));
-        var schema          = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var schema          = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>(new() { SerializerOptions = SystemJsonSchemaSerializerOptions.Default });
 
-        var oldJson = generatedSchema.ToJson();
-
-        var anotherResult = generatedSchema.Validate(content);
         var actualResult  = schema.Validate(content);
 
         actualResult.ShouldBeEquivalentTo(expectedResult);
     }
-}
-
-record SchemaTestSubject {
-    public string                     String     { get; set; } = null!;
-    public int                        Int        { get; set; }
-    public double                     Double     { get; set; }
-    public bool                       Bool       { get; set; }
-    public DateTime                   DateTime   { get; set; }
-    public Guid                       Guid       { get; set; }
-    public Uri                        Uri        { get; set; } = null!;
-    public byte[]                     Bytes      { get; set; } = null!;
-    public string[]                   Array      { get; set; } = null!;
-    public List<string>               List       { get; set; } = null!;
-    public Dictionary<string, string> Dictionary { get; set; } = null!;
-    public SchemaTestSubject          Nested     { get; set; } = null!;
 }

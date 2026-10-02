@@ -1,6 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
 using KurrentDB.Common.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -13,11 +16,16 @@ using static KurrentDB.Common.Configuration.ConfigConstants;
 namespace KurrentDB.OtlpExporterPlugin;
 
 public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntitlements: ["OTLP_EXPORTER"]) {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.OtlpExporter";
+
 	private const string KurrentConfigurationPrefix = RootPrefix;
 	private static readonly ILogger _staticLogger = Log.ForContext<OtlpExporterPlugin>();
 
 	public OtlpExporterPlugin() : this(_staticLogger) {
 	}
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabled = configuration.OtlpMetricsEnabled() || configuration.OtlpLogsEnabled();
@@ -51,7 +59,7 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 		var scrapeIntervalSeconds = configuration.GetValue<int>($"{KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds");
 
 		services
-			// Configure OTLP options from the shared section first, then overlay any per-signal overrides. 
+			// Configure OTLP options from the shared section first, then overlay any per-signal overrides.
 			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpConfigPrefix)) // shared
 			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpMetricsOtlpPrefix)) // overlay
 			.Configure<MetricReaderOptions>(configuration.GetSection(OtlpMetricsPrefix))

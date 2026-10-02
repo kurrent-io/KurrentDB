@@ -2,6 +2,8 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<GitVersion>false</GitVersion>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

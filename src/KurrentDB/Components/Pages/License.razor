@@ -72,7 +72,7 @@
 #nullable enable
 	[Inject] ILicenseService LicenseService { get; set; } = null!;
 
-	Dictionary<string, object?>? _licenseSummary;
+	Dictionary<string, string?>? _licenseSummary;
 	IDisposable? _subscription;
 
 	protected override void OnInitialized() {
@@ -95,9 +95,9 @@
 
 	// Updates arrive off the licensing service's background thread, so marshal to the renderer
 	// and guard the teardown race (the circuit can be disposed while an update is in flight).
-	void Update(Dictionary<string, object?>? summary) => _ = RefreshAsync(summary);
+	void Update(Dictionary<string, string?>? summary) => _ = RefreshAsync(summary);
 
-	async Task RefreshAsync(Dictionary<string, object?>? summary) {
+	async Task RefreshAsync(Dictionary<string, string?>? summary) {
 		try {
 			await InvokeAsync(() => {
 				_licenseSummary = summary;

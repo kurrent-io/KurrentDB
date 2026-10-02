@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -275,9 +276,10 @@ public class ClusterVNode<TStreamId> :
 
 		ReloadLogOptions(options);
 
-		T GetOptions<T>(string subsection) where T : new() => configuration
-			.GetSection($"{KurrentConfigurationKeys.Prefix}:{subsection}")
-			.Get<T>() ?? new();
+		T GetOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(string subsection)
+			where T : class, IConfigurationBinder<T>, new()
+			=> T.Bind(configuration
+				.GetSection($"{KurrentConfigurationKeys.Prefix}:{subsection}")) ?? new();
 
 		var experimentalOptions = GetOptions<ExperimentalOptions>("Experimental");
 		OptionsFormatter.LogConfig("Experimental", experimentalOptions);
@@ -313,23 +315,23 @@ public class ClusterVNode<TStreamId> :
 		var nodeTcpOptions = GetOptions<NodeTcpOptions>("TcpPlugin");
 		var enableExternalTcp = nodeTcpOptions.EnableExternalTcp;
 
-		var httpEndPoint = new IPEndPoint(options.Interface.NodeIp, options.Interface.NodePort);
+		var httpEndPoint = new IPEndPoint(options.Interface.GetNodeIp(), options.Interface.NodePort);
 
 		var intTcp = disableInternalTcpTls
-			? new IPEndPoint(options.Interface.ReplicationIp,
+			? new IPEndPoint(options.Interface.GetReplicationIp(),
 				options.Interface.ReplicationPort)
 			: null;
 		var intSecIp = !disableInternalTcpTls
-			? new IPEndPoint(options.Interface.ReplicationIp,
+			? new IPEndPoint(options.Interface.GetReplicationIp(),
 				options.Interface.ReplicationPort)
 			: null;
 
 		var extTcp = disableExternalTcpTls && enableExternalTcp
-			? new IPEndPoint(options.Interface.NodeIp,
+			? new IPEndPoint(options.Interface.GetNodeIp(),
 				nodeTcpOptions.NodeTcpPort)
 			: null;
 		var extSecIp = !disableExternalTcpTls && enableExternalTcp
-			? new IPEndPoint(options.Interface.NodeIp,
+			? new IPEndPoint(options.Interface.GetNodeIp(),
 				nodeTcpOptions.NodeTcpPort)
 			: null;
 
@@ -909,9 +911,9 @@ public class ClusterVNode<TStreamId> :
 
 		GossipAdvertiseInfo = GetGossipAdvertiseInfo();
 		GossipAdvertiseInfo GetGossipAdvertiseInfo() {
-			IPAddress intIpAddress = options.Interface.ReplicationIp;
+			IPAddress intIpAddress = options.Interface.GetReplicationIp();
 
-			IPAddress extIpAddress = options.Interface.NodeIp;
+			IPAddress extIpAddress = options.Interface.GetNodeIp();
 
 			var intHostToAdvertise = options.Interface.ReplicationHostAdvertiseAs ?? intIpAddress.ToString();
 			var extHostToAdvertise = options.Interface.NodeHostAdvertiseAs ?? extIpAddress.ToString();
@@ -1602,7 +1604,7 @@ public class ClusterVNode<TStreamId> :
 				(false, true, false) => throw new InvalidConfigurationException(
 					"DNS discovery is disabled, but no gossip seed endpoints have been specified. "
 					+ "Specify gossip seeds using the `GossipSeed` option."),
-				_ => new KnownEndpointGossipSeedSource(options.Cluster.GossipSeed)
+				_ => new KnownEndpointGossipSeedSource(options.Cluster.GetGossipSeed())
 			};
 
 		var gossip = new NodeGossipService(
@@ -1662,7 +1664,7 @@ public class ClusterVNode<TStreamId> :
 					: options.Interface.NodePort,
 				ConnectionPoolCapacity = ESConsts.KPlaneConnectionPoolCapacity,
 				HeartbeatTimeout = TimeSpan.FromMilliseconds(options.KontrolPlane.KontrolPlaneAppointmentTimeoutMs),
-				ListenAddress = new IPEndPoint(options.Interface.NodeIp, options.KontrolPlane.KontrollerPort),
+				ListenAddress = new IPEndPoint(options.Interface.GetNodeIp(), options.KontrolPlane.KontrollerPort),
 				PublicAddress = raftPublicAddress, // other kplane nodes connect to this
 				LowerElectionTimeout = options.KontrolPlane.KontrolPlaneLowerElectionTimeoutMs,
 				UpperElectionTimeout = options.KontrolPlane.KontrolPlaneUpperElectionTimeoutMs,
@@ -1671,7 +1673,7 @@ public class ClusterVNode<TStreamId> :
 				// used only for bootstrapping the kplane on first startup
 				Nodes = isSingleNode
 					? []
-					: options.KontrolPlane.KontrolPlaneBootstrapSeed.ToImmutableHashSet().Add(raftPublicAddress),
+					: options.KontrolPlane.GetKontrolPlaneBootstrapSeed().ToImmutableHashSet().Add(raftPublicAddress),
 				PersistentStateRoot = kontrollerPath,
 				SnapshotDepth = ESConsts.KPlaneSnapshotDepth,
 				Tls = options.Application.TlsDisabled()
@@ -1738,7 +1740,7 @@ public class ClusterVNode<TStreamId> :
 			// Bootstrap only: the first AnnounceDatabaseNode response replaces this list with the Kontrol
 			// Plane's own and redirects to its leader. A node running a Kontroller adds itself, so it can
 			// bootstrap before any peer is up and the set is never empty even with no seed configured.
-			var kontrolPlaneNodes = new HashSet<EndPoint>(options.KontrolPlane.KontrolPlaneApiSeed);
+			var kontrolPlaneNodes = new HashSet<EndPoint>(options.KontrolPlane.GetKontrolPlaneApiSeed());
 			if (options.KontrolPlane.IsKontrolPlaneNode)
 				kontrolPlaneNodes.Add(memberInfoLite.HttpEndPoint);
 

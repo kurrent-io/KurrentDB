@@ -7,11 +7,13 @@ using System.Text.Json.Serialization;
 namespace KurrentDB.AutoScavenge.Converters;
 
 public class EventJsonConverter : JsonConverter<IEvent> {
-	public override IEvent? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+	public override IEvent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
 		throw new NotImplementedException();
 	}
 
 	public override void Write(Utf8JsonWriter writer, IEvent value, JsonSerializerOptions options) {
-		JsonSerializer.Serialize(writer, value, value.GetType(), options);
+		// options.TypeInfoResolver is always the source-generated AutoScavengeJsonContext, which knows every
+		// concrete IEvent implementation, so this stays trim-safe despite serializing by the runtime type.
+		JsonSerializer.Serialize(writer, value, options.GetTypeInfo(value.GetType()));
 	}
 }

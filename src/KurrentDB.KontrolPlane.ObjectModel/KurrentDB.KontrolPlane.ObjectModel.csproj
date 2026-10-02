@@ -7,6 +7,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<GitVersion>false</GitVersion>
 		<RootNamespace>KurrentDB</RootNamespace>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 
 	<ItemGroup>

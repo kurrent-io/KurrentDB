@@ -1,8 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.Reflection;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
@@ -31,41 +29,25 @@ partial class ReadStreamBackward : ReadMessage { }
 
 [Collection("MetricsLabelTests")] // labels are static
 public class MessageLabelConfiguratorTests {
-	private readonly Type[] _messageTypes;
-
-	public MessageLabelConfiguratorTests() {
-		_messageTypes = new[] {
-			typeof(ReadMessage),
-			typeof(ReadAllForward),
-			typeof(ReadAllBackward),
-			typeof(ReadStreamForward),
-			typeof(ReadStreamBackward),
-		};
-	}
-
-	private MetricsConfiguration.LabelMappingCase CreateMapping(string regex, string label) => new() {
+	private static MetricsConfiguration.LabelMappingCase CreateMapping(string regex, string label) => new() {
 		Regex = regex,
 		Label = label,
 	};
 
-	private void ResetLabels() {
-		var flags = BindingFlags.Static | BindingFlags.Public;
-		foreach (var type in _messageTypes) {
-			var labelProperty = type.GetProperty("LabelStatic", flags);
-			var originalLabelProperty = type.GetProperty("OriginalLabelStatic", flags);
+	private static string Resolve(string originalLabel, params MetricsConfiguration.LabelMappingCase[] mappings) =>
+		MessageLabelConfigurator.ResolveLabel(originalLabel, mappings);
 
-			labelProperty?.SetValue(null, originalLabelProperty.GetValue(null));
-		}
-	}
-
-	private void Run(params MetricsConfiguration.LabelMappingCase[] mappings) {
-		ResetLabels();
-		MessageLabelConfigurator.ConfigureMessageLabels(mappings, _messageTypes);
+	// labels are resolved lazily and cached, so clear the cache to resolve them again
+	private static void ResetLabels() {
+		ReadAllForward.LabelStatic = null;
+		ReadAllBackward.LabelStatic = null;
+		ReadStreamForward.LabelStatic = null;
+		ReadStreamBackward.LabelStatic = null;
 	}
 
 	[Fact]
 	public void no_map() {
-		Run();
+		ResetLabels();
 
 		Assert.Equal("TestGroup-Reads-ReadAllForward", ReadAllForward.LabelStatic);
 		Assert.Equal("TestGroup-Reads-ReadAllForward", ReadAllForward.OriginalLabelStatic);
@@ -85,65 +67,85 @@ public class MessageLabelConfiguratorTests {
 	}
 
 	[Fact]
-	public void simple_map() {
-		Run(
-			CreateMapping("TestGroup-Reads-ReadAll.*", "ReadAll"),
-			CreateMapping("TestGroup-Reads-ReadStream.*", "ReadStream"));
+	public void configured_map_applies_to_message_label() {
+		// the configuration is process-wide, so use a mapping that only matches the test messages and restore it afterwards
+		MessageLabelConfigurator.ConfigureMessageLabels([CreateMapping("TestGroup-Reads-ReadAll(.*)", "$1AllRead")]);
+		try {
+			ResetLabels();
 
-		Assert.Equal("ReadAll", new ReadAllForward().Label);
-		Assert.Equal("ReadAll", new ReadAllBackward().Label);
-		Assert.Equal("ReadStream", new ReadStreamForward().Label);
-		Assert.Equal("ReadStream", new ReadStreamBackward().Label);
+			Assert.Equal("ForwardAllRead", new ReadAllForward().Label);
+			Assert.Equal("ForwardAllRead", ReadAllForward.LabelStatic);
+			Assert.Equal("TestGroup-Reads-ReadAllForward", ReadAllForward.OriginalLabelStatic);
+			Assert.Equal("TestGroup-Reads-ReadStreamForward", new ReadStreamForward().Label);
+		} finally {
+			MessageLabelConfigurator.ConfigureMessageLabels([]);
+			ResetLabels();
+		}
+	}
+
+	[Fact]
+	public void simple_map() {
+		MetricsConfiguration.LabelMappingCase[] mappings = [
+			CreateMapping("TestGroup-Reads-ReadAll.*", "ReadAll"),
+			CreateMapping("TestGroup-Reads-ReadStream.*", "ReadStream"),
+		];
+
+		Assert.Equal("ReadAll", Resolve(ReadAllForward.OriginalLabelStatic, mappings));
+		Assert.Equal("ReadAll", Resolve(ReadAllBackward.OriginalLabelStatic, mappings));
+		Assert.Equal("ReadStream", Resolve(ReadStreamForward.OriginalLabelStatic, mappings));
+		Assert.Equal("ReadStream", Resolve(ReadStreamBackward.OriginalLabelStatic, mappings));
 	}
 
 	[Fact]
 	public void map_with_capture() {
-		Run(
+		MetricsConfiguration.LabelMappingCase[] mappings = [
 			CreateMapping("TestGroup-Reads-ReadAll(.*)", "$1AllRead"),
-			CreateMapping("TestGroup-Reads-ReadStream(.*)", "$1StreamRead"));
+			CreateMapping("TestGroup-Reads-ReadStream(.*)", "$1StreamRead"),
+		];
 
-		Assert.Equal("ForwardAllRead", new ReadAllForward().Label);
-		Assert.Equal("BackwardAllRead", new ReadAllBackward().Label);
-		Assert.Equal("ForwardStreamRead", new ReadStreamForward().Label);
-		Assert.Equal("BackwardStreamRead", new ReadStreamBackward().Label);
+		Assert.Equal("ForwardAllRead", Resolve(ReadAllForward.OriginalLabelStatic, mappings));
+		Assert.Equal("BackwardAllRead", Resolve(ReadAllBackward.OriginalLabelStatic, mappings));
+		Assert.Equal("ForwardStreamRead", Resolve(ReadStreamForward.OriginalLabelStatic, mappings));
+		Assert.Equal("BackwardStreamRead", Resolve(ReadStreamBackward.OriginalLabelStatic, mappings));
 	}
 
 	[Fact]
 	public void cases_matched_in_order() {
-		Run(
+		MetricsConfiguration.LabelMappingCase[] mappings = [
 			CreateMapping(".*Forward.*", "Forward"),
 			CreateMapping(".*Stream.*", "Stream"),
-			CreateMapping(".*", "Other"));
+			CreateMapping(".*", "Other"),
+		];
 
-		Assert.Equal("Forward", new ReadAllForward().Label);
-		Assert.Equal("Other", new ReadAllBackward().Label);
-		Assert.Equal("Forward", new ReadStreamForward().Label);
-		Assert.Equal("Stream", new ReadStreamBackward().Label);
+		Assert.Equal("Forward", Resolve(ReadAllForward.OriginalLabelStatic, mappings));
+		Assert.Equal("Other", Resolve(ReadAllBackward.OriginalLabelStatic, mappings));
+		Assert.Equal("Forward", Resolve(ReadStreamForward.OriginalLabelStatic, mappings));
+		Assert.Equal("Stream", Resolve(ReadStreamBackward.OriginalLabelStatic, mappings));
 	}
 
 	[Fact]
 	public void unspecified_label() {
-		Run(new MetricsConfiguration.LabelMappingCase() {
+		var mapping = new MetricsConfiguration.LabelMappingCase() {
 			Regex = "TestGroup-Reads-ReadAll.*",
 			// no Label
-		});
+		};
 
-		Assert.Equal("TestGroup-Reads-ReadAllForward", new ReadAllForward().Label);
-		Assert.Equal("TestGroup-Reads-ReadAllBackward", new ReadAllBackward().Label);
-		Assert.Equal("TestGroup-Reads-ReadStreamForward", new ReadStreamForward().Label);
-		Assert.Equal("TestGroup-Reads-ReadStreamBackward", new ReadStreamBackward().Label);
+		Assert.Equal("TestGroup-Reads-ReadAllForward", Resolve(ReadAllForward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadAllBackward", Resolve(ReadAllBackward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadStreamForward", Resolve(ReadStreamForward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadStreamBackward", Resolve(ReadStreamBackward.OriginalLabelStatic, mapping));
 	}
 
 	[Fact]
 	public void unspecified_regex() {
-		Run(new MetricsConfiguration.LabelMappingCase() {
+		var mapping = new MetricsConfiguration.LabelMappingCase() {
 			// no Regex
 			Label = "TheLabel",
-		});
+		};
 
-		Assert.Equal("TestGroup-Reads-ReadAllForward", new ReadAllForward().Label);
-		Assert.Equal("TestGroup-Reads-ReadAllBackward", new ReadAllBackward().Label);
-		Assert.Equal("TestGroup-Reads-ReadStreamForward", new ReadStreamForward().Label);
-		Assert.Equal("TestGroup-Reads-ReadStreamBackward", new ReadStreamBackward().Label);
+		Assert.Equal("TestGroup-Reads-ReadAllForward", Resolve(ReadAllForward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadAllBackward", Resolve(ReadAllBackward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadStreamForward", Resolve(ReadStreamForward.OriginalLabelStatic, mapping));
+		Assert.Equal("TestGroup-Reads-ReadStreamBackward", Resolve(ReadStreamBackward.OriginalLabelStatic, mapping));
 	}
 }
