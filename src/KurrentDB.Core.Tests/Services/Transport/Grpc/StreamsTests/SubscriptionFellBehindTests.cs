@@ -1,8 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
@@ -47,10 +49,12 @@ public class SubscriptionFellBehindTests {
 			};
 			SubscribeTo(options);
 
+			// ends the call if the subscription does not fall behind, before the fixture gives up waiting for it
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
 			using var call = StreamsClient.Read(new() { Options = options }, GetCallOptions(AdminCredentials));
 
 			// go live
-			while (await call.ResponseStream.MoveNext()) {
+			while (await call.ResponseStream.MoveNext(cts.Token)) {
 				Responses.Add(call.ResponseStream.Current);
 				if (call.ResponseStream.Current.ContentCase == ReadResp.ContentOneofCase.CaughtUp)
 					break;
@@ -66,7 +70,7 @@ public class SubscriptionFellBehindTests {
 			// does so, the last event is received either while catching up or once live again.
 			var finished = false;
 			var caughtUpAgain = false;
-			while (!(finished && caughtUpAgain) && await call.ResponseStream.MoveNext()) {
+			while (!(finished && caughtUpAgain) && await call.ResponseStream.MoveNext(cts.Token)) {
 				var response = call.ResponseStream.Current;
 				Responses.Add(response);
 
