@@ -13,23 +13,11 @@ using KurrentDB.Common.DevCertificates;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
-using KurrentDB.Components;
-using KurrentDB.Components.Cluster;
-using KurrentDB.Components.Dashboard;
-using KurrentDB.Components.PersistentSubscriptions;
-using KurrentDB.Components.Plugins;
-using KurrentDB.Components.Projections;
-using KurrentDB.Components.Scavenges;
-using KurrentDB.Components.ServerInfo;
-using KurrentDB.Components.Streams;
-using KurrentDB.Components.Users;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Logging;
-using KurrentDB.Services;
-using KurrentDB.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -38,9 +26,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
-using MudBlazor;
-using MudBlazor.Services;
-using Scrutor;
 using Serilog;
 using Serilog.Events;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
@@ -250,8 +235,6 @@ try {
 	return await exitCodeSource.Task;
 
 	async Task Run(ClusterVNodeHostedService hostedService) {
-		var monitoringService = new MonitoringService();
-		var metricsObserver = new MetricsObserver();
 		try {
 			var applicationOptions = new WebApplicationOptions {
 				Args = args,
@@ -281,7 +264,7 @@ try {
 						KestrelHelpers.ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
 
 					if (hostedService.Node.EnableUnixSocket)
-						KestrelHelpers.TryListenOnUnixSocket(hostedService, server);
+						KestrelHelpers.TryListenOnUnixSocket(hostedService, server, out _);
 				});
 			hostedService.Node.Startup.ConfigureServices(builder.Services);
 			// Order is important, configure IHostedService after the WebHost to make the sure
@@ -289,59 +272,7 @@ try {
 			// Allows the subsystems to resolve dependencies out of the DI in Configure() before being started.
 			// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
 			builder.Services.AddSingleton<IHostedService>(hostedService);
-			// Scoped, not singleton: theme is a per-user (per-circuit) preference, not server-global.
-			// HttpContextAccessor lets Preferences read the theme cookie server-side to seed flicker-free.
-			builder.Services.AddHttpContextAccessor();
-			// Page authorization: map [Authorize(Policy = UiPolicies.X)] to a KurrentDB Operation check.
-			builder.Services.AddAuthorization(KurrentDB.Components.Shared.UiPolicies.Configure);
-			builder.Services.AddSingleton<
-				Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
-				KurrentDB.Components.Shared.OperationAuthorizationHandler>();
-			builder.Services.AddScoped<KurrentDB.UI.Services.Preferences>();
-			builder.Services
-				.AddRazorComponents()
-				.AddInteractiveServerComponents();
-			builder.Services.AddCascadingAuthenticationState();
-			builder.Services.AddMudServices(config => {
-				config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
-			});
-			builder.Services.AddMudMarkdownServices();
-			builder.Services.AddScoped<LogObserver>();
-			builder.Services.AddScoped<ClipboardService>();
-			builder.Services.AddSingleton(monitoringService);
-			builder.Services.AddSingleton(metricsObserver);
-			builder.Services.AddSingleton<PluginsService>();
-			builder.Services.AddScoped<UserManagementService>();
-			builder.Services.AddScoped<ClusterOperationsService>();
-			// Optional resolution: IKontroller is only registered on a Kontrol Plane node.
-			builder.Services.AddScoped(sp =>
-				new KontrolPlaneService(sp.GetService<KurrentDB.KontrolPlane.IKontroller>()));
-			// Process-wide node-role tracker (subscribes to $mem-node-state); shared by all UI circuits.
-			builder.Services.AddSingleton<KurrentDB.Components.Cluster.GossipMonitor>();
-			builder.Services.AddSingleton<IHostedService>(sp =>
-				sp.GetRequiredService<KurrentDB.Components.Cluster.GossipMonitor>());
-			builder.Services.AddScoped<ScavengeService>();
-			builder.Services.AddScoped<DashboardService>();
-			builder.Services.AddScoped<StreamsService>();
-			builder.Services.AddScoped(sp => {
-				// ProjectionsService publishes to the projections subsystem's leader input queue. When projections
-				// are disabled on this node (e.g. --run-projections=None) the subsystem is absent; resolve a service
-				// in the "unavailable" state (null queue) rather than throwing, so injecting it into the Projections
-				// page doesn't crash the circuit — the page shows a calm "not enabled" message instead.
-				var opts = sp.GetRequiredService<ClusterVNodeOptions>();
-				var projectionsPublisher = opts.Subsystems.OfType<KurrentDB.Projections.Core.ProjectionsSubsystem>().FirstOrDefault()?.LeaderInputQueue;
-				return new ProjectionsService(projectionsPublisher, sp.GetRequiredService<EventStore.Plugins.Authorization.IAuthorizationProvider>());
-			});
-			builder.Services.AddScoped<PersistentSubscriptionsService>();
-			builder.Services.AddScoped<ServerInfoService>();
-			builder.Services.AddScoped(sp => {
-				// Register via a factory (like ProjectionsService above) rather than by type:
-				// ValidateOnBuild constructs every type-registered descriptor up front and
-				// would fail resolving StatsService when secondary indexing is disabled.
-				return new KurrentDB.Components.Stats.UiStatsService(
-					sp.GetRequiredService<KurrentDB.SecondaryIndexing.Stats.StatsService>(),
-					sp.GetRequiredService<EventStore.Plugins.Authorization.IAuthorizationProvider>());
-			});
+			EmbeddedUI.ConfigureServices(builder.Services);
 			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
@@ -350,18 +281,14 @@ try {
 
 			var app = builder.Build();
 
-			// ahead of Startup.Configure, which sets up routing and the endpoints: a Blazor circuit request
-			// would otherwise be handled by its endpoint before reaching this middleware
 			if (!options.Interface.DisableAdminUi)
-				app.UseMiddleware<BlazorShutdownMiddleware>();
+				EmbeddedUI.UseShutdownGuard(app);
 
 			hostedService.Node.Startup.Configure(app);
-			if (!options.Interface.DisableAdminUi) {
-				app.MapStaticAssets();
-				app.MapRazorComponents<App>()
-					.DisableAntiforgery()
-					.AddInteractiveServerRenderMode();
-			}
+
+			if (!options.Interface.DisableAdminUi)
+				EmbeddedUI.Configure(app);
+
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

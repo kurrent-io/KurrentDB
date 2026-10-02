@@ -25,20 +25,22 @@ public static class KestrelHelpers {
 			listenOptions.Use(next => new ClearTextHttpMultiplexingMiddleware(next).OnConnectAsync);
 	}
 
-	public static void TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, KestrelServerOptions server) {
+	public static bool TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, KestrelServerOptions server, out string unixSocket) {
+		unixSocket = null;
+
 		if (hostedService.Node.Db.Config.InMemDb) {
 			Log.Information("Not listening on a UNIX domain socket since the database is running in memory.");
-			return;
+			return false;
 		}
 
 		if (!RuntimeInformation.IsLinux && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17063)) {
 			Log.Error("Not listening on a UNIX domain socket since it is not supported by the operating system.");
-			return;
+			return false;
 		}
 
 		try {
 			var legacyUnixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
-			var unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "kurrent.sock"));
+			unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "kurrent.sock"));
 
 			CleanupStaleSocket(legacyUnixSocket);
 			CleanupStaleSocket(unixSocket);
@@ -48,12 +50,12 @@ public static class KestrelHelpers {
 				ConfigureHttpOptions(listenOptions, hostedService, useHttps: false);
 			});
 			Log.Information("Listening on UNIX domain socket: {unixSocket}", unixSocket);
+
+			return true;
 		} catch (Exception ex) {
 			Log.Error(ex, "Failed to listen on UNIX domain socket.");
 			throw;
 		}
-
-		return;
 
 		static void CleanupStaleSocket(string socketPath) {
 			if (File.Exists(socketPath)) {
