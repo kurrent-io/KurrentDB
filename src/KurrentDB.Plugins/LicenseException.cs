@@ -12,7 +12,7 @@ public class LicenseException(string featureName, Exception? inner = null) : Exc
 }
 
 public class LicenseEntitlementException(string featureName, string entitlement) : Exception(
-	$"{featureName} feature requires the {entitlement} entitlement. Please contact EventStore support.") {
+	$"{featureName} feature requires the {entitlement} entitlement. Please contact Kurrent support.") {
 	public string FeatureName { get; } = featureName;
 	public string MissingEntitlement { get; } = entitlement;
 }

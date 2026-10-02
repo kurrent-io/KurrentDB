@@ -78,12 +78,15 @@ public static class ControlPlaneWireUp {
     static IServiceCollection AddConnectorsControlRegistry(this IServiceCollection services) =>
         services
             .AddSingleton(new ConnectorsControlRegistryOptions {
-                Filter           = Filters.ManagementFilter,
                 SnapshotStreamId = Streams.ControlConnectorsRegistryStream
             })
             .AddSingleton<ConnectorsControlRegistry>()
-            .AddSingleton<GetActiveConnectors>(static ctx => {
+            .AddSingleton<LoadActiveConnectorsSnapshot>(static ctx => {
                 var registry = ctx.GetRequiredService<ConnectorsControlRegistry>();
-                return registry.GetConnectors;
+                return registry.LoadSnapshot;
+            })
+            .AddSingleton<SaveActiveConnectorsSnapshot>(static ctx => {
+                var registry = ctx.GetRequiredService<ConnectorsControlRegistry>();
+                return registry.SaveSnapshot;
             });
 }

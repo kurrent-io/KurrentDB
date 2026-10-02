@@ -10,9 +10,11 @@ using Kurrent.Surge.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Management.Contracts.Commands;
+using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Surge.Consumers;
 using Microsoft.Extensions.Logging;
 using ConnectorState = KurrentDB.Connectors.Management.Contracts.ConnectorState;
@@ -26,15 +28,19 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         ISystemClient client,
         ConnectorsActivator activator,
         ConnectorsCommandApplication commandApplication,
-        GetActiveConnectors getActiveConnectors,
+        LoadActiveConnectorsSnapshot loadActiveConnectorsSnapshot,
+        SaveActiveConnectorsSnapshot saveActiveConnectorsSnapshot,
         GetNodeSystemInfo getNodeSystemInfo,
         Func<SystemConsumerBuilder> getConsumerBuilder,
+        TimeProvider time,
         ILoggerFactory loggerFactory,
         string? serviceName = null
     ) : base(publisher, subscriber, getNodeSystemInfo, loggerFactory, serviceName ?? "ConnectorsController") {
-        Activator           = activator;
-        CommandApplication  = commandApplication;
-        GetActiveConnectors = getActiveConnectors;
+        Activator                    = activator;
+        CommandApplication           = commandApplication;
+        LoadActiveConnectorsSnapshot = loadActiveConnectorsSnapshot;
+        SaveActiveConnectorsSnapshot = saveActiveConnectorsSnapshot;
+        Time                         = time;
 
         ConsumerBuilder = getConsumerBuilder()
             .ConsumerId("ConnectorsController")
@@ -44,32 +50,42 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
             .DisableAutoCommit();
     }
 
-    ConnectorsActivator          Activator           { get; }
-    GetActiveConnectors          GetActiveConnectors { get; }
-    ConnectorsCommandApplication CommandApplication  { get; }
-    SystemConsumerBuilder        ConsumerBuilder     { get; }
+    static readonly TimeSpan SnapshotInterval = TimeSpan.FromMinutes(1);
+
+    ConnectorsActivator          Activator                    { get; }
+    LoadActiveConnectorsSnapshot LoadActiveConnectorsSnapshot { get; }
+    SaveActiveConnectorsSnapshot SaveActiveConnectorsSnapshot { get; }
+    ConnectorsCommandApplication CommandApplication           { get; }
+    SystemConsumerBuilder        ConsumerBuilder              { get; }
+    TimeProvider                 Time                         { get; }
 
     protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
-        GetConnectorsResult connectors = new();
+        var connectors            = new ActiveConnectors();
+        var caughtUp              = false;
+        var lastSnapshotTimestamp = (long?)null;
+        LogPosition lastSnapshotPosition;
 
         try {
-            connectors = await GetActiveConnectors(stoppingToken);
-
-            await connectors
-                .Select(connector => ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision))
-                .WhenAll();
+            connectors           = await LoadActiveConnectorsSnapshot(stoppingToken);
+            lastSnapshotPosition = connectors.Position.LogPosition;
 
             await using var consumer = ConsumerBuilder.StartPosition(connectors.Position).Create();
 
             await foreach (var record in consumer.Records(stoppingToken)) {
+                connectors.Apply(record);
+
                 switch (record.Value) {
-                    case ConnectorActivating evt:
-                        var connector = new RegisteredConnector(evt.ConnectorId, evt.Revision, EnrichWithStartPosition(evt.Settings, evt.StartFrom));
-                        connectors.Connectors.Add(connector);
-                        await ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision);
+                    case ReadResponse.CheckpointReceived:
+                        await SaveSnapshot(connectors);
                         break;
-                    case ConnectorDeactivating evt:
-                        connectors.Connectors.RemoveAll(x => x.ConnectorId == evt.ConnectorId);
+                    case ReadResponse.SubscriptionCaughtUp when !caughtUp:
+                        await connectors.Select(ActivateConnector).WhenAll();
+                        caughtUp = true;
+                        break;
+                    case ConnectorActivating evt when caughtUp:
+                        await ActivateConnector(connectors[evt.ConnectorId]);
+                        break;
+                    case ConnectorDeactivating evt when caughtUp:
                         await DeactivateConnector(evt.ConnectorId);
                         break;
                 }
@@ -92,15 +108,27 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
 
         return;
 
-        static IDictionary<string, string?> EnrichWithStartPosition(IDictionary<string, string?> settings, StartFromPosition? startPosition) {
-            if (startPosition is not null)
-                settings["Subscription:StartPosition"] = startPosition.LogPosition.ToString();
+        async ValueTask SaveSnapshot(ActiveConnectors active) {
+            if (active.Position.LogPosition <= lastSnapshotPosition)
+                return;
 
-            return settings;
+            if (lastSnapshotTimestamp is { } last && Time.GetElapsedTime(last) < SnapshotInterval)
+                return;
+
+            try {
+                await SaveActiveConnectorsSnapshot(active);
+                lastSnapshotPosition = active.Position.LogPosition;
+            }
+            catch (Exception ex) {
+                Logger.LogSnapshotSaveFailure(ex, nodeInfo.InstanceId);
+            }
+
+            lastSnapshotTimestamp = Time.GetTimestamp();
         }
 
-        async Task ActivateConnector(ConnectorId connectorId, IDictionary<string, string?> settings, int revision) {
-            var activationResult = await Activator.Activate(connectorId, settings, revision, stoppingToken);
+        async Task ActivateConnector(RegisteredConnector connector) {
+            var connectorId      = connector.ConnectorId;
+            var activationResult = await Activator.Activate(connectorId, connector.Settings, connector.Revision, stoppingToken);
 
             Logger.LogConnectorActivationResult(
                 activationResult.Failure
@@ -183,4 +211,7 @@ static partial class ConnectorsControlServiceLogMessages {
         SkipEnabledCheck = true
     )]
     internal static partial void LogDeactivationRecordFailure(this ILogger logger, Exception error, Guid nodeId, string connectorId);
+
+    [LoggerMessage(LogLevel.Warning, "ConnectorsControlService [Node Id: {NodeId}] Failed to save activated connectors snapshot")]
+    internal static partial void LogSnapshotSaveFailure(this ILogger logger, Exception error, Guid nodeId);
 }

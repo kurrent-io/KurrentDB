@@ -18,4 +18,8 @@
 		<PackageReference Include="Serilog" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+	</ItemGroup>
+
 </Project>

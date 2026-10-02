@@ -2,8 +2,6 @@
 title: "Kafka Sink"
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The Kafka sink writes events to a Kafka topic using an idempotent producer for

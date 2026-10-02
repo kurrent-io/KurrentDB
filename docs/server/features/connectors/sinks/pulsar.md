@@ -2,8 +2,6 @@
 title: 'Pulsar Sink'
 ---
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 ## Overview
 
 The Apache Pulsar Sink connector writes events from your KurrentDB stream to a specified Pulsar topic.

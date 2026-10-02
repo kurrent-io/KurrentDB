@@ -77,13 +77,9 @@ Use the following option to enable this feature:
 
 ## User X.509 Certificates 
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The User Certificates feature allows authentication through an X.509 user certificate in addition to username and password. User certificates work across any cluster that shares a trusted root Certificate Authority (CA) with the user's certificate. This means that you can have a single user certificate that is valid across multiple clusters.
 
 ### Configuration steps
-
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
@@ -256,13 +252,9 @@ Signature Hash: 6d922badaba2372070f13c69b620286262eab1d8d2d2156a271a1d73aaaf64e4
 
 ## LDAP authentication 
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The LDAP Authentication feature enables KurrentDB to use LDAP-based directory services for authentication.
 
 ### Configuration
-
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
@@ -347,8 +339,6 @@ If you encounter issues, check the server's log. Common problems include:
 
 ## OAuth Authentication
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The OAuth feature allows KurrentDB to connect to an identity server and authenticate users based on a JWT rather than username and password.
 
 Access tokens can contain a "role" claim, which will be used for [authorization](./user-authorization.md).
@@ -358,8 +348,6 @@ With the default basic authentication, KurrentDB treats the username as a "role"
 :::
 
 ### Configuration
-
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 

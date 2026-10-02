@@ -26,7 +26,7 @@ Follow the upgrade procedure below on each node, starting with a follower node:
 
 1. Stop the node.
 1. Uninstall any previous versions of EventStoreDB.
-1. Install the new version and update the configuration. If you use licensed features, ensure that you configure a [license key](../quick-start/installation.md#license-keys).
+1. Install the new version and update the configuration.
 1. Start the node.
 1. Wait for the node to become a follower or read-only replica.
 1. Repeat the process for the next node.
@@ -44,7 +44,8 @@ If you modified the Linux service file to increase the open files limit, those c
 
 ### Breaking Changes
 
-- None
+- Multi-node clusters require a [license key](../quick-start/installation.md#license-keys) (and single-node deployments do not).
+- Transient projections have been removed in favor of [SQL queries](../features/queries/flightsql.md) backed by [secondary](../features/indexes/secondary.md) and [user-defined](../features/indexes/user-defined.md) indexes.
 
 ### Deprecation Notices
 

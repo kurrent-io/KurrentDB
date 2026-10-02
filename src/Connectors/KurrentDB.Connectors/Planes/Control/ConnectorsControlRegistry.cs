@@ -3,9 +3,7 @@
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
-using System.Collections;
 using KurrentDB.Connectors.Control.Contracts;
-using KurrentDB.Connectors.Management.Contracts.Events;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
@@ -22,8 +20,7 @@ using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?
 namespace KurrentDB.Connectors.Planes.Control;
 
 public record ConnectorsControlRegistryOptions {
-    public ConsumeFilter Filter           { get; init; }
-    public StreamId      SnapshotStreamId { get; init; }
+    public StreamId SnapshotStreamId { get; init; }
 }
 
 class ConnectorsControlRegistry {
@@ -47,132 +44,64 @@ class ConnectorsControlRegistry {
     SystemProducer                   Producer { get; }
     TimeProvider                     Time     { get; }
 
-    /// <summary>
-    /// Asynchronously retrieves an array of active connectors registered in the system.
-    /// </summary>
-    /// <param name="cancellationToken">A CancellationToken to observe while waiting for the task to complete.</param>
-    public async Task<GetConnectorsResult> GetConnectors(CancellationToken cancellationToken) {
+    public async Task<ActiveConnectors> LoadSnapshot(CancellationToken cancellationToken) {
 	    await StartupWorkMonitor.WhenCompletedAsync();
-        var (state, checkpoint, snapshotPosition) = await LoadSnapshot(cancellationToken);
 
-        RecordPosition lastReadPosition = checkpoint;
+        try {
+            var snapshotRecord = await Reader.ReadLastStreamRecord(Options.SnapshotStreamId, cancellationToken);
 
-        var records = Reader.ReadForwards(checkpoint.LogPosition, Options.Filter, cancellationToken: cancellationToken);
-
-        const string startPositionKey = "Subscription:StartPosition";
-
-        await foreach (var record in records) {
-            switch (record.Value) {
-                case ConnectorActivating activating:
-                    // hijack settings and inject the start position
-                    if (activating.StartFrom is not null)
-                        activating.Settings[startPositionKey] = activating.StartFrom.LogPosition.ToString();
-
-                    state[activating.ConnectorId] = new RegisteredConnector(
-                        activating.ConnectorId,
-                        activating.Revision,
-                        activating.Settings
-                    );
-                    break;
-
-                case ConnectorRunning running:
-                    // remove the start position from the settings in case one was set
-                    var connector = state[running.ConnectorId];
-                    state[running.ConnectorId] = connector with {
-                        Settings = connector.Settings.With(x => x.Remove(startPositionKey))
-                    };
-                    break;
-
-                case ConnectorDeactivating deactivating:
-                    state.Remove(deactivating.ConnectorId);
-                    break;
-            }
-
-            lastReadPosition = record.Position;
-        }
-
-        var result = state.Values.ToList();
-
-        // updates the snapshot every time the last record position is newer,
-        // regardless of state changes
-        if (lastReadPosition != checkpoint || snapshotPosition == RecordPosition.Unset)
-            await UpdateSnapshot(result, lastReadPosition, snapshotPosition);
-
-        return new GetConnectorsResult {
-            Connectors = result,
-            Position   = lastReadPosition
-        };
-
-        async Task<(Dictionary<ConnectorId, RegisteredConnector> State, RecordPosition Checkpoint, RecordPosition SnapshotPosition)> LoadSnapshot(CancellationToken ct) {
-            try {
-                var snapshotRecord = await Reader.ReadLastStreamRecord(Options.SnapshotStreamId, ct);
-
-                if (snapshotRecord.Value is not ActivatedConnectorsSnapshot snapshot) {
-                    var record = await Reader
-                        .ReadBackwards(ConsumeFilter.None, cancellationToken: ct)
-                        .FirstOrDefaultAsync(ct);
-
-                    return ([], record.Position, snapshotRecord.Position);
-                }
-
-                var snapshotState = snapshot.Connectors.ToDictionary(
+            if (snapshotRecord.Value is ActivatedConnectorsSnapshot snapshot) {
+                var state = snapshot.Connectors.ToDictionary(
                     conn => ConnectorId.From(conn.ConnectorId),
                     conn => new RegisteredConnector(conn.ConnectorId, conn.Revision, conn.Settings)
                 );
 
-                return (snapshotState, snapshot.LogPosition, snapshotRecord.Position);
+                return new(state, snapshot.LogPosition);
             }
-            catch (Exception ex) {
-                throw new Exception("Failed to load activated connectors snapshot", ex);
-            }
+
+            var head = await Reader
+                .ReadBackwards(ConsumeFilter.None, maxCount: 1, cancellationToken: cancellationToken)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var connectors = new ActiveConnectors([], head.Position);
+
+            await SaveSnapshot(connectors);
+
+            return connectors;
         }
-
-        async Task UpdateSnapshot(List<RegisteredConnector> connectors, RecordPosition newCheckpoint, RecordPosition expectedPosition) {
-            try {
-                var newSnapshot = MapToSnapshot(connectors, newCheckpoint, Time.GetUtcNow());
-
-                var requestBuilder = ProduceRequest.Builder
-                    .Message(newSnapshot)
-                    .Stream(Options.SnapshotStreamId)
-                    .ExpectedStreamRevision(expectedPosition.StreamRevision);
-
-                await Producer.Produce(requestBuilder.Create());
-            }
-            catch (Exception ex) {
-                throw new Exception("Failed to update activated connectors snapshot", ex);
-            }
-
-            return;
-
-            static ActivatedConnectorsSnapshot MapToSnapshot(List<RegisteredConnector> connectors, RecordPosition position, DateTimeOffset now) {
-                return new ActivatedConnectorsSnapshot {
-                    Connectors  = { connectors.Select(MapToConnector) },
-                    LogPosition = position.LogPosition.CommitPosition!.Value,
-                    TakenAt     = now.ToTimestamp()
-                };
-
-                ActivatedConnectorsSnapshot.Types.Connector MapToConnector(RegisteredConnector source) =>
-                    new() {
-                        ConnectorId = source.ConnectorId,
-                        Revision    = source.Revision,
-                        Settings    = { source.Settings }
-                    };
-            }
+        catch (Exception ex) {
+            throw new Exception("Failed to load activated connectors snapshot", ex);
         }
     }
-}
 
-public record GetConnectorsResult : IEnumerable<RegisteredConnector> {
-    public List<RegisteredConnector> Connectors { get; init; } = [];
-    public RecordPosition            Position   { get; init; } = RecordPosition.Earliest;
+    public async Task SaveSnapshot(ActiveConnectors connectors) {
+        try {
+            var snapshot = new ActivatedConnectorsSnapshot {
+                Connectors  = { connectors.Select(MapToConnector) },
+                LogPosition = connectors.Position.LogPosition.CommitPosition!.Value,
+                TakenAt     = Time.GetUtcNow().ToTimestamp()
+            };
 
-    public IEnumerator<RegisteredConnector> GetEnumerator() => Connectors.GetEnumerator();
+            var request = ProduceRequest.Builder
+                .Message(snapshot)
+                .Stream(Options.SnapshotStreamId)
+                .ExpectedStreamState(StreamState.Any)
+                .Create();
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+            await Producer.Produce(request);
+        }
+        catch (Exception ex) {
+            throw new Exception("Failed to update activated connectors snapshot", ex);
+        }
 
-    public void Deconstruct(out List<RegisteredConnector> connectors, out RecordPosition position) {
-        connectors = Connectors;
-        position   = Position;
+        return;
+
+        static ActivatedConnectorsSnapshot.Types.Connector MapToConnector(RegisteredConnector source) =>
+            new() {
+                ConnectorId = source.ConnectorId,
+                Revision    = source.Revision,
+                Settings    = { source.Settings }
+            };
     }
 }
 
@@ -181,4 +110,6 @@ public record RegisteredConnector(ConnectorId ConnectorId, int Revision, Connect
     public ClusterNodeState  NodeAffinity { get; } = Settings.NodeAffinity();
 }
 
-public delegate Task<GetConnectorsResult> GetActiveConnectors(CancellationToken cancellationToken);
+public delegate Task<ActiveConnectors> LoadActiveConnectorsSnapshot(CancellationToken cancellationToken);
+
+public delegate Task SaveActiveConnectorsSnapshot(ActiveConnectors connectors);

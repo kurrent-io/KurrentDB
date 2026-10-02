@@ -184,6 +184,12 @@ For example:
 |------------------------------------------------------------|-------------------------|--------|
 | `/subscriptions/{stream}/{subscription_name}/replayParked` | `application/json`      | POST   |
 
+## Truncating parked messages
+
+| URI                                                          | Supported Content Types | Method |
+|--------------------------------------------------------------|-------------------------|--------|
+| `/subscriptions/{stream}/{subscription_name}/truncateParked` | `application/json`      | POST   |
+
 ## Getting information for all subscriptions
 
 | URI              | Method |

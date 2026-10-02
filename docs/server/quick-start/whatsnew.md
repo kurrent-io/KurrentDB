@@ -6,11 +6,21 @@ order: 2
 
 ## New in 26.2
 
-Features
-* [Kontrol Plane](#kontrol-plane)
-* [Disable TLS](#disable-tls)
-
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+* [Licensing Changes](#licensing-changes)
+* [Kontrol Plane](#kontrol-plane)
+* [Embedded UI Improvements](#embedded-ui)
+* [Multi-field User-defined Indexes](#multi-field-user-defined-indexes)
+* [Persistent Subscriptions Truncate API](#persistent-subscriptions-truncate-api)
+* [Disable TLS Option](#disable-tls)
+* [Miscellaneous](#miscellaneous-improvements-26-2)
+
+### Licensing Changes
+
+From 26.2, all multi-node deployments require a valid license key to be configured. Single-node deployments, however, now have unrestricted access to all licensed features out of the box (excluding features that require multiple nodes).
+
+See the [blog post](https://kurrentdb.kurrent.io/blog/licensing-in-kurrentdb-v26-2-and-beyond-what-s-free-and-what-s-licensed/) and [license key documentation](installation.md#license-keys) for details.
 
 ### Kontrol Plane
 
@@ -21,6 +31,58 @@ The Kontrol Plane is a significant step in our strategy to support multiple data
 The Kontrol Plane is off by default and changes nothing until you turn it on.
 
 See the Kontrol Plane [configuration guide](../configuration/kontrol-plane.md) for details.
+
+### Embedded UI
+
+The embedded web UI, which has been split for a little while between a 'new' UI and the older 'admin UI', has been unified and given a refresh with many small usability improvements including
+
+- Easier navigation in the stream browser.
+- One-click navigation between nodes.
+- Light and dark themes.
+- A friendly database name and a PRODUCTION warning shown in the top bar.
+
+See the embedded UI [documentation](../features/admin-ui.md) for details, as well as [Kurrent Navigator](https://navigator.kurrent.io/) and [Gaffer](https://gaffer.kurrent.io/).
+
+### Multi-field User-defined Indexes
+
+User defined indexes can now index multiple fields. For example, create an index:
+
+```http
+POST https://127.0.0.1:2113/v2/indexes/orders-by-country
+Content-Type: application/json
+Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
+
+{
+  "filter": "rec => rec.schema.name == 'OrderCreated'",
+  "fields": [
+    {
+      "name": "country",
+      "selector": "rec => rec.value.country",
+      "type": "INDEX_FIELD_TYPE_STRING"
+    },
+    {
+      "name": "total",
+      "selector": "rec => rec.value.total",
+      "type": "INDEX_FIELD_TYPE_DOUBLE"
+    }
+  ]
+}
+```
+
+And then query it:
+
+```sql
+select * from usr."orders-by-country" where field_country = 'Mauritius' and field_total > 149.99 limit 10
+```
+
+See the user defined index [documentation](../features/indexes/user-defined.md) for details.
+
+
+### Persistent Subscriptions Truncate API
+
+Previously, messages parked by a persistent subscription could be replayed, but discarding them was only possible by deleting the parked message stream. In 26.2 a `truncateParked` API has been added which works in the same way as the `replayParked` API, except that instead of sending the messages to the clients it simply discards them. The API is available via HTTP, gRPC, and in the embedded UI.
+
+See the parked messages [documentation](../features/persistent-subscriptions.md#parked-messages) for details.
 
 ### Disable TLS
 
@@ -35,6 +97,25 @@ When TLS is disabled, all traffic, including authentication credentials and the 
 :::
 
 See the [security documentation](../security/security-options.md#running-without-tls) for details.
+
+
+### Miscellaneous Improvements 26.2
+
+- Increased maximum number of chunks
+
+  The maximum number of logical chunks in a database has been raised from 400,000 to 600,000, increasing the maximum logical database size with the default 256 MB chunk size from roughly 100 TB to 150 TB. As before, the nodes log warnings and then errors as the limit is being approached.
+
+- Configurable gRPC response compression level
+
+  gRPC responses are gzip-compressed when the client supports it. The compression level, previously fixed at `Optimal`, can now be set with the `CompressionLevel` option. Allowed values are `NoCompression`, `Fastest`, `Optimal` (default), and `SmallestSize`; higher levels reduce network traffic at the cost of more CPU. See the [networking configuration](../configuration/networking.md#grpc-response-compression) for details.
+
+- Configurable location and size limit for SQL engine temporary files
+
+  Queries run by the embedded SQL engine (DuckDB) write intermediate results to disk when they don't fit in memory. The new `SqlEngineTempDirectory` option sets where these temporary files are written (default `kurrent.ddb.tmp` inside the database directory), and `SqlEngineTempDirectorySizeLimit` caps how much space they may use in bytes (default: 90% of the available space on that volume). Queries that would exceed the limit fail rather than filling the disk. See the [database configuration](../configuration/db-config.md#sql-engine-temporary-files) for details.
+
+- Disk usage metrics for index and log drives
+
+  The `kurrentdb_sys_disk_bytes` metric previously reported used and total bytes only for the drive holding the database. It now also reports the index and log drives when they are on different drives.
 
 ## New in 26.1
 
@@ -55,8 +136,6 @@ Changes / Improvements
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
 ### SQL API
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 KurrentDB 26.1 introduces support for the [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol, giving general purpose Arrow Flight SQL clients an API to query the indexed event log.
 
@@ -88,8 +167,6 @@ These improvements and fixes are being backported to 24.10 and 26.0.
 
 ### Per-signal OTLP Endpoint Configuration
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 Allow metrics and logs to be exported to different OTLP endpoints by adding optional per-signal OTLP overrides under the Metrics and Logs config sections. Unspecified properties inherit from the shared OpenTelemetry:Otlp section, preserving backwards compatibility.
 
 Also applies to Headers and other properties of OtlpExporterOptions
@@ -98,8 +175,6 @@ See the [documentation](../diagnostics/integrations.md#per-signal-otlp-endpoints
 
 ### OAuth Support for Microsoft Entra
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The new setting `OAuth:DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
 
 Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document.
@@ -107,8 +182,6 @@ Enable this when using an identity provider such as Microsoft Entra that support
 See the [documentation](../security/user-authentication.md#oauth-authentication) for details.
 
 ### OAuth and Ldap Plugin Configuration
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The OAuth and Ldap plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldap plugins could only take their configuration from a file.
 
@@ -125,8 +198,6 @@ See the [documentation](../security/protocol-security.md#disable-client-authenti
 JavaScript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
 
 ### Connectors: Webhook Source
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Webhook Source Connector receives HTTP requests from external systems and appends them as events to KurrentDB streams, enabling seamless integration with services that publish events via webhooks.
 
@@ -160,8 +231,6 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 KurrentDB 26.0 adds [user-defined secondary indexes](../features/indexes/user-defined.md), which advance the [secondary indexes](../features/indexes/secondary.md) added in 25.1. Users can now define custom secondary indexes from record content for fast, field-based reads, subscriptions, and UI queries (e.g. “orders-by-country”). Indexes follow the log and store their data separately on each node, so you get targeted access without increasing log size.
 
 ### Archiving support for GCP and Azure
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 Previously, only Amazon S3 could be used as the blob storage for archived chunks. Now Azure and GCP can be used.
 - [Azure Documentation](../features/archiving.md#microsoft-azure-configuration)
@@ -220,8 +289,6 @@ Under the hood, KurrentDB 26.0 uses the latest dotnet runtime: .NET 10.
 
 ### Connectors: Kafka Source
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The Kafka Source Connector consumes messages from Kafka topics and appends them to KurrentDB streams, enabling seamless integration between the two platforms.
 
 The connector supports consuming from multiple partitions concurrently and offers flexible routing options to control which KurrentDB streams receive the messages. 
@@ -229,8 +296,6 @@ The connector supports consuming from multiple partitions concurrently and offer
 Refer to the [documentation](../features/connectors/sources/kafka.md) for instructions on setting up a Kafka source connector.
 
 ### Connectors: SQL Sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The SQL Sink Connector writes events from KurrentDB to SQL databases (Microsoft SQL Server and PostgreSQL) by executing configurable SQL statements.
 
@@ -296,13 +361,9 @@ In client libraries, log record properties are surfaced as a dictionary-like str
 
 ### Database stats
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
 
 ### Ad-hoc SQL queries
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
 
@@ -311,8 +372,6 @@ The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL q
 KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
 
 ### OpenTelemetry logs export
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The [OpenTelemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
 
@@ -331,8 +390,6 @@ Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCap
 ### Connectors
 
 #### Pulsar sink connector
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Apache Pulsar sink connector writes events from your KurrentDB stream to a specified Pulsar topic. 
 
@@ -444,8 +501,6 @@ These are the new features in KurrentDB 25.0:
 
 ### Archiving
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 KurrentDB 25.0 introduces the initial release of Archiving: a new major feature to reduce costs and increase scalability of a KurrentDB cluster.
 
 With the new Archiving feature, data is uploaded to cheaper storage such as Amazon S3 and then can be removed from the volumes attached to the cluster nodes. The volumes can be correspondingly smaller and cheaper. The nodes are all able to read the archive, and when a read request from a client requires data that is stored in the archive, the node retrieves that data from the archive transparently to the client.
@@ -455,8 +510,6 @@ Refer to [the documentation](../features/archiving.md) for more information abou
 ### Connectors
 
 #### Elasticsearch sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
 an Elasticsearch index. The records will be serialized into JSON documents,
@@ -553,13 +606,10 @@ These are the new features that were added in EventStoreDB 24.10:
 We have improved and expanded on the Connectors preview introduced in 24.2.0.
 
 The Connectors feature is enabled by default.
-You can use the HTTP sink without a license, but a license is required for all other connectors.
 
 Refer to the [documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
 
 #### Elasticsearch sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
 an Elasticsearch index. The records will be serialized into JSON documents,
@@ -568,8 +618,6 @@ compatible with Elasticsearch's document structure.
 Refer to the [documentation](../features/connectors/sinks/elasticsearch.md) for instructions on setting up a Elasticsearch sink.
 
 #### Kafka sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The Kafka sink writes events from EventStoreDB to a Kafka topic.
 
@@ -580,8 +628,6 @@ Refer to the [documentation](../features/connectors/sinks/kafka.md) for instruct
 
 #### MongoDB sink
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The MongoDB sink pulls messages from an EventStoreDB stream and stores the messages to a collection.
 
 It supports data transformation for modifying event data or metadata and the inclusion of additional headers before sending messages to the MongoDB collection. It also supports at-least-once delivery and resilience features to handle transient errors.
@@ -589,8 +635,6 @@ It supports data transformation for modifying event data or metadata and the inc
 Refer to the [documentation](../features/connectors/sinks/mongo.md) for instructions on setting up a MongoDB sink.
 
 #### RabbitMQ sink
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The RabbitMQ sink pulls messages from EventStoreDB and sends the messages to a RabbitMQ exchange using a specified routing key.
 
@@ -632,47 +676,26 @@ See the [Data Protection documentation](../features/connectors/features.md#data-
 
 ### Auto-scavenge
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The auto-scavenge feature automatically schedules _cluster scavenges_ which are composed of multiple _node scavenges_. Only one node scavenge can be executed at a time in the cluster. The auto-scavenge feature allows the scheduling of said _cluster scavenges_.
 
-The auto-scavenge feature requires a license to use. EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
+EventStoreDB will only start auto-scavenging once an administrator has set up a schedule for running cluster scavenges.
 
 Refer to the [documentation](../operations/auto-scavenge.md) for instructions on enabling and using this feature.
 
 ### Stream policy
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 Define stream access policies in one place based on stream prefixes rather than using stream ACLs.
 
 Stream access policies can be created to grant users or groups read, write, delete, or metadata access.  These policies can be applied to streams based on their prefix or to system or user streams.
 
-The Stream Policy feature requires a license to use. Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
+Refer to the [documentation](../security/user-authorization.md#stream-policy-authorization) for more information about using and configuring this feature.
 
 ### Encryption-at-rest
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
 
 This feature aims to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file-level encryption provides some protection for attacks against the live system or remote exploits, as the plaintext data is not directly readable.
 
-The Encryption-at-rest feature requires a license to use and is disabled by default.
 If Encryption-at-rest is enabled, it is impossible to roll back to an unencrypted database after a new chunk has been created or if a chunk has been scavenged.
 
 Refer to the [documentation](../security/README.md#encryption-at-rest) for more information about using and configuring this feature.
-
-### Enterprise features now require a license key
-
-Customers can unlock the enterprise features of EventStoreDB with a license key. This applies to the previous commercial plugins and several of the new features in this release.
-
-You will need to provide a license key if you want to enable or use the following features:
-* Auto-scavenge
-* Kafka connectors
-* Stream Policies
-* Encryption-at-rest
-* Ldaps authentication
-* OAuth authentication
-* Logs Endpoint
-* OTLP Endpoint

@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Licensing.Keygen;
 using Xunit;
 
@@ -66,6 +67,7 @@ partial class KeygenSimulator {
 		Assert.Equal($"{Fingerprint.Ram}", $"{attributes["metadata"]!["ram"]}");
 		Assert.Equal($"true", $"{attributes["metadata"]!["readOnlyReplica"]}");
 		Assert.Equal($"true", $"{attributes["metadata"]!["archiver"]}");
+		Assert.Equal(VersionInfo.Version, $"{attributes["metadata"]!["version"]}");
 
 		var relationships = data!["relationships"]!["license"]!["data"];
 		Assert.Equal("licenses", $"{relationships!["type"]}");

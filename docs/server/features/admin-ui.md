@@ -12,7 +12,7 @@ The legacy web interface (`/web`) has been removed. Its functionality now lives 
 
 The embedded UI shows the cluster status and resource utilization, useful metrics about the throughput of data being written to and read from the database, and information about each cluster node such as its configuration, license status, and loaded plugins. It also lets you browse streams, manage projections and persistent subscriptions, run ad-hoc queries, manage users, and run scavenges.
 
-Use the brightness toggle in the top bar to switch between **light and dark themes**; your choice is remembered. Pages marked <Badge type="info" vertical="middle" text="License Required"/> require a license.
+Use the brightness toggle in the top bar to switch between **light and dark themes**; your choice is remembered.
 
 ## Cluster Status
 
@@ -22,7 +22,7 @@ Use the brightness toggle in the top bar to switch between **light and dark them
 The _Cluster Status_ page shows the serving node's status and the cluster as a whole:
 - **Node status**: The address, version, and operating system of the node you are connected to. From here you can **Shutdown** the node, and — when the local node is the leader of a multi-node cluster — **Resign** it (trigger a leader election). Both actions require the appropriate permission and are disabled otherwise.
 - **Cluster status**: A card per cluster member showing its state, address, checkpoints, and epoch. The card for the node you're connected to is tagged **This node**; every other live node has an **Open this node's UI** button that opens that node's UI in a new tab.
-- **Resources**: CPU, memory, and disk gauges plus the active connection count, with throughput charts <Badge type="info" vertical="middle" text="License Required"/>.
+- **Resources**: CPU, memory, and disk gauges plus the active connection count, with throughput charts
 
 ## Dashboard
 
@@ -34,8 +34,6 @@ The _Dashboard_ shows **queue statistics** for the node you're connected to — 
 Use **Snapshot** to capture the current statistics as text you can copy to the clipboard.
 
 ## Database stats
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 When [secondary indexes](indexes/secondary.md) are enabled, the _Stats_ page shows additional information about the database, including:
 - **Stream categories**: Stream categories in the database, with:
@@ -50,8 +48,6 @@ When [secondary indexes](indexes/secondary.md) are enabled, the _Stats_ page sho
 ![Embedded UI Stats page](images/ui/stats-dark.png#dark)
 
 ## Logs
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The _Logs_ page shows the cluster node's recent log messages. You can filter by log level and message content. Logs are streamed to the UI in real time, starting from the moment you open the page; there's no option to load older logs here.
 
@@ -101,16 +97,12 @@ The _Query_ page provides a SQL editor for running ad-hoc queries against your e
 
 ## Configuration
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
 The _Config_ page shows the current configuration of the cluster node in a table, which you can filter by name, value, and source. For each option it shows a description, the current value, and the source it was set from (e.g. default, environment variable, or configuration file). The configuration is read-only and cannot be modified from the UI.
 
 ![Embedded UI configuration page](images/ui/config.png#light)
 ![Embedded UI configuration page](images/ui/config-dark.png#dark)
 
 ## Plugins
-
-<Badge type="info" vertical="middle" text="License Required"/>
 
 The _Plugins_ page lists the plugins and subsystems loaded in the cluster node, showing each one's name, version, and description, so you can verify which plugins are active.
 
