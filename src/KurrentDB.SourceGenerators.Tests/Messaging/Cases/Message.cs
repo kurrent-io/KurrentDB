@@ -18,6 +18,7 @@ namespace KurrentDB.SourceGenerators.Tests.Messaging {
 
 	[BaseMessage]
 	public abstract partial class Message {
+		protected static string ResolveLabel(string originalLabel) => originalLabel;
 	}
 
 	enum TestMessageGroup {

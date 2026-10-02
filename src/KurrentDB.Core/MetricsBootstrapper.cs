@@ -74,8 +74,7 @@ public static class MetricsBootstrapper {
 
 		OptionsFormatter.LogConfig("Metrics", conf);
 
-		MessageLabelConfigurator.ConfigureMessageLabels(
-			conf.MessageTypes, InMemoryBus.KnownMessageTypes);
+		MessageLabelConfigurator.ConfigureMessageLabels(conf.MessageTypes);
 
 		var useLegacyNames = conf.LegacyCoreNaming;
 		var serviceName = conf.ServiceName;

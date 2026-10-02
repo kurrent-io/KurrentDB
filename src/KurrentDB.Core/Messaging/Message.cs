@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using KurrentDB.Core.Metrics;
 using Newtonsoft.Json;
 
 namespace KurrentDB.Core.Messaging;
@@ -24,13 +25,15 @@ public class DerivedMessageAttribute : Attribute {
 }
 
 [BaseMessage]
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllProperties)]
 public abstract partial class Message(CancellationToken token = default) {
 	internal static readonly object UnknownAffinity = new();
 	protected static readonly object StrongAffinity = new();
 
 	[JsonIgnore]
 	public CancellationToken CancellationToken => token;
+
+	// Called by the generated LabelStatic of every concrete message type on first access
+	protected static string ResolveLabel(string originalLabel) => MessageLabelConfigurator.ResolveLabel(originalLabel);
 
 	/// <summary>
 	/// Returns the synchronization affinity for the current message.

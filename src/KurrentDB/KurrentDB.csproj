@@ -99,6 +99,7 @@
 		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authentication.OAUTH" Condition="'$(EnableOAuthPlugin)' == 'false'" Value="false" Trim="true" />
 		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.LegacyAuthorizationWithStreamAuthorizationDisabled" Condition="'$(EnableLegacyAuthorizationPlugin)' == 'false'" Value="false" Trim="true" />
 		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.Policy" Condition="'$(EnableStreamPolicyPlugin)' == 'false'" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.SecondaryIndexes" Condition="'$(EnableSecondaryIndexingPlugin)' == 'false'" Value="false" Trim="true" />
 	</ItemGroup>
 
 	<!-- Trimming removes only managed code; drop the Kafka native libraries explicitly when Connectors is disabled -->
