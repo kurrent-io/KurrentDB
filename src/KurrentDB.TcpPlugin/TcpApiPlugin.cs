@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
 using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
@@ -9,8 +11,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.TcpPlugin;
 
 public class TcpApiPlugin : SubsystemsPlugin {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.TcpClientProtocol";
+
 	public TcpApiPlugin() : base(requiredEntitlements: ["TCP_CLIENT_PLUGIN"]) {
 	}
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabled = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", defaultValue: false);

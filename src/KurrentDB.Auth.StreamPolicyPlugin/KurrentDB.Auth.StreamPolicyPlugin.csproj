@@ -9,8 +9,4 @@
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="System.ComponentModel.Composition" />
-	</ItemGroup>
 </Project>

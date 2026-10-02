@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
 using System.IO;
 using System.Linq;
 using System.Runtime;
@@ -102,8 +100,10 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		switch (_options.Database.DbLogFormat) {
 			case DbLogFormat.V2: {
-				var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
-				_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+				if (SecondaryIndexingPlugin.IsAllowed) {
+					var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
+					_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+				}
 
 				var logFormatFactory = new LogV2FormatAbstractorFactory();
 				var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
@@ -149,7 +149,9 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 			var authorizationTypeToPlugin = new Dictionary<string, AuthorizationProviderFactory>();
 			var authzPlugins = new List<IAuthorizationPlugin>();
-			authzPlugins.Add(new LegacyAuthorizationWithStreamAuthorizationDisabledPlugin());
+
+			if (LegacyAuthorizationWithStreamAuthorizationDisabledPlugin.IsAllowed)
+				authzPlugins.Add(new LegacyAuthorizationWithStreamAuthorizationDisabledPlugin());
 
 			foreach (var potentialPlugin in authzPlugins) {
 				try {
@@ -160,7 +162,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 					authorizationTypeToPlugin.Add(commandLine,
 						new(_ => potentialPlugin.GetAuthorizationProviderFactory(authorizationConfig))
 					);
-				} catch (CompositionException ex) {
+				} catch (Exception ex) {
 					Log.Error(ex, "Error loading authentication plugin.");
 				}
 			}
@@ -190,8 +192,12 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 			var loggerFactory = new SerilogLoggerFactory();
 			var authPlugins = new List<IAuthenticationPlugin>();
-			authPlugins.Add(new LdapsAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
-			authPlugins.Add(new OAuthAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
+
+			if (LdapsAuthenticationPlugin.IsAllowed)
+				authPlugins.Add(new LdapsAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
+
+			if (OAuthAuthenticationPlugin.IsAllowed)
+				authPlugins.Add(new OAuthAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
 
 			foreach (var potentialPlugin in authPlugins) {
 				try {
@@ -202,7 +208,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 					authenticationTypeToPlugin.Add(commandLine,
 						new AuthenticationProviderFactory(_ =>
 							potentialPlugin.GetAuthenticationProviderFactory(authenticationConfig)));
-				} catch (CompositionException ex) {
+				} catch (Exception ex) {
 					Log.Error(ex, "Error loading authentication plugin.");
 				}
 			}
@@ -219,16 +225,33 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		static ClusterVNodeOptions LoadSubsystemsPlugins(ClusterVNodeOptions options) {
 			var plugins = new List<ISubsystemsPlugin>();
-			plugins.Add(new OtlpExporterPlugin.OtlpExporterPlugin());
-			plugins.Add(new UserCertificatesPlugin());
-			plugins.Add(new LogsEndpointPlugin());
-			plugins.Add(new EncryptionAtRestPlugin());
 
-			plugins.Add(new AutoScavengePlugin());
-			plugins.Add(new TcpApiPlugin());
-			plugins.Add(new ConnectorsPlugin());
-			plugins.Add(new SchemaRegistryPlugin());
-			plugins.Add(new ApiV2Plugin());
+			if (OtlpExporterPlugin.OtlpExporterPlugin.IsAllowed)
+				plugins.Add(new OtlpExporterPlugin.OtlpExporterPlugin());
+
+			if (UserCertificatesPlugin.IsAllowed)
+				plugins.Add(new UserCertificatesPlugin());
+
+			if (LogsEndpointPlugin.IsAllowed)
+				plugins.Add(new LogsEndpointPlugin());
+
+			if (EncryptionAtRestPlugin.IsAllowed)
+				plugins.Add(new EncryptionAtRestPlugin());
+
+			if (AutoScavengePlugin.IsAllowed)
+				plugins.Add(new AutoScavengePlugin());
+
+			if (TcpApiPlugin.IsAllowed)
+				plugins.Add(new TcpApiPlugin());
+
+			if (ConnectorsPlugin.IsAllowed)
+				plugins.Add(new ConnectorsPlugin());
+
+			if (SchemaRegistryPlugin.IsAllowed)
+				plugins.Add(new SchemaRegistryPlugin());
+
+			if (ApiV2Plugin.IsAllowed)
+				plugins.Add(new ApiV2Plugin());
 
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",

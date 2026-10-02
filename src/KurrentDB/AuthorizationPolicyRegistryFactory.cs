@@ -33,7 +33,7 @@ public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 		}
 
 		// Load up all policy selectors in the plugins directory
-		_pluginSelectorFactories = [new StreamPolicySelectorFactory()];
+		_pluginSelectorFactories = StreamPolicySelectorFactory.IsAllowed ? [new StreamPolicySelectorFactory()] : [];
 		_pluginSelectorFactories.ForEach(factory => {
 			_logger.Information("Loaded Authorization Policy plugin: {plugin}.", factory.CommandLineName);
 		});

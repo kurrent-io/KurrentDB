@@ -24,7 +24,7 @@ public class DerivedMessageAttribute : Attribute {
 }
 
 [BaseMessage]
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllProperties)]
 public abstract partial class Message(CancellationToken token = default) {
 	internal static readonly object UnknownAffinity = new();
 	protected static readonly object StrongAffinity = new();

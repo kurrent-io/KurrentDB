@@ -1,21 +1,21 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using KurrentDB.AutoScavenge.Clients;
 using KurrentDB.AutoScavenge.Converters;
-using KurrentDB.AutoScavenge.Domain;
 using KurrentDB.AutoScavenge.Scavengers;
 using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using KurrentDB.POC.IO.Core;
-using KurrentDB.POC.IO.Core.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +26,8 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.AutoScavenge;
 
 public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScavenge, requiredEntitlements: ["AUTO_SCAVENGE"]), IConnectedSubsystemsPlugin {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.{PluginNames.AutoScavenge}";
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengePlugin>();
 	private readonly CancellationTokenSource _cts = new();
 	private AutoScavengeService? _autoScavengeService;
@@ -38,6 +40,9 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 
 	private IAutoScavengeClient _dispatcher = IAutoScavengeClient.None;
 	private EventStoreOptions _options = new();
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:AutoScavenge:Enabled");

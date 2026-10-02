@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
 using KurrentDB.SchemaRegistry;
 using KurrentDB.Surge;
@@ -12,6 +14,11 @@ namespace KurrentDB.Plugins.SchemaRegistry;
 
 [UsedImplicitly]
 public class SchemaRegistryPlugin : SubsystemsPlugin {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.SchemaRegistry";
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		services
 			.AddSurgeSystemComponents()

@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.ComponentModel.Composition;
+using System;
 using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -10,13 +11,17 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Auth.Ldaps;
 
-[Export(typeof(IAuthenticationPlugin))]
 public class LdapsAuthenticationPlugin(
 	IConfiguration configuration,
 	string configFileKey,
 	ILoggerFactory loggerFactory) : IAuthenticationPlugin {
+	public const string Name = "LDAPS";
+	private const string FeatureName = $"{IAuthenticationPlugin.FeatureNamePrefix}.{Name}";
 
-	public string Name { get { return "LDAPS"; } }
+	string IAuthenticationPlugin.Name => Name;
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public string Version {
 		get { return typeof(LdapsAuthenticationPlugin).Assembly.GetName().Version?.ToString() ?? string.Empty; }

@@ -1,8 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.ComponentModel.Composition;
+using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
+using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
@@ -11,8 +13,12 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin;
 
-[Export(typeof(IPolicySelectorFactory))]
 public class StreamPolicySelectorFactory : Plugin, IPolicySelectorFactory, ISubsystem {
+	private const string FeatureName = $"{IAuthorizationPlugin.FeatureNamePrefix}.Policy";
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
 	public string CommandLineName => Name.Replace("Plugin", "").ToLowerInvariant();
 	private static readonly ILogger Logger = Log.ForContext<StreamPolicySelector>();
 	private IPolicySelector? _policySelector;

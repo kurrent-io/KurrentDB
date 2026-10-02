@@ -7,7 +7,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -18,6 +17,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using IdentityModel;
@@ -42,8 +42,10 @@ namespace KurrentDB.Auth.OAuth;
 // file. So they may be dead and removable (along with the "/web" redirect), but an external client could
 // still drive the flow — confirm that before removing them. Until then, the "/web" redirect is left as-is
 // rather than repointed, since it's subsumed by this keep-vs-remove decision.
-[Export(typeof(IAuthenticationPlugin))]
 public class OAuthAuthenticationPlugin(IConfiguration configuration, string configPathKey, ILoggerFactory loggerFactory) : IAuthenticationPlugin {
+	public const string Name = "OAUTH";
+	private const string FeatureName = $"{IAuthenticationPlugin.FeatureNamePrefix}.{Name}";
+
 	public static readonly string[] ValidSigningAlgorithms = {
 		SecurityAlgorithms.RsaSha256Signature,
 		SecurityAlgorithms.RsaSha384Signature,
@@ -59,7 +61,10 @@ public class OAuthAuthenticationPlugin(IConfiguration configuration, string conf
 		SecurityAlgorithms.RsaSsaPssSha512,
 	};
 
-	public string Name { get; } = "OAUTH";
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
+	string IAuthenticationPlugin.Name => Name;
 	public string Version { get; } = typeof(OAuthAuthenticationPlugin).Assembly.GetName().Version!.ToString();
 	public string CommandLineName { get; } = "oauth";
 
