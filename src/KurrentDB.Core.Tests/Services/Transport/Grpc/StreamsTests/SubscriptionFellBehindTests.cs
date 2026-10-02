@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
+using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Services.Transport.Grpc;
@@ -17,8 +18,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 
 [TestFixture]
 public class SubscriptionFellBehindTests {
-	private const uint FellBehindCompatibility = 2;
-
 	public abstract class when_a_live_subscription_falls_behind<TLogFormat, TStreamId>(uint compatibility)
 		: GrpcSpecification<TLogFormat, TStreamId> {
 
@@ -33,7 +32,7 @@ public class SubscriptionFellBehindTests {
 		protected readonly string StreamName = $"stream-{Uuid.NewUuid()}";
 		private protected readonly List<ReadResp> Responses = [];
 
-		private bool ExpectFellBehind => compatibility >= FellBehindCompatibility;
+		private bool ExpectFellBehind => compatibility >= ResponseConverter.FellBehindCompatibility;
 
 		private protected abstract void SubscribeTo(ReadReq.Types.Options options);
 
@@ -63,17 +62,19 @@ public class SubscriptionFellBehindTests {
 
 			await Append([CreateEvent(FinishEventType)]);
 
-			// the subscription can only catch up again after sending the last event if it fell behind
+			// the subscription only catches up a second time if it fell behind. depending on how quickly it
+			// does so, the last event is received either while catching up or once live again.
 			var finished = false;
-			while (await call.ResponseStream.MoveNext()) {
+			var caughtUpAgain = false;
+			while (!(finished && caughtUpAgain) && await call.ResponseStream.MoveNext()) {
 				var response = call.ResponseStream.Current;
 				Responses.Add(response);
 
 				if (response.ContentCase == ReadResp.ContentOneofCase.Event &&
 				    response.Event.Event.Metadata[GrpcMetadata.Type] == FinishEventType)
 					finished = true;
-				else if (finished && response.ContentCase == ReadResp.ContentOneofCase.CaughtUp)
-					break;
+				else if (response.ContentCase == ReadResp.ContentOneofCase.CaughtUp)
+					caughtUpAgain = true;
 			}
 		}
 
@@ -190,7 +191,7 @@ public class SubscriptionFellBehindTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string), 0u)]
-	[TestFixture(typeof(LogFormat.V2), typeof(string), FellBehindCompatibility)]
+	[TestFixture(typeof(LogFormat.V2), typeof(string), ResponseConverter.FellBehindCompatibility)]
 	public class when_a_live_subscription_to_all_falls_behind<TLogFormat, TStreamId>(uint compatibility)
 		: when_a_live_subscription_falls_behind<TLogFormat, TStreamId>(compatibility) {
 
@@ -204,7 +205,7 @@ public class SubscriptionFellBehindTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string), 0u)]
-	[TestFixture(typeof(LogFormat.V2), typeof(string), FellBehindCompatibility)]
+	[TestFixture(typeof(LogFormat.V2), typeof(string), ResponseConverter.FellBehindCompatibility)]
 	public class when_a_live_filtered_subscription_to_all_falls_behind<TLogFormat, TStreamId>(uint compatibility)
 		: when_a_live_subscription_falls_behind<TLogFormat, TStreamId>(compatibility) {
 
@@ -222,7 +223,7 @@ public class SubscriptionFellBehindTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string), 0u)]
-	[TestFixture(typeof(LogFormat.V2), typeof(string), FellBehindCompatibility)]
+	[TestFixture(typeof(LogFormat.V2), typeof(string), ResponseConverter.FellBehindCompatibility)]
 	public class when_a_live_subscription_to_a_stream_falls_behind<TLogFormat, TStreamId>(uint compatibility)
 		: when_a_live_subscription_falls_behind<TLogFormat, TStreamId>(compatibility) {
 

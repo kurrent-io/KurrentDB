@@ -113,13 +113,15 @@ message ReadResp {
 		google.protobuf.Timestamp timestamp = 1;
 
 		// Checkpoint for resuming a stream subscription.
-		// For stream subscriptions it is populated unless the stream is empty.
+		// For stream subscriptions it is populated unless the subscription started from the
+		// beginning of the stream and has not sent any events yet.
 		// For $all subscriptions it is not populated.
 		optional int64 stream_revision = 2;
 
 		// Checkpoint for resuming a $all subscription.
 		// For stream subscriptions it is not populated.
-		// For $all subscriptions it is populated unless the database is empty.
+		// For $all subscriptions it is populated unless the subscription started from the
+		// beginning of $all and has not sent any events or checkpoints yet.
 		optional Position position = 3;
 	}
 
@@ -129,13 +131,15 @@ message ReadResp {
 		google.protobuf.Timestamp timestamp = 1;
 
 		// Checkpoint for resuming a stream subscription.
-		// For stream subscriptions it is populated unless the stream is empty.
+		// For stream subscriptions it is populated unless the subscription started from the
+		// beginning of the stream and has not sent any events yet.
 		// For $all subscriptions it is not populated.
 		optional int64 stream_revision = 2;
 
 		// Checkpoint for resuming a $all subscription.
 		// For stream subscriptions it is not populated.
-		// For $all subscriptions it is populated unless the database is empty.
+		// For $all subscriptions it is populated unless the subscription started from the
+		// beginning of $all and has not sent any events or checkpoints yet.
 		optional Position position = 3;
 	}
 
