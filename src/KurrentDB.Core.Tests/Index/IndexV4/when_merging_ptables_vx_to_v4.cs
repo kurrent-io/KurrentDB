@@ -98,11 +98,11 @@ public class when_merging_ptables_vx_to_v4 : SpecificationWithDirectoryPerTestFi
 		using (var filestream = File.Open(newTableFileCopy, FileMode.Open, FileAccess.Read)) {
 			var footerSize = PTableFooter.GetSize(PTableVersions.IndexV4);
 			Assert.AreEqual(filestream.Length,
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size + footerSize + PTable.MD5Size);
+				PTableHeader.Size + numIndexEntries * IndexEntry.V3.Size +
+				requiredMidpoints * IndexEntry.V3.Size + footerSize + PTable.MD5Size);
 			filestream.Seek(
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size, SeekOrigin.Begin);
+				PTableHeader.Size + numIndexEntries * IndexEntry.V3.Size +
+				requiredMidpoints * IndexEntry.V3.Size, SeekOrigin.Begin);
 
 			var ptableFooter = PTableFooter.FromStream(filestream);
 			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
@@ -217,11 +217,11 @@ public class when_merging_to_ptable_v4_with_deleted_entries : SpecificationWithD
 		using (var filestream = File.Open(newTableFileCopy, FileMode.Open, FileAccess.Read)) {
 			var footerSize = PTableFooter.GetSize(PTableVersions.IndexV4);
 			Assert.AreEqual(filestream.Length,
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size + footerSize + PTable.MD5Size);
+				PTableHeader.Size + numIndexEntries * IndexEntry.V3.Size +
+				requiredMidpoints * IndexEntry.V3.Size + footerSize + PTable.MD5Size);
 			filestream.Seek(
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size, SeekOrigin.Begin);
+ 				PTableHeader.Size + numIndexEntries * IndexEntry.V3.Size +
+				requiredMidpoints * IndexEntry.V3.Size, SeekOrigin.Begin);
 
 			var ptableFooter = PTableFooter.FromStream(filestream);
 			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
