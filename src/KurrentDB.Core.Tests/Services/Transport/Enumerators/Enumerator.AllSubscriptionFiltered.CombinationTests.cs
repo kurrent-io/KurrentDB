@@ -558,7 +558,9 @@ public partial class EnumeratorTests {
 							Assert.Fail("Subscription fell behind.");
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
-						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						// the checkpoint to resume from is the last event or checkpoint that was sent before falling behind
+						Assert.AreNotEqual(TFPos.HeadOfTf, lastEventOrCheckpointPos);
+						Assert.AreEqual(lastEventOrCheckpointPos, x.Wrapped.AllCheckpoint);
 						Assert.Null(x.Wrapped.StreamCheckpoint);
 
 						fellBehind = true;
@@ -571,7 +573,8 @@ public partial class EnumeratorTests {
 							Assert.Fail("Subscription fell behind then caught up.");
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
-						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						Assert.AreNotEqual(TFPos.HeadOfTf, lastEventOrCheckpointPos);
+						Assert.AreEqual(lastEventOrCheckpointPos, x.Wrapped.AllCheckpoint);
 						Assert.Null(x.Wrapped.StreamCheckpoint);
 
 						caughtUp = true;
