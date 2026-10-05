@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.1.
 
+## [26.1.3](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.3)
+
+2 October 2026
+
+### Scavenge: Fixed scavenging on Ubuntu 20.04 (PR [#5748](https://github.com/kurrent-io/KurrentDB/pull/5748))
+
+26.1.2 could not run scavenges on Ubuntu 20.04. The scavenge would immediately fail. This has been fixed.
+
+### Increased the maximum number of chunks (PR [#5722](https://github.com/kurrent-io/KurrentDB/pull/5722))
+
+A database can now contain up to 600,000 logical chunks, raised from 400,000. With the default chunk size this increases the maximum logical size of the transaction log from approximately 100 TiB to 150 TiB. As before, the server logs warnings and then errors as the database approaches the limit, and shuts down if the limit is reached.
+
 ## [26.1.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.1.2)
 
 5 August 2026
