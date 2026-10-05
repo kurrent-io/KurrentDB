@@ -33,7 +33,7 @@ public static class KestrelHelpers {
 			return false;
 		}
 
-		if (!RuntimeInformation.IsLinux && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17063)) {
+		if (!RuntimeInformation.IsLinux && !RuntimeInformation.IsOSX && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17063)) {
 			Log.Error("Not listening on a UNIX domain socket since it is not supported by the operating system.");
 			return false;
 		}
