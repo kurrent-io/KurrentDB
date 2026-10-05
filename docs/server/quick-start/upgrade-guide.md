@@ -44,7 +44,7 @@ If you modified the Linux service file to increase the open files limit, those c
 
 ### Breaking Changes
 
-- Multi-node clusters require a [license key](../quick-start/installation.md#license-keys) (and single-node deployments do not).
+- Multi-node deployments now require a license key configured on all nodes (and single-node deployments now do not). See the [blog post](https://kurrentdb.kurrent.io/blog/licensing-in-kurrentdb-v26-2-and-beyond-what-s-free-and-what-s-licensed/) and [license key documentation](../quick-start/installation.md#license-keys) for details.
 - Transient projections have been removed in favor of [SQL queries](../features/queries/flightsql.md) backed by [secondary](../features/indexes/secondary.md) and [user-defined](../features/indexes/user-defined.md) indexes.
 
 ### Deprecation Notices
