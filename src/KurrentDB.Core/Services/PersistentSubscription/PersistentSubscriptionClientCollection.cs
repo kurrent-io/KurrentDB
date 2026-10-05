@@ -55,12 +55,27 @@ internal class PersistentSubscriptionClientCollection {
 		if (!_hash.TryGetValue(correlationId, out client))
 			return new OutstandingMessage[0];
 		_hash.Remove(client.CorrelationId);
-		_consumerStrategy.ClientRemoved(client);
+		// A stopped client was already removed from the consumer strategy by StopClient.
+		if (!client.IsStopped)
+			_consumerStrategy.ClientRemoved(client);
 		if (sendDropNotification) {
 			client.SendDropNotification();
 		}
 
 		return client.GetUnconfirmedEvents();
+	}
+
+	// Removes the client from the consumer strategy so it stops receiving new
+	// events, but keeps it in the hash so acks/nacks for in-flight events are
+	// still delivered to it. Idempotent — calling Stop a second time is a no-op.
+	public bool StopClient(Guid correlationId) {
+		if (!_hash.TryGetValue(correlationId, out var client))
+			return false;
+		if (client.IsStopped)
+			return true;
+		client.MarkStopped();
+		_consumerStrategy.ClientRemoved(client);
+		return true;
 	}
 
 	public IEnumerable<PersistentSubscriptionClient> GetAll() {

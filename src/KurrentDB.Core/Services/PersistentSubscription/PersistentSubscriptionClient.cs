@@ -49,6 +49,11 @@ public class PersistentSubscriptionClient {
 
 	public Guid InstanceId { get; } = Guid.NewGuid();
 
+	// True once the client has been removed from the consumer pool via Stop.
+	// The client object is retained so in-flight events can still be acked or
+	// nacked over the still-open connection, but no new events are pushed to it.
+	public bool IsStopped { get; private set; }
+
 	/// <summary>
 	/// Raised whenever an in-flight event has been confirmed. This could be because of ack, nak, timeout or disconnection.
 	/// </summary>
@@ -97,6 +102,10 @@ public class PersistentSubscriptionClient {
 		return removedAny;
 	}
 
+	internal void MarkStopped() {
+		IsStopped = true;
+	}
+
 	public bool Push(OutstandingMessage message) {
 		if (!CanSend()) {
 			return false;
@@ -131,7 +140,7 @@ public class PersistentSubscriptionClient {
 	}
 
 	private bool CanSend() {
-		return AvailableSlots > 0;
+		return !IsStopped && AvailableSlots > 0;
 	}
 
 	private void OnEventConfirmed(OutstandingMessage ev) {
