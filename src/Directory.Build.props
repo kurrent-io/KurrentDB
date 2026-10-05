@@ -84,4 +84,14 @@
 		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
 		<Using Include="JetBrains.Annotations" />
 	</ItemGroup>
+
+	<ItemGroup Label="NuGet Audit Suppressions">
+		<!--
+		  CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
+		  pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
+		  The fixed package 2.1.12 relies on glibc 2.33/2.34 which is not available on RHEL 8, which we'd like to support since it is a supported platform of .NET10
+		  The vulnerability poses no threat to KurrentDB so we can upgrade it again later when there is a compatible package.
+		-->
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+	</ItemGroup>
 </Project>
