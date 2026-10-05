@@ -807,7 +807,8 @@ public partial class EnumeratorTests {
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
 						Assert.Null(x.Wrapped.AllCheckpoint);
-						Assert.NotNull(x.Wrapped.StreamCheckpoint);
+						// the checkpoint to resume from is the last event that was sent before falling behind
+						Assert.AreEqual(nextEventNumber - 1, x.Wrapped.StreamCheckpoint);
 
 						fellBehind = true;
 						break;
@@ -820,7 +821,7 @@ public partial class EnumeratorTests {
 
 						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
 						Assert.Null(x.Wrapped.AllCheckpoint);
-						Assert.NotNull(x.Wrapped.StreamCheckpoint);
+						Assert.AreEqual(nextEventNumber - 1, x.Wrapped.StreamCheckpoint);
 
 						caughtUp = true;
 						break;
