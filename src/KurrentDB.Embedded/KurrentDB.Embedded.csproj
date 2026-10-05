@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>KurrentDB.Embedded</RootNamespace>
+		<Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
+		<IsPackable>true</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DotNext.Threading" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="KurrentDB.Client" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- The engine's json configuration, which lives with KurrentDB.Hosting but has to be packed from
+			 here: a referenced project's content does not flow into this package. -->
+		<None Include="..\KurrentDB.Hosting\logconfig.json" Link="logconfig.json"
+			  Pack="true" PackagePath="contentFiles/any/any/" PackageCopyToOutput="true" />
+		<None Include="..\KurrentDB.Hosting\metricsconfig.json" Link="metricsconfig.json"
+			  Pack="true" PackagePath="contentFiles/any/any/" PackageCopyToOutput="true" />
+		<None Include="..\KurrentDB.Hosting\kestrelsettings.json" Link="kestrelsettings.json"
+			  Pack="true" PackagePath="contentFiles/any/any/" PackageCopyToOutput="true" />
+
+		<!-- The promotion pipeline rewrites this file inside the package -->
+		<None Include="..\KurrentDB.Common\Utils\version.properties" Link="version.properties"
+			  Pack="true" PackagePath="contentFiles/any/any/" PackageCopyToOutput="true" />
+
+		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
+		<None Include="..\..\NOTICE.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Embedded.Tests" />
+	</ItemGroup>
+</Project>

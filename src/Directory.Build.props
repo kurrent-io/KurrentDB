@@ -4,10 +4,10 @@
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
 		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
 		<Authors>Kurrent, Inc</Authors>
-		<PackageIconUrl>ouro.png</PackageIconUrl>
+		<PackageIcon>ouro.png</PackageIcon>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<Copyright>Copyright 2011-2026 Kurrent, Inc</Copyright>
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
 		<TargetFramework>net10.0</TargetFramework>
