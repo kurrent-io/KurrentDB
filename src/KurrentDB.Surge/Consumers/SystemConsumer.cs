@@ -165,16 +165,16 @@ public class SystemConsumer : IConsumer {
 			if (response is ReadResponse.EventReceived eventReceived) {
 				var resolvedEvent = eventReceived.Event;
 
-				lastReadRecord = await resolvedEvent.ToRecord(Deserialize);
+				var record = await resolvedEvent.ToRecord(Deserialize);
 
                 // TODO WC: To be reviewed. We should be able to delete this because it should never happen
-				if (lastReadRecord == SurgeRecord.None)
+				if (record == SurgeRecord.None)
 					continue;
 
-				if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(lastReadRecord))
+				if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(record))
 					continue;
 
-				lastReadRecord = lastReadRecord with { SequenceId = Sequence.FetchNext() };
+				lastReadRecord = record with { SequenceId = Sequence.FetchNext() };
 
 				await Intercept(new RecordReceived(this, lastReadRecord));
 
@@ -184,7 +184,7 @@ public class SystemConsumer : IConsumer {
 				lastReadRecord = new SurgeRecord {
 					Id         = RecordId.From(Guid.NewGuid()),
 					Position   = LogPosition.From(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition != 0 ? checkpointReceived.PreparePosition : checkpointReceived.CommitPosition),
-					SequenceId = Options.AutoCommit.Enabled ? Sequence.FetchNext() : SequenceId.None,
+					SequenceId = Sequence.FetchNext(), // Some callers track every record themselves, even with auto-commit off.
 					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
 					ValueType  = typeof(ReadResponse.CheckpointReceived),
 					Value      = checkpointReceived,
@@ -224,7 +224,7 @@ public class SystemConsumer : IConsumer {
     }
 
     public async ValueTask<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
-	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+	    if (record.Value is ReadResponse.SubscriptionCaughtUp || (Options.AutoCommit.Enabled && record.Value is ReadResponse.CheckpointReceived))
 		    return CheckpointController.TrackedPositions;
 
 	    var trackedPositions = await CheckpointController.Track(record);
@@ -233,7 +233,7 @@ public class SystemConsumer : IConsumer {
     }
 
     public async ValueTask<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
-	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+	    if (record.Value is ReadResponse.SubscriptionCaughtUp || (Options.AutoCommit.Enabled && record.Value is ReadResponse.CheckpointReceived))
 		    return CheckpointController.TrackedPositions;
 
 	    var trackedPositions = await CheckpointController.Commit(record);
