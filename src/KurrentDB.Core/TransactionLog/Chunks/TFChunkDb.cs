@@ -373,5 +373,10 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		Config.TruncateCheckpoint.Close(flush: chunksClosed);
 		Config.ProposalCheckpoint.Close(flush: chunksClosed);
 		Config.StreamExistenceFilterCheckpoint.Close(flush: chunksClosed);
+
+		if (chunksClosed)
+			Config.DbLock?.Dispose();
+		else
+			_log.Warning("Keeping the exclusive lock on the database: it was not closed cleanly.");
 	}
 }
