@@ -30,7 +30,7 @@ public static class VersionInfo {
 	static VersionInfo() {
 		// the official release assemblies contain the version prefix (4 part number)
 		// but not the suffix (beta, rc1, rtm, etc) so that the same assembly can be promoted.
-		var versionPrefix = Assembly.GetEntryAssembly().GetName().Version.ToString();
+		var versionPrefix = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? string.Empty;
 		if (versionPrefix.EndsWith(".0"))
 			versionPrefix = versionPrefix[..^2];
 		VersionPrefix = versionPrefix;
