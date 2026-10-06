@@ -83,7 +83,7 @@ internal partial class Streams<TStreamId> {
 
 				await using (enumerator) {
 					while (await enumerator.MoveNextAsync()) {
-						if (ResponseConverter.TryConvertReadResponse(enumerator.Current, uuidOption, out var readResponse))
+						if (ResponseConverter.TryConvertReadResponse(enumerator.Current, uuidOption, compatibility, out var readResponse))
 							await responseStream.WriteAsync(readResponse);
 					}
 				}
@@ -292,7 +292,10 @@ internal partial class Streams<TStreamId> {
 }
 
 static class ResponseConverter {
-	public static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, out ReadResp readResp) {
+	// The lowest ReadReq.Options.ControlOption.compatibility at which the client is sent FellBehind.
+	public const uint FellBehindCompatibility = 2;
+
+	public static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, uint compatibility, out ReadResp readResp) {
 		readResp = readResponse switch {
 			ReadResponse.EventReceived eventReceived => new ReadResp {
 				Event = ConvertToReadEvent(uuidOption, eventReceived.Event)
@@ -315,7 +318,8 @@ static class ResponseConverter {
 				}
 			},
 			ReadResponse.SubscriptionCaughtUp caughtUp => Convert(caughtUp),
-			ReadResponse.SubscriptionFellBehind => null, // currently not sent to clients
+			// only sent to clients that have declared they can handle it
+			ReadResponse.SubscriptionFellBehind fellBehind => compatibility >= FellBehindCompatibility ? Convert(fellBehind) : null,
 			ReadResponse.LastStreamPositionReceived lastStreamPositionReceived => new ReadResp {
 				LastStreamPosition = lastStreamPositionReceived.LastStreamPosition
 			},
@@ -332,22 +336,46 @@ static class ResponseConverter {
 		var response = new ReadResp {
 			CaughtUp = new CaughtUp {
 				Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(caughtUp.Timestamp),
+				Position = ConvertCheckpoint(caughtUp.AllCheckpoint),
 			},
 		};
 
-		if (caughtUp.StreamCheckpoint is { } streamCheckpoint && streamCheckpoint >= 0) {
-			response.CaughtUp.StreamRevision = streamCheckpoint;
-		}
-
-		if (caughtUp.AllCheckpoint is { } allCheckpoint && allCheckpoint != TFPos.HeadOfTf) {
-			var unsignedPosition = Position.FromInt64(allCheckpoint.CommitPosition, allCheckpoint.PreparePosition);
-			response.CaughtUp.Position = new() {
-				CommitPosition = unsignedPosition.CommitPosition,
-				PreparePosition = unsignedPosition.PreparePosition,
-			};
+		if (ConvertCheckpoint(caughtUp.StreamCheckpoint) is { } streamRevision) {
+			response.CaughtUp.StreamRevision = streamRevision;
 		}
 
 		return response;
+	}
+
+	private static ReadResp Convert(ReadResponse.SubscriptionFellBehind fellBehind) {
+		var response = new ReadResp {
+			FellBehind = new FellBehind {
+				Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(fellBehind.Timestamp),
+				Position = ConvertCheckpoint(fellBehind.AllCheckpoint),
+			},
+		};
+
+		if (ConvertCheckpoint(fellBehind.StreamCheckpoint) is { } streamRevision) {
+			response.FellBehind.StreamRevision = streamRevision;
+		}
+
+		return response;
+	}
+
+	// null when there is no stream checkpoint to resume from, i.e. nothing has been sent from the stream yet
+	private static long? ConvertCheckpoint(long? streamCheckpoint) =>
+		streamCheckpoint >= 0 ? streamCheckpoint : null;
+
+	// null when there is no $all checkpoint to resume from, i.e. nothing has been sent from $all yet
+	private static ReadResp.Types.Position ConvertCheckpoint(TFPos? allCheckpoint) {
+		if (allCheckpoint is not { } checkpoint || checkpoint == TFPos.HeadOfTf)
+			return null;
+
+		var unsignedPosition = Position.FromInt64(checkpoint.CommitPosition, checkpoint.PreparePosition);
+		return new() {
+			CommitPosition = unsignedPosition.CommitPosition,
+			PreparePosition = unsignedPosition.PreparePosition,
+		};
 	}
 
 	public static void ConvertReadResponseException(ReadResponseException readResponseEx) {
