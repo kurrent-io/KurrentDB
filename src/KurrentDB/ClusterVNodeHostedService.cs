@@ -7,7 +7,6 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.IO;
 using System.Linq;
-using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins;
@@ -53,11 +52,10 @@ using Serilog.Extensions.Logging;
 
 namespace KurrentDB;
 
-public class ClusterVNodeHostedService : IHostedService, IDisposable {
+public class ClusterVNodeHostedService : IHostedService {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeHostedService>();
 
 	private readonly ClusterVNodeOptions _options;
-	private readonly ExclusiveDbLock _dbLock;
 
 	public ClusterVNode Node { get; }
 
@@ -93,16 +91,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 					options.Projection.MaxProjectionStateSize,
 					options.Projection.MaxPartitionStateCacheSize)))
 			: options;
-
-		if (!_options.Database.MemDb) {
-			var absolutePath = Path.GetFullPath(_options.Database.Db);
-			if (RuntimeInformation.IsWindows)
-				absolutePath = absolutePath.ToLower();
-
-			_dbLock = new ExclusiveDbLock(absolutePath);
-			if (!_dbLock.Acquire())
-				throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{_options.Database.Db}'.");
-		}
 
 		var authorizationConfig = string.IsNullOrEmpty(_options.Auth.AuthorizationConfig)
 			? _options.Application.Config
@@ -342,14 +330,4 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 	public Task StopAsync(CancellationToken cancellationToken) =>
 		Node.StopAsync(cancellationToken: cancellationToken);
-
-	public void Dispose() {
-		if (_dbLock is not { IsAcquired: true }) {
-			return;
-		}
-
-		using (_dbLock) {
-			_dbLock.Release();
-		}
-	}
 }

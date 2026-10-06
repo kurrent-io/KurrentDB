@@ -78,6 +78,9 @@ public class TFChunkDbConfig {
 		MaxTruncation = maxTruncation;
 	}
 
+	// The exclusive lock on <see cref="Path"/>, or null when there is no directory to lock.
+	public ExclusiveDbLock DbLock { get; init; }
+
 	public long SqlEngineTempDirectorySizeLimit { get; init; }
 
 	public string SqlEngineTempDirectory { get; init; } = "";

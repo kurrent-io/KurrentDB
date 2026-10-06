@@ -244,13 +244,8 @@ try {
 		exitCodeSource.SetResult(code);
 	});
 
-	using (var hostedService = new ClusterVNodeHostedService(options, certificateProvider, configuration)) {
-		// Synchronous Wait() because ClusterVNodeHostedService must be disposed on the same thread
-		// that it was constructed on, because it makes use of ExclusiveDbLock which uses a Mutex.
-		// ReSharper disable once MethodHasAsyncOverloadWithCancellation
-		// ReSharper disable once MethodSupportsCancellation
-		Run(hostedService).Wait();
-	}
+	var hostedService = new ClusterVNodeHostedService(options, certificateProvider, configuration);
+	await Run(hostedService);
 
 	return await exitCodeSource.Task;
 

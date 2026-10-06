@@ -390,6 +390,8 @@ public class ClusterVNode<TStreamId> :
 			out SystemStatsHelper statsHelper,
 			out int readerThreadsCount) {
 
+			ExclusiveDbLock dbLock;
+
 			ICheckpoint databaseTagChk;
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -403,6 +405,7 @@ public class ClusterVNode<TStreamId> :
 			var dbPath = options.Database.Db;
 
 			if (options.Database.MemDb) {
+				dbLock = null;
 				databaseTagChk = new InMemoryCheckpoint(Checkpoint.DatabaseTag, initValue: GenerateDatabaseTag());
 				writerChk = new InMemoryCheckpoint(Checkpoint.Writer);
 				chaserChk = new InMemoryCheckpoint(Checkpoint.Chaser);
@@ -429,6 +432,12 @@ public class ClusterVNode<TStreamId> :
 						throw;
 					}
 				}
+
+				// the directory exists and is writable, and dbPath will not change again: lock it before
+				// anything in it is opened, so that a second server on the same directory stops here
+				dbLock = new ExclusiveDbLock(dbPath);
+				if (!dbLock.Acquire())
+					throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{dbPath}'.");
 
 				var indexPath = options.Database.Index ?? Path.Combine(dbPath, ESConsts.DefaultIndexDirectoryName);
 				Log.Information("Index Path set to {indexPath}", indexPath);
@@ -507,6 +516,7 @@ public class ClusterVNode<TStreamId> :
 				writethrough: options.Database.WriteThrough,
 				reduceFileCachePressure: options.Database.ReduceFileCachePressure,
 				maxTruncation: options.Database.MaxTruncation) {
+				DbLock = dbLock,
 				SqlEngineTempDirectory = options.Database.SqlEngineTempDirectory,
 				SqlEngineTempDirectorySizeLimit = options.Database.SqlEngineTempDirectorySizeLimit,
 			};
