@@ -157,8 +157,8 @@ ReadLoop:
 					checkpoint = await CatchUp(checkpoint, ct);
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
-			} catch (ReadResponseException.NotHandled.ServerNotReady ex) {
-				Log.Warning("Subscription {subscriptionId} to $all terminated because server is not ready.", _subscriptionId);
+			} catch (ReadResponseException.NotHandled ex) {
+				Log.Warning("Subscription {subscriptionId} to $all terminated: {reason}.", _subscriptionId, ex.Message);
 				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition))
