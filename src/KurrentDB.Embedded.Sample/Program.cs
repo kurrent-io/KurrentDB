@@ -41,7 +41,6 @@ internal static class Program {
 
 		Log.Information("Running the samples for run {runId}", data.RunId);
 
-		_ = Foo();
 		await new AppendSamples(client, data).RunAsync(cancellation);
 		await new ReadSamples(client, data).RunAsync(cancellation);
 		await new SubscriptionSamples(client, data).RunAsync(cancellation);
@@ -56,14 +55,6 @@ internal static class Program {
 		}
 
 		Log.Information("Stopping...");
-	}
-
-	static async Task Foo() {
-		while (true) {
-			await Task.Delay(10_000);
-			Log.Information("collecting");
-			GC.Collect(2, GCCollectionMode.Default, true, true);
-		}
 	}
 
 	static CancellationToken ConsoleCancellation() {
