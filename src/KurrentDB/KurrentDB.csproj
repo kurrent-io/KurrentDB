@@ -32,6 +32,7 @@
 		<ProjectReference Include="..\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" />
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
 		<ProjectReference Include="..\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
@@ -63,10 +64,6 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<None Update="logconfig.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="..\KurrentDB.Common\Utils\version.properties">
-		  <Link>version.properties</Link>
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

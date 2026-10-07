@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
-    <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+    <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

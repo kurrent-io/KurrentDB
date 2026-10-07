@@ -130,15 +130,12 @@ public class ClusterVNodeApp : IAsyncDisposable {
 			.AddSerilog();
 
 		// configure services first so we can override things
-		svc.Node.Startup.ConfigureServices(builder.Services);
+		NodeWebApplication.ConfigureServices(builder.Services, svc);
 
         builder.Services
             .AddOpenTelemetry()
             .WithMetrics(metrics => metrics
                 .AddOtlpExporter());
-
-        // then add the hosted service
-        builder.Services.AddSingleton<IHostedService>(svc);
 
         // Configures gRPC client address discovery to use a static resolver
         // that points to the test server's address.
@@ -174,7 +171,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 		// finally, build the app and configure all the routes and grpc services
 		Web = builder.Build();
 
-        svc.Node.Startup.Configure(Web);
+        NodeWebApplication.Configure(Web, svc);
 
 		// grab the logger for later use
 		Logger = Web.Services.GetRequiredService<ILogger<ClusterVNodeApp>>();

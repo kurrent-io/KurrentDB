@@ -16,6 +16,37 @@ using RuntimeInformation = System.Runtime.RuntimeInformation;
 namespace KurrentDB;
 
 public static class KestrelHelpers {
+	/// <summary>
+	/// The endpoints a node serves on, and the gRPC keep-alive limits that apply to all of them.
+	/// </summary>
+	/// <param name="listenOnTcp">
+	/// Whether to open the configured TCP endpoint. The server always does; an embedded database may have
+	/// nothing left that needs it.
+	/// </param>
+	/// <returns>
+	/// True if a UNIX domain socket was opened, with <paramref name="unixSocket"/> naming it. False if the
+	/// node is configured without one or cannot have one, which the server carries on from and a host
+	/// reached only over the socket does not.
+	/// </returns>
+	public static bool TryConfigureListeners(
+		KestrelServerOptions server,
+		ClusterVNodeOptions options,
+		ClusterVNodeHostedService hostedService,
+		bool listenOnTcp,
+		out string unixSocket) {
+
+		server.Limits.Http2.KeepAlivePingDelay = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveInterval);
+		server.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveTimeout);
+
+		if (listenOnTcp) {
+			server.Listen(options.Interface.NodeIp, options.Interface.NodePort, listenOptions =>
+				ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
+		}
+
+		unixSocket = null;
+		return hostedService.Node.EnableUnixSocket && TryListenOnUnixSocket(hostedService, server, out unixSocket);
+	}
+
 	public static void ConfigureHttpOptions(ListenOptions listenOptions, ClusterVNodeHostedService hostedService, bool useHttps) {
 		listenOptions.UseConnectionInterceptors();
 

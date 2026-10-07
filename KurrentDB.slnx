@@ -116,6 +116,7 @@
   <Project Path="src/KurrentDB.Transport.Http/KurrentDB.Transport.Http.csproj" />
   <Project Path="src/KurrentDB.Transport.Tcp/KurrentDB.Transport.Tcp.csproj" />
   <Project Path="src/KurrentDB/KurrentDB.csproj" />
+  <Project Path="src/KurrentDB.Hosting/KurrentDB.Hosting.csproj" />
   <Project Path="src/KurrentDB.KontrolPlane.ObjectModel/KurrentDB.KontrolPlane.ObjectModel.csproj" />
   <Project Path="src/KurrentDB.KontrolPlane/KurrentDB.KontrolPlane.csproj" />
 </Solution>

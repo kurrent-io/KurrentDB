@@ -2,10 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
-using System.Linq;
-using System.Runtime;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB;
@@ -14,7 +10,6 @@ using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
-using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Logging;
@@ -24,11 +19,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Events;
-using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
 var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
@@ -37,11 +29,6 @@ var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
-	if (!Environment.Is64BitProcess) {
-		Log.Fatal("KurrentDB requires a 64-bit process to run.");
-		return 1;
-	}
-
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	Log.Logger = KurrentLoggerConfiguration
@@ -68,135 +55,15 @@ try {
 		return 0;
 	}
 
-	Log.Information(
-		"{description,-25} {version} {edition} ({buildId}/{commitSha}, {timestamp})", "DB VERSION:",
-		VersionInfo.Version, VersionInfo.Edition, VersionInfo.BuildId, VersionInfo.CommitSha, VersionInfo.Timestamp
-	);
-
-	Log.Information("{description,-25} {osArchitecture} ", "OS ARCHITECTURE:", System.Runtime.InteropServices.RuntimeInformation.OSArchitecture);
-	Log.Information("{description,-25} {osFlavor} ({osVersion})", "OS:", RuntimeInformation.OsPlatform, Environment.OSVersion);
-	Log.Information("{description,-25} {osRuntimeVersion} ({architecture}-bit)", "RUNTIME:", RuntimeInformation.RuntimeVersion, RuntimeInformation.RuntimeMode);
-	Log.Information("{description,-25} {maxGeneration} IsServerGC: {isServerGC} Latency Mode: {latencyMode}", "GC:",
-		GC.MaxGeneration == 0 ? "NON-GENERATION (PROBABLY BOEHM)" : $"{GC.MaxGeneration + 1} GENERATIONS",
-		GCSettings.IsServerGC,
-		GCSettings.LatencyMode);
-	Log.Information("{description,-25} {logsDirectory}", "LOGS:", options.Logging.Log);
-	Log.Information("{description,-25} {isWindowsService}", "IsWindowsService:", WindowsServiceHelpers.IsWindowsService());
-
-	var gcSettings = string.Join($"{Environment.NewLine}    ", GC.GetConfigurationVariables().Select(kvp => $"{kvp.Key}: {kvp.Value}"));
-	Log.Information($"GC Configuration settings:{Environment.NewLine}    {{settings}}", gcSettings);
-
-	Log.Information(options.DumpOptions()!);
-
-	var level = options.Application.AllowUnknownOptions
-		? LogEventLevel.Warning
-		: LogEventLevel.Fatal;
-
-	foreach (var (option, suggestion) in options.Unknown.Options) {
-		if (string.IsNullOrEmpty(suggestion)) {
-			Log.Write(level, "The option {option} is not a known option.", option);
-		} else {
-			Log.Write(level, "The option {option} is not a known option. Did you mean {suggestion}?", option, suggestion);
-		}
-	}
-
-	if (options.UnknownOptionsDetected && !options.Application.AllowUnknownOptions) {
-		Log.Fatal(
-			$"Found unknown options. To continue anyway, set {nameof(ClusterVNodeOptions.ApplicationOptions.AllowUnknownOptions)} to true.");
+	if (!NodePreflight.TryPrepare(options, out var cannotStart)) {
+		Log.Fatal(cannotStart);
 		Log.Information("Use the --help option in the command line to see the full list of KurrentDB configuration options.");
 		return 1;
 	}
 
-	CertificateProvider certificateProvider;
-	if (options.DevMode.Dev) {
-		Log.Information("Dev mode is enabled.");
-		Log.Warning(
-			"\n==============================================================================================================\n" +
-			"DEV MODE IS ON. THIS MODE IS *NOT* RECOMMENDED FOR PRODUCTION USE.\n" +
-			"DEV MODE WILL GENERATE AND TRUST DEV CERTIFICATES FOR RUNNING A SINGLE SECURE NODE ON LOCALHOST.\n" +
-			"==============================================================================================================\n");
-		var manager = CertificateManager.Instance;
-		var devCertPath = options.DevMode.DevCertPath;
-		X509Certificate2 devCert = null;
-
-		// If a cert path is specified, try to load an existing cert from it
-		if (!string.IsNullOrEmpty(devCertPath)) {
-			devCert = DevCertificateFile.TryLoad(devCertPath);
-			if (devCert is not null) {
-				Log.Information("Dev certificate loaded from {path}", devCertPath);
-			} else if (File.Exists(devCertPath)) {
-				Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
-			}
-		}
-
-		if (devCert is null) {
-			// Generate a new certificate and optionally export to file
-			var result = manager.EnsureDevelopmentCertificate(
-				DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1),
-				out devCert,
-				path: devCertPath,
-				includePrivateKey: !string.IsNullOrEmpty(devCertPath));
-			if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
-				Log.Fatal("Could not ensure dev certificate is available. Reason: {result}", result);
-				return 1;
-			}
-
-			if (devCert is null) {
-				Log.Fatal("Could not create dev certificate. " +
-						  "If the home directory is not writable (e.g., in a container), " +
-						  "use --dev-cert-path to specify an alternative file location.");
-				return 1;
-			}
-
-			if (!string.IsNullOrEmpty(devCertPath)) {
-				Log.Information("Dev certificate saved to {path}", devCertPath);
-			}
-		}
-
-		// Write public cert as .crt for clients to trust
-		if (!string.IsNullOrEmpty(devCertPath)) {
-			try {
-				var crtPath = DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
-				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)",
-					crtPath);
-			} catch (Exception ex) {
-				Log.Warning("Could not write public certificate: {error}", ex.Message);
-			}
-		}
-
-		if (!manager.IsTrusted(devCert) && RuntimeInformation.IsWindows) {
-			Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", devCert);
-			manager.TrustCertificate(devCert);
-		} else if (!RuntimeInformation.IsWindows) {
-			Log.Warning("Automatically trusting dev certs is only supported on Windows.\n" +
-						"Please trust certificate {cert} if it's not trusted already.", devCert);
-		}
-
-		Log.Information("Running in dev mode using certificate '{cert}'", devCert);
-		certificateProvider = new DevCertificateProvider(devCert);
-	} else {
-		certificateProvider = new OptionsCertificateProvider();
-	}
-
-	var defaultLocationWarnings = options.CheckForLegacyDefaultLocations(optionsWithLegacyDefaults);
-	foreach (var locationWarning in defaultLocationWarnings) {
-		Log.Warning(locationWarning);
-	}
-
-	var eventStoreOptionWarnings = options.CheckForLegacyEventStoreConfiguration();
-	if (eventStoreOptionWarnings.Any()) {
-		Log.Warning(
-			$"The \"{KurrentConfigurationKeys.LegacyEventStorePrefix}\" configuration root " +
-			$"has been deprecated and renamed to \"{KurrentConfigurationKeys.Prefix}\". " +
-			"The following settings will still be used, but will stop working in a future release:");
-		foreach (var warning in eventStoreOptionWarnings) {
-			Log.Warning(warning);
-		}
-	}
-
-	var deprecationWarnings = options.GetDeprecationWarnings();
-	if (deprecationWarnings != null) {
-		Log.Warning($"DEPRECATED{Environment.NewLine}{deprecationWarnings}");
+	if (!CertificateProviders.TryCreate(options, out var certificateProvider, out var noCertificate)) {
+		Log.Fatal(noCertificate);
+		return 1;
 	}
 
 	if (!ClusterVNodeOptionsValidator.ValidateForStartup(options)) {
@@ -255,36 +122,23 @@ try {
 				x.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
 #endif
 			});
-			builder.WebHost.ConfigureKestrel(
-				server => {
-					server.Limits.Http2.KeepAlivePingDelay = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveInterval);
-					server.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveTimeout);
+			// a node that cannot open a socket still has its TCP endpoint, so the server carries on
+			builder.WebHost.ConfigureKestrel(server =>
+				KestrelHelpers.TryConfigureListeners(server, options, hostedService, listenOnTcp: true, out _));
+			NodeWebApplication.ConfigureServices(builder.Services, hostedService);
+			if (!options.Interface.DisableAdminUi)
+				EmbeddedUI.ConfigureServices(builder.Services);
+			NodePreflight.WriteHostEnvironment(builder.Environment);
 
-					server.Listen(options.Interface.NodeIp, options.Interface.NodePort, listenOptions =>
-						KestrelHelpers.ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
-
-					if (hostedService.Node.EnableUnixSocket)
-						KestrelHelpers.TryListenOnUnixSocket(hostedService, server, out _);
-				});
-			hostedService.Node.Startup.ConfigureServices(builder.Services);
-			// Order is important, configure IHostedService after the WebHost to make the sure
-			// ClusterVNodeHostedService and the subsystems are started after configuration is finished.
-			// Allows the subsystems to resolve dependencies out of the DI in Configure() before being started.
-			// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
-			builder.Services.AddSingleton<IHostedService>(hostedService);
-			EmbeddedUI.ConfigureServices(builder.Services);
-			builder.Services.AddSingleton(TimeProvider.System);
-			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
-			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
-
-			builder.Services.Decorate<IHostedService, HostedServiceLifecycleDecorator>();
+			NodeWebApplication.LogHostedServiceLifecycle(builder.Services);
 
 			var app = builder.Build();
 
+			// the shutdown guard has to see a circuit request before the node's endpoints claim it
 			if (!options.Interface.DisableAdminUi)
 				EmbeddedUI.UseShutdownGuard(app);
 
-			hostedService.Node.Startup.Configure(app);
+			NodeWebApplication.Configure(app, hostedService);
 
 			if (!options.Interface.DisableAdminUi)
 				EmbeddedUI.Configure(app);

@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>KurrentDB</RootNamespace>
+    <Description>Assembles a KurrentDB node and the web application around it, for any host that runs one.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MEF, for the plugin catalogs in ClusterVNodeHostedService -->
+    <PackageReference Include="System.ComponentModel.Composition" />
+    <!-- WindowsServiceHelpers, for the startup banner -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <!-- Decorate, for the hosted service lifecycle logging -->
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- VersionInfo reads this from the output directory at type-initialisation time, and Common copies
+         it to Utils/ rather than the root, so it needs linking into place. Every host that assembles a
+         node touches VersionInfo, so it is declared here rather than in each of them. -->
+    <None Include="..\KurrentDB.Common\Utils\version.properties">
+      <Link>version.properties</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
+    <ProjectReference Include="..\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
+    <ProjectReference Include="..\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" />
+    <ProjectReference Include="..\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" />
+    <ProjectReference Include="..\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" />
+    <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+    <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+    <ProjectReference Include="..\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
+    <ProjectReference Include="..\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
+    <ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
+    <ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
+    <ProjectReference Include="..\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" />
+    <ProjectReference Include="..\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
+    <ProjectReference Include="..\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" />
+    <ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
+    <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
+
+    <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
+    <ProjectReference Include="..\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
+  </ItemGroup>
+</Project>
