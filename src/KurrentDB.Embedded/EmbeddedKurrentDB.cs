@@ -352,12 +352,10 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			["NodePort"] = options.TcpListenerPort.ToString(CultureInfo.InvariantCulture),
 
 			["Insecure"] = options.Insecure.ToString(),
-			// an embedded database is a part of someone else's process: it neither phones home nor
-			// writes log files of its own, and it warns about a setting it does not recognise rather than
-			// refusing to start the host application over it
+			// an embedded database is a part of someone else's process: it neither phones home nor writes
+			// log files of its own
 			["TelemetryOptout"] = bool.TrueString,
 			["DisableLogFile"] = bool.TrueString,
-			["AllowUnknownOptions"] = bool.TrueString,
 
 			// and it does not log its statistics either. The server writes them as a JSON object every
 			// StatsPeriodSec and routes that source context to a file of its own, which an embedded node has no

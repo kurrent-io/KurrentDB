@@ -103,6 +103,39 @@ public class EmbeddedKurrentDBOptionsTests {
 		await Task.CompletedTask;
 	}
 
+	[Test]
+	public async Task reports_a_mistyped_setting_rather_than_ignoring_it() {
+		var dataDirectory = TestPaths.NewDataDirectory();
+
+		using var _ = new Cleanup(dataDirectory);
+		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
+			Settings = new Dictionary<string, string?> {
+				["KurrentDB:NodePrt"] = "21139"
+			}
+		});
+
+		// AllowUnknownOptions is left at the server's default, so StartAsync refuses this rather than
+		// leaving the caller with a database that quietly ignored what they asked for
+		db.ServerOptions.Application.AllowUnknownOptions.ShouldBeFalse();
+		db.ServerOptions.UnknownOptionsDetected.ShouldBeTrue();
+	}
+
+	[Test]
+	public async Task does_not_report_a_nested_setting_because_plugins_use_them() {
+		var dataDirectory = TestPaths.NewDataDirectory();
+
+		using var _ = new Cleanup(dataDirectory);
+		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
+			Settings = new Dictionary<string, string?> {
+				["KurrentDB:Licensing:LicenseKey"] = "a-licence-key"
+			}
+		});
+
+		// the flip side of the above, and the reason a caller who writes KurrentDB:Database:ChunkSize gets
+		// neither the setting nor a complaint
+		db.ServerOptions.UnknownOptionsDetected.ShouldBeFalse();
+	}
+
 	sealed class Cleanup(string dataDirectory) : IDisposable {
 		public void Dispose() => TestPaths.Delete(dataDirectory);
 	}

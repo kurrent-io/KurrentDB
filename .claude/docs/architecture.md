@@ -70,6 +70,9 @@
   - Diagnostics: KurrentDB.Diagnostics.LogsEndpointPlugin
 - **Secondary Indexing**: KurrentDB.SecondaryIndexing, KurrentDB.DuckDB (90+ total projects)
 - **Schema Registry**: SchemaRegistry/ (4 projects)
+- **Embedded**: KurrentDB.Embedded — runs a single-node server in the calling process, reached over a UNIX
+  domain socket instead of the network. See `src/KurrentDB.Embedded/README.md`. KurrentDB.Embedded.Sample is
+  a console host; it takes `KurrentDB.Hosting`, which assembles the node without the server executable's Blazor UI.
 - **Testing**: Projects ending in `.Tests` use xUnit, NUnit, and TUnit frameworks
   - KurrentDB.Testing - Shared testing infrastructure
   - KurrentDB.Surge.Testing - Surge framework testing utilities

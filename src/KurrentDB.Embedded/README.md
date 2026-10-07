@@ -92,7 +92,7 @@ and a project that merely references KurrentDB does not produce one.
 | `RunProjections` | `true` | Runs system projections and starts the standard ones. |
 | `Insecure` | `true` | No TLS, no authentication, no authorization. |
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
-| `Settings` | empty | Any server setting, keyed as in a config file: `KurrentDB:Section:Option`. |
+| `Settings` | empty | Any server setting, keyed flat: `KurrentDB:ChunkSize`. Plugins nest: `KurrentDB:Licensing:LicenseKey`. |
 | `ConfigureServices` | – | Add or replace DI registrations after the node has registered its own. |
 | `ConfigureLogging` | – | Change where the node logs. |
 
