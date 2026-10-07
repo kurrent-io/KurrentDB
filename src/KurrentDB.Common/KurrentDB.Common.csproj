@@ -36,6 +36,7 @@
 	  <None Update="Utils\version.properties">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <EmbeddedResource Include="Utils\version.properties" LogicalName="version.properties" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
