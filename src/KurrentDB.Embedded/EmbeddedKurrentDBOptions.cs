@@ -23,6 +23,12 @@ public sealed record EmbeddedKurrentDBOptions {
 	public required string DataDirectory { get; init; }
 
 	/// <summary>
+	/// Whether to opt out of telemetry. False by default, the same as the server, so an embedded node
+	/// reports usage data to <c>kurrent.io</c> unless it is told not to.
+	/// </summary>
+	public bool TelemetryOptout { get; init; }
+
+	/// <summary>
 	/// How long to wait for the node to report itself ready before <see cref="EmbeddedKurrentDB.StartAsync"/>
 	/// gives up.
 	/// </summary>

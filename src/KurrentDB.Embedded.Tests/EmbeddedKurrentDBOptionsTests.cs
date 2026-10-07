@@ -35,9 +35,7 @@ public class EmbeddedKurrentDBOptionsTests {
 		serverOptions.Cluster.ClusterSize.ShouldBe(1);
 		serverOptions.Cluster.DiscoverViaDns.ShouldBeFalse();
 
-		// part of someone else's process: it does not phone home, and it does not write to the host's log
-		// on a timer either
-		serverOptions.Application.TelemetryOptout.ShouldBeTrue();
+		// part of someone else's process: it does not write to the host's log, nor to it on a timer
 		serverOptions.Logging.DisableLogFile.ShouldBeTrue();
 		serverOptions.Database.StatsStorage.ShouldBe(StatsStorage.None);
 	}
@@ -57,13 +55,38 @@ public class EmbeddedKurrentDBOptionsTests {
 	}
 
 	[Test]
+	public async Task reports_telemetry_unless_told_not_to() {
+		var dataDirectory = TestPaths.NewDataDirectory();
+
+		using var _ = new Cleanup(dataDirectory);
+		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory));
+
+		// the same default as the server: embedding is a deployment shape, not a privacy policy
+		db.ServerOptions.Application.TelemetryOptout.ShouldBeFalse();
+	}
+
+	[Test]
+	public async Task opts_out_of_telemetry_when_asked() {
+		var dataDirectory = TestPaths.NewDataDirectory();
+
+		using var _ = new Cleanup(dataDirectory);
+		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
+			TelemetryOptout = true
+		});
+
+		// the option is the only way to reach this setting, so it had better work
+		db.ServerOptions.Application.TelemetryOptout.ShouldBeTrue();
+	}
+
+	[Test]
 	public async Task refuses_a_setting_the_server_only_takes_from_the_environment() {
 		var dataDirectory = TestPaths.NewDataDirectory();
 
 		using var _ = new Cleanup(dataDirectory);
 
 		// the library sets TelemetryOptout itself, through the defaults source, which is exempt. A caller
-		// supplying one is not, exactly as it would not be from a configuration file.
+		// supplying one is not, exactly as it would not be from a configuration file — which is why the
+		// option exists, and is covered by the two tests above.
 		var options = TestPaths.Options(dataDirectory) with {
 			Settings = new Dictionary<string, string?> {
 				["KurrentDB:TelemetryOptout"] = bool.FalseString

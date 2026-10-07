@@ -51,7 +51,6 @@ var streams = new Streams.StreamsClient(channel);
   are reached without one.
 - **No replication listener and no gossip.** A single node elects itself, replicates to nobody and resolves
   no seeds, so `ClusterVNode` never opens the internal TCP endpoint.
-- **No telemetry.** `TelemetryOptout` is forced on.
 - **No licence call.** A single node with no licence key issues itself one rather than asking for one. Set
   `KurrentDB:Licensing:LicenseKey` through `Settings` and it will contact `licensing.kurrent.io` as usual.
 - **No log files.** The node logs through the static `Serilog.Log` logger, so a host that has not configured
@@ -91,6 +90,7 @@ and a project that merely references KurrentDB does not produce one.
 |---|---|---|
 | `DataDirectory` | *required* | Where the database is written. Created owner-only if absent. |
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
+| `TelemetryOptout` | `false` | Opt out of usage reporting to `kurrent.io`. |
 | `Settings` | empty | Any server setting, keyed flat: `KurrentDB:ChunkSize`. Plugins nest: `KurrentDB:Licensing:LicenseKey`. |
 | `ConfigureServices` | – | Add or replace DI registrations after the node has registered its own. |
 | `ConfigureLogging` | – | Change where the node logs. |

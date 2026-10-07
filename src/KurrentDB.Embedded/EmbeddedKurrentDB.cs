@@ -337,8 +337,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			["Db"] = dataDirectory,
 			["EnableUnixSocket"] = bool.TrueString,
 			["Insecure"] = bool.TrueString,
-			["TelemetryOptout"] = bool.TrueString, //qq make into an option?
-
+			["TelemetryOptout"] = options.TelemetryOptout.ToString(),
 			//qq revisit stats and logging
 			["DisableLogFile"] = bool.TrueString,
 			["StatsStorage"] = nameof(StatsStorage.None),
