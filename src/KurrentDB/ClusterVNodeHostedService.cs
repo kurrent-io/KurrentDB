@@ -25,7 +25,6 @@ using KurrentDB.Core.Authentication.PassthroughAuthentication;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.LogAbstraction;
-using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
@@ -101,7 +100,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		switch (_options.Database.DbLogFormat) {
 			case DbLogFormat.V2: {
-				if (SecondaryIndexingPlugin.IsAllowed) {
+				if (SecondaryIndexingPlugin.IsAllowed && SchemaRegistryPlugin.IsAllowed) {
 					var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
 					_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 				}
