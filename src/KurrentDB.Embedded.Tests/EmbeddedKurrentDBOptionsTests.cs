@@ -60,17 +60,6 @@ public class EmbeddedKurrentDBOptionsTests {
 	}
 
 	[Test]
-	public async Task runs_projections_when_asked_to() {
-		var dataDirectory = TestPaths.NewDataDirectory();
-
-		using var _ = new Cleanup(dataDirectory);
-		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with { RunProjections = true });
-
-		db.ServerOptions.Projection.RunProjections.ShouldBe(ProjectionType.System);
-		db.ServerOptions.Projection.StartStandardProjections.ShouldBeTrue();
-	}
-
-	[Test]
 	public async Task lets_settings_override_what_it_chose() {
 		var dataDirectory = TestPaths.NewDataDirectory();
 

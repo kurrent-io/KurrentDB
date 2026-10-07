@@ -367,11 +367,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		if (options.IndexDirectory is { Length: > 0 } indexDirectory)
 			defaults["Index"] = Path.GetFullPath(indexDirectory);
 
-		if (options.RunProjections) {
-			defaults["RunProjections"] = nameof(ProjectionType.System);
-			defaults["StartStandardProjections"] = bool.TrueString;
-		}
-
 		return new ConfigurationBuilder()
 			.AddKurrentDefaultValues(defaults)
 			.AddInMemoryCollection(options.Settings)

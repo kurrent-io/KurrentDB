@@ -50,9 +50,7 @@ public static class TestPaths {
 			DataDirectory = dataDirectory,
 			// the socket is what these tests are about, and a fixed port would collide between them
 			EnableTcpListener = false,
-			// nothing here reads a projection, and starting them only slows the node down
-			RunProjections = false,
-			StartupTimeout = TimeSpan.FromMinutes(2)
+			StartupTimeout = TimeSpan.FromMinutes(2),
 		};
 
 	public static void Delete(string directory) {

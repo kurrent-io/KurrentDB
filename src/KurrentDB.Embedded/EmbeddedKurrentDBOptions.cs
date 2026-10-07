@@ -50,11 +50,6 @@ public sealed record EmbeddedKurrentDBOptions {
 	public int TcpListenerPort { get; init; } = 2113;
 
 	/// <summary>
-	/// Whether to run the projections subsystem and start the standard projections.
-	/// </summary>
-	public bool RunProjections { get; init; } = true;
-
-	/// <summary>
 	/// Whether to run without TLS, authentication or authorization.
 	/// </summary>
 	/// <remarks>
