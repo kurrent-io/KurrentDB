@@ -98,10 +98,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		ClusterVNodeOptionsValidator.Validate(ServerOptions);
 
-		// Also the startup checks, which is why this library's own choices go in through the defaults
-		// source: those are exempt from the environment-only rule, while a caller's are not. So a caller
-		// who puts DefaultAdminPassword or TelemetryOptout in Settings is turned away here, as they would
-		// be by a server reading them from a configuration file.
 		if (!ClusterVNodeOptionsValidator.ValidateForStartup(ServerOptions)) {
 			throw new InvalidConfigurationException(
 				"The embedded database cannot start with this configuration. The errors logged above say why.");
@@ -156,16 +152,9 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 					$"{nameof(EmbeddedKurrentDB)} on the same data directory instead.");
 			}
 
-			// The same banner and the same refusals as the server executable, and before the state moves:
-			// nothing has been opened, so a node that cannot run here leaves an instance that was never
-			// started rather than one that is spent. The options are the valuable part of the banner —
-			// they come from this library's defaults merged with Settings, so unlike a server there is no
-			// configuration file to go and read. Sensitive values are masked.
 			if (!NodePreflight.TryPrepare(ServerOptions, out var cannotStart))
 				throw new InvalidOperationException(cannotStart);
 
-			// the configured certificate, or a generated one if a caller asked for dev mode through Settings.
-			// Hardcoding the configured provider here would have quietly ignored that.
 			if (!CertificateProviders.TryCreate(ServerOptions, out var certificateProvider, out var noCertificate))
 				throw new InvalidOperationException(noCertificate);
 
@@ -332,22 +321,24 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	/// option check deliberately ignores.
 	/// </para>
 	/// </remarks>
-	static IConfigurationRoot BuildConfiguration(EmbeddedKurrentDBOptions options, string dataDirectory) {
-		var defaults = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
-			["Db"] = dataDirectory,
-			["EnableUnixSocket"] = bool.TrueString,
-			["Insecure"] = bool.TrueString,
-			["TelemetryOptout"] = options.TelemetryOptout.ToString(),
-			//qq revisit stats and logging
-			["DisableLogFile"] = bool.TrueString,
-			["StatsStorage"] = nameof(StatsStorage.None),
-		};
-
-		return new ConfigurationBuilder()
-			.AddKurrentDefaultValues(defaults)
-			.AddInMemoryCollection(options.Settings)
+	static IConfigurationRoot BuildConfiguration(EmbeddedKurrentDBOptions options, string dataDirectory) =>
+		new ConfigurationBuilder()
+			.AddKurrentDefaultValues()
+			// TelemetryOptout value masquerades as a default because it
+			// is only allowed to be overridden by the environment.
+			.AddKurrentDefaultValues(new KeyValuePair<string, string?>[] {
+				new("KurrentDB:TelemetryOptout", options.TelemetryOptout.ToString()),
+			})
+			.AddInMemoryCollection([
+				new("KurrentDB:Db", dataDirectory),
+				new("KurrentDB:EnableUnixSocket", bool.TrueString),
+				new("KurrentDB:Insecure", bool.TrueString),
+				//qq revisit stats and logging
+				new("KurrentDB:DisableLogFile", bool.TrueString),
+				new("KurrentDB:StatsStorage", nameof(StatsStorage.None)),
+			])
+			.AddInMemoryCollection(options.DatabaseOptions)
 			.Build();
-	}
 
 	WebApplication BuildWebApplication(
 		EmbeddedKurrentDBOptions options,
@@ -377,7 +368,8 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			// the node picks the socket path — the database directory, which is the data directory — and
 			// reports it back. The constructor has ruled out the in-memory database, so what is left is an
 			// operating system without UNIX domain sockets, or a caller who turned EnableUnixSocket off
-			// through Settings. Either way an embedded database has no way in, so neither is survivable.
+			// through DatabaseOptions. Either way an embedded database has no way in, so neither is
+			// survivable.
 			if (!KestrelHelpers.TryConfigureListeners(
 				server: server,
 				options: ServerOptions,
@@ -387,7 +379,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				throw new PlatformNotSupportedException(
 					"An embedded KurrentDB is reached over a UNIX domain socket, and none was opened. Either " +
 					"this operating system does not support them, or KurrentDB:EnableUnixSocket has been " +
-					"turned off through Settings.");
+					"turned off through DatabaseOptions.");
 			}
 
 			Volatile.Write(ref _unixSocketPath, unixSocket);

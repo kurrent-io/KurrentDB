@@ -10,11 +10,6 @@ namespace KurrentDB.Embedded;
 /// <summary>
 /// How an <see cref="EmbeddedKurrentDB"/> is configured.
 /// </summary>
-/// <remarks>
-/// These are the settings that an embedded database has an opinion about. Everything else the server
-/// understands can be set through <see cref="Settings"/>, using the same keys as a configuration file —
-/// <c>KurrentDB:ChunkSize</c> and so on.
-/// </remarks>
 [PublicAPI]
 public sealed record EmbeddedKurrentDBOptions {
 	/// <summary>
@@ -23,8 +18,7 @@ public sealed record EmbeddedKurrentDBOptions {
 	public required string DataDirectory { get; init; }
 
 	/// <summary>
-	/// Whether to opt out of telemetry. False by default, the same as the server, so an embedded node
-	/// reports usage data to <c>kurrent.io</c> unless it is told not to.
+	/// Whether to opt out of telemetry. False by default.
 	/// </summary>
 	public bool TelemetryOptout { get; init; }
 
@@ -35,18 +29,9 @@ public sealed record EmbeddedKurrentDBOptions {
 	public TimeSpan StartupTimeout { get; init; } = TimeSpan.FromMinutes(1);
 
 	/// <summary>
-	/// Server settings, keyed as the server binds them: <c>KurrentDB:Option</c>, flat, with no section in
-	/// between — <c>KurrentDB:ChunkSize</c>, not <c>KurrentDB:Database:ChunkSize</c>. Plugins are the
-	/// exception and are nested, as in <c>KurrentDB:Licensing:LicenseKey</c>. Applied last, so they win
-	/// over everything this library chose.
+	/// Server settings, keyed as the server binds them e.g. <c>KurrentDB:PrepareTimeoutMs</c>
 	/// </summary>
-	/// <remarks>
-	/// A key the server does not recognise stops the node from starting, so a typo is reported rather than
-	/// ignored. That only covers flat keys: an unrecognised <em>section</em> is passed over without
-	/// complaint, because that is how plugin configuration reaches its plugin. So
-	/// <c>KurrentDB:Database:ChunkSize</c> is not an error — it simply does nothing.
-	/// </remarks>
-	public IReadOnlyDictionary<string, string?> Settings { get; init; } =
+	public IReadOnlyDictionary<string, string?> DatabaseOptions { get; init; } =
 		new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>

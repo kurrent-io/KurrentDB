@@ -46,7 +46,7 @@ public class EmbeddedKurrentDBOptionsTests {
 
 		using var _ = new Cleanup(dataDirectory);
 		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
-			Settings = new Dictionary<string, string?> {
+			DatabaseOptions = new Dictionary<string, string?> {
 				["KurrentDB:NodePort"] = "21139"
 			}
 		});
@@ -88,7 +88,7 @@ public class EmbeddedKurrentDBOptionsTests {
 		// supplying one is not, exactly as it would not be from a configuration file — which is why the
 		// option exists, and is covered by the two tests above.
 		var options = TestPaths.Options(dataDirectory) with {
-			Settings = new Dictionary<string, string?> {
+			DatabaseOptions = new Dictionary<string, string?> {
 				["KurrentDB:TelemetryOptout"] = bool.FalseString
 			}
 		};
@@ -104,7 +104,7 @@ public class EmbeddedKurrentDBOptionsTests {
 
 		using var _ = new Cleanup(dataDirectory);
 		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
-			Settings = new Dictionary<string, string?> {
+			DatabaseOptions = new Dictionary<string, string?> {
 				["KurrentDB:NodePrt"] = "21139"
 			}
 		});
@@ -121,7 +121,7 @@ public class EmbeddedKurrentDBOptionsTests {
 
 		using var _ = new Cleanup(dataDirectory);
 		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
-			Settings = new Dictionary<string, string?> {
+			DatabaseOptions = new Dictionary<string, string?> {
 				["KurrentDB:Licensing:LicenseKey"] = "a-licence-key"
 			}
 		});

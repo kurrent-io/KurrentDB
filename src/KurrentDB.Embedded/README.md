@@ -52,7 +52,7 @@ var streams = new Streams.StreamsClient(channel);
 - **No replication listener and no gossip.** A single node elects itself, replicates to nobody and resolves
   no seeds, so `ClusterVNode` never opens the internal TCP endpoint.
 - **No licence call.** A single node with no licence key issues itself one rather than asking for one. Set
-  `KurrentDB:Licensing:LicenseKey` through `Settings` and it will contact `licensing.kurrent.io` as usual.
+  `KurrentDB:Licensing:LicenseKey` through `DatabaseOptions` and it will contact `licensing.kurrent.io` as usual.
 - **No log files.** The node logs through the static `Serilog.Log` logger, so a host that has not configured
   Serilog gets a quiet component. Point `Serilog.Log.Logger` at a sink, or use `ConfigureLogging`, to see it.
 - **No statistics in the log.** `StatsStorage` is forced to `None`. The server logs a JSON object of system
@@ -70,7 +70,7 @@ ignored.
 
 Having no port is what makes it reasonable to run insecure, which this does by default: there is nothing on
 the network to authenticate, the socket's file permissions are the access control, and anything that can
-open the socket can already read the chunks beside it. Set `KurrentDB:Insecure` through `Settings` and
+open the socket can already read the chunks beside it. Set `KurrentDB:Insecure` through `DatabaseOptions` and
 configure certificates there if you want something stricter.
 
 ## No Blazor UI
@@ -88,10 +88,11 @@ and a project that merely references KurrentDB does not produce one.
 
 | Option | Default | |
 |---|---|---|
+| `Name` | the data directory's name | What this database calls itself in the log. See below. |
 | `DataDirectory` | *required* | Where the database is written. Created owner-only if absent. |
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
 | `TelemetryOptout` | `false` | Opt out of usage reporting to `kurrent.io`. |
-| `Settings` | empty | Any server setting, keyed flat: `KurrentDB:ChunkSize`. Plugins nest: `KurrentDB:Licensing:LicenseKey`. |
+| `DatabaseOptions` | empty | Any server setting e.g. `KurrentDB:PrepareTimeoutMs`. |
 | `ConfigureServices` | – | Add or replace DI registrations after the node has registered its own. |
 | `ConfigureLogging` | – | Change where the node logs. |
 
@@ -103,7 +104,7 @@ it, and anything that knows where a KurrentDB socket lives still knows. It is no
 `UnixSocketPath` reads it back off the node once `StartAsync` has returned.
 
 The node declines to open a socket at all in two cases, each of which would leave an embedded database
-with no way in, so each is an error rather than a warning: `KurrentDB:MemDb` set through `Settings`,
+with no way in, so each is an error rather than a warning: `KurrentDB:MemDb` set through `DatabaseOptions`,
 which the constructor rejects, and an operating system without UNIX domain sockets, which `StartAsync`
 reports.
 
@@ -116,7 +117,8 @@ nothing: the database files are opened by `StartAsync()`, which returns once the
 The constructor refuses a configuration the node could not be built from: `InvalidConfigurationException`
 for a setting the server would not start with either, and `InvalidOperationException` for an in-memory
 database. `StartAsync` refuses what is only knowable as it starts — a 32-bit process, or an unrecognised
-setting when `AllowUnknownOptions` has been turned off through `Settings` — with `InvalidOperationException`
+setting when `AllowUnknownOptions` has been turned off through `DatabaseOptions` — with
+`InvalidOperationException`
 naming the reason.
 
 A database runs once. The node and the web host it runs in are both single-use, so an instance that has been
