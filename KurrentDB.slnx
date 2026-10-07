@@ -90,6 +90,7 @@
     <Project Path="src/KurrentDB.Plugins.TestHelpers/KurrentDB.Plugins.TestHelpers.csproj" />
     <Project Path="src/KurrentDB.SourceGenerators.Tests/KurrentDB.SourceGenerators.Tests.csproj" />
     <Project Path="src/KurrentDB.SystemRuntime.Tests/KurrentDB.SystemRuntime.Tests.csproj" />
+    <Project Path="src/KurrentDB.Embedded.Tests/KurrentDB.Embedded.Tests.csproj" />
     <Project Path="src/KurrentDB.KontrolPlane.Tests/KurrentDB.KontrolPlane.Tests.csproj" />
   </Folder>
   <Project Path="src/KurrentDB.DataPlane/KurrentDB.DataPlane.csproj" />
@@ -117,6 +118,8 @@
   <Project Path="src/KurrentDB.Transport.Tcp/KurrentDB.Transport.Tcp.csproj" />
   <Project Path="src/KurrentDB/KurrentDB.csproj" />
   <Project Path="src/KurrentDB.Hosting/KurrentDB.Hosting.csproj" />
+  <Project Path="src/KurrentDB.Embedded.Sample/KurrentDB.Embedded.Sample.csproj" />
+  <Project Path="src/KurrentDB.Embedded/KurrentDB.Embedded.csproj" />
   <Project Path="src/KurrentDB.KontrolPlane.ObjectModel/KurrentDB.KontrolPlane.ObjectModel.csproj" />
   <Project Path="src/KurrentDB.KontrolPlane/KurrentDB.KontrolPlane.csproj" />
 </Solution>
