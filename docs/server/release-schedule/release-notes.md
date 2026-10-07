@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.2.
 
+## [26.2.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.2)
+
+7 October 2026
+
+### Fixed memory leak in gRPC streaming calls (PR [#5764](https://github.com/kurrent-io/KurrentDB/pull/5764))
+
+In 26.2.0 and 26.2.1, memory usage grew by a few bytes with each gRPC streaming call, such as streaming reads and subscriptions, and was not reclaimed when the call ended. Memory usage now remains stable.
+
+### Subscriptions: Added opt-in FellBehind notifications for gRPC clients (PR [#5760](https://github.com/kurrent-io/KurrentDB/pull/5760))
+
+When a live subscription cannot keep up and drops back to catch-up mode, the server can now send a `FellBehind` message to the client, with a timestamp and checkpoint, just as it already sends `CaughtUp`. Clients only receive it if they opt in by requesting compatibility level 2 on the subscription, so existing clients see no change.
+
 ## [26.2.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.1)
 
 5 October 2026
