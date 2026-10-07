@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Net;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
@@ -80,7 +81,7 @@ public class with_dns_discovery_disabled_and_gossip_seeds_defined<TLogFormat, TS
 
 	[Test]
 	public void should_set_the_gossip_seeds() {
-		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GossipSeed);
+		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GetGossipSeed());
 	}
 }
 
@@ -98,7 +99,7 @@ public class with_custom_gossip_seeds<TLogFormat, TStreamId> : ClusterMemberScen
 
 	[Test]
 	public void should_set_the_gossip_seeds() {
-		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GossipSeed);
+		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GetGossipSeed());
 	}
 }
 
