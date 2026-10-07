@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Net;
 using KurrentDB.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,43 +21,6 @@ public sealed record EmbeddedKurrentDBOptions {
 	/// The directory the database is written to. It is created, owner-only, if it does not exist.
 	/// </summary>
 	public required string DataDirectory { get; init; }
-
-	/// <summary>
-	/// The directory the index is written to. Defaults to an <c>index</c> directory under
-	/// <see cref="DataDirectory"/>.
-	/// </summary>
-	public string? IndexDirectory { get; init; }
-
-	/// <summary>
-	/// Whether to also listen on a TCP port. The socket is the intended way in; the port is what serves
-	/// the admin UI, the Prometheus endpoint and any tooling that cannot speak to a socket.
-	/// </summary>
-	// TODO: revisit. The TCP listener is on by default so that the admin UI and the existing HTTP tooling
-	// keep working while the embedded server finds its shape. An embedded database should not need to open
-	// a port at all, and this should end up defaulting to false once nothing depends on it.
-	public bool EnableTcpListener { get; init; } = true;
-
-	/// <summary>
-	/// The address the TCP listener binds to, when <see cref="EnableTcpListener"/> is set. Loopback by
-	/// default: a single embedded node has nothing to say to another machine.
-	/// </summary>
-	public IPAddress TcpListenerIp { get; init; } = IPAddress.Loopback;
-
-	/// <summary>
-	/// The port the TCP listener binds to, when <see cref="EnableTcpListener"/> is set.
-	/// </summary>
-	public int TcpListenerPort { get; init; } = 2113;
-
-	/// <summary>
-	/// Whether to run without TLS, authentication or authorization.
-	/// </summary>
-	/// <remarks>
-	/// On by default, and it means what it says: anything that can reach the socket or the TCP port has
-	/// administrator access. The socket is restricted to the user who started the database, but the TCP
-	/// listener is open to everything on the machine that can reach the loopback address. Turn this off
-	/// and configure certificates through <see cref="Settings"/> for a node that is reachable by others.
-	/// </remarks>
-	public bool Insecure { get; init; } = true;
 
 	/// <summary>
 	/// How long to wait for the node to report itself ready before <see cref="EmbeddedKurrentDB.StartAsync"/>

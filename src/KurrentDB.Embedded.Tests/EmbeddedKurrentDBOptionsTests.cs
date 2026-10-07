@@ -43,23 +43,6 @@ public class EmbeddedKurrentDBOptionsTests {
 	}
 
 	[Test]
-	public async Task carries_the_listener_options_through() {
-		var dataDirectory = TestPaths.NewDataDirectory();
-
-		using var _ = new Cleanup(dataDirectory);
-		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory) with {
-			EnableTcpListener = true,
-			TcpListenerPort = 21131,
-		});
-
-		db.ServerOptions.Interface.NodeIp.ShouldBe(IPAddress.Loopback);
-		db.ServerOptions.Interface.NodePort.ShouldBe(21131);
-
-		// the admin HTTP API stays, as on a normal node: it is the Blazor UI that embedding does without
-		db.ServerOptions.Interface.DisableAdminUi.ShouldBeFalse();
-	}
-
-	[Test]
 	public async Task lets_settings_override_what_it_chose() {
 		var dataDirectory = TestPaths.NewDataDirectory();
 

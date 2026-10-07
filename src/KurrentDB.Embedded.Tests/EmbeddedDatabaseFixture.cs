@@ -48,8 +48,6 @@ public static class TestPaths {
 	public static EmbeddedKurrentDBOptions Options(string dataDirectory) =>
 		new() {
 			DataDirectory = dataDirectory,
-			// the socket is what these tests are about, and a fixed port would collide between them
-			EnableTcpListener = false,
 			StartupTimeout = TimeSpan.FromMinutes(2),
 		};
 

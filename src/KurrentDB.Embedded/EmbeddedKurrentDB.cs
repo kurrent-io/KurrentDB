@@ -1,12 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Globalization;
 using DotNext.Threading;
 using Grpc.Net.Client;
 using KurrentDB.Client;
 using KurrentDB.Common.Exceptions;
-using KurrentDB.Common.Options;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
@@ -233,13 +231,8 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	/// <summary>
 	/// Settings for the KurrentDB .NET client that reach this node over its socket.
 	/// </summary>
-	/// <remarks>
-	/// The address carries the scheme and the <c>:authority</c> header and nothing else: the handler
-	/// dials the socket rather than resolving and connecting to that address.
-	/// </remarks>
 	public KurrentDBClientSettings CreateClientSettings() {
-		var settings = KurrentDBClientSettings.Create(
-			$"kurrentdb://localhost:{ServerOptions.Interface.NodePort.ToString(CultureInfo.InvariantCulture)}?tls=false");
+		var settings = KurrentDBClientSettings.Create("kurrentdb://localhost?tls=false");
 
 		var socketPath = UnixSocketPath;
 		settings.CreateHttpMessageHandler = () => UnixDomainSocket.CreateHandler(socketPath);
@@ -250,18 +243,19 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	/// <summary>
 	/// A gRPC channel to this node over its socket, for use with the generated service clients.
 	/// </summary>
-	/// <remarks>The caller owns the channel and should dispose it.</remarks>
+	/// <remarks>
+	/// The caller owns the channel and should dispose it. As with <see cref="CreateClientSettings"/>, the
+	/// address is a placeholder: the handler dials the socket.
+	/// </remarks>
 	public GrpcChannel CreateChannel(Action<GrpcChannelOptions>? configure = null) {
 		var channelOptions = new GrpcChannelOptions {
 			HttpHandler = UnixDomainSocket.CreateHandler(UnixSocketPath),
-			DisposeHttpClient = true
+			DisposeHttpClient = true,
 		};
 
 		configure?.Invoke(channelOptions);
 
-		return GrpcChannel.ForAddress(
-			$"http://localhost:{ServerOptions.Interface.NodePort.ToString(CultureInfo.InvariantCulture)}",
-			channelOptions);
+		return GrpcChannel.ForAddress("http://localhost", channelOptions);
 	}
 
 	/// <summary>
@@ -340,32 +334,15 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	/// </remarks>
 	static IConfigurationRoot BuildConfiguration(EmbeddedKurrentDBOptions options, string dataDirectory) {
 		var defaults = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
-			// a single node elects itself, replicates to nobody and has nobody to gossip with, so it
-			// opens no replication listener and resolves no seeds
-			["ClusterSize"] = "1",
-			["DiscoverViaDns"] = bool.FalseString,
-
 			["Db"] = dataDirectory,
-
 			["EnableUnixSocket"] = bool.TrueString,
-			["NodeIp"] = options.TcpListenerIp.ToString(),
-			["NodePort"] = options.TcpListenerPort.ToString(CultureInfo.InvariantCulture),
+			["Insecure"] = bool.TrueString,
+			["TelemetryOptout"] = bool.TrueString, //qq make into an option?
 
-			["Insecure"] = options.Insecure.ToString(),
-			// an embedded database is a part of someone else's process: it neither phones home nor writes
-			// log files of its own
-			["TelemetryOptout"] = bool.TrueString,
+			//qq revisit stats and logging
 			["DisableLogFile"] = bool.TrueString,
-
-			// and it does not log its statistics either. The server writes them as a JSON object every
-			// StatsPeriodSec and routes that source context to a file of its own, which an embedded node has no
-			// say over: the host owns the logging configuration, so the stats would land in the host's log.
-			// Collection is unaffected, so the stats HTTP endpoint still answers with fresh numbers.
-			["StatsStorage"] = nameof(StatsStorage.None)
+			["StatsStorage"] = nameof(StatsStorage.None),
 		};
-
-		if (options.IndexDirectory is { Length: > 0 } indexDirectory)
-			defaults["Index"] = Path.GetFullPath(indexDirectory);
 
 		return new ConfigurationBuilder()
 			.AddKurrentDefaultValues(defaults)
@@ -403,7 +380,11 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			// operating system without UNIX domain sockets, or a caller who turned EnableUnixSocket off
 			// through Settings. Either way an embedded database has no way in, so neither is survivable.
 			if (!KestrelHelpers.TryConfigureListeners(
-					server, ServerOptions, hostedService, options.EnableTcpListener, out var unixSocket)) {
+				server: server,
+				options: ServerOptions,
+				hostedService: hostedService,
+				listenOnTcp: false,
+				unixSocket: out var unixSocket)) {
 				throw new PlatformNotSupportedException(
 					"An embedded KurrentDB is reached over a UNIX domain socket, and none was opened. Either " +
 					"this operating system does not support them, or KurrentDB:EnableUnixSocket has been " +

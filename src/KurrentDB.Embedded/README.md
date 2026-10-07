@@ -47,6 +47,8 @@ var streams = new Streams.StreamsClient(channel);
 
 ## What it does not do over the network
 
+- **No listening port.** The node binds its socket and nothing else. See below for how the HTTP endpoints
+  are reached without one.
 - **No replication listener and no gossip.** A single node elects itself, replicates to nobody and resolves
   no seeds, so `ClusterVNode` never opens the internal TCP endpoint.
 - **No telemetry.** `TelemetryOptout` is forced on.
@@ -57,22 +59,24 @@ var streams = new Streams.StreamsClient(channel);
 - **No statistics in the log.** `StatsStorage` is forced to `None`. The server logs a JSON object of system
   statistics every `StatsPeriodSec` and splits that source context off into a file of its own; a host owns its
   own logging configuration, so an embedded node would just be dropping that object into the host's log every
-  30 seconds. The statistics are still collected, so `/stats` answers as usual.
+  30 seconds. The statistics are still collected, so `/stats` still answers, over the socket.
 
-## The TCP listener
+## Reaching the HTTP endpoints
 
-**`EnableTcpListener` defaults to `true`, and should not stay that way.** It is on so the admin HTTP API,
-the Prometheus endpoint and existing HTTP tooling keep working while this finds its shape; an embedded
-database should not have to open a port at all. Two things to know while it is on:
+There is no TCP listener, and no option to ask for one. The admin HTTP API, the Prometheus endpoint and
+`/stats` are all still there — they are reached by dialling the socket rather than an address.
+`CreateClientSettings()` and `CreateChannel()` do that for you; a plain `HttpClient` does it with a
+`SocketsHttpHandler.ConnectCallback` pointed at `UnixSocketPath`, and the host and port in the URI are
+ignored.
 
-- With `Insecure` (the default), the port has no TLS and no authentication. It binds to loopback only, but
-  anything on the machine that can reach loopback has administrator access to the database.
-- Turning it off takes the HTTP endpoints with it — anything that reaches the node over HTTP rather than
-  over the socket stops working.
+Having no port is what makes it reasonable to run insecure, which this does by default: there is nothing on
+the network to authenticate, the socket's file permissions are the access control, and anything that can
+open the socket can already read the chunks beside it. Set `KurrentDB:Insecure` through `Settings` and
+configure certificates there if you want something stricter.
 
 ## No Blazor UI
 
-The admin HTTP API is here, as on a normal node. The Blazor UI is not, and this library deliberately does
+The admin HTTP API is here, over the socket. The Blazor UI is not, and this library deliberately does
 not reference the server executable that carries it — it takes `KurrentDB.Hosting`, which assembles the
 same node with the same plugins and subsystems but none of the UI. That keeps MudBlazor, BlazorMonaco and
 the Razor runtime out of every application that embeds a database.
@@ -86,11 +90,6 @@ and a project that merely references KurrentDB does not produce one.
 | Option | Default | |
 |---|---|---|
 | `DataDirectory` | *required* | Where the database is written. Created owner-only if absent. |
-| `IndexDirectory` | `<DataDirectory>/index` | |
-| `EnableTcpListener` | `true` | See above. |
-| `TcpListenerIp` / `TcpListenerPort` | `127.0.0.1` / `2113` | |
-| `RunProjections` | `true` | Runs system projections and starts the standard ones. |
-| `Insecure` | `true` | No TLS, no authentication, no authorization. |
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
 | `Settings` | empty | Any server setting, keyed flat: `KurrentDB:ChunkSize`. Plugins nest: `KurrentDB:Licensing:LicenseKey`. |
 | `ConfigureServices` | – | Add or replace DI registrations after the node has registered its own. |
@@ -104,9 +103,9 @@ it, and anything that knows where a KurrentDB socket lives still knows. It is no
 `UnixSocketPath` reads it back off the node once `StartAsync` has returned.
 
 The node declines to open a socket at all in two cases, each of which would leave an embedded database
-with no way in, so each is an error rather than a warning: `KurrentDB:Database:MemDb` set through
-`Settings`, which the constructor rejects, and an operating system without UNIX domain sockets, which
-`StartAsync` reports.
+with no way in, so each is an error rather than a warning: `KurrentDB:MemDb` set through `Settings`,
+which the constructor rejects, and an operating system without UNIX domain sockets, which `StartAsync`
+reports.
 
 ## Lifecycle
 
