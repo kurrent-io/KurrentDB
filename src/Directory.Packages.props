@@ -15,11 +15,11 @@
     <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="6.8.0" />
-    <PackageVersion Include="DotNext.IO" Version="6.8.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.8.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="6.8.0" />
-    <PackageVersion Include="DotNext.Net.Cluster" Version="6.8.1" />
+    <PackageVersion Include="DotNext" Version="6.9.0" />
+    <PackageVersion Include="DotNext.IO" Version="6.9.0" />
+    <PackageVersion Include="DotNext.Threading" Version="6.9.0" />
+    <PackageVersion Include="DotNext.Unsafe" Version="6.9.0" />
+    <PackageVersion Include="DotNext.Net.Cluster" Version="6.9.0" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
@@ -92,6 +92,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
+    <!-- Pin Microsoft.Data.Sqlite to 10.0.10 because 10.0.11 requires glibc 2.33 which is not available on RHEL 8 (https://github.com/dotnet/efcore/issues/39148) -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
@@ -180,8 +181,6 @@
     <PackageVersion Include="SharpCompress" Version="0.48.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <!-- Override vulnerable transitive from `Microsoft.Data.Sqlite` -->
-    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
     <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />

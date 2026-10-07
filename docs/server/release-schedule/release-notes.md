@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.2.
 
+## [26.2.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.1)
+
+05 October 2026
+
+### Schema Registry: Fixed queries missing recently registered schemas (PR [#5757](https://github.com/kurrent-io/KurrentDB/pull/5757))
+
+In 26.2.0, schema registry queries, such as listing schemas or checking compatibility, could miss schemas registered or changed while the node was running. When this happened, the logs showed an `ArgumentNullException` for `sequenceId` from `DuckDBProjector`. Queries now stay up to date, and after upgrading they also pick up any schemas they missed.
+
 ## [26.2.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.0)
 
 30 September 2026
