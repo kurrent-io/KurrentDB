@@ -28,7 +28,6 @@ internal static class Program {
 		// reported either, because a nested key is how plugin configuration reaches its plugin
 		// (KurrentDB:Licensing:LicenseKey).
 		await using var db = new EmbeddedKurrentDB(new() {
-			Name = "DB1",
 			DataDirectory = dataDirectory,
 			DatabaseOptions = new Dictionary<string, string?> {
 				["KurrentDB:WriteTimeoutMs"] = "5000",
