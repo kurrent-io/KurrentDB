@@ -91,12 +91,13 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			// TelemetryOptout value masquerades as a default because it
 			// is only allowed to be overridden by the environment.
 			.AddKurrentDefaultValues(new KeyValuePair<string, string?>[] {
-				new("KurrentDB:TelemetryOptout", options.TelemetryOptout.ToString()),
+				new("TelemetryOptout", options.TelemetryOptout.ToString()),
 			})
 			.AddInMemoryCollection([
 				new("KurrentDB:Db", DataDirectory),
 				new("KurrentDB:EnableUnixSocket", bool.TrueString),
 				new("KurrentDB:Insecure", bool.TrueString),
+				new("KurrentDB:DiscoverViaDns", bool.FalseString),
 				//qq revisit stats and logging
 				new("KurrentDB:DisableLogFile", bool.TrueString),
 				new("KurrentDB:StatsStorage", nameof(StatsStorage.None)),
@@ -382,21 +383,40 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Completes when the node publishes <see cref="SystemMessage.SystemReady"/>.
+	/// Completes when initialized subsystems and a writable leader are both available.
 	/// </summary>
-	sealed class ReadinessProbe : IHandle<SystemMessage.SystemReady>, IDisposable {
+	sealed class ReadinessProbe : IHandle<SystemMessage.SystemReady>, IHandle<SystemMessage.StateChangeMessage>, IDisposable {
 		// the message is handled on the bus dispatch thread; continuations must not run there
 		readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		readonly ISubscriber _mainBus;
+		bool _systemReady;
+		bool _leader;
 
 		public ReadinessProbe(ISubscriber mainBus) {
 			_mainBus = mainBus;
-			_mainBus.Subscribe(this);
+			_mainBus.Subscribe<SystemMessage.SystemReady>(this);
+			_mainBus.Subscribe<SystemMessage.StateChangeMessage>(this);
 		}
 
 		void IHandle<SystemMessage.SystemReady>.Handle(SystemMessage.SystemReady message) {
-			if (_ready.TrySetResult())
-				_mainBus.Unsubscribe(this);
+			_systemReady = true;
+			TryComplete();
+		}
+
+		void IHandle<SystemMessage.StateChangeMessage>.Handle(SystemMessage.StateChangeMessage message) {
+			_leader = message is SystemMessage.BecomeLeader;
+			TryComplete();
+		}
+
+		void TryComplete() {
+			// SystemReady can precede leader inauguration; returning then races the caller's first write.
+			if (_systemReady && _leader && _ready.TrySetResult())
+				Unsubscribe();
+		}
+
+		void Unsubscribe() {
+			_mainBus.Unsubscribe<SystemMessage.SystemReady>(this);
+			_mainBus.Unsubscribe<SystemMessage.StateChangeMessage>(this);
 		}
 
 		public async Task WaitAsync(TimeSpan timeout, CancellationToken cancellationToken) {
@@ -410,7 +430,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		public void Dispose() {
 			if (_ready.TrySetCanceled())
-				_mainBus.Unsubscribe(this);
+				Unsubscribe();
 		}
 	}
 }

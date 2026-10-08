@@ -53,9 +53,27 @@ public class clear_text_http_multiplexing_middleware {
 	}
 
 	[TearDown]
-	public Task Teardown() {
-		_host?.StopAsync();
-		return Task.CompletedTask;
+	public async Task Teardown() {
+		if (_host is not null) {
+			await _host.StopAsync();
+			await _host.DisposeAsync();
+		}
+	}
+
+	[Test]
+	public async Task concurrent_http_versions_keep_their_own_protocol() {
+		await Task.WhenAll(Enumerable.Range(0, 100).Select(async index => {
+			var version = index % 2 == 0 ? HttpVersion.Version11 : HttpVersion.Version20;
+			using var client = new HttpClient();
+			using var request = new HttpRequestMessage(HttpMethod.Get, _endpoint + "/test") {
+				Version = version,
+				VersionPolicy = HttpVersionPolicy.RequestVersionExact
+			};
+			using var response = await client.SendAsync(request);
+			Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+			Assert.AreEqual(version, response.Version);
+			Assert.AreEqual("hello", await response.Content.ReadAsStringAsync());
+		}));
 	}
 
 	[Test]
