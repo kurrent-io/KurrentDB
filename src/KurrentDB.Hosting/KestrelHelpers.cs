@@ -16,18 +16,7 @@ using RuntimeInformation = System.Runtime.RuntimeInformation;
 namespace KurrentDB;
 
 public static class KestrelHelpers {
-	/// <summary>
-	/// The endpoints a node serves on, and the gRPC keep-alive limits that apply to all of them.
-	/// </summary>
-	/// <param name="listenOnTcp">
-	/// Whether to open the configured TCP endpoint. The server always does; an embedded database may have
-	/// nothing left that needs it.
-	/// </param>
-	/// <returns>
-	/// True if a UNIX domain socket was opened, with <paramref name="unixSocket"/> naming it. False if the
-	/// node is configured without one or cannot have one, which the server carries on from and a host
-	/// reached only over the socket does not.
-	/// </returns>
+	/// <returns>True if a UNIX domain socket was opened, with <paramref name="unixSocket"/> naming it.</returns>
 	public static bool TryConfigureListeners(
 		KestrelServerOptions server,
 		ClusterVNodeOptions options,
