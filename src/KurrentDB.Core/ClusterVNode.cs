@@ -521,6 +521,7 @@ public class ClusterVNode<TStreamId> :
 				DbLock = dbLock,
 				SqlEngineTempDirectory = options.Database.SqlEngineTempDirectory,
 				SqlEngineTempDirectorySizeLimit = options.Database.SqlEngineTempDirectorySizeLimit,
+				SqlEngineMemoryLimit = options.Database.SqlEngineMemoryLimit,
 			};
 		}
 

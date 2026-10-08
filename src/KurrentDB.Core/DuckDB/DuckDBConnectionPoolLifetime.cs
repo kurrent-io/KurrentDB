@@ -24,6 +24,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
 	private readonly string _tempDirectory;
 	private readonly long _maxTempDirectorySizeBytes;
+	private readonly long _memoryLimitBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
@@ -41,6 +42,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			: $"{_path}.tmp"); // the same directory DuckDB would pick by default. explicit so we can clean it up
 
 		_maxTempDirectorySizeBytes = config.SqlEngineTempDirectorySizeLimit;
+		_memoryLimitBytes = config.SqlEngineMemoryLimit;
 		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
 
 		var once = new List<IDuckDBSetup>();
@@ -75,7 +77,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {
-			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
+			["memory_limit"] = _memoryLimitBytes > 0 ? $"{_memoryLimitBytes}B" : $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 			["temp_directory"] = _tempDirectory,
 			// security settings
