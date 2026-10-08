@@ -93,7 +93,6 @@ and a project that merely references KurrentDB does not produce one.
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
 | `TelemetryOptout` | `false` | Opt out of usage reporting to `kurrent.io`. |
 | `DatabaseOptions` | empty | Any server setting e.g. `KurrentDB:PrepareTimeoutMs`. |
-| `ConfigureServices` | – | Add or replace DI registrations after the node has registered its own. |
 | `ConfigureLogging` | – | Change where the node logs. |
 
 ### Where the socket lives

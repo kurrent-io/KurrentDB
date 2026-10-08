@@ -387,9 +387,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		NodeWebApplication.ConfigureServices(builder.Services, hostedService);
 
-		// after the node, so that a host can replace anything it registered
-		options.ConfigureServices?.Invoke(ServerOptions, builder.Services);
-
 		// last, so that it covers the host's hosted services as well as the node's
 		NodeWebApplication.LogHostedServiceLifecycle(builder.Services);
 

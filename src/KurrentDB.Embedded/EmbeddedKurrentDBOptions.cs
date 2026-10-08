@@ -35,11 +35,6 @@ public sealed record EmbeddedKurrentDBOptions {
 		new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
-	/// Called after the node has registered its own services, to add or replace registrations.
-	/// </summary>
-	public Action<ClusterVNodeOptions, IServiceCollection>? ConfigureServices { get; init; }
-
-	/// <summary>
 	/// Called after logging has been pointed at Serilog, to change where the node logs.
 	/// </summary>
 	public Action<ILoggingBuilder>? ConfigureLogging { get; init; }
