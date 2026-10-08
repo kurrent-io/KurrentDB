@@ -27,7 +27,7 @@ var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 
 var exitCodeSource = new TaskCompletionSource<int>();
 
-Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
+KurrentLoggerConfiguration.InstallProcessDefaults();
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 

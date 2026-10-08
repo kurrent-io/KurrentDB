@@ -43,9 +43,9 @@ public class KurrentLoggerConfiguration {
 	private static readonly ExpressionTemplate JsonTemplate = new(CompactJsonTemplate);
 
 	// ReSharper disable once NotAccessedField.Local
-	private static readonly SerilogEventListener SerilogEventListener;
+	private static SerilogEventListener? _serilogEventListener;
 
-	static KurrentLoggerConfiguration() {
+	public static void InstallProcessDefaults() {
 		Serilog.Log.Logger = ConsoleLog;
 		AppDomain.CurrentDomain.UnhandledException += (s, e) => {
 			if (e.ExceptionObject is Exception exc)
@@ -53,7 +53,7 @@ public class KurrentLoggerConfiguration {
 			else
 				Serilog.Log.Fatal("Global Unhandled Exception object: {e}.", e.ExceptionObject);
 		};
-		SerilogEventListener = new();
+		_serilogEventListener = new();
 	}
 
 	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
