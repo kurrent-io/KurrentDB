@@ -95,10 +95,10 @@ public class UserIndexEventStore : IEventStore {
 	public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default) =>
 		_inner.DeleteStream(stream, expectedVersion, cancellationToken);
 
-	public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) =>
+	public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) =>
 		_inner.ReadEvents(stream, start, count, cancellationToken);
 
-	public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) =>
+	public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) =>
 		_inner.ReadEventsBackwards(stream, start, count, cancellationToken);
 
 	public Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) =>
