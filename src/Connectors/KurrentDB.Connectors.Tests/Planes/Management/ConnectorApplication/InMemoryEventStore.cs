@@ -29,15 +29,15 @@ public class SystemInMemoryEventStore : IEventStore {
     }
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         var result = FindStream(stream).GetEvents(start, count).ToArray();
-        return result.Length == 0 ? throw new StreamNotFoundError(stream) : Task.FromResult(result);
+        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result.ToAsyncEnumerable();
     }
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         var result = FindStream(stream).GetEventsBackwards(count).ToArray();
-        return result.Length == 0 ? throw new StreamNotFoundError(stream) : Task.FromResult(result);
+        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result.ToAsyncEnumerable();
     }
 
     /// <inheritdoc />

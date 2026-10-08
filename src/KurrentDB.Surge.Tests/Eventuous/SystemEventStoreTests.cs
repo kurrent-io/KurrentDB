@@ -76,7 +76,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
                 StreamReadPosition.Start,
                 1,
                 cancellator.Token
-            );
+            )
+            .ToArrayAsync(cancellator.Token);
 
         // Assert
         Assert.Single(readResults);
@@ -99,7 +100,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
         var readResults = await eventStore
-            .ReadEvents(stream, StreamReadPosition.Start, events.Length, cancellator.Token);
+            .ReadEvents(stream, StreamReadPosition.Start, events.Length, cancellator.Token)
+            .ToArrayAsync(cancellator.Token);
 
         // Assert
         readResults.Length.ShouldBe(5);
@@ -232,7 +234,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         result.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
         var readResults = await eventStore
-            .ReadEvents(stream, StreamReadPosition.Start, 1, cancellator.Token);
+            .ReadEvents(stream, StreamReadPosition.Start, 1, cancellator.Token)
+            .ToArrayAsync(cancellator.Token);
 
         // Assert
         readResults.Length.ShouldBe(1);
@@ -264,6 +267,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         // Act & Assert
         await eventStore
 	        .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
+	        .ToArrayAsync(cancellator.Token)
+	        .AsTask()
 	        .ShouldThrowAsync<StreamNotFound>();
     }
 
@@ -279,6 +284,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         // Act & Assert
         await eventStore
             .ReadEventsBackwards(stream, new(long.MaxValue),  10, cancellator.Token)
+            .ToArrayAsync(cancellator.Token)
+            .AsTask()
             .ShouldThrowAsync<StreamNotFound>();
     }
 
@@ -299,7 +306,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
 	    // Assert
 	    appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-	    var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, int.MaxValue, cancellator.Token);
+	    var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, int.MaxValue, cancellator.Token)
+		    .ToArrayAsync(cancellator.Token);
 
 	    readResults.Length.ShouldBe(events.Length);
 	    events.First().Id.ShouldBe(readResults.First().Id);
@@ -323,7 +331,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         // Assert
         appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-        var readResults = await eventStore.ReadEventsBackwards(stream, new(long.MaxValue), int.MaxValue, cancellator.Token);
+        var readResults = await eventStore.ReadEventsBackwards(stream, new(long.MaxValue), int.MaxValue, cancellator.Token)
+            .ToArrayAsync(cancellator.Token);
 
         readResults.Length.ShouldBe(events.Length);
         events.First().Id.ShouldBe(readResults.Last().Id);
@@ -343,7 +352,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAss
         await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, streamEvents, cancellator.Token);
 
         // Act
-        var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token);
+        var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
+            .ToArrayAsync(cancellator.Token);
 
         // Assert
         readResults.Length.ShouldBe(2);

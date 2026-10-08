@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using Eventuous;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
@@ -8,8 +9,6 @@ using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Surge.Producers;
-using KurrentDB.Surge.Readers;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace KurrentDB.Surge.Eventuous;
@@ -93,26 +92,23 @@ public class SystemEventStore(IReader reader, IProducer producer) : IEventStore,
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
+    public IAsyncEnumerable<StreamEvent> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
         var from = start.Value < 0 ? StreamRevision.Min : StreamRevision.From(start.Value);
 
-        StreamEvent[] result;
+        return Reader
+            .Read(StreamId.From(stream), from, ReadDirection.Forwards, count, cancellationToken)
+            .Select(record => new StreamEvent(
+                record.Id,
+                record.Value,
+                Metadata.FromHeaders(record.Headers),
+                record.SchemaInfo.ContentType,
+                record.Position.StreamRevision
+            ))
+            .TranslateErrors(MapError, cancellationToken);
 
-        try {
-            result = await Reader
-                .Read(StreamId.From(stream), from, ReadDirection.Forwards, count, cancellationToken)
-                .Select(record => new StreamEvent(
-                    record.Id,
-                    record.Value,
-                    Metadata.FromHeaders(record.Headers),
-                    record.SchemaInfo.ContentType,
-                    record.Position.StreamRevision
-                ))
-                .ToArrayAsync(cancellationToken);
-        }
-        catch (Exception ex) {
+        Exception MapError(Exception ex) {
             // because Eventuous has a different exception for this
-            if (ex is ReadResponseException.StreamNotFound) throw new StreamNotFound(stream);
+            if (ex is ReadResponseException.StreamNotFound) return new StreamNotFound(stream);
 
             // TODO SS: must validate what exceptions are actually thrown when reading events
             StreamingError error = ex switch {
@@ -127,31 +123,27 @@ public class SystemEventStore(IReader reader, IProducer producer) : IEventStore,
                 _                                               => new StreamingCriticalError($"Unable to read {count} starting at {start} events from {stream}", ex)
             };
 
-            throw error;
+            return error;
         }
-
-        return result;
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
+    public IAsyncEnumerable<StreamEvent> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
 	    var from = start == StreamReadPosition.End ? StreamRevision.Max : StreamRevision.From(start.Value);
-        StreamEvent[] result;
 
-        try {
-            result = await Reader
-                .Read(StreamId.From(stream), from, ReadDirection.Backwards, count, cancellationToken)
-                .Select(record => new StreamEvent(
-                    record.Id,
-                    record.Value,
-                    Metadata.FromHeaders(record.Headers),
-                    record.SchemaInfo.ContentType,
-                    record.Position.StreamRevision
-                ))
-                .ToArrayAsync(cancellationToken);
-        }
-        catch (Exception ex) {
-	        if (ex is ReadResponseException.StreamNotFound) throw new StreamNotFound(stream);
+        return Reader
+            .Read(StreamId.From(stream), from, ReadDirection.Backwards, count, cancellationToken)
+            .Select(record => new StreamEvent(
+                record.Id,
+                record.Value,
+                Metadata.FromHeaders(record.Headers),
+                record.SchemaInfo.ContentType,
+                record.Position.StreamRevision
+            ))
+            .TranslateErrors(MapError, cancellationToken);
+
+        Exception MapError(Exception ex) {
+	        if (ex is ReadResponseException.StreamNotFound) return new StreamNotFound(stream);
 
 	        // TODO SS: must validate what exceptions are actually thrown when reading events
             StreamingError error = ex switch {
@@ -166,10 +158,8 @@ public class SystemEventStore(IReader reader, IProducer producer) : IEventStore,
                 _                                               => new StreamingCriticalError($"Unable to read {count} events backwards from {stream}", ex)
             };
 
-            throw error;
+            return error;
         }
-
-        return result;
     }
 
     /// <inheritdoc/>
@@ -190,5 +180,33 @@ public class SystemEventStore(IReader reader, IProducer producer) : IEventStore,
     public async ValueTask DisposeAsync() {
         await Reader.DisposeAsync();
         await Producer.DisposeAsync();
+    }
+}
+
+static class AsyncEnumerableExtensions {
+    /// Translates whatever the reader throws while it is being enumerated. A plain try/catch cannot wrap
+    /// the loop, because yield return is not allowed inside one with a catch.
+    public static async IAsyncEnumerable<T> TranslateErrors<T>(
+        this IAsyncEnumerable<T> source,
+        Func<Exception, Exception> translate,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    ) {
+        await using var items = source.GetAsyncEnumerator(cancellationToken);
+
+        while (true) {
+            bool moved;
+
+            try {
+                moved = await items.MoveNextAsync();
+            }
+            catch (Exception ex) {
+                throw translate(ex);
+            }
+
+            if (!moved)
+                yield break;
+
+            yield return items.Current;
+        }
     }
 }

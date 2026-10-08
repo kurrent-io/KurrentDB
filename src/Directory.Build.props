@@ -17,7 +17,10 @@
 		<VersionSuffix>prerelease</VersionSuffix>
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
 		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
-		<NoWarn>SYSLIB0057;xUnit1051</NoWarn>
+		<!-- EVTC001 wants [EventType] on types it decides are domain events. We register through
+		     TypeMap.Instance.AddType instead, and it is flagging Eventuous.StreamName, which we cannot
+		     annotate. 0.17 claims fewer false positives, so revisit after the upgrade settles. -->
+		<NoWarn>SYSLIB0057;xUnit1051;EVTC001</NoWarn>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
 		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
