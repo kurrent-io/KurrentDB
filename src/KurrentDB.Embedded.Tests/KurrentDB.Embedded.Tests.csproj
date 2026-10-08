@@ -1,27 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <IsKurrentTUnit>true</IsKurrentTUnit>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <RootNamespace>KurrentDB.Embedded.Tests</RootNamespace>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
+	<PropertyGroup>
+		<IsKurrentTUnit>true</IsKurrentTUnit>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<RootNamespace>KurrentDB.Embedded.Tests</RootNamespace>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Shouldly" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Shouldly" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Using Include="Microsoft.Extensions.DependencyInjection" />
-    <Using Include="Shouldly" />
-    <Using Include="TUnit" />
-    <Using Include="TUnit.Core" />
-    <Using Include="TUnit.Core.Interfaces" />
-  </ItemGroup>
+	<ItemGroup>
+		<Using Include="Microsoft.Extensions.DependencyInjection" />
+		<Using Include="Shouldly" />
+		<Using Include="TUnit" />
+		<Using Include="TUnit.Core" />
+		<Using Include="TUnit.Core.Interfaces" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
+	</ItemGroup>
 </Project>

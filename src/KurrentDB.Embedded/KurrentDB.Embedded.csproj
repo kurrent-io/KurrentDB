@@ -1,30 +1,30 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>KurrentDB.Embedded</RootNamespace>
-    <Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
-  </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>KurrentDB.Embedded</RootNamespace>
+		<Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="DotNext.Threading" />
-    <PackageReference Include="Grpc.Net.Client" />
-    <PackageReference Include="KurrentDB.Client" />
-    <PackageReference Include="Serilog.Extensions.Logging" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="DotNext.Threading" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="KurrentDB.Client" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\KurrentDB\logconfig.json" Link="logconfig.json" CopyToOutputDirectory="PreserveNewest"
-          Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
-    <None Include="..\KurrentDB\metricsconfig.json" Link="metricsconfig.json" CopyToOutputDirectory="PreserveNewest"
-          Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\KurrentDB\logconfig.json" Link="logconfig.json" CopyToOutputDirectory="PreserveNewest"
+					Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
+		<None Include="..\KurrentDB\metricsconfig.json" Link="metricsconfig.json" CopyToOutputDirectory="PreserveNewest"
+					Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="KurrentDB.Embedded.Tests" />
-  </ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Embedded.Tests" />
+	</ItemGroup>
 </Project>

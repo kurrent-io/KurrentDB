@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>KurrentDB.Embedded.Sample</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>KurrentDB.Embedded.Sample</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Serilog.Sinks.Console" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Serilog.Sinks.Console" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
+	</ItemGroup>
 </Project>
