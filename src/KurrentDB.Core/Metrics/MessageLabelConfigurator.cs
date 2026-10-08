@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Text.RegularExpressions;
 using KurrentDB.Common.Configuration;
 using Serilog;
@@ -21,7 +22,7 @@ public static class MessageLabelConfigurator {
 
 	internal static string ResolveLabel(string originalLabel) => ResolveLabel(originalLabel, _configuration);
 
-	internal static string ResolveLabel(string originalLabel, MetricsConfiguration.LabelMappingCase[] configuration) {
+	internal static string ResolveLabel(string originalLabel, ReadOnlySpan<MetricsConfiguration.LabelMappingCase> configuration) {
 		foreach (var @case in configuration) {
 			var pattern = $"^{@case.Regex}$";
 			var match = Regex.Match(input: originalLabel, pattern: pattern);

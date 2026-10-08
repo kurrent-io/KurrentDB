@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
@@ -27,6 +28,11 @@ partial class ReadStreamForward : ReadMessage { }
 [DerivedMessage(TestGroup.Reads)]
 partial class ReadStreamBackward : ReadMessage { }
 
+// Label mappings are process-wide and replaced by every node that starts (MetricsBootstrapper),
+// so tests reading them must not run in parallel with tests from other collections.
+[CollectionDefinition("MetricsLabelTests", DisableParallelization = true)]
+public class MetricsLabelTestsCollection;
+
 [Collection("MetricsLabelTests")] // labels are static
 public class MessageLabelConfiguratorTests {
 	private static MetricsConfiguration.LabelMappingCase CreateMapping(string regex, string label) => new() {
@@ -34,7 +40,7 @@ public class MessageLabelConfiguratorTests {
 		Label = label,
 	};
 
-	private static string Resolve(string originalLabel, params MetricsConfiguration.LabelMappingCase[] mappings) =>
+	private static string Resolve(string originalLabel, params ReadOnlySpan<MetricsConfiguration.LabelMappingCase> mappings) =>
 		MessageLabelConfigurator.ResolveLabel(originalLabel, mappings);
 
 	// labels are resolved lazily and cached, so clear the cache to resolve them again
@@ -47,6 +53,8 @@ public class MessageLabelConfiguratorTests {
 
 	[Fact]
 	public void no_map() {
+		// a node started by an earlier test may have left its own mappings configured
+		MessageLabelConfigurator.ConfigureMessageLabels([]);
 		ResetLabels();
 
 		Assert.Equal("TestGroup-Reads-ReadAllForward", ReadAllForward.LabelStatic);
