@@ -4,6 +4,12 @@
     <Description>Assembles a KurrentDB node and the web application around it, for any host that runs one.</Description>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(KurrentEmbeddedMinimal)' == 'true'">
+    <ProjectReference Include="..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(KurrentEmbeddedMinimal)' != 'true'">
+    <Compile Remove="EmbeddedIndexRuntime.cs" />
+  </ItemGroup>
   <ItemGroup>
     <!-- MEF, for the plugin catalogs in ClusterVNodeHostedService -->
     <PackageReference Include="System.ComponentModel.Composition" />
@@ -35,14 +41,14 @@
     <ProjectReference Include="..\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
     <ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
     <ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
-    <ProjectReference Include="..\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" />
+    <ProjectReference Include="..\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" Condition="'$(KurrentEmbeddedMinimal)' != 'true'" />
     <ProjectReference Include="..\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
     <ProjectReference Include="..\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" />
     <ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
     <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
 
-    <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
-    <ProjectReference Include="..\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" Condition="'$(KurrentEmbeddedMinimal)' != 'true'" />
+    <ProjectReference Include="..\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" Condition="'$(KurrentEmbeddedMinimal)' != 'true'" />
     <ProjectReference Include="..\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
   </ItemGroup>
 </Project>

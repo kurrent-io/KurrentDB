@@ -530,6 +530,9 @@ public partial record ClusterVNodeOptions {
 					 $"Defaults to 90% of the available disk space on the {nameof(SqlEngineTempDirectory)} volume.")]
 		public long SqlEngineTempDirectorySizeLimit { get; init; }
 
+		[Description("Memory limit in bytes for embedded DuckDB. Zero uses 25% of runtime-available memory.")]
+		public long SqlEngineMemoryLimit { get; init; }
+
 		[Description("Directory for embedded DuckDB to write temp files. " +
 					 "Must not be used for other files, *.tmp files will automatically be removed. " +
 					 "Defaults to <DB Directory>/kurrent.ddb.tmp/")]

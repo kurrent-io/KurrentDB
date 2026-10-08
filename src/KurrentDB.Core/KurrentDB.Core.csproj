@@ -6,6 +6,14 @@
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
+	<ItemGroup Condition="'$(KurrentEmbeddedMinimal)' == 'true'">
+		<!-- Shared monitoring and wire DTOs remain; no persistent-subscription engine or endpoints. -->
+		<Compile Remove="Services/PersistentSubscription/**/*.cs" />
+		<Compile Include="Services/PersistentSubscription/RequestStatistics.cs;Services/PersistentSubscription/NakAction.cs" />
+		<Compile Remove="Services/Transport/Grpc/PersistentSubscriptions*.cs" />
+		<Compile Remove="Services/Transport/Http/Controllers/PersistentSubscriptionController.cs" />
+		<Compile Remove="PluginModel/IPersistentSubscriptionConsumerStrategyPlugin.cs" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="FluentStorage" />
@@ -22,7 +30,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="librdkafka.redist" />
+		<PackageReference Include="librdkafka.redist" Condition="'$(KurrentEmbeddedMinimal)' != 'true'" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
@@ -105,6 +113,9 @@
 		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
 		</Protobuf>
+	</ItemGroup>
+	<ItemGroup Condition="'$(KurrentEmbeddedMinimal)' == 'true'">
+		<Protobuf Remove="..\Protos\Grpc\persistent.proto" />
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />

@@ -83,5 +83,7 @@ public class TFChunkDbConfig {
 
 	public long SqlEngineTempDirectorySizeLimit { get; init; }
 
+	public long SqlEngineMemoryLimit { get; init; }
+
 	public string SqlEngineTempDirectory { get; init; } = "";
 }

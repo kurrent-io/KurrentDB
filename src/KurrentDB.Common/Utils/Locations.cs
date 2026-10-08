@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime;
 
 namespace KurrentDB.Common.Utils;
@@ -26,8 +26,7 @@ public class Locations {
 	public static readonly string LegacyLogDirectory;
 
 	static Locations() {
-		ApplicationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
-							   Path.GetFullPath(".");
+		ApplicationDirectory = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
 
 		PluginsDirectory = Path.Combine(ApplicationDirectory, "plugins");
 		FallbackDefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");

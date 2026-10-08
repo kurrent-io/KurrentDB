@@ -4,7 +4,48 @@ Runs a **single-node KurrentDB server inside your own process**, reachable over 
 
 It is the same node the server executable runs — the same `ClusterVNode`, the same subsystems (projections,
 secondary indexing, connectors, schema registry, API v2), the same gRPC services. What embedding changes is
-the hosting and the way in.
+the hosting and the way in. The opt-in minimal build below excludes selected subsystems.
+
+## Experimental minimal build
+
+Build with `-p:KurrentEmbeddedMinimal=true` to exclude projection engines, Connectors, Schema Registry,
+and persistent-subscription engines and endpoints. The Blazor admin UI is absent in either embedded build.
+Shared protocol/monitoring DTOs remain, not a running persistent-subscription service. Minimal hosting does
+not discover extra subsystem plugins from disk.
+
+Stream and `$all` reads/writes, ordinary subscriptions, atomic multi-stream appends, metadata, soft deletion,
+secondary indexes, DuckDB and AutoScavenge remain. Flight SQL is still supplied by secondary indexing.
+Index management uses an in-memory wire registry; it does not require the Schema Registry service.
+
+The minimal profile supplies these defaults before `DatabaseOptions`, so callers can override them:
+
+| Server key under `KurrentDB:` | Minimal default |
+|---|---|
+| `ChunkSize` | 134217728 bytes (128 MiB, half the normal 256 MiB chunk) |
+| `CachedChunks` | 1 |
+| `MaxAppendSize` | 16777216 bytes (16 MiB) |
+| `UseIndexBloomFilters` | false |
+| `StreamExistenceFilterSize` | 0 (disabled) |
+| `SqlEngineMemoryLimit` | 268435456 bytes (256 MiB) |
+
+`SqlEngineMemoryLimit=0` retains the normal automatic limit of 25% of runtime-available memory; a positive
+value is an explicit DuckDB limit in bytes, independent of the CLR heap cap. Negative values are rejected.
+This is not a whole-process memory limit. Builds without the minimal switch retain their normal defaults.
+Do not change the chunk size of an existing data directory in place: these settings are not a data migration.
+
+```bash
+dotnet publish src/KurrentDB.Embedded.Sample -c Release -r osx-arm64 --self-contained true \
+  -p:KurrentEmbeddedMinimal=true -p:PublishSingleFile=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true -o /tmp/kdb-embedded-minimal
+
+dotnet run --project src/KurrentDB.Embedded.Tests -c Release \
+  -p:KurrentEmbeddedMinimal=true -- \
+  --treenode-filter '/*/*/EmbeddedResourceProfileTests/*'
+```
+
+Minimal builds use separate `obj/embedded/` and `bin/embedded/` outputs. Single-file publishing still ships
+support assets beside the executable and extracts native libraries at runtime. This profile is experimental;
+its preprocessor/build switches are not a finalized module interface.
 
 ## Why a socket
 
@@ -51,10 +92,11 @@ var streams = new Streams.StreamsClient(channel);
   are reached without one.
 - **No replication listener and no gossip.** A single node elects itself, replicates to nobody and resolves
   no seeds, so `ClusterVNode` never opens the internal TCP endpoint.
-- **No licence call.** A single node with no licence key issues itself one rather than asking for one. Set
-  `KurrentDB:Licensing:LicenseKey` through `DatabaseOptions` and it will contact `licensing.kurrent.io` as usual.
+- **Licensing can contact the network.** A keyless single node uses the community licence; embedding alone
+  does not guarantee offline operation.
 - **No log files.** The node logs through the static `Serilog.Log` logger, so a host that has not configured
-  Serilog gets a quiet component. Point `Serilog.Log.Logger` at a sink, or use `ConfigureLogging`, to see it.
+  Serilog gets a quiet component. The constructor overload returning a `LoggerConfiguration` supplies the
+  node's log levels; add a sink and assign the resulting logger to `Serilog.Log.Logger`.
 - **No statistics in the log.** `StatsStorage` is forced to `None`. The server logs a JSON object of system
   statistics every `StatsPeriodSec` and splits that source context off into a file of its own; a host owns its
   own logging configuration, so an embedded node would just be dropping that object into the host's log every
@@ -88,7 +130,6 @@ and a project that merely references KurrentDB does not produce one.
 
 | Option | Default | |
 |---|---|---|
-| `Name` | the data directory's name | What this database calls itself in the log. See below. |
 | `DataDirectory` | *required* | Where the database is written. Created owner-only if absent. |
 | `StartupTimeout` | 1 minute | How long `StartAsync` waits for the node to report ready. |
 | `TelemetryOptout` | `false` | Opt out of usage reporting to `kurrent.io`. |

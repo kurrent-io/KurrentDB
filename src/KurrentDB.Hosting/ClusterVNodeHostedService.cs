@@ -30,18 +30,24 @@ using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Hashing;
 using KurrentDB.Core.LogAbstraction;
+#if !KURRENT_EMBEDDED_MINIMAL
 using KurrentDB.Core.PluginModel;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+#endif
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.PluginHosting;
 using KurrentDB.Plugins.Api.V2;
+#if !KURRENT_EMBEDDED_MINIMAL
 using KurrentDB.Plugins.Connectors;
 using KurrentDB.Plugins.SchemaRegistry;
+#endif
 using KurrentDB.POC.ConnectedSubsystemsPlugin;
+#if !KURRENT_EMBEDDED_MINIMAL
 using KurrentDB.Projections.Core;
+#endif
 using KurrentDB.SecondaryIndexing;
 using KurrentDB.Security.EncryptionAtRest;
 using KurrentDB.TcpPlugin;
@@ -64,7 +70,9 @@ public class ClusterVNodeHostedService : IHostedService {
 
 		// two plugin mechanisms; pluginLoader is the new one
 		var pluginLoader = new PluginLoader(new DirectoryInfo(Locations.PluginsDirectory));
+#if !KURRENT_EMBEDDED_MINIMAL
 		var plugInContainer = FindPlugins();
+#endif
 
 		options = LoadSubsystemsPlugins(pluginLoader, options);
 
@@ -74,6 +82,12 @@ public class ClusterVNodeHostedService : IHostedService {
 			throw new InvalidConfigurationException("Failed to configure MD5. If FIPS mode is enabled in your OS, please use the MD5 commercial plugin.");
 		}
 
+#if KURRENT_EMBEDDED_MINIMAL
+		if (options.Projection.RunProjections != ProjectionType.None)
+			throw new InvalidConfigurationException("Projections are not included in the embedded minimal build.");
+		var projectionMode = ProjectionType.None;
+		_options = options;
+#else
 		var projectionMode = options.DevMode.Dev && options.Projection.RunProjections == ProjectionType.None
 			? ProjectionType.System
 			: options.Projection.RunProjections;
@@ -91,6 +105,7 @@ public class ClusterVNodeHostedService : IHostedService {
 					options.Projection.MaxProjectionStateSize,
 					options.Projection.MaxPartitionStateCacheSize)))
 			: options;
+#endif
 
 		var authorizationConfig = string.IsNullOrEmpty(_options.Auth.AuthorizationConfig)
 			? _options.Application.Config
@@ -115,7 +130,10 @@ public class ClusterVNodeHostedService : IHostedService {
 					authProviderFactory,
 					virtualStreamReader,
 					secondaryIndexReaders,
-					GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
+#if !KURRENT_EMBEDDED_MINIMAL
+					GetPersistentSubscriptionConsumerStrategyFactories(),
+#endif
+					certificateProvider,
 					configuration);
 				Node = node;
 				break;
@@ -180,6 +198,7 @@ public class ClusterVNodeHostedService : IHostedService {
 			return (modifiedOptions, factory);
 		}
 
+#if !KURRENT_EMBEDDED_MINIMAL
 		static CompositionContainer FindPlugins() {
 			var catalog = new AggregateCatalog();
 
@@ -200,7 +219,9 @@ public class ClusterVNodeHostedService : IHostedService {
 
 			return new CompositionContainer(catalog);
 		}
+#endif
 
+#if !KURRENT_EMBEDDED_MINIMAL
 		IPersistentSubscriptionConsumerStrategyFactory[] GetPersistentSubscriptionConsumerStrategyFactories() {
 			var allPlugins = plugInContainer.GetExports<IPersistentSubscriptionConsumerStrategyPlugin>();
 			var strategyFactories = new List<IPersistentSubscriptionConsumerStrategyFactory>();
@@ -217,6 +238,7 @@ public class ClusterVNodeHostedService : IHostedService {
 
 			return strategyFactories.ToArray();
 		}
+#endif
 
 		AuthenticationProviderFactory GetAuthenticationProviderFactory() {
 			if (_options.Application.AuthDisabled()) {
@@ -260,7 +282,11 @@ public class ClusterVNodeHostedService : IHostedService {
 		}
 
 		static ClusterVNodeOptions LoadSubsystemsPlugins(PluginLoader pluginLoader, ClusterVNodeOptions options) {
+#if KURRENT_EMBEDDED_MINIMAL
+			var plugins = new List<ISubsystemsPlugin>();
+#else
 			var plugins = pluginLoader.Load<ISubsystemsPlugin>().ToList();
+#endif
 			plugins.Add(new OtlpExporterPlugin.OtlpExporterPlugin());
 			plugins.Add(new UserCertificatesPlugin());
 			plugins.Add(new LogsEndpointPlugin());
@@ -268,8 +294,10 @@ public class ClusterVNodeHostedService : IHostedService {
 			plugins.Add(new ConnectedSubsystemsPlugin());
 			plugins.Add(new AutoScavengePlugin());
 			plugins.Add(new TcpApiPlugin());
+#if !KURRENT_EMBEDDED_MINIMAL
 			plugins.Add(new ConnectorsPlugin());
 			plugins.Add(new SchemaRegistryPlugin());
+#endif
 			plugins.Add(new ApiV2Plugin());
 
 			foreach (var plugin in plugins) {

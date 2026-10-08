@@ -14,6 +14,9 @@ namespace KurrentDB;
 /// </summary>
 public static class NodeWebApplication {
 	public static void ConfigureServices(IServiceCollection services, ClusterVNodeHostedService hostedService) {
+#if KURRENT_EMBEDDED_MINIMAL
+		EmbeddedIndexRuntime.ConfigureServices(services);
+#endif
 		hostedService.Node.Startup.ConfigureServices(services);
 		// Order is important, configure IHostedService after the WebHost to make the sure
 		// ClusterVNodeHostedService and the subsystems are started after configuration is finished.

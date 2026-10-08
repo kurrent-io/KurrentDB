@@ -101,6 +101,16 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				new("KurrentDB:DisableLogFile", bool.TrueString),
 				new("KurrentDB:StatsStorage", nameof(StatsStorage.None)),
 			])
+#if KURRENT_EMBEDDED_MINIMAL
+			.AddInMemoryCollection([
+				new("KurrentDB:ChunkSize", "134217728"),
+				new("KurrentDB:CachedChunks", "1"),
+				new("KurrentDB:MaxAppendSize", "16777216"),
+				new("KurrentDB:UseIndexBloomFilters", bool.FalseString),
+				new("KurrentDB:StreamExistenceFilterSize", "0"),
+				new("KurrentDB:SqlEngineMemoryLimit", "268435456"),
+			])
+#endif
 			.AddInMemoryCollection(options.DatabaseOptions));
 
 		ClusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configuration);

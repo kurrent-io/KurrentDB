@@ -1,4 +1,10 @@
 <Project>
+	<PropertyGroup Condition="'$(KurrentEmbeddedMinimal)' == 'true'">
+		<BaseIntermediateOutputPath>obj/embedded/</BaseIntermediateOutputPath>
+		<BaseOutputPath>bin/embedded/</BaseOutputPath>
+		<DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+		<DefineConstants>$(DefineConstants);KURRENT_EMBEDDED_MINIMAL</DefineConstants>
+	</PropertyGroup>
 	<PropertyGroup>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
