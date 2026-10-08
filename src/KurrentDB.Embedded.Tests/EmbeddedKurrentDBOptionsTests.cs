@@ -25,7 +25,7 @@ public class EmbeddedKurrentDBOptionsTests {
 		using var _ = new Cleanup(dataDirectory);
 		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory));
 
-		var serverOptions = db.ServerOptions;
+		var serverOptions = db.ClusterVNodeOptions;
 
 		// the socket is the way in, and it is created in the database directory
 		serverOptions.Interface.EnableUnixSocket.ShouldBeTrue();
@@ -51,7 +51,7 @@ public class EmbeddedKurrentDBOptionsTests {
 			}
 		});
 
-		db.ServerOptions.Interface.NodePort.ShouldBe(21139);
+		db.ClusterVNodeOptions.Interface.NodePort.ShouldBe(21139);
 	}
 
 	[Test]
@@ -62,7 +62,7 @@ public class EmbeddedKurrentDBOptionsTests {
 		await using var db = new EmbeddedKurrentDB(TestPaths.Options(dataDirectory));
 
 		// the same default as the server: embedding is a deployment shape, not a privacy policy
-		db.ServerOptions.Application.TelemetryOptout.ShouldBeFalse();
+		db.ClusterVNodeOptions.Application.TelemetryOptout.ShouldBeFalse();
 	}
 
 	[Test]
@@ -75,7 +75,7 @@ public class EmbeddedKurrentDBOptionsTests {
 		});
 
 		// the option is the only way to reach this setting, so it had better work
-		db.ServerOptions.Application.TelemetryOptout.ShouldBeTrue();
+		db.ClusterVNodeOptions.Application.TelemetryOptout.ShouldBeTrue();
 	}
 
 	[Test]
@@ -111,8 +111,8 @@ public class EmbeddedKurrentDBOptionsTests {
 
 		// AllowUnknownOptions is left at the server's default, so StartAsync refuses this rather than
 		// leaving the caller with a database that quietly ignored what they asked for
-		db.ServerOptions.Application.AllowUnknownOptions.ShouldBeFalse();
-		db.ServerOptions.UnknownOptionsDetected.ShouldBeTrue();
+		db.ClusterVNodeOptions.Application.AllowUnknownOptions.ShouldBeFalse();
+		db.ClusterVNodeOptions.UnknownOptionsDetected.ShouldBeTrue();
 	}
 
 	[Test]
@@ -128,7 +128,7 @@ public class EmbeddedKurrentDBOptionsTests {
 
 		// the flip side of the above, and the reason a caller who writes KurrentDB:Database:ChunkSize gets
 		// neither the setting nor a complaint
-		db.ServerOptions.UnknownOptionsDetected.ShouldBeFalse();
+		db.ClusterVNodeOptions.UnknownOptionsDetected.ShouldBeFalse();
 	}
 
 	sealed class Cleanup(string dataDirectory) : IDisposable {

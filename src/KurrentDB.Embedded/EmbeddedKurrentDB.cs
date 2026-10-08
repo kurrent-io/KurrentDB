@@ -5,8 +5,10 @@ using DotNext.Threading;
 using Grpc.Net.Client;
 using KurrentDB.Client;
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Log;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
@@ -56,7 +58,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 	readonly EmbeddedKurrentDBOptions _options;
 	readonly IConfigurationRoot _configuration;
-	readonly TimeSpan _startupTimeout;
 
 	// One lock for every lifecycle transition, so starting, stopping and disposing never overlap and the
 	// state below is only ever read and written while holding it. None of this is a hot path. It is held
@@ -74,38 +75,47 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	// written from the Kestrel callback, read by anyone holding a reference
 	string? _unixSocketPath;
 
-	/// <summary>
-	/// Works out how the node will be configured and prepares its directory. Nothing is opened and nothing
-	/// is listening until <see cref="StartAsync"/> is called.
-	/// </summary>
-	public EmbeddedKurrentDB(EmbeddedKurrentDBOptions options) {
+	public EmbeddedKurrentDB(EmbeddedKurrentDBOptions options) : this(options, out _) { }
+
+	public EmbeddedKurrentDB(EmbeddedKurrentDBOptions options, out LoggerConfiguration loggerConfiguration) {
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentException.ThrowIfNullOrWhiteSpace(options.DataDirectory);
 
-		_startupTimeout = options.StartupTimeout > TimeSpan.Zero
-			? options.StartupTimeout
-			: throw new ArgumentOutOfRangeException(
-				nameof(options), options.StartupTimeout,
-				$"{nameof(EmbeddedKurrentDBOptions.StartupTimeout)} must be greater than zero.");
+		_options = options;
 
 		// the directory is owner-only when we create it, which is also what keeps another user off the
 		// socket inside it between the moment it is bound and the moment its own permissions are set
 		DataDirectory = UnixDomainSocket.CreatePrivateDirectory(options.DataDirectory);
 
-		_options = options;
-		_configuration = BuildConfiguration(options, DataDirectory);
-		ServerOptions = ClusterVNodeOptions.FromConfiguration(_configuration);
+		_configuration = KurrentConfiguration.BuildEmbedded(x => x
+			// TelemetryOptout value masquerades as a default because it
+			// is only allowed to be overridden by the environment.
+			.AddKurrentDefaultValues(new KeyValuePair<string, string?>[] {
+				new("KurrentDB:TelemetryOptout", options.TelemetryOptout.ToString()),
+			})
+			.AddInMemoryCollection([
+				new("KurrentDB:Db", DataDirectory),
+				new("KurrentDB:EnableUnixSocket", bool.TrueString),
+				new("KurrentDB:Insecure", bool.TrueString),
+				//qq revisit stats and logging
+				new("KurrentDB:DisableLogFile", bool.TrueString),
+				new("KurrentDB:StatsStorage", nameof(StatsStorage.None)),
+			])
+			.AddInMemoryCollection(options.DatabaseOptions));
 
-		ClusterVNodeOptionsValidator.Validate(ServerOptions);
+		ClusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configuration);
 
-		if (!ClusterVNodeOptionsValidator.ValidateForStartup(ServerOptions)) {
+		loggerConfiguration = KurrentLoggerConfiguration
+			.ApplyLogLevels(new LoggerConfiguration(), ClusterVNodeOptions.ConfigurationRoot!);
+
+		if (!ClusterVNodeOptionsValidator.ValidateForStartup(ClusterVNodeOptions)) {
 			throw new InvalidConfigurationException(
 				"The embedded database cannot start with this configuration. The errors logged above say why.");
 		}
 
 		// a node with no database directory does not listen on a socket, which would leave this one with
 		// no way in at all
-		if (ServerOptions.Database.MemDb) {
+		if (ClusterVNodeOptions.Database.MemDb) {
 			throw new InvalidOperationException(
 				"An embedded KurrentDB cannot run with an in-memory database: it is reached over a UNIX domain " +
 				"socket, and the node only creates one when it has a database directory.");
@@ -124,13 +134,13 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		?? throw new InvalidOperationException("The embedded database has not been started.");
 
 	/// <summary>The server options the node was configured with.</summary>
-	public ClusterVNodeOptions ServerOptions { get; }
+	internal ClusterVNodeOptions ClusterVNodeOptions { get; }
 
 	/// <summary>
 	/// The node's service provider, for resolving services such as <c>ISystemClient</c>. Available once
 	/// <see cref="StartAsync"/> has returned.
 	/// </summary>
-	public IServiceProvider Services =>
+	internal IServiceProvider Services =>
 		_web?.Services
 		?? throw new InvalidOperationException("The embedded database has not been started.");
 
@@ -152,10 +162,10 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 					$"{nameof(EmbeddedKurrentDB)} on the same data directory instead.");
 			}
 
-			if (!NodePreflight.TryPrepare(ServerOptions, out var cannotStart))
+			if (!NodePreflight.TryPrepare(ClusterVNodeOptions, out var cannotStart))
 				throw new InvalidOperationException(cannotStart);
 
-			if (!CertificateProviders.TryCreate(ServerOptions, out var certificateProvider, out var noCertificate))
+			if (!CertificateProviders.TryCreate(ClusterVNodeOptions, out var certificateProvider, out var noCertificate))
 				throw new InvalidOperationException(noCertificate);
 
 			_state = State.Running;
@@ -164,7 +174,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				// opening the database is synchronous and can take a while, and there is no reason to make
 				// the caller's thread wait through it
 				_hostedService = await Task.Run(
-					() => new ClusterVNodeHostedService(ServerOptions, certificateProvider, _configuration),
+					() => new ClusterVNodeHostedService(ClusterVNodeOptions, certificateProvider, _configuration),
 					cancellationToken);
 
 				_web = BuildWebApplication(_options, _configuration, _hostedService);
@@ -178,7 +188,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				// so it is restricted to the user who started the database
 				UnixDomainSocket.RestrictToOwner(UnixSocketPath);
 
-				await _readiness.WaitAsync(_startupTimeout, cancellationToken);
+				await _readiness.WaitAsync(_options.StartupTimeout, cancellationToken);
 			} catch {
 				// a node that failed to start is not one anybody can use, and it is holding the database:
 				// let go of whatever did open, which leaves this one disposed and refusing another attempt
@@ -305,41 +315,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		Disposed
 	}
 
-	/// <remarks>
-	/// <para>
-	/// This library's choices go in as default values, which are keyed without the <c>KurrentDB:</c>
-	/// prefix because that source adds it. The caller's settings go in afterwards, so they win, and they
-	/// carry the prefix as a configuration file would. Only the second of those is subject to the
-	/// environment-only rule, which is what lets the startup checks run at all.
-	/// </para>
-	/// <para>
-	/// Either way the engine's own settings are flat under <c>KurrentDB:</c>, because
-	/// <see cref="ClusterVNodeOptions.FromConfiguration"/> binds each option group straight from that
-	/// section — the groups are for the help text, not for the keys. Only plugins are nested, as in
-	/// <c>KurrentDB:AutoScavenge:Enabled</c>, because they read their own sections. Getting this wrong is
-	/// quiet: an engine key under a group name looks like an unknown plugin section, which the unknown
-	/// option check deliberately ignores.
-	/// </para>
-	/// </remarks>
-	static IConfigurationRoot BuildConfiguration(EmbeddedKurrentDBOptions options, string dataDirectory) =>
-		new ConfigurationBuilder()
-			.AddKurrentDefaultValues()
-			// TelemetryOptout value masquerades as a default because it
-			// is only allowed to be overridden by the environment.
-			.AddKurrentDefaultValues(new KeyValuePair<string, string?>[] {
-				new("KurrentDB:TelemetryOptout", options.TelemetryOptout.ToString()),
-			})
-			.AddInMemoryCollection([
-				new("KurrentDB:Db", dataDirectory),
-				new("KurrentDB:EnableUnixSocket", bool.TrueString),
-				new("KurrentDB:Insecure", bool.TrueString),
-				//qq revisit stats and logging
-				new("KurrentDB:DisableLogFile", bool.TrueString),
-				new("KurrentDB:StatsStorage", nameof(StatsStorage.None)),
-			])
-			.AddInMemoryCollection(options.DatabaseOptions)
-			.Build();
-
 	WebApplication BuildWebApplication(
 		EmbeddedKurrentDBOptions options,
 		IConfigurationRoot configuration,
@@ -371,7 +346,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			// survivable.
 			if (!KestrelHelpers.TryConfigureListeners(
 				server: server,
-				options: ServerOptions,
+				options: ClusterVNodeOptions,
 				hostedService: hostedService,
 				listenOnTcp: false,
 				unixSocket: out var unixSocket)) {

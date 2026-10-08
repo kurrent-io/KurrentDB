@@ -14,8 +14,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Where the node is assembled: ClusterVNodeHostedService loads every plugin and subsystem.
-         Deliberately not the server executable, which would drag its Blazor UI along with it. -->
+    <None Include="..\KurrentDB\logconfig.json" Link="logconfig.json" CopyToOutputDirectory="PreserveNewest"
+          Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
+    <None Include="..\KurrentDB\metricsconfig.json" Link="metricsconfig.json" CopyToOutputDirectory="PreserveNewest"
+          Pack="true" PackagePath="contentFiles\any\any\" PackageCopyToOutput="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.Embedded.Tests" />
   </ItemGroup>
 </Project>

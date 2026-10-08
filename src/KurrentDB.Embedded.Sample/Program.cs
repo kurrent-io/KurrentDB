@@ -4,7 +4,6 @@
 using DotNext.Threading;
 using KurrentDB.Client;
 using Serilog;
-using Serilog.Events;
 
 namespace KurrentDB.Embedded.Sample;
 
@@ -12,25 +11,26 @@ internal static class Program {
 	public static async Task Main(string[] args) {
 		var ct = ConsoleCancellation();
 
-		// The node logs through the static Serilog logger for now.
-		Log.Logger = new LoggerConfiguration()
-			.MinimumLevel.Information()
-			.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-			.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-			.CreateLogger();
-
 		// DatabaseOptions is the way through to anything the server understands that this library has no
 		// opinion about. The keys are flat: KurrentDB:WriteTimeoutMs, even though the server groups that
 		// option under Database — KurrentDB:Database:WriteTimeoutMs would bind nothing, and would not be
 		// reported either, because a nested key is how plugin configuration reaches its plugin
 		// (KurrentDB:Licensing:LicenseKey).
-		await using (var db = new EmbeddedKurrentDB(new() {
-			DataDirectory = Path.Combine(Directory.GetCurrentDirectory(), "kdb-embedded"),
-			DatabaseOptions = new Dictionary<string, string?> {
-				["KurrentDB:WriteTimeoutMs"] = "5000",
-				["KurrentDB:PrepareTimeoutMs"] = "5000",
-				["KurrentDB:CommitTimeoutMs"] = "5000",
-			}})) {
+		await using (var db = new EmbeddedKurrentDB(
+			new() {
+				DataDirectory = Path.Combine(Directory.GetCurrentDirectory(), "kdb-embedded"),
+				DatabaseOptions = new Dictionary<string, string?> {
+					["KurrentDB:WriteTimeoutMs"] = "5000",
+					["KurrentDB:PrepareTimeoutMs"] = "5000",
+					["KurrentDB:CommitTimeoutMs"] = "5000",
+				}
+			},
+			out var loggerConfiguration)) {
+
+			// to support all the static loggers, for now.
+			Log.Logger = loggerConfiguration
+				.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+				.CreateLogger();
 
 			await db.StartAsync();
 
