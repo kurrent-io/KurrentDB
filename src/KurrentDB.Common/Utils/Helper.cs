@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using System.Reflection;
 using System.Text;
 
 namespace KurrentDB.Common.Utils;
@@ -34,7 +33,7 @@ public static class Helper {
 	}
 
 	public static string GetDefaultLogsDir() {
-		return Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "es-logs");
+		return Path.Combine(AppContext.BaseDirectory, "es-logs");
 	}
 
 	public static string FormatBinaryDump(byte[] logBulk) {

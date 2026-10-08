@@ -157,7 +157,9 @@ public class ClusterVNodeStartup<TStreamId>
 
 		app.MapLegacyPipeline(_httpService, internalDispatcher, forcePlainTextMetrics);
 
+#if !KURRENT_EMBEDDED_MINIMAL
 		app.MapGrpcService<PersistentSubscriptions>();
+#endif
 		app.MapGrpcService<Users>();
 		app.MapGrpcService<Streams<TStreamId>>();
 		app.MapGrpcService<ClusterGossip>();
@@ -272,7 +274,9 @@ public class ClusterVNodeStartup<TStreamId>
 				Ensure.Positive(_options.Application.MaxAppendEventSize),
 				TimeSpan.FromMilliseconds(_options.Database.WriteTimeoutMs),
 				_expiryStrategy, _trackers.GrpcTrackers, _authorizationProvider))
+#if !KURRENT_EMBEDDED_MINIMAL
 			.AddSingleton(new PersistentSubscriptions(_mainQueue, _authorizationProvider))
+#endif
 			.AddSingleton(new Users(_mainQueue, _authorizationProvider))
 			.AddSingleton(new Operations(_mainQueue, _authorizationProvider))
 			.AddSingleton(new ClusterGossip(_mainQueue, _authorizationProvider, _clusterDns,

@@ -53,6 +53,12 @@ public static class ClusterVNodeOptionsValidator {
 				$"{nameof(options.Database.SqlEngineTempDirectorySizeLimit)} must be greater than or equal to 0.");
 		}
 
+		if (options.Database.SqlEngineMemoryLimit < 0) {
+			throw new ArgumentOutOfRangeException(nameof(options.Database.SqlEngineMemoryLimit),
+				options.Database.SqlEngineMemoryLimit,
+				$"{nameof(options.Database.SqlEngineMemoryLimit)} must be greater than or equal to 0.");
+		}
+
 		if (options.Grpc.KeepAliveTimeout < 0) {
 			throw new ArgumentOutOfRangeException(
 				$"Invalid {nameof(options.Grpc.KeepAliveTimeout)} {options.Grpc.KeepAliveTimeout}. Please provide a positive integer.");

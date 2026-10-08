@@ -1,18 +1,20 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.IO.Pipelines;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.CSharp.RuntimeBinder;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 
 public class ClearTextHttpMultiplexingMiddleware(ConnectionDelegate next) {
-	//HTTP/2 prior knowledge-mode connection preface
-	private static readonly byte[] Http2Preface = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray(); //PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
+	private static readonly byte[] Http2Preface = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray();
+	private static readonly Type ProtocolsFeatureType = typeof(KestrelServerOptions).Assembly
+		.GetType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.HttpProtocolsFeature", throwOnError: true);
+	private static readonly object Http1Feature = Activator.CreateInstance(ProtocolsFeatureType, HttpProtocols.Http1);
+	private static readonly object Http2Feature = Activator.CreateInstance(ProtocolsFeatureType, HttpProtocols.Http2);
 
 	private static async Task<bool> HasHttp2Preface(PipeReader input) {
 		while (true) {
@@ -41,16 +43,10 @@ public class ClearTextHttpMultiplexingMiddleware(ConnectionDelegate next) {
 		}
 	}
 
-	private static void SetProtocols(object target, HttpProtocols protocols) {
-		var field = target.GetType().GetField("_endpointDefaultProtocols", BindingFlags.Instance | BindingFlags.NonPublic);
-		if (field == null)
-			throw new RuntimeBinderException("Couldn't bind to Kestrel _endpointDefaultProtocols field");
-		field.SetValue(target, protocols);
-	}
-
 	public async Task OnConnectAsync(ConnectionContext context) {
 		var hasHttp2Preface = await HasHttp2Preface(context.Transport.Input);
-		SetProtocols(next.Target, hasHttp2Preface ? HttpProtocols.Http2 : HttpProtocols.Http1);
+		// Kestrel's endpoint defaults are shared; protocol detection belongs to this connection only.
+		context.Features[ProtocolsFeatureType] = hasHttp2Preface ? Http2Feature : Http1Feature;
 		await next(context);
 	}
 }

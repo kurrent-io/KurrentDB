@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 
 namespace KurrentDB.Common.Utils;
 
@@ -30,24 +29,12 @@ public static class VersionInfo {
 	static VersionInfo() {
 		// the official release assemblies contain the version prefix (4 part number)
 		// but not the suffix (beta, rc1, rtm, etc) so that the same assembly can be promoted.
-		var versionPrefix = Assembly.GetEntryAssembly().GetName().Version.ToString();
+		var versionPrefix = typeof(VersionInfo).Assembly.GetName().Version.ToString();
 		if (versionPrefix.EndsWith(".0"))
 			versionPrefix = versionPrefix[..^2];
 		VersionPrefix = versionPrefix;
 
-		var versionFilePath = Path.Join(
-			Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory),
-			VersionPropertiesFileName
-		);
-
-		if (!File.Exists(versionFilePath)) {
-			// In tests, AppDomain.CurrentDomain.BaseDirectory is `bin/` instead of `bin/<tfm>/`,
-			// so use a path relative to the current assembly as a fallback.
-			versionFilePath = Path.Join(
-				Path.GetDirectoryName(typeof(VersionInfo).Assembly.Location),
-				VersionPropertiesFileName
-			);
-		}
+		var versionFilePath = Path.Join(AppContext.BaseDirectory, VersionPropertiesFileName);
 
 		var properties = LoadProperties(versionFilePath);
 

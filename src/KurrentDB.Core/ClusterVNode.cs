@@ -53,8 +53,10 @@ using KurrentDB.Core.Services.Archive.Storage;
 using KurrentDB.Core.Services.Gossip;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.PeriodicLogs;
+#if !KURRENT_EMBEDDED_MINIMAL
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+#endif
 using KurrentDB.Core.Services.Replication;
 using KurrentDB.Core.Services.RequestManager;
 using KurrentDB.Core.Services.Storage;
@@ -112,7 +114,9 @@ public abstract class ClusterVNode {
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
 		SecondaryIndexReaders secondaryIndexReaders = null,
+#if !KURRENT_EMBEDDED_MINIMAL
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
+#endif
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
 		ILicenseProvider licenseProvider = null,
@@ -126,7 +130,9 @@ public abstract class ClusterVNode {
 			authorizationProviderFactory,
 			virtualStreamReader,
 			secondaryIndexReaders,
+#if !KURRENT_EMBEDDED_MINIMAL
 			factories,
+#endif
 			certificateProvider,
 			configuration,
 			licenseProvider,
@@ -255,8 +261,10 @@ public class ClusterVNode<TStreamId> :
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
 		SecondaryIndexReaders secondaryIndexReaders = null,
+#if !KURRENT_EMBEDDED_MINIMAL
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory>
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
+#endif
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
 		ILicenseProvider licenseProvider = null,
@@ -519,6 +527,7 @@ public class ClusterVNode<TStreamId> :
 				DbLock = dbLock,
 				SqlEngineTempDirectory = options.Database.SqlEngineTempDirectory,
 				SqlEngineTempDirectorySizeLimit = options.Database.SqlEngineTempDirectorySizeLimit,
+				SqlEngineMemoryLimit = options.Database.SqlEngineMemoryLimit,
 			};
 		}
 
@@ -998,7 +1007,9 @@ public class ClusterVNode<TStreamId> :
 		authenticationProviderFactory ??= !options.Application.AuthDisabled()
 			? throw new InvalidConfigurationException($"An {nameof(AuthenticationProviderFactory)} is required when running securely.")
 			: new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
+#if !KURRENT_EMBEDDED_MINIMAL
 		additionalPersistentSubscriptionConsumerStrategyFactories ??= [];
+#endif
 
 		_authenticationProvider = new DelegatedAuthenticationProvider(
 			authenticationProviderFactory
@@ -1113,13 +1124,19 @@ public class ClusterVNode<TStreamId> :
 			options.Application.DisableHttpCaching, options.Application.MaxAppendEventSize, TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
 		var gossipController = new GossipController(_mainQueue, _workersHandler,
 			trackers.GossipTrackers.ProcessingRequestFromHttpClient);
+#if !KURRENT_EMBEDDED_MINIMAL
 		var persistentSubscriptionController =
 			new PersistentSubscriptionController(httpSendService, _mainQueue, _workersHandler);
+#endif
 
 		var infoController = new InfoController(
 			options,
 			new Dictionary<string, bool> {
+#if KURRENT_EMBEDDED_MINIMAL
+				["projections"] = false,
+#else
 				["projections"] = options.Projection.RunProjections != ProjectionType.None || options.DevMode.Dev,
+#endif
 				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.AuthDisabled(),
 				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
 			},
@@ -1128,7 +1145,9 @@ public class ClusterVNode<TStreamId> :
 
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(infoController);
 
+#if !KURRENT_EMBEDDED_MINIMAL
 		_httpService.SetupController(persistentSubscriptionController);
+#endif
 		if (!options.Interface.DisableAdminUi)
 			_httpService.SetupController(adminController);
 		_httpService.SetupController(pingController);
@@ -1228,6 +1247,7 @@ public class ClusterVNode<TStreamId> :
 		subscrBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscription);
 		subscrBus.Subscribe<StorageMessage.SecondaryIndexDeleted>(subscription);
 
+#if !KURRENT_EMBEDDED_MINIMAL
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", metricsConfiguration.GetBusSlowMessageThreshold);
@@ -1307,6 +1327,7 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionPushToClients>(persistentSubscription);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
+#endif
 		// STORAGE SCAVENGER
 		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
 		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
@@ -1877,7 +1898,9 @@ public class ClusterVNode<TStreamId> :
 			_workersHandler.Start();
 			monitoringQueue.Start();
 			subscrQueue.Start();
+#if !KURRENT_EMBEDDED_MINIMAL
 			perSubscrQueue.Start();
+#endif
 			redactionQueue.Start();
 			dynamicCacheManager.Start();
 			_mainQueue.Publish(new SystemMessage.SystemInit());
