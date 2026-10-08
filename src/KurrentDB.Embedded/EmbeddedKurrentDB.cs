@@ -357,7 +357,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		// everything the node logs goes through the static Serilog logger. A host that has not configured
 		// Serilog gets a quiet component rather than console output it never asked for.
 		builder.Logging.ClearProviders().AddSerilog();
-		options.ConfigureLogging?.Invoke(builder.Logging);
 
 		builder.Services.Configure<HostOptions>(host => {
 			host.ShutdownTimeout = ClusterVNode.ShutdownTimeout + TimeSpan.FromSeconds(1);

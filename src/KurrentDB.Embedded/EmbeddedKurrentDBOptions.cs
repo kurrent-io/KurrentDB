@@ -33,9 +33,4 @@ public sealed record EmbeddedKurrentDBOptions {
 	/// </summary>
 	public IReadOnlyDictionary<string, string?> DatabaseOptions { get; init; } =
 		new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-
-	/// <summary>
-	/// Called after logging has been pointed at Serilog, to change where the node logs.
-	/// </summary>
-	public Action<ILoggingBuilder>? ConfigureLogging { get; init; }
 }
