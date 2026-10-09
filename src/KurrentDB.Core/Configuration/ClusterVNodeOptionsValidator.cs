@@ -37,7 +37,7 @@ public static class ClusterVNodeOptionsValidator {
 			throw new ArgumentNullException(nameof(options.Cluster.ClusterDns));
 		}
 
-		if (string.IsNullOrEmpty(options.Cluster.GossipSeed)) {
+		if (options.Cluster.GetGossipSeed() == null) {
 			throw new ArgumentNullException(nameof(options.Cluster.GossipSeed));
 		}
 
@@ -101,7 +101,7 @@ public static class ClusterVNodeOptionsValidator {
 			(nameof(options.Database.Index), options.Database.Index),
 			(nameof(options.Database.SqlEngineTempDirectory), options.Database.SqlEngineTempDirectory));
 
-		if (options.Cluster.GetGossipSeed() is not [] && options.Cluster.ClusterSize == 1) {
+		if (options.Cluster.GetGossipSeed().Count > 1 && options.Cluster.ClusterSize == 1) {
 			throw new ApplicationInitializationException(
 				"The given ClusterSize is set to 1 but GossipSeeds are multiple. We will never be able to sync up with this configuration.");
 		}
