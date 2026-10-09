@@ -62,6 +62,7 @@ public class HashListMemTable : IMemTable {
 		Interlocked.Add(ref _count, entries.Count);
 
 		EntryList list = null;
+		EntryList held = null; // the list whose write lock we hold, set only on successful acquisition
 		ulong? stream = null;
 
 		try {
@@ -71,8 +72,7 @@ public class HashListMemTable : IMemTable {
 				Ensure.Nonnegative(entry.Position, "entry.Position");
 
 				if (entry.Stream != stream) {
-					list?.Lock.Release();
-					list = null;
+					ReleaseWriteLock(ref held);
 
 					stream = entry.Stream;
 
@@ -80,29 +80,44 @@ public class HashListMemTable : IMemTable {
 						list = new(MemTableComparer);
 						// TryGetLatestEntry requires the list to be non-empty when it reads it
 						// so we acquire the write lock before making the list visible
-						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
-							list = null;
-							throw new UnableToAcquireLockInReasonableTimeException();
-						}
+						AcquireWriteLock(list, out held);
 						_hash.AddOrUpdate(stream.Value, list,
 							(x, y) => {
 								throw new Exception(
 									"This should never happen as MemTable updates are single-threaded.");
 							});
 					} else {
-						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
-							list = null;
-							throw new UnableToAcquireLockInReasonableTimeException();
-						}
+						AcquireWriteLock(list, out held);
 					}
 				}
 
 				list.Add(new Entry(entry.Version, entry.Position), 0);
 			}
-		} finally {
-			// list not null => we hold the list lock.
-			list?.Lock.Release();
+		} catch (Exception ex) {
+			// releasing can fail too, but that must not hide the exception that got us here
+			try {
+				ReleaseWriteLock(ref held);
+			} catch (Exception releaseEx) {
+				throw new AggregateException(ex, releaseEx);
+			}
+
+			throw;
 		}
+
+		ReleaseWriteLock(ref held);
+	}
+
+	private static void AcquireWriteLock(EntryList list, out EntryList held) {
+		if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+			throw new UnableToAcquireLockInReasonableTimeException();
+
+		held = list;
+	}
+
+	private static void ReleaseWriteLock(ref EntryList held) {
+		var temp = held;
+		held = null;
+		temp?.Lock.Release();
 	}
 
 	public bool TryGetOneValue(ulong stream, long number, out long position) {
