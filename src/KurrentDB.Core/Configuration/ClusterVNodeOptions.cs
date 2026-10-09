@@ -320,7 +320,8 @@ public partial record ClusterVNodeOptions {
 		[Description("Port other Kontrol Plane Nodes can reach this one on.")]
 		public int KontrollerPortAdvertiseAs { get; set; } = 0;
 
-		[Description("Kontrol Plane TCP endpoints for Kontrol Plane nodes to discover each other during bootstrapping.")]
+		[Description("Kontrol Plane TCP endpoints for Kontrol Plane nodes to discover each other during bootstrapping."),
+		 ConfigurationArray]
 		public string KontrolPlaneBootstrapSeed {
 			get => GossipSeedConverter.ToString(_bootstrapSeed);
 			set => _bootstrapSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
@@ -329,7 +330,7 @@ public partial record ClusterVNodeOptions {
 		internal IReadOnlyList<EndPoint> GetKontrolPlaneBootstrapSeed()
 			=> _bootstrapSeed;
 
-		[Description("Kontrol Plane gRPC API endpoints for discovery by Data Plane nodes.")]
+		[Description("Kontrol Plane gRPC API endpoints for discovery by Data Plane nodes."), ConfigurationArray]
 		public string KontrolPlaneApiSeed {
 			get => GossipSeedConverter.ToString(_apiSeed);
 			set => _apiSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
@@ -388,7 +389,7 @@ public partial record ClusterVNodeOptions {
 		[Description("The port on which cluster nodes' managers are running.")]
 		public int ClusterGossipPort { get; set; } = 2113;
 
-		[Description("Endpoints for other cluster nodes from which to seed gossip.")]
+		[Description("Endpoints for other cluster nodes from which to seed gossip."), ConfigurationArray]
 		public string GossipSeed {
 			get => GossipSeedConverter.ToString(_gossipSeed);
 			set => _gossipSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);

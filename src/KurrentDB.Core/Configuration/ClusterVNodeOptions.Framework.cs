@@ -105,8 +105,8 @@ public partial record ClusterVNodeOptions {
 				var isDefault = provider.GetType() == typeof(KurrentDefaultValuesConfigurationProvider);
 
 				if (!provider.TryGet(option.Value.Key, out var value)) {
-					// Handle options that have been configured as arrays (GossipSeed is currently the only one
-					// where this is possible)
+					// An option marked [ConfigurationArray] may have been supplied as a configuration array, in
+					// which case its own key holds nothing and the values live in child keys.
 					if (option.Value.OptionSchema.Value<string>("type") is "array") {
 						var parentPath = option.Value.Key;
 						var childValues = new List<string>();
@@ -123,7 +123,7 @@ public partial record ClusterVNodeOptions {
 						if (childValues.Count is 0)
 							continue; // no child values. skip
 					} else {
-						continue; // no value and it is an array so don't check for children. skip.
+						continue; // no value and not an array, so there are no children to check. skip.
 					}
 				}
 
