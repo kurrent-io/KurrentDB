@@ -92,6 +92,9 @@ partial class Enumerator {
 					checkpoint = await CatchUp(checkpoint, ct);
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
+			} catch (ReadResponseException.NotHandled ex) {
+				Log.Warning("Subscription {SubscriptionId} to {IndexName} terminated: {Reason}.", _subscriptionId, _indexName, ex.Message);
+				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (
 				    OperationCanceledException or

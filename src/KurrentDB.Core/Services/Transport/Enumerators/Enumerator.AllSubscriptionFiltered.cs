@@ -179,6 +179,9 @@ ReadLoop:
 					checkpoint = await CatchUp(checkpoint, ct);
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
+			} catch (ReadResponseException.NotHandled ex) {
+				Log.Warning("Subscription {subscriptionId} to $all:{eventFilter} terminated: {reason}.", _subscriptionId, _eventFilter, ex.Message);
+				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition)) {
 					Log.Error(ex, "Subscription {subscriptionId} to $all:{eventFilter} experienced an error.", _subscriptionId, _eventFilter);
