@@ -37,10 +37,6 @@ public static class ClusterVNodeOptionsValidator {
 			throw new ArgumentNullException(nameof(options.Cluster.ClusterDns));
 		}
 
-		if (options.Cluster.GetGossipSeed() == null) {
-			throw new ArgumentNullException(nameof(options.Cluster.GossipSeed));
-		}
-
 		if (options.Database.InitializationThreads <= 0) {
 			throw new ArgumentOutOfRangeException(nameof(options.Database.InitializationThreads),
 				options.Database.InitializationThreads,
