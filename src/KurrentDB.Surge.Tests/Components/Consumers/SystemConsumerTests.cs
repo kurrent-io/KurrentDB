@@ -6,6 +6,8 @@
 using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Consumers.Checkpoints;
+using Kurrent.Surge.Consumers.Configuration;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Surge.Testing.Fixtures;
@@ -373,5 +375,40 @@ public class SystemConsumerTests(ITestOutputHelper output, SystemComponentsAssem
 	    var positions = await consumer.GetLatestPositions();
 
 	    positions.Last().LogPosition.Should().BeEquivalentTo(consumedRecords.Last().LogPosition);
+    }
+
+    [Fact]
+    public async Task yields_trackable_records_when_auto_commit_is_disabled() {
+	    await Fixture.ProduceTestEvents(Identifiers.GenerateShortId("stream"), 1, 1000);
+
+	    var filter = ConsumeFilter.FromJsonPath($"$[?($.streamId == '{Identifiers.GenerateShortId()}')]");
+
+	    using var cancellator = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+
+	    await using var tracker = new CheckpointController(
+		    (positions, _) => ValueTask.FromResult(positions),
+		    new AutoCommitOptions { Enabled = false },
+		    Fixture.Logger,
+		    "external-tracker"
+	    );
+
+	    await tracker.Activate();
+
+	    await using var consumer = Fixture.NewConsumer()
+		    .Filter(filter)
+		    .InitialPosition(SubscriptionInitialPosition.Earliest)
+		    .DisableAutoCommit()
+		    .AutoCommit(options => options with { RecordsThreshold = 100 })
+		    .Create();
+
+	    await foreach (var record in consumer.Records(cancellator.Token)) {
+		    await tracker.Track(record);
+
+		    if (record.Value is ReadResponse.SubscriptionCaughtUp)
+			    break;
+	    }
+
+	    tracker.TrackedPositions.Should().NotBeEmpty();
+	    tracker.NextReadyPositions.Should().HaveCount(tracker.TrackedPositions.Count);
     }
 }
