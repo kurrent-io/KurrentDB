@@ -322,7 +322,7 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Kontrol Plane TCP endpoints for Kontrol Plane nodes to discover each other during bootstrapping.")]
 		public string KontrolPlaneBootstrapSeed {
-			get => GossipSeedConverter.ToString(_bootstrapSeed);
+			//get => GossipSeedConverter.ToString(_bootstrapSeed);
 			set => _bootstrapSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
 		}
 
@@ -331,7 +331,7 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Kontrol Plane gRPC API endpoints for discovery by Data Plane nodes.")]
 		public string KontrolPlaneApiSeed {
-			get => GossipSeedConverter.ToString(_apiSeed);
+			//get => GossipSeedConverter.ToString(_apiSeed);
 			set => _apiSeed = IReadOnlyList<EndPoint>.ParseConfigurationValue(value);
 		}
 

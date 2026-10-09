@@ -1598,7 +1598,7 @@ public class ClusterVNode<TStreamId> :
 		var gossipSeedSource = (
 			options.Cluster.DiscoverViaDns,
 			options.Cluster.ClusterSize > 1,
-			options.Cluster.GossipSeed is { Length: > 0 }) switch {
+			options.Cluster.GetGossipSeed() is not []) switch {
 				(true, true, _) => (IGossipSeedSource)new DnsGossipSeedSource(options.Cluster.ClusterDns,
 					options.Cluster.ClusterGossipPort),
 				(false, true, false) => throw new InvalidConfigurationException(

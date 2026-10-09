@@ -37,7 +37,7 @@ public static class ClusterVNodeOptionsValidator {
 			throw new ArgumentNullException(nameof(options.Cluster.ClusterDns));
 		}
 
-		if (options.Cluster.GossipSeed == null) {
+		if (string.IsNullOrEmpty(options.Cluster.GossipSeed)) {
 			throw new ArgumentNullException(nameof(options.Cluster.GossipSeed));
 		}
 
@@ -101,7 +101,7 @@ public static class ClusterVNodeOptionsValidator {
 			(nameof(options.Database.Index), options.Database.Index),
 			(nameof(options.Database.SqlEngineTempDirectory), options.Database.SqlEngineTempDirectory));
 
-		if (options.Cluster.GossipSeed.Length > 1 && options.Cluster.ClusterSize == 1) {
+		if (options.Cluster.GetGossipSeed() is not [] && options.Cluster.ClusterSize == 1) {
 			throw new ApplicationInitializationException(
 				"The given ClusterSize is set to 1 but GossipSeeds are multiple. We will never be able to sync up with this configuration.");
 		}
@@ -128,7 +128,7 @@ public static class ClusterVNodeOptionsValidator {
 
 		if (options.KontrolPlane.IsKontrolPlaneNode &&
 			options.Cluster.ClusterSize > 1 &&
-			options.KontrolPlane.KontrolPlaneBootstrapSeed is []) {
+			options.KontrolPlane.GetKontrolPlaneBootstrapSeed() is []) {
 			throw new InvalidConfigurationException(
 				$"A Kontrol Plane node in a cluster of more than one node requires a " +
 				$"{nameof(options.KontrolPlane.KontrolPlaneBootstrapSeed)} so that the Kontrol Plane nodes " +
@@ -144,7 +144,7 @@ public static class ClusterVNodeOptionsValidator {
 		// Plane API, which redirects it to the leader. A Data Plane node that runs no Kontroller has
 		// nowhere to start from.
 		if (options.KontrolPlane is { IsDataPlaneNode: true, IsKontrolPlaneNode: false } &&
-			options.KontrolPlane.KontrolPlaneApiSeed is []) {
+			options.KontrolPlane.GetKontrolPlaneApiSeed() is []) {
 			throw new InvalidConfigurationException(
 				$"A Data Plane node that is not also a Kontrol Plane node requires a " +
 				$"{nameof(options.KontrolPlane.KontrolPlaneApiSeed)} so that it can reach the Kontrol Plane.");
@@ -230,7 +230,7 @@ public static class ClusterVNodeOptionsValidator {
 	}
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
-		if (options.Cluster is { DiscoverViaDns: false, GossipSeed.Length: 0, ClusterSize: 1 }) {
+		if (options.Cluster is { DiscoverViaDns: false, ClusterSize: 1 } && options.Cluster.GetGossipSeed() is []) {
 			Log.Information(
 				"DNS discovery is disabled, but no gossip seed endpoints have been specified. Since "
 				+ "the cluster size is set to 1, this may be intentional. Gossip seeds can be specified "

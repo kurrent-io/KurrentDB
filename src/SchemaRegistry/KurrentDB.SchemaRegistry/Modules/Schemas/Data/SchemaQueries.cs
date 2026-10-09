@@ -229,7 +229,7 @@ file readonly struct GetSchemaQuery : IQuery<SchemaNameArgs, Schema> {
 
 	public static Schema Parse(ref DataChunk.Row row) {
 		var schemaName = row.ReadString();
-		var description = row.ReadString();
+		var description = row.TryReadString() ?? string.Empty;
 		var dataFormat = (SchemaDataFormat)row.ReadSByte();
 		var compatibility = (CompatibilityMode)row.ReadSByte();
 		var tags = SchemaQueries.ParseTags(row.ReadString());
