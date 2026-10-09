@@ -5,12 +5,12 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<IsPlugin>true</IsPlugin>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="System.ComponentModel.Composition" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>
 </Project>

@@ -8,18 +8,27 @@ using KurrentDB.Core.Settings;
 namespace KurrentDB.TcpPlugin;
 
 public class EventStoreOptions {
-	public int ConnectionPendingSendBytesThreshold { get; init; } = 10 * 1_024 * 1_024;
-	public int ConnectionQueueSizeThreshold { get; init; } = 50_000;
-	public int WriteTimeoutMs { get; init; } = 2_000;
-	public bool Insecure { get; init; }
-	public bool DisableTls { get; init; }
+	private IPAddress _nodeIp = IPAddress.Loopback;
+
+	public int ConnectionPendingSendBytesThreshold { get; set; } = 10 * 1_024 * 1_024;
+	public int ConnectionQueueSizeThreshold { get; set; } = 50_000;
+	public int WriteTimeoutMs { get; set; } = 2_000;
+	public bool Insecure { get; set; }
+	public bool DisableTls { get; set; }
 	public bool TlsDisabled() => Insecure || DisableTls;
-	public IPAddress NodeIp { get; init; } = IPAddress.Loopback;
-	public TcpPluginOptions TcpPlugin { get; init; } = new();
+
+	public string NodeIp {
+		get => _nodeIp.ToString();
+		set => _nodeIp = IPAddress.Parse(value);
+	}
+
+	internal IPAddress GetNodeIp() => _nodeIp;
+
+	public TcpPluginOptions TcpPlugin { get; set; } = new();
 
 	public class TcpPluginOptions : NodeTcpOptions {
-		public int NodeHeartbeatInterval { get; init; } = 2_000;
-		public int NodeHeartbeatTimeout { get; init; } = 1_000;
-		public int TcpReadTimeoutMs { get; init; } = ESConsts.ReadRequestTimeout;
+		public int NodeHeartbeatInterval { get; set; } = 2_000;
+		public int NodeHeartbeatTimeout { get; set; } = 1_000;
+		public int TcpReadTimeoutMs { get; set; } = ESConsts.ReadRequestTimeout;
 	}
 }

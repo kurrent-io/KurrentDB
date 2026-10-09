@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -19,6 +20,7 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Serialization;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -189,7 +191,7 @@ public sealed class TelemetryService :
 			"edition", JsonValue.Create(VersionInfo.Edition)));
 
 		message.Envelope.ReplyWith(new TelemetryMessage.Response(
-			"uptime", JsonValue.Create(TimeProvider.System.GetElapsedTime(_startTime))));
+			"uptime", JsonValue.Create(TimeProvider.System.GetElapsedTime(_startTime), CoreJsonContext.Default.TimeSpan)));
 
 		message.Envelope.ReplyWith(new TelemetryMessage.Response(
 			"cluster", new JsonObject {
@@ -234,8 +236,10 @@ public sealed class TelemetryService :
 				.Where(evt => evt.CollectionMode == Snapshot))
 			.ForEach(evt => {
 				try {
-					var payload = JsonSerializer.SerializeToNode(
-						evt.Data.ToDictionary(kvp => LowerFirstLetter(kvp.Key), kvp => kvp.Value));
+					var payload = new JsonObject();
+					foreach (var (key, value) in evt.Data)
+						payload.Add(LowerFirstLetter(key), CoreJsonContext.ToJsonValue(value));
+
 					message.Envelope.ReplyWith(new TelemetryMessage.Response(LowerFirstLetter(evt.Source), payload));
 				} catch (Exception ex) {
 					Logger.Warning(ex, "Failed to collect telemetry from pluggable component {Source}", evt.Source);
@@ -246,7 +250,9 @@ public sealed class TelemetryService :
 
 		{
 			var extraTelemetry = _configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:Telemetry").Get<Dictionary<string, string>>() ?? [];
-			var payload = JsonSerializer.SerializeToNode(extraTelemetry.ToDictionary(kvp => LowerFirstLetter(kvp.Key), kvp => kvp.Value));
+			var payload = JsonSerializer.SerializeToNode(
+				extraTelemetry.ToDictionary(kvp => LowerFirstLetter(kvp.Key), kvp => kvp.Value),
+				CoreJsonContext.Default.DictionaryStringString);
 			message.Envelope.ReplyWith(new TelemetryMessage.Response(
 				"telemetry", payload));
 		}

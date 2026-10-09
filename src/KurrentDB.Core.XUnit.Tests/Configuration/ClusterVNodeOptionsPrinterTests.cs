@@ -169,4 +169,25 @@ DEFAULT OPTIONS:
 		nodePort.DisplayValue.Should().BeEquivalentTo("18");
 		nodePort.SourceDisplayName.Should().BeEquivalentTo("Command Line");
 	}
+
+	// GossipSeed is surfaced as a single delimited string but can also be supplied as a configuration
+	// array, in which case its own key holds nothing and the values live in child keys. The option is
+	// only picked up if its schema still says it is an array (see ConfigurationArrayAttribute).
+	[Fact]
+	public void loaded_options_include_gossip_seed_configured_as_an_array() {
+		var kurrentPrefix = KurrentConfigurationKeys.Prefix;
+		var config = new ConfigurationBuilder()
+			.AddKurrentDefaultValues()
+			.AddInMemoryCollection(new Dictionary<string, string?> {
+				{ $"{kurrentPrefix}:GossipSeed:0", "192.168.0.1:2113" },
+				{ $"{kurrentPrefix}:GossipSeed:1", "192.168.0.2:2113" },
+			})
+			.Build();
+
+		var loadedOptions = ClusterVNodeOptions.GetLoadedOptions(config);
+
+		var gossipSeed = loadedOptions[$"{kurrentPrefix}:GossipSeed"];
+		gossipSeed.DisplayValue.Should().BeEquivalentTo("192.168.0.1:2113, 192.168.0.2:2113");
+		gossipSeed.Metadata.OptionSchema["type"]!.ToString().Should().Be("array");
+	}
 }

@@ -64,6 +64,6 @@ public class EventStoreOptionsTests {
 	public void can_set_ip() {
 		var sut = CreateSut(
 			($"{KurrentConfigurationKeys.Prefix}:NodeIp", "1.2.3.4"));
-		Assert.Equal(IPAddress.Parse("1.2.3.4"), sut.NodeIp);
+		Assert.Equal("1.2.3.4", sut.NodeIp);
 	}
 }

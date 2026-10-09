@@ -9,7 +9,9 @@ namespace KurrentDB.SourceGenerators.Tests.Messaging.Abstract
 		private partial class A
 		{
 			public static string OriginalLabelStatic { get; } = "TestMessageGroup-Abstract-A";
-			public static string LabelStatic { get; set; } = "TestMessageGroup-Abstract-A";
+
+			private static string _labelStatic;
+			public static string LabelStatic { get => _labelStatic ??= ResolveLabel(OriginalLabelStatic); set => _labelStatic = value; }
 			public override string Label => LabelStatic;
 		}
 	}

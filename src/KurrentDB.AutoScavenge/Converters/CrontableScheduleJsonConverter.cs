@@ -9,7 +9,7 @@ namespace KurrentDB.AutoScavenge.Converters;
 
 public class CrontableScheduleJsonConverter : JsonConverter<CrontabSchedule> {
 	public override CrontabSchedule Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-		if (reader.TokenType != JsonTokenType.String)
+		if (reader.TokenType is not JsonTokenType.String)
 			throw new JsonException("CRON expression can only be a string");
 
 		try {
@@ -20,6 +20,6 @@ public class CrontableScheduleJsonConverter : JsonConverter<CrontabSchedule> {
 	}
 
 	public override void Write(Utf8JsonWriter writer, CrontabSchedule value, JsonSerializerOptions options) {
-		JsonSerializer.Serialize(writer, value.ToString(), options);
+		writer.WriteStringValue(value.ToString());
 	}
 }

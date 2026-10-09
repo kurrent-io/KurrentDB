@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Security.EncryptionAtRest.EncryptionConfigurators;
@@ -17,9 +19,14 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Security.EncryptionAtRest;
 
 public class EncryptionAtRestPlugin() : SubsystemsPlugin(requiredEntitlements: ["ENCRYPTION_AT_REST"]) {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.EncryptionAtRest";
+
 	const string ConfigRoot = "KurrentDB:EncryptionAtRest";
 
 	private static readonly ILogger _logger = Log.ForContext<EncryptionAtRestPlugin>();
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabled = configuration.GetValue($"{ConfigRoot}:Enabled", defaultValue: false);

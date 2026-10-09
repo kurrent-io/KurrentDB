@@ -18,6 +18,7 @@ using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DuckDB;
@@ -114,7 +115,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Cluster = new() {
 				DiscoverViaDns = false,
 				ClusterDns = string.Empty,
-				GossipSeed = gossipSeeds,
+				GossipSeed = GossipSeedConverter.ToString(gossipSeeds),
 				ClusterSize = clusterSize,
 				NodePriority = nodePriority,
 				ClusterSecret = clusterSecret,
@@ -127,8 +128,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				StreamInfoCacheCapacity = 10_000
 			},
 			Interface = new() {
-				ReplicationIp = InternalTcpEndPoint.Address,
-				NodeIp = ExternalTcpEndPoint.Address,
+				ReplicationIp = InternalTcpEndPoint.Address.ToString(),
+				NodeIp = ExternalTcpEndPoint.Address.ToString(),
 				ReplicationPort = InternalTcpEndPoint.Port,
 				NodePort = HttpEndPoint.Port,
 				ReplicationHeartbeatTimeout = 2_000,
@@ -164,7 +165,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				IsKontrolPlaneNode = kontrolPlaneMode,
 				IsDataPlaneNode = kontrolPlaneMode,
 				KontrollerPort = kontrollerPort,
-				KontrolPlaneBootstrapSeed = kontrolPlaneBootstrapSeed ?? [],
+				KontrolPlaneBootstrapSeed = GossipSeedConverter.ToString(kontrolPlaneBootstrapSeed ?? []),
 			},
 			PlugableComponents = subsystems
 		};

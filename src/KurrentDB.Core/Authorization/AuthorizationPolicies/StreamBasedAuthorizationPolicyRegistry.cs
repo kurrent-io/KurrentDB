@@ -34,10 +34,6 @@ public class StreamBasedAuthorizationPolicyRegistry :
 	private CancellationTokenSource? _cts;
 	private IPolicySelector[] _effectivePolicySelectors = [];
 
-	private static readonly JsonSerializerOptions SerializeOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-	};
-
 	public class PolicyChangedEventArgs : EventArgs {
 		public ReadOnlyPolicy[] EffectivePolicies { get; }
 
@@ -152,7 +148,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 		}
 
 		try {
-			var settings = JsonSerializer.Deserialize<AuthorizationPolicySettings>(evnt.Event.Data.Span, SerializeOptions);
+			var settings = JsonSerializer.Deserialize(evnt.Event.Data.Span, AuthorizationPolicyJsonContext.Default.AuthorizationPolicySettings);
 			if (settings is not null)
 				return (true, settings);
 			_logger.Error("Could not parse authorization policy settings");

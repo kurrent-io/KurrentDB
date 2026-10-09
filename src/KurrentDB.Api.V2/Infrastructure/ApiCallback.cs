@@ -3,8 +3,6 @@
 
 #pragma warning disable CS8524, CS8509
 
-using System.Collections.Concurrent;
-using System.Reflection;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Core.Messages;
@@ -141,8 +139,6 @@ abstract class ApiCallbackBase<TState, TResponse>(ServerCallContext context, in 
 }
 
 static class MessageExtensions {
-    static ConcurrentDictionary<Type, Func<Message, OperationResult>> OperationResultFieldCache { get; } = new();
-
     /// <summary>
     /// Attempts to extract the OperationResult field from a Message, if it exists.
     /// <remarks>
@@ -152,18 +148,13 @@ static class MessageExtensions {
     /// </remarks>
     /// </summary>
     public static bool TryGetOperationResult(this Message message, out OperationResult result) {
-        if (OperationResultFieldCache.GetOrAdd(message.GetType(), ValueFactory(message)) is { } getResult) {
-            result = getResult(message);
+        if (message is ClientMessage.MessageWithResult messageWithResult) {
+	        result = messageWithResult.Result;
             return true;
         }
 
         result = default;
         return false;
-
-        static Func<Type, Func<Message, OperationResult>> ValueFactory(Message message) =>
-            msgType => msgType.GetRuntimeFields().FirstOrDefault(f => f.FieldType == typeof(OperationResult)) is { } field
-                ? msg => (OperationResult)field.GetValue(msg)!
-                : null!;
     }
 }
 

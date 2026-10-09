@@ -81,9 +81,12 @@ static class ClassDeclarationGenerationExtensions {
 		$"public virtual string Label => \"\";",
 	};
 
+	// The label is resolved lazily from the configured mapping (see Message.ResolveLabel) instead of being
+	// assigned through reflection at startup, so it survives trimming. Setting LabelStatic to null re-resolves it.
 	private static string[] RegisterConcreteLabel(string label) => new[] {
 		$"public static string OriginalLabelStatic {{ get; }} = \"{label}\";",
-		$"public static string LabelStatic {{ get; set; }} = \"{label}\";",
+		$"private static string _labelStatic;",
+		$"public static string LabelStatic {{ get => _labelStatic ??= ResolveLabel(OriginalLabelStatic); set => _labelStatic = value; }}",
 		$"public override string Label => LabelStatic;",
 	};
 

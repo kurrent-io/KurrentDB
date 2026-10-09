@@ -47,7 +47,7 @@ public abstract class TestFixtureWithInterpretedProjection {
 
 	protected virtual IProjectionStateHandler CreateStateHandler() {
 		return _stateHandlerFactory.Create(
-			"projection", _projectionType, _projection, true, null, logger: (s, _) => {
+			"projection", _projectionType, _projection, true, null, static (_, _, _) => null, logger: (s, _) => {
 				if (s.StartsWith("P:"))
 					Console.WriteLine(s);
 				else

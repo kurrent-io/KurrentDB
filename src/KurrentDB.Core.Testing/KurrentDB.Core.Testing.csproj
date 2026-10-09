@@ -14,7 +14,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
-		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.crt" />

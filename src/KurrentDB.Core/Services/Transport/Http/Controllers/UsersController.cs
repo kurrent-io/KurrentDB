@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
@@ -173,7 +174,7 @@ public class UsersController : CommunicationController {
 			x => Log.Debug(x, "Reply Text Content Failed."));
 	}
 
-	private SendToHttpEnvelope<T> CreateReplyEnvelope<T>(
+	private SendToHttpEnvelope<T> CreateReplyEnvelope<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]T>(
 		HttpEntityManager http, Func<ICodec, T, string> formatter = null,
 		Func<ICodec, T, ResponseConfiguration> configurator = null)
 		where T : UserManagementMessage.ResponseMessage {
@@ -181,7 +182,7 @@ public class UsersController : CommunicationController {
 			_networkSendQueue, http, formatter ?? AutoFormatter, configurator ?? AutoConfigurator, null);
 	}
 
-	private SendToHttpWithConversionEnvelope<T, R> CreateSendToHttpWithConversionEnvelope<T, R>(
+	private SendToHttpWithConversionEnvelope<T, R> CreateSendToHttpWithConversionEnvelope<T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]R>(
 		HttpEntityManager http, Func<T, R> formatter)
 		where T : UserManagementMessage.ResponseMessage
 		where R : UserManagementMessage.ResponseMessage {
@@ -203,7 +204,7 @@ public class UsersController : CommunicationController {
 				ErrorToHttpStatusCode(result.Error), codec.ContentType, codec.Encoding);
 	}
 
-	private string AutoFormatter<T>(ICodec codec, T result) {
+	private string AutoFormatter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ICodec codec, T result) {
 		return codec.To(result);
 	}
 

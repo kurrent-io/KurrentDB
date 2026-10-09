@@ -4,9 +4,9 @@
 using System.Text.Json;
 using System.Threading.Channels;
 using KurrentDB.AutoScavenge.Clients;
-using KurrentDB.AutoScavenge.Converters;
 using KurrentDB.AutoScavenge.Domain;
 using KurrentDB.AutoScavenge.Scavengers;
+using KurrentDB.AutoScavenge.Serialization;
 using KurrentDB.AutoScavenge.Sources;
 using KurrentDB.POC.IO.Core;
 using Serilog;
@@ -18,11 +18,6 @@ using TimeProvider = TimeProvider;
 
 internal class AutoScavengeService : IDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengeService>();
-
-	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		Converters = { new EventJsonConverter(), new CrontableScheduleJsonConverter() }
-	};
 
 	private readonly CancellationTokenSource _cts;
 	private readonly EventStoreOptions _options;
@@ -139,7 +134,7 @@ internal class AutoScavengeService : IDisposable {
 
 		await foreach (var @event in _client.SubscribeToStream("$mem-gossip", cancellationToken)) {
 			try {
-				var msg = JsonSerializer.Deserialize<GossipMessage>(@event.Data.Span)!;
+				var msg = JsonSerializer.Deserialize(@event.Data.Span, GossipJsonContext.Default.GossipMessage)!;
 				_gossipHandler.ReceiveGossipMessage(msg);
 				await _commands.Writer.WriteAsync(new Commands.ReceiveGossip(msg), cancellationToken);
 
@@ -174,7 +169,7 @@ internal class AutoScavengeService : IDisposable {
 			Guid.NewGuid(),
 			@event.Type,
 			"application/json",
-			JsonSerializer.SerializeToUtf8Bytes(@event, JsonSerializerOptions),
+			JsonSerializer.SerializeToUtf8Bytes(@event, AutoScavengeJsonContext.Default.IEvent),
 			isPropertyMetadata: false,
 			Array.Empty<byte>());
 	}

@@ -2,18 +2,20 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Exceptions;
+using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Core.Services.Archive;
 
-public class ArchiveOptions {
-	public bool Enabled { get; init; } = false;
-	public StorageType StorageType { get; init; } = StorageType.Unspecified;
-	public FileSystemOptions FileSystem { get; init; } = new();
-	public S3Options S3 { get; init; } = new();
-	public AzureOptions Azure { get; init; } = new();
-	public GcpOptions GCP { get; init; } = new();
-	public RetentionOptions RetainAtLeast { get; init; } = new();
+public class ArchiveOptions : IConfigurationBinder<ArchiveOptions> {
+	public bool Enabled { get; set; } = false;
+	public StorageType StorageType { get; set; } = StorageType.Unspecified;
+	public FileSystemOptions FileSystem { get; set; } = new();
+	public S3Options S3 { get; set; } = new();
+	public AzureOptions Azure { get; set; } = new();
+	public GcpOptions GCP { get; set; } = new();
+	public RetentionOptions RetainAtLeast { get; set; } = new();
 
 	public void Validate() {
 		try {
@@ -48,6 +50,9 @@ public class ArchiveOptions {
 
 		RetainAtLeast.Validate();
 	}
+
+	static ArchiveOptions IConfigurationBinder<ArchiveOptions>.Bind(IConfiguration configuration)
+		=> configuration.Get<ArchiveOptions>()!;
 }
 
 public enum StorageType {
@@ -61,7 +66,7 @@ public enum StorageType {
 }
 
 public class FileSystemOptions {
-	public string Path { get; init; } = "";
+	public string Path { get; set; } = "";
 
 	public void Validate() {
 		if (string.IsNullOrWhiteSpace(Path))
@@ -70,8 +75,8 @@ public class FileSystemOptions {
 }
 
 public class S3Options {
-	public string Bucket { get; init; } = "";
-	public string Region { get; init; } = "";
+	public string Bucket { get; set; } = "";
+	public string Region { get; set; } = "";
 
 	public void Validate() {
 		if (string.IsNullOrWhiteSpace(Bucket))
@@ -83,12 +88,12 @@ public class S3Options {
 }
 
 public class AzureOptions {
-	public string Container { get; init; } = "";
+	public string Container { get; set; } = "";
 
 	/// <summary>
 	/// Gets or sets service URL or connection string depending on <see cref="Authentication"/> type.
 	/// </summary>
-	public string ConnectionStringOrServiceUrl { get; init; } = "";
+	public string ConnectionStringOrServiceUrl { get; set; } = "";
 
 	/// <summary>
 	/// Gets or sets the client ID for the user-assigned managed identity.
@@ -96,12 +101,12 @@ public class AzureOptions {
 	/// <remarks>
 	/// Applicable when <see cref="Authentication"/> is <see cref="AuthenticationType.UserAssignedIdentity"/>.
 	/// </remarks>
-	public string UserAssignedClientId { get; init; } = "";
+	public string UserAssignedClientId { get; set; } = "";
 
 	/// <summary>
 	/// Gets or sets the authentication type.
 	/// </summary>
-	public AuthenticationType Authentication { get; init; } = AuthenticationType.Unspecified;
+	public AuthenticationType Authentication { get; set; } = AuthenticationType.Unspecified;
 
 	public void Validate() {
 		string error = null;
@@ -169,7 +174,7 @@ public class AzureOptions {
 }
 
 public class GcpOptions {
-	public string Bucket { get; init; } = "";
+	public string Bucket { get; set; } = "";
 
 	public void Validate() {
 		if (string.IsNullOrWhiteSpace(Bucket))
@@ -180,9 +185,9 @@ public class GcpOptions {
 // Local chunks are removed after they have passed beyond both criteria, so they
 // must both be set to be useful.
 public class RetentionOptions {
-	public long Days { get; init; } = TimeSpan.MaxValue.Days;
+	public long Days { get; set; } = TimeSpan.MaxValue.Days;
 	// number of bytes in the logical log
-	public long LogicalBytes { get; init; } = long.MaxValue;
+	public long LogicalBytes { get; set; } = long.MaxValue;
 
 	public void Validate() {
 		if (Days == TimeSpan.MaxValue.Days)

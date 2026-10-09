@@ -43,7 +43,7 @@ public readonly record struct PluginDiagnosticsData() : IComparable<PluginDiagno
 	/// <summary>
 	///		The data associated with the event in the form of a dictionary.
 	/// </summary>
-	public required Dictionary<string, object?> Data { get; init; }
+	public required Dictionary<string, IConvertible?> Data { get; init; }
 
 	/// <summary>
 	///		When the event occurred.

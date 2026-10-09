@@ -5,6 +5,8 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<IsPlugin>true</IsPlugin>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -13,7 +15,6 @@
 		<PackageReference Include="IdentityModel" />
 		<PackageReference Include="LruCacheNet" />
 		<PackageReference Include="Newtonsoft.Json" />
-		<PackageReference Include="System.ComponentModel.Composition" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>

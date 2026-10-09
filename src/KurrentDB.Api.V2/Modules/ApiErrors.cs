@@ -14,6 +14,7 @@ using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using Kurrent.Rpc;
+using KurrentDB.Api.Infrastructure.Protobuf;
 using Type = System.Type;
 
 namespace KurrentDB.Api.Errors;
@@ -62,7 +63,7 @@ public static partial class ApiErrors {
         if (permission is not null)
             details.Permission = permission;
 
-        return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
+        return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.AccessDenied, message, details);
     }
 
     /// <summary>
@@ -146,7 +147,7 @@ public static partial class ApiErrors {
                 static (sb, failure) => sb.AppendLine($" -- {failure.ErrorMessage}")
             ).ToString();
 
-        return RpcExceptions.FromError(ServerError.BadRequest, message, details);
+        return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.BadRequest, message, details);
     }
 
     /// <summary>
@@ -216,7 +217,7 @@ public static partial class ApiErrors {
 
         var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(ServerError.OperationTimeout, message, details);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.OperationTimeout, message, details);
 	}
 
 	/// <summary>
@@ -242,7 +243,7 @@ public static partial class ApiErrors {
 
 		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(ServerError.ServerNotReady, message, details);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.ServerNotReady, message, details);
 	}
 
 	/// <summary>
@@ -261,7 +262,7 @@ public static partial class ApiErrors {
 
 		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(ServerError.ServerShuttingDown, message, details);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.ServerShuttingDown, message, details);
 	}
 
 	/// <summary>
@@ -288,7 +289,7 @@ public static partial class ApiErrors {
 
 		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(ServerError.ServerOverloaded, message, details);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.ServerOverloaded, message, details);
 	}
 
     /// <summary>
@@ -324,7 +325,7 @@ public static partial class ApiErrors {
              }
 		};
 
-		return RpcExceptions.FromError(ServerError.NotLeaderNode, message, notLeaderNode);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.NotLeaderNode, message, notLeaderNode);
 	}
 
     /// <summary>
@@ -361,7 +362,7 @@ public static partial class ApiErrors {
 		                  + $"Please contact support if the problem persists.{Environment.NewLine}"
 		                  + $"{message}";
 
-		return RpcExceptions.FromError(ServerError.ServerMalfunction, statusMessage);
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.ServerMalfunction, statusMessage);
 	}
 
 	/// <summary>
@@ -392,6 +393,6 @@ public static partial class ApiErrors {
 		        + $"Please contact support if the problem persists.{Environment.NewLine}"
 		        + $"{message ?? exception.Message}";
 
-		return RpcExceptions.FromError(ServerError.ServerMalfunction, message, exception.ToRpcDebugInfo());
+		return RpcExceptions.FromError<ServerError, ErrorEnums>(ServerError.ServerMalfunction, message, exception.ToRpcDebugInfo());
 	}
 }

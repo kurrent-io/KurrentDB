@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Messaging;
@@ -17,9 +18,9 @@ public static partial class GossipMessage {
 
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GotGossipSeedSources : Message {
-		public readonly EndPoint[] GossipSeeds;
+		public readonly IReadOnlyList<EndPoint> GossipSeeds;
 
-		public GotGossipSeedSources(EndPoint[] gossipSeeds) {
+		public GotGossipSeedSources(IReadOnlyList<EndPoint> gossipSeeds) {
 			GossipSeeds = gossipSeeds;
 		}
 	}

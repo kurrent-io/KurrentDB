@@ -5,12 +5,12 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Reflection;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
@@ -55,6 +55,8 @@ public partial class InMemoryBus {
 			=> typeof(Message).IsAssignableFrom(candidate) && candidate.IsGenericTypeDefinition is false;
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2026",
+		Justification = "Message types removed by the trimmer are never instantiated or subscribed to, so they don't need handlers")]
 	static Type[] LoadAvailableTypes(Assembly assembly) {
 		try {
 			return assembly.GetTypes();
@@ -88,7 +90,7 @@ public partial class InMemoryBus {
 
 		static void RegisterMessageType(Dictionary<Type, MessageTypeHandler> messageTypes, Type messageType,
 			MessageTypeHandler handler) {
-			while (messageType.GetBaseTypes().FirstOrDefault(KnownMessageTypes.Contains) is { } baseType && handler.Parent is null) {
+			while (FindKnownBaseType(messageType) is { } baseType && handler.Parent is null) {
 				if (!messageTypes.TryGetValue(baseType, out var parent))
 					Debug.Fail($"Unexpected message type {messageType}");
 
@@ -96,6 +98,15 @@ public partial class InMemoryBus {
 				handler = parent;
 				messageType = baseType;
 			}
+		}
+
+		static Type FindKnownBaseType(Type messageType) {
+			for (var baseType = messageType.BaseType; baseType is not null; baseType = baseType.BaseType) {
+				if (KnownMessageTypes.Contains(baseType))
+					return baseType;
+			}
+
+			return null;
 		}
 	}
 
