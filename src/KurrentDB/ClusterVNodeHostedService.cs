@@ -218,7 +218,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				? factory
 				: throw new ApplicationInitializationException(
 					$"""
-					  The authentication type {_options.Auth.AuthenticationType} is not recognised.
+					 The authentication type {_options.Auth.AuthenticationType} is not recognised.
 					 Valid options for authentication are: {string.Join(", ", authenticationTypeToPlugin.Keys)}.
 					 """);
 		}
