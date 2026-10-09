@@ -165,7 +165,7 @@ public class SystemConsumer : IConsumer {
 			if (response is ReadResponse.EventReceived eventReceived) {
 				var resolvedEvent = eventReceived.Event;
 
-				lastReadRecord = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
+				lastReadRecord = await resolvedEvent.ToRecord(Deserialize);
 
                 // TODO WC: To be reviewed. We should be able to delete this because it should never happen
 				if (lastReadRecord == SurgeRecord.None)
@@ -173,6 +173,8 @@ public class SystemConsumer : IConsumer {
 
 				if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(lastReadRecord))
 					continue;
+
+				lastReadRecord = lastReadRecord with { SequenceId = Sequence.FetchNext() };
 
 				await Intercept(new RecordReceived(this, lastReadRecord));
 
@@ -182,7 +184,7 @@ public class SystemConsumer : IConsumer {
 				lastReadRecord = new SurgeRecord {
 					Id         = RecordId.From(Guid.NewGuid()),
 					Position   = LogPosition.From(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition != 0 ? checkpointReceived.PreparePosition : checkpointReceived.CommitPosition),
-					SequenceId = Sequence.FetchNext(),
+					SequenceId = Options.AutoCommit.Enabled ? Sequence.FetchNext() : SequenceId.None,
 					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
 					ValueType  = typeof(ReadResponse.CheckpointReceived),
 					Value      = checkpointReceived,
@@ -191,8 +193,10 @@ public class SystemConsumer : IConsumer {
 
 				await Intercept(new RecordReceived(this, lastReadRecord));
 
-				await CheckpointController.Track(lastReadRecord);
-				await Intercept(new RecordTracked(this, lastReadRecord));
+				if (Options.AutoCommit.Enabled) {
+					await CheckpointController.Track(lastReadRecord);
+					await Intercept(new RecordTracked(this, lastReadRecord));
+				}
 
 				yield return lastReadRecord;
 			}
