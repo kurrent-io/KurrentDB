@@ -13,6 +13,7 @@ using KurrentDB.Core;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Logging;
+using KurrentDB.Plugins.Connectors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -96,6 +97,7 @@ try {
 		exitCodeSource.SetResult(code);
 	});
 
+	options.RegisterNonTrimmablePlugins();
 	var hostedService = new ClusterVNodeHostedService(options, certificateProvider, configuration);
 	await Run(hostedService);
 
@@ -177,4 +179,9 @@ void ConfigureThreadPool() {
 	Log.Information("Changed MaxWorkerThreads from {Before} to {After}", maxWorkerThreads1, maxWorkerThreads2);
 	Log.Information("Changed MinCompletionPortThreads from {Before} to {After}", minCompletionPortThreads1, minCompletionPortThreads2);
 	Log.Information("Changed MaxCompletionPortThreads from {Before} to {After}", maxCompletionPortThreads1, maxCompletionPortThreads2);
+}
+
+file static class NonTrimmablePlugins {
+	public static void RegisterNonTrimmablePlugins(this ClusterVNodeOptions options)
+		=> options.WithPlugableComponent(new ConnectorsPlugin());
 }
