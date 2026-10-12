@@ -14,6 +14,24 @@
 		<PackageReference Include="Serilog.Sinks.Console" />
 	</ItemGroup>
 
+	<!-- Plugin feature switches -->
+	<ItemGroup>
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.APIV2" Value="true" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authentication.LDAPS" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authentication.OAUTH" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.LegacyAuthorizationWithStreamAuthorizationDisabled" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.Authorization.Policy" Value="true" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.AutoScavenge" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.EncryptionAtRest" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.LogsEndpoint" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.OtlpExporter" Value="false" Trim="true" />
+		<!-- SchemaRegistry is required for SecondaryIndexes -->
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.SchemaRegistry" Value="true" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.SecondaryIndexes" Value="true" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.TcpClientProtocol" Value="false" Trim="true" />
+		<RuntimeHostConfigurationOption Include="KurrentDB.Plugins.UserCertificates" Value="false" Trim="true" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
 	</ItemGroup>
