@@ -86,10 +86,10 @@ public sealed class PTableBenchmarkData {
 
 	// Builds the PTable file for the given version, overwriting any file left behind by a previous
 	// run, and returns its path. Call DeleteFile when done with it.
-	public string CreateFile(byte version) {
+	public string CreateFile(byte version, int cacheDepth) {
 		var path = FilePath(version);
 		var table = Core.Index.PTable.FromMemtable(
-			BuildMemTable(version), path, InitialReaders, MaxReaders, skipIndexVerify: true);
+			BuildMemTable(version), path, InitialReaders, MaxReaders, cacheDepth: cacheDepth, skipIndexVerify: true);
 		table.Dispose();
 		table.WaitForDisposal(TimeSpan.FromSeconds(120));
 		return path;

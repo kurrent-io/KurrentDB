@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
+using System.Runtime.CompilerServices;
 using KurrentDB.Core.Exceptions;
 
 namespace KurrentDB.Core.Index;
@@ -25,17 +27,16 @@ public class PTableFooter {
 		NumMidpointsCached = numMidpointsCached;
 	}
 
-	public byte[] AsByteArray() {
-		var array = new byte[Size];
-		array[0] = (byte)FileType.PTableFile;
-		array[1] = Version;
-		uint numMidpoints = NumMidpointsCached;
-		for (int i = 0; i < 4; i++) {
-			array[i + 2] = (byte)(numMidpoints & 0xFF);
-			numMidpoints >>= 8;
-		}
+	[SkipLocalsInit]
+	public void WriteTo(Stream stream) {
+		Span<byte> buffer = stackalloc byte[Size];
+		buffer.Clear();
 
-		return array;
+		buffer[0] = (byte)FileType.PTableFile;
+		buffer[1] = Version;
+		BinaryPrimitives.WriteUInt32LittleEndian(buffer[2..], NumMidpointsCached);
+
+		stream.Write(buffer);
 	}
 
 	public static PTableFooter FromStream(Stream stream) {
@@ -51,9 +52,9 @@ public class PTableFooter {
 				"PTable footer with version < 4 found. PTable footers are supported as from version 4.",
 				new InvalidFileException("Invalid PTable file."));
 
-		byte[] buffer = new byte[4];
-		stream.ReadExactly(buffer, 0, 4);
-		uint numMidpointsCached = BitConverter.ToUInt32(buffer, 0);
+		Span<byte> buffer = stackalloc byte[4];
+		stream.ReadExactly(buffer);
+		uint numMidpointsCached = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
 
 		return new PTableFooter((byte)version, numMidpointsCached);
 	}

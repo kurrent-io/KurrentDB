@@ -16,6 +16,9 @@ public class PTableReadBenchmarks {
 	[Params(1_000_000, 16_000_000)]
 	public int IndexSize;
 
+	[Params(8, 16, 20)]
+	public int CacheDepth;
+
 	[Params(false, true)]
 	public bool SkipIndexVerify;
 
@@ -28,7 +31,8 @@ public class PTableReadBenchmarks {
 	[GlobalSetup]
 	public void Setup() {
 		_data = PTableBenchmarkData.Generate(IndexSize);
-		_file = _data.CreateFile(Version);
+		_data.DeleteFile(Version);
+		_file = _data.CreateFile(Version, cacheDepth: CacheDepth);
 	}
 
 	[GlobalCleanup]
@@ -40,8 +44,9 @@ public class PTableReadBenchmarks {
 			_file,
 			PTableBenchmarkData.InitialReaders,
 			PTableBenchmarkData.MaxReaders,
-			cacheDepth: 16,
-			skipIndexVerify: SkipIndexVerify);
+			cacheDepth: CacheDepth,
+			skipIndexVerify: SkipIndexVerify
+		);
 		var count = table.Count;
 		table.Dispose();
 		table.WaitForDisposal(TimeSpan.FromSeconds(120));
