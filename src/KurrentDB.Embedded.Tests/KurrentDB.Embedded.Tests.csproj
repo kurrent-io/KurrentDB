@@ -15,6 +15,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- BundledAssemblyReferencesTests reads what restoring KurrentDB.Embedded resolved, rather than
+			 guessing at the repository layout from the test's output directory. -->
+		<AssemblyMetadata Include="EmbeddedProjectAssetsFile"
+						  Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\KurrentDB.Embedded\obj\project.assets.json'))" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Using Include="Microsoft.Extensions.DependencyInjection" />
 		<Using Include="Shouldly" />
 		<Using Include="TUnit" />
@@ -25,5 +32,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
 		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+		<!-- KurrentDB.Embedded references the engine with PrivateAssets="all", so that packing it does not
+			 turn the bundled projects into package dependencies. That also stops them reaching anything that
+			 references it, so the engine types these tests use are asked for here. -->
+		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
 	</ItemGroup>
 </Project>

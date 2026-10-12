@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -6,8 +6,15 @@
 		<Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
 		<IsPackable>true</IsPackable>
 		<IsTrimmable>true</IsTrimmable>
+		<!-- This is the only package we publish. Every other project in the solution is IsPackable=false,
+			 so their assemblies are bundled into lib/ below rather than becoming package dependencies that
+			 could never resolve. Suppressing the project reference suppresses the transitive flow of its
+			 NuGet dependencies with it, so AddClosurePackageReferences below puts them back. -->
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeSolutionAssembliesInPackage</TargetsForTfmSpecificBuildOutput>
 	</PropertyGroup>
 
+	<!-- This project's own dependencies. Everything the bundled assemblies need on top of these is
+		 collected from the closure below. -->
 	<ItemGroup>
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="Grpc.Net.Client" />
@@ -35,10 +42,42 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
+		<ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="KurrentDB.Embedded.Tests" />
 	</ItemGroup>
+
+	<Target Name="IncludeSolutionAssembliesInPackage" DependsOnTargets="ResolveReferences">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)"
+								  Condition="'%(ReferenceCopyLocalPaths.ReferenceSourceTarget)' == 'ProjectReference'
+											 and '%(Extension)' == '.dll'" />
+		</ItemGroup>
+	</Target>
+
+	<!-- The external packages the bundled assemblies need, taken from the package references of every
+		 project reachable from this one. Restore asks for them through CollectPackageReferences, so they
+		 reach the assets file as ordinary references and pack turns them into package dependencies.
+		 Versions come from Directory.Packages.props, as they do everywhere else. -->
+	<Target Name="AddClosurePackageReferences" BeforeTargets="CollectPackageReferences">
+		<MSBuild Projects="@(ProjectReference)"
+				 Targets="GetClosurePackageReferences"
+				 Properties="Configuration=$(Configuration)"
+				 BuildInParallel="true">
+			<Output TaskParameter="TargetOutputs" ItemName="_ClosurePackageReferenceCandidate" />
+		</MSBuild>
+
+		<RemoveDuplicates Inputs="@(_ClosurePackageReferenceCandidate)">
+			<Output TaskParameter="Filtered" ItemName="_ClosurePackageReferenceDistinct" />
+		</RemoveDuplicates>
+
+		<!-- Exclude keeps the references this project declares itself, with their own metadata. -->
+		<ItemGroup>
+			<PackageReference Include="@(_ClosurePackageReferenceDistinct)"
+							  Exclude="@(PackageReference)"
+							  RemoveMetadata="PrivateAssets;IncludeAssets;ExcludeAssets" />
+		</ItemGroup>
+	</Target>
 </Project>

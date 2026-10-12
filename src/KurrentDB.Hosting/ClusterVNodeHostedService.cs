@@ -86,9 +86,13 @@ public class ClusterVNodeHostedService : IHostedService {
 
 		switch (_options.Database.DbLogFormat) {
 			case DbLogFormat.V2: {
-				if (SecondaryIndexingPlugin.IsAllowed && SchemaRegistryPlugin.IsAllowed) {
-					var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
-					_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+				if (SecondaryIndexingPlugin.IsAllowed) {
+					if (SchemaRegistryPlugin.IsAllowed) {
+						var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
+						_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+					} else {
+						throw new InvalidOperationException("Could not run Secondary Indexing: It requires a build with SchemaRegistry.");
+					}
 				}
 
 				var logFormatFactory = new LogV2FormatAbstractorFactory();

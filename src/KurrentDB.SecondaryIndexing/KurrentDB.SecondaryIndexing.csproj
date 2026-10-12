@@ -17,7 +17,7 @@
 	<ItemGroup>
 		<PackageReference Include="Apache.Arrow.Flight.AspNetCore" />
 		<PackageReference Include="Apache.Arrow.Flight.Sql" />
-		<PackageReference Include="Grpc.Tools" />
+		<PackageReference Include="Grpc.Tools" PrivateAssets="all" />
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="Kurrent.Quack.Arrow" />
 		<PackageReference Include="Kurrent.Surge.Core" />

@@ -9,7 +9,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
-		<PackageReference Include="YamlDotNet" />
+		<PackageReference Include="YamlDotnet" />
 		<PackageReference Include="System.Reactive" />
 		<PackageReference Include="DotNext" />
 	</ItemGroup>

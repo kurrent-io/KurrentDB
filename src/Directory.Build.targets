@@ -26,4 +26,40 @@
 						Or '%(RuntimeTargetsCopyLocalItems.FileName)' == 'vcruntime140_1')" />
 		</ItemGroup>
 	</Target>
+
+	<!--
+	  Returns the PackageReferences of this project and of every project it references, transitively.
+	  KurrentDB.Embedded packs its whole project closure into one package, so it has to declare the
+	  external packages those assemblies need; see its csproj. The walk calls this target on each
+	  project reference in turn, which is why it lives here rather than in that project.
+
+	  Left out: references that contribute nothing at runtime, either because they are build-time only
+	  (PrivateAssets=all, which is how GitInfo and Grpc.Tools are referenced) or because they exclude
+	  the runtime assets outright. A reference behind a Condition is included only when that condition
+	  holds for the configuration being packed, which is what the caller passes down.
+	-->
+	<Target Name="GetClosurePackageReferences" Returns="@(_ClosurePackageReference)">
+		<MSBuild Projects="@(ProjectReference)"
+				 Targets="GetClosurePackageReferences"
+				 Properties="Configuration=$(Configuration)"
+				 BuildInParallel="true"
+				 Condition="'%(ProjectReference.ReferenceOutputAssembly)' != 'false'
+							And '%(ProjectReference.OutputItemType)' != 'Analyzer'">
+			<Output TaskParameter="TargetOutputs" ItemName="_ClosureFromProjectReference" />
+		</MSBuild>
+
+		<ItemGroup>
+			<_OwnPackageReference Include="@(PackageReference)"
+				Condition="!$([MSBuild]::ValueOrDefault('%(PackageReference.PrivateAssets)', '').ToLowerInvariant().Contains('all'))
+						   And !$([MSBuild]::ValueOrDefault('%(PackageReference.ExcludeAssets)', '').ToLowerInvariant().Contains('all'))
+						   And !$([MSBuild]::ValueOrDefault('%(PackageReference.ExcludeAssets)', '').ToLowerInvariant().Contains('runtime'))" />
+			<!-- The MSBuild task copies the ProjectReference's metadata onto whatever the target returns, so
+				 the asset metadata is dropped here rather than carried up the walk. KurrentDB.Embedded
+				 references KurrentDB.Hosting with PrivateAssets="all", and left in place that reaches the
+				 assets file as suppressParent, which is pack's instruction to leave the dependency out of
+				 the package. -->
+			<_ClosurePackageReference Include="@(_ClosureFromProjectReference);@(_OwnPackageReference)"
+									  RemoveMetadata="PrivateAssets;IncludeAssets;ExcludeAssets" />
+		</ItemGroup>
+	</Target>
 </Project>
