@@ -48,7 +48,7 @@ internal static class Program {
 		int timeout = Timeout.Infinite, int readWindow = 2000, int writeWindow = 2000, int pingWindow = 2000,
 		bool reconnect = true, bool useTls = false, bool tlsValidateServer = false, string connectionString = "",
 		StatsFormat statsFormat = StatsFormat.Csv) {
-		Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
+		KurrentLoggerConfiguration.InstallProcessDefaults();
 
 		try {
 			var logsDirectory = log?.FullName ?? Locations.DefaultTestClientLogDirectory;

@@ -58,6 +58,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
 	</ItemGroup>
 </Project>

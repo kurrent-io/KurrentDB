@@ -43,9 +43,9 @@ public class KurrentLoggerConfiguration {
 	private static readonly ExpressionTemplate JsonTemplate = new(CompactJsonTemplate);
 
 	// ReSharper disable once NotAccessedField.Local
-	private static readonly SerilogEventListener SerilogEventListener;
+	private static SerilogEventListener? _serilogEventListener;
 
-	static KurrentLoggerConfiguration() {
+	public static void InstallProcessDefaults() {
 		Serilog.Log.Logger = ConsoleLog;
 		AppDomain.CurrentDomain.UnhandledException += (s, e) => {
 			if (e.ExceptionObject is Exception exc)
@@ -53,7 +53,7 @@ public class KurrentLoggerConfiguration {
 			else
 				Serilog.Log.Fatal("Global Unhandled Exception object: {e}.", e.ExceptionObject);
 		};
-		SerilogEventListener = new();
+		_serilogEventListener = new();
 	}
 
 	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
@@ -112,26 +112,8 @@ public class KurrentLoggerConfiguration {
 		_logsDirectory = logsDirectory;
 		_componentName = componentName;
 
-		var loglevelSection = logLevelConfigurationRoot.GetSection("Logging").GetSection("LogLevel");
-		var defaultLogLevelSection = loglevelSection.GetSection("Default");
-		lock (DefaultLogLevelSwitchLock) {
-			DefaultLogLevelSwitch = new LoggingLevelSwitch {
-				MinimumLevel = LogEventLevel.Verbose
-			};
-			ApplyLogLevel(defaultLogLevelSection, DefaultLogLevelSwitch);
-		}
-
-		var loggerConfiguration = StandardLoggerConfiguration
-			.MinimumLevel.ControlledBy(DefaultLogLevelSwitch)
+		_loggerConfiguration = ApplyLogLevels(StandardLoggerConfiguration, logLevelConfigurationRoot)
 			.WriteTo.Async(AsyncSink);
-
-		foreach (var namedLogLevelSection in loglevelSection.GetChildren().Where(x => x.Key != "Default")) {
-			var levelSwitch = new LoggingLevelSwitch();
-			ApplyLogLevel(namedLogLevelSection, levelSwitch);
-			loggerConfiguration = loggerConfiguration.MinimumLevel.Override(namedLogLevelSection.Key, levelSwitch);
-		}
-
-		_loggerConfiguration = loggerConfiguration;
 
 		void AsyncSink(LoggerSinkConfiguration configuration) {
 			configuration.Logger(c => c
@@ -171,6 +153,28 @@ public class KurrentLoggerConfiguration {
 				configuration.WriteTo.RollingFile(GetLogFileName("stats"), JsonTemplate, logFileRetentionCount, logFileInterval, logFileSize);
 			}
 		}
+	}
+
+	public static LoggerConfiguration ApplyLogLevels(LoggerConfiguration loggerConfiguration, IConfiguration logLevels) {
+		var loglevelSection = logLevels.GetSection("Logging").GetSection("LogLevel");
+		var defaultLogLevelSection = loglevelSection.GetSection("Default");
+		lock (DefaultLogLevelSwitchLock) {
+			DefaultLogLevelSwitch = new LoggingLevelSwitch {
+				MinimumLevel = LogEventLevel.Verbose
+			};
+			ApplyLogLevel(defaultLogLevelSection, DefaultLogLevelSwitch);
+		}
+
+		loggerConfiguration = loggerConfiguration
+			.MinimumLevel.ControlledBy(DefaultLogLevelSwitch);
+
+		foreach (var namedLogLevelSection in loglevelSection.GetChildren().Where(x => x.Key != "Default")) {
+			var levelSwitch = new LoggingLevelSwitch();
+			ApplyLogLevel(namedLogLevelSection, levelSwitch);
+			loggerConfiguration = loggerConfiguration.MinimumLevel.Override(namedLogLevelSection.Key, levelSwitch);
+		}
+
+		return loggerConfiguration;
 
 		void ApplyLogLevel(IConfigurationSection namedLogLevelSection, LoggingLevelSwitch levelSwitch) {
 			TrySetLogLevel(namedLogLevelSection, levelSwitch);

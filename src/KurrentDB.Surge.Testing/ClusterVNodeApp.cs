@@ -54,8 +54,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
                 x.Logging.ClearProviders();
                 x.Logging.AddSerilog(Log.Logger);
             })
-            .With(x => esdb.Node.Startup.ConfigureServices(x.Services))
-            .With(x => x.Services.AddSingleton<IHostedService>(esdb))
+            .With(x => NodeWebApplication.ConfigureServices(x.Services, esdb))
             .With(x => configureServices?.Invoke(x.Services));
 
         builder.WebHost.ConfigureKestrel(serverOptions => {
@@ -65,7 +64,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 	        });
         });
 
-        App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
+        App = builder.Build().With(x => NodeWebApplication.Configure(x, esdb));
 
         await App.StartAsync();
 
