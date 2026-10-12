@@ -20,8 +20,8 @@ internal sealed class AppendSamples(KurrentDBClient client, SampleData data) {
 			data.OrdersStream,
 			StreamState.Any,
 			[
-				data.Event(data.OrderPlaced, new { orderId = "A", country = "Mauritius" }),
-				data.Event(data.OrderPlaced, new { orderId = "B", country = "United Kingdom" })
+				data.Event(data.OrderPlaced, new OrderPlaced("A", "Mauritius"), SampleJsonContext.Default.OrderPlaced),
+				data.Event(data.OrderPlaced, new OrderPlaced("B", "United Kingdom"), SampleJsonContext.Default.OrderPlaced)
 			],
 			cancellationToken: cancellationToken);
 
@@ -41,11 +41,11 @@ internal sealed class AppendSamples(KurrentDBClient client, SampleData data) {
 				new AppendStreamRequest(
 					data.OrdersStream,
 					StreamState.Any,
-					[data.Event(data.OrderShipped, new { orderId = "A", carrier = "DHL" })]),
+					[data.Event(data.OrderShipped, new OrderShipped("A", "DHL"), SampleJsonContext.Default.OrderShipped)]),
 				new AppendStreamRequest(
 					data.InventoryStream,
 					StreamState.Any,
-					[data.Event(data.StockReserved, new { sku = "WIDGET-1", quantity = 2 })])
+					[data.Event(data.StockReserved, new StockReserved("WIDGET-1", 2), SampleJsonContext.Default.StockReserved)])
 			],
 			cancellationToken);
 

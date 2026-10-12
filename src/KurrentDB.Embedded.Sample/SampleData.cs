@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using KurrentDB.Client;
 
 namespace KurrentDB.Embedded.Sample;
@@ -22,8 +23,6 @@ internal sealed class SampleData {
 	public string OrderShipped => $"OrderShipped-{RunId}";
 	public string StockReserved => $"StockReserved-{RunId}";
 
-	public EventData Event<T>(string eventType, T payload) =>
-		new(Uuid.NewUuid(), eventType, JsonSerializer.SerializeToUtf8Bytes(payload));
-
-	public string Json<T>(T payload) => JsonSerializer.Serialize(payload);
+	public EventData Event<T>(string eventType, T payload, JsonTypeInfo<T> typeInfo) =>
+		new(Uuid.NewUuid(), eventType, JsonSerializer.SerializeToUtf8Bytes(payload, typeInfo));
 }

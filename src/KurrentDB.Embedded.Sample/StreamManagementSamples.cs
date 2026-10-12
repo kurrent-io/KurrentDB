@@ -24,7 +24,7 @@ internal sealed class StreamManagementSamples(KurrentDBClient client, SampleData
 		await client.AppendToStreamAsync(
 			data.ShipmentsStream,
 			StreamState.Any,
-			[data.Event(data.OrderShipped, new { orderId = "A" })],
+			[data.Event(data.OrderShipped, new OrderShipped("A"), SampleJsonContext.Default.OrderShipped)],
 			cancellationToken: cancellationToken);
 
 		await client.DeleteAsync(data.ShipmentsStream, StreamState.Any, cancellationToken: cancellationToken);
@@ -40,7 +40,7 @@ internal sealed class StreamManagementSamples(KurrentDBClient client, SampleData
 		var reappended = await client.AppendToStreamAsync(
 			data.ShipmentsStream,
 			StreamState.Any,
-			[data.Event(data.OrderShipped, new { orderId = "B" })],
+			[data.Event(data.OrderShipped, new OrderShipped("B"), SampleJsonContext.Default.OrderShipped)],
 			cancellationToken: cancellationToken);
 
 		Log.Information(
@@ -56,7 +56,7 @@ internal sealed class StreamManagementSamples(KurrentDBClient client, SampleData
 		await client.AppendToStreamAsync(
 			data.QuotesStream,
 			StreamState.Any,
-			[data.Event("QuoteGiven", new { price = 42 })],
+			[data.Event("QuoteGiven", new QuoteGiven(42), SampleJsonContext.Default.QuoteGiven)],
 			cancellationToken: cancellationToken);
 
 		await client.SetStreamMetadataAsync(

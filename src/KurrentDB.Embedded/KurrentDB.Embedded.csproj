@@ -5,6 +5,7 @@
 		<RootNamespace>KurrentDB.Embedded</RootNamespace>
 		<Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
 		<IsPackable>true</IsPackable>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 
 	<ItemGroup>
