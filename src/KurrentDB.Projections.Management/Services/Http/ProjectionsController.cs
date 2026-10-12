@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using EventStore.Plugins.Authorization;
@@ -575,7 +576,7 @@ public class ProjectionsController : CommunicationController {
 		return message.Reason;
 	}
 
-	private static string DefaultFormatter<T>(ICodec codec, T message) {
+	private static string DefaultFormatter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ICodec codec, T message) {
 		return codec.To(message);
 	}
 

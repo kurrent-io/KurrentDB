@@ -177,10 +177,6 @@ public class ClusterVNodeStartup<TStreamId>
 			policy => policy.RequireAssertion(async context =>
 				await _authorizationProvider.CheckAccessAsync(context.User, operation, CancellationToken.None));
 
-#if DEBUG
-		app.MapGrpcReflectionService();
-#endif
-
 		// enable redaction service on unix sockets only
 		app.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
 			if (!c.HttpContext.IsUnixSocketConnection())
@@ -336,10 +332,6 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddServiceOptions<GrpcKontrollerServer>(options => options.Interceptors.Add<NotReadyInterceptor>())
 			.AddServiceOptions<GrpcDataPlaneServer>(options => options.Interceptors.Add<NotReadyInterceptor>())
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
-
-#if DEBUG
-		services.AddGrpcReflection();
-#endif
 
 		services.AddDuckDb();
 

@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +15,8 @@ using Serilog;
 namespace KurrentDB.Auth.UserCertificates;
 
 public class UserCertificatesPlugin : SubsystemsPlugin {
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.UserCertificates";
+
 	public const string KurrentConfigurationPrefix = "KurrentDB";
 	private static readonly ILogger _staticLogger = Log.ForContext<UserCertificatesPlugin>();
 	private readonly ILogger _logger;
@@ -28,6 +32,9 @@ public class UserCertificatesPlugin : SubsystemsPlugin {
 
 		_logger = logger;
 	}
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabled = configuration.GetValue($"{KurrentConfigurationPrefix}:UserCertificates:Enabled", defaultValue: false);

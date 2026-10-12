@@ -4,10 +4,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using KurrentDB.AutoScavenge.Converters;
 using KurrentDB.AutoScavenge.Domain;
-using KurrentDB.POC.IO.Core.Serialization;
+using KurrentDB.AutoScavenge.Serialization;
 using NCrontab;
 using Serilog;
 
@@ -17,23 +15,14 @@ namespace KurrentDB.AutoScavenge.Clients;
 public class ProxyAutoScavengeClient(HttpClientWrapper wrapper) : GossipAwareBase, IAutoScavengeClient {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProxyAutoScavengeClient>();
 
-	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		Converters = {
-			new EnumConverterWithDefault<AutoScavengeStatus>(),
-			new EnumConverterWithDefault<AutoScavengeStatusResponse.Status>(),
-			new CrontableScheduleJsonConverter(),
-		},
-	};
-
 	public async Task<Response<AutoScavengeStatusResponse>> GetStatus(CancellationToken token) {
 		try {
 			var baseUrl = GetLeaderBaseUrl(nameof(GetStatus));
 			if (baseUrl is null)
 				return Response.ServerError<AutoScavengeStatusResponse>("No leader node was found in the cluster");
 
-			var resp = await wrapper.HttpClient.GetFromJsonAsync<AutoScavengeStatusResponse>(
-				$"{baseUrl}/auto-scavenge/status", JsonSerializerOptions, token);
+			var resp = await wrapper.HttpClient.GetFromJsonAsync(
+				$"{baseUrl}/auto-scavenge/status", AutoScavengeJsonContext.Default.AutoScavengeStatusResponse, token);
 
 			return Response.Successful(resp!);
 		} catch (HttpRequestException ex) {
@@ -94,9 +83,9 @@ public class ProxyAutoScavengeClient(HttpClientWrapper wrapper) : GossipAwareBas
 			if (baseUrl is null)
 				return Response.ServerError<Unit>("No leader node was found in the cluster");
 
-			var content = JsonContent.Create(new JsonObject {
-				["schedule"] = schedule.ToString(),
-			});
+			var content = JsonContent.Create(
+				new ConfigureRequest { Schedule = schedule.ToString() },
+				AutoScavengeJsonContext.Default.ConfigureRequest);
 
 			var resp = await wrapper.HttpClient.PostAsync($"{baseUrl}/auto-scavenge/configure", content, token);
 			resp.EnsureSuccessStatusCode();
@@ -110,6 +99,10 @@ public class ProxyAutoScavengeClient(HttpClientWrapper wrapper) : GossipAwareBas
 		} catch (Exception ex) {
 			return Response.ServerError(ex.Message);
 		}
+	}
+
+	internal sealed class ConfigureRequest {
+		public required string Schedule { get; init; }
 	}
 
 	private string? GetLeaderBaseUrl(string request) {

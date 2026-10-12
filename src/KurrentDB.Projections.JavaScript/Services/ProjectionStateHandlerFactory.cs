@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 
@@ -21,11 +21,13 @@ public class ProjectionStateHandlerFactory {
 		_javascriptExecutionTimeout = javascriptExecutionTimeout;
 		_trackers = trackers;
 	}
+
 	public IProjectionStateHandler Create(
 		string projectionName,
 		string factoryType, string source,
 		bool enableContentTypeValidation,
 		int? projectionExecutionTimeout,
+		Func<string, string, Action<string, object[]>, IProjectionStateHandler> factory,
 		Action<string, object[]> logger = null) {
 		var colonPos = factoryType.IndexOf(':');
 		string kind = null;
@@ -52,25 +54,24 @@ public class ProjectionStateHandlerFactory {
 				// Allow loading native projections from previous versions
 				rest = rest?.Replace("EventStore", "KurrentDB");
 
-				var type = Type.GetType(rest);
-				if (type == null) {
-					type =
-						AppDomain.CurrentDomain.GetAssemblies()
-							.Select(v => v.GetType(rest))
-							.FirstOrDefault(v => v != null);
-				}
+				result = factory.Invoke(rest, source, logger)
+				         ?? TryLoadProjection(rest, source, logger)
+				         ?? throw new NotSupportedException($"Could not find type \"{rest}\"");
 
-				if (type is null) {
-					throw new NotSupportedException($"Could not find type \"{rest}\"");
-				}
-
-				var handler = Activator.CreateInstance(type, source, logger);
-				result = (IProjectionStateHandler)handler;
 				break;
 			default:
-				throw new NotSupportedException(string.Format("'{0}' handler type is not supported", factoryType));
+				throw new NotSupportedException($"'{factoryType}' handler type is not supported");
 		}
 
 		return result;
+
+		[UnconditionalSuppressMessage("Trimming", "IL2057",
+			Justification = "Dynamic projection loading is for tests and backward compat only.")]
+		static IProjectionStateHandler TryLoadProjection(string typeName, string source, Action<string, object[]> logger) {
+			var projectionType = Type.GetType(typeName);
+			return typeof(IProjectionStateHandler).IsAssignableFrom(projectionType)
+				? Activator.CreateInstance(projectionType, source, logger) as IProjectionStateHandler
+				: null;
+		}
 	}
 }

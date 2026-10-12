@@ -12,6 +12,7 @@ using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core.Standard;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
@@ -318,7 +319,18 @@ public class ProjectionCoreService
 			query,
 			enableContentTypeValidation,
 			projectionExecutionTimeout,
+			CreateSystemProjection,
 			logger: logger.Verbose);
 		return stateHandler;
 	}
+
+	public static IProjectionStateHandler CreateSystemProjection(string typeName, string source, Action<string, object[]> logger)
+		=> typeName switch {
+			$"KurrentDB.Projections.Core.Standard.{nameof(ByCorrelationId)}" => new ByCorrelationId(source, logger),
+			$"KurrentDB.Projections.Core.Standard.{nameof(CategorizeEventsByStreamPath)}" => new CategorizeEventsByStreamPath(source, logger),
+			$"KurrentDB.Projections.Core.Standard.{nameof(CategorizeStreamByPath)}" => new CategorizeStreamByPath(source, logger),
+			$"KurrentDB.Projections.Core.Standard.{nameof(IndexEventsByEventType)}" => new IndexEventsByEventType(source, logger),
+			$"KurrentDB.Projections.Core.Standard.{nameof(IndexStreams)}" => new IndexStreams(source, logger),
+			_ => null,
+		};
 }

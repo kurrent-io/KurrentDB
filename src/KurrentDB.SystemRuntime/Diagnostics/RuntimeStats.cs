@@ -6,33 +6,26 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Interop;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using static System.Convert;
 using static System.Globalization.CultureInfo;
-using static System.Reflection.BindingFlags;
 
 namespace System.Diagnostics;
 
 [PublicAPI]
 public static class RuntimeStats {
-	static RuntimeStats() {
-		GetCpuUsageInternal = typeof(GC)
-			.Assembly
-			.GetType("System.Diagnostics.Tracing.RuntimeEventSourceHelper")!
-			.GetMethod("GetCpuUsage", Static | NonPublic)!
-			.CreateDelegate<Func<double>>();
+	[UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "GetCpuUsage")]
+	private static extern double GetCpuUsageInternal(
+		[UnsafeAccessorType("System.Diagnostics.Tracing.RuntimeEventSourceHelper, System.Private.CoreLib")]
+		object? obj = null);
 
-		GetExceptionCountInternal = typeof(Exception)
-			.GetMethod("GetExceptionCount", Static | NonPublic)!
-			.CreateDelegate<Func<uint>>();
+	[UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "GetExceptionCount")]
+	private static extern uint GetExceptionCountInternal(Exception? e = null);
 
-		GetLastGCPercentTimeInGCInternal = typeof(GC)
-			.GetMethod("GetLastGCPercentTimeInGC", Static | NonPublic)!
-			.CreateDelegate<Func<int>>();
-	}
-
-	static Func<double> GetCpuUsageInternal { get; }
-	static Func<uint> GetExceptionCountInternal { get; }
-	static Func<int> GetLastGCPercentTimeInGCInternal { get; }
+	[UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "GetLastGCPercentTimeInGC")]
+	private static extern int GetLastGCPercentTimeInGCInternal(
+		[UnsafeAccessorType("System.GC, System.Private.CoreLib")]
+		object? obj = null);
 
 	public static double GetCpuUsage() => GetCpuUsageInternal();
 

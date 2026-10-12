@@ -4,23 +4,24 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using System.Text.Json;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization.Metadata;
 using Jint;
 using Jint.Native;
 using Jint.Native.Function;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace KurrentDB.Scripting;
 
 public class JsRecordEvaluator {
-	readonly JsonSerializerOptions _serializerOptions;
 	readonly JsRecord _record;
 	readonly JsValue _jsValue;
 
-	public JsRecordEvaluator(Engine engine, JsonSerializerOptions serializerOptions) {
-		_serializerOptions = serializerOptions;
-		_record  = new();
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsRecord))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsSchemaInfo))]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsRecordPosition))]
+	public JsRecordEvaluator(Engine engine) {
+		_record = new();
 		_jsValue = JsValue.FromObjectWithType(engine, _record, typeof(JsRecord));
 	}
 
@@ -28,7 +29,7 @@ public class JsRecordEvaluator {
 		MapRecord(re.OriginalEvent, sequence);
 
 	public void MapRecord(EventRecord record, ulong sequence) =>
-		_record.Remap(record, sequence, _serializerOptions);
+		_record.Remap(record, sequence);
 
 	public bool Match(Function? filter) =>
 		filter?.Call(_jsValue).AsBoolean() ?? true;

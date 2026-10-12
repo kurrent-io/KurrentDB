@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using KurrentDB.Common.Utils;
 
@@ -35,11 +36,11 @@ public class TextCodec : ICodec {
 					   || string.Equals(component.Subtype, "plain", StringComparison.OrdinalIgnoreCase)));
 	}
 
-	public T From<T>(string text) {
+	public T From<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string text) {
 		throw new NotSupportedException();
 	}
 
-	public string To<T>(T value) {
+	public string To<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T value) {
 		return ((object)value) != null ? value.ToString() : null;
 	}
 }

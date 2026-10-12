@@ -36,11 +36,11 @@ public static class ConfigurationRootExtensions {
 		return errorMessages.ToArray();
 	}
 
-	public static string? CheckProvidersForEnvironmentVariables(this IConfigurationRoot? configurationRoot, IEnumerable<Type> optionSections) {
+	public static string? CheckProvidersForEnvironmentVariables(this IConfigurationRoot? configurationRoot, IEnumerable<PropertyInfo> options) {
 		if (configurationRoot == null)
 			return null;
 
-		var environmentOptionsOnly = optionSections.SelectMany(section => section.GetProperties())
+		var environmentOptionsOnly = options
 			.Where(option => option.GetCustomAttribute<EnvironmentOnlyAttribute>() != null)
 			.Select(option => option)
 			.ToArray();

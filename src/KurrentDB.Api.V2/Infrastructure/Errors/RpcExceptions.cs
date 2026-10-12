@@ -6,7 +6,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
-
+using KurrentDB.Api.Infrastructure.Protobuf;
 using Enum   = System.Enum;
 using Status = Google.Rpc.Status;
 
@@ -26,11 +26,13 @@ public static class RpcExceptions {
 	/// This ensures that clients can programmatically identify the error type and access
 	/// any structured details associated with the error.
 	/// </summary>
-	public static RpcException FromError<TError>(TError error, string message, params IMessage[] details) where TError : struct, Enum {
+	public static RpcException FromError<TError, TErrorDef>(TError error, string message, params IMessage[] details)
+		where TError : struct, Enum
+		where TErrorDef : IErrorEnum<TError>, allows ref struct {
 		Debug.Assert(error.GetHashCode() != 0, "The error must not be the default value!");
 		Debug.Assert(!string.IsNullOrWhiteSpace(message), "The message must not be empty!");
 
-		var err = error.GetErrorMetadata();
+		var err = error.GetErrorMetadata<TError, TErrorDef>();
 
         Debug.Assert(
             !err.HasDetails || err.HasDetails && details.Any(d => d.GetType() == err.DetailsType),

@@ -4,7 +4,6 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 // ReSharper disable MemberCanBePrivate.Global
 
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -45,7 +44,7 @@ public class JsRecord {
 	Func<JsonNode?> DeserializeValue { get; set; } = null!;
 	Func<JsonNode?> DeserializeProps { get; set; } = null!;
 
-	internal void Remap(EventRecord evt, ulong sequence, JsonSerializerOptions options) {
+	internal void Remap(EventRecord evt, ulong sequence) {
 		Id         = $"{evt.EventId}";
 		Sequence   = sequence;
 		Redacted   = evt.Flags.HasFlag(PrepareFlags.IsRedacted);
@@ -54,12 +53,12 @@ public class JsRecord {
 		Schema.Name   = evt.EventType;
 		Schema.Format = Enum.Parse<JsSchemaFormat>(evt.SchemaFormat);
 
-		DeserializeValue = !evt.Data.IsEmpty && !Redacted && Schema.Format == JsSchemaFormat.Json
-			? () => JsonSerializer.Deserialize<JsonNode>(evt.Data.Span, options)
+		DeserializeValue = !evt.Data.IsEmpty && !Redacted && Schema.Format is JsSchemaFormat.Json
+			? () => JsonNode.Parse(evt.Data.Span)
 			: static () => null;
 
 		DeserializeProps = !evt.Metadata.IsEmpty
-			? () => JsonSerializer.Deserialize<JsonNode>(evt.Metadata.Span, options)
+			? () => JsonNode.Parse(evt.Metadata.Span)
 			: static () => null;
 
 		Position.LogPosition    = evt.LogPosition;

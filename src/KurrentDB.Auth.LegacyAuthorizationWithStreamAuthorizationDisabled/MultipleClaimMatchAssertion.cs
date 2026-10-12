@@ -11,7 +11,7 @@ using EventStore.Plugins.Authorization;
 
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 
-public class MultipleClaimMatchAssertion : IComparable<MultipleClaimMatchAssertion>, IAssertion {
+public class MultipleClaimMatchAssertion : IComparable<MultipleClaimMatchAssertion>, IComparable<IAssertion>, IAssertion {
 	private readonly IReadOnlyList<Claim> _claims;
 	private readonly MultipleMatchMode _mode;
 
@@ -103,4 +103,6 @@ public class MultipleClaimMatchAssertion : IComparable<MultipleClaimMatchAsserti
 
 		return 0;
 	}
+
+	int IComparable<IAssertion>.CompareTo(IAssertion other) => CompareTo(other as MultipleClaimMatchAssertion);
 }

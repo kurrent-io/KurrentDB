@@ -4,9 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using DotNext;
+using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using EventStore.Plugins.Subsystems;
@@ -23,7 +26,11 @@ namespace KurrentDB.Diagnostics.LogsEndpointPlugin;
 
 // TODO: use SubsystemPlugin now that it is more flexible about licence requirements and what to do when they fail
 public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
-	public string Name => "LogsEndpoint";
+	public const string Name = "LogsEndpoint";
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.{Name}";
+
+	string ISubsystemsPlugin.Name => Name;
+	string IPlugableComponent.Name => Name;
 	public string Version => typeof(LogsEndpointPlugin).Assembly.GetName().Version!.ToString();
 	public string CommandLineName => "logs-endpoint";
 	public string DiagnosticsName => Name;
@@ -39,6 +46,9 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 		_logger.Information("LogsEndpointPlugin is loaded");
 	}
 
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
 	// ISubsystemsPlugin
 	public IReadOnlyList<ISubsystem> GetSubsystems() => new[] { this };
 
@@ -52,6 +62,9 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 		Enabled = false;
 	}
 
+	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PluginDiagnosticsData))]
+	[SuppressMessage("Trimming", "IL2026",
+		Justification = "PluginDiagnosticsData is preserved via DynamicDependency.")]
 	public void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var diagnosticListener = new DiagnosticListener(DiagnosticsName);
 		var value = new PluginDiagnosticsData {
@@ -139,7 +152,7 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 
 	public Task Stop() => Task.CompletedTask;
 
-	class KurrentDBOptions {
+	public class KurrentDBOptions {
 		public string Log { get; set; }
 		public string NodeIp { get; set; }
 		public string NodePort { get; set; }

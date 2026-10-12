@@ -65,11 +65,11 @@ file readonly struct AddOrIgnoreDatabaseNodeStmt(AddOrIgnoreDatabaseNode command
 		in UpdateDatabaseArgs args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
-		args.Address.Span,
+		{ args.Address.Span, BlobType.Raw },
 		args.Role,
 		args.Version,
-		args.ClientApiAddr.Span,
-		args.ReplicationAddr.Span,
+		{ args.ClientApiAddr.Span, BlobType.Raw },
+		{ args.ReplicationAddr.Span, BlobType.Raw },
 		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
 		args.ClientTcpApiPort,
 		args.ClientTcpApiIsSecure
@@ -106,11 +106,11 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 		in UpdateDatabaseArgs args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
-		args.Address.Span,
+		{ args.Address.Span, BlobType.Raw },
 		args.Role,
 		args.Version,
-		args.ClientApiAddr.Span,
-		args.ReplicationAddr.Span,
+		{ args.ClientApiAddr.Span, BlobType.Raw },
+		{ args.ReplicationAddr.Span, BlobType.Raw },
 		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
 		args.ClientTcpApiPort,
 		args.ClientTcpApiIsSecure,
@@ -140,7 +140,7 @@ file readonly struct RemoveDatabaseNodeStmt(RemoveDatabaseNode command) :
 	public static StatementBindingResult Bind(in (string DatabaseId, ReadOnlyMemory<byte> Address) args, PreparedStatement source)
 		=> new(source) {
 			args.DatabaseId,
-			args.Address.Span
+			{ args.Address.Span, BlobType.Raw }
 		};
 
 	public bool Invoke(DuckDBAdvancedConnection connection)
@@ -177,7 +177,7 @@ file readonly struct AppointLeaderNodeStmt(AppointLeader command)
 		PreparedStatement source)
 		=> new(source) {
 			args.DatabaseId,
-			args.Address.Span,
+			{ args.Address.Span, BlobType.Raw },
 			Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
 		};
 

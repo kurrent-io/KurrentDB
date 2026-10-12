@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using KurrentDB.Common.Utils;
@@ -13,7 +14,7 @@ public class DnsGossipSeedSource(string hostname, int managerHttpPort) : IGossip
 		return Dns.BeginGetHostAddresses(hostname, requestCallback, state);
 	}
 
-	public EndPoint[] EndGetHostEndpoints(IAsyncResult asyncResult) {
+	public IReadOnlyList<EndPoint> EndGetHostEndpoints(IAsyncResult asyncResult) {
 		var addresses = Dns.EndGetHostAddresses(asyncResult);
 
 		return addresses.Select(address => new IPEndPoint(address, managerHttpPort).WithClusterDns(hostname)).ToArray();

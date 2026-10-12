@@ -32,7 +32,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         TimeProvider time,
         IEventStore store
     ) :
-        base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
+        base(ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
         OnAny<CreateConnector>((connector, cmd) => {
             connector.EnsureIsNew();
 

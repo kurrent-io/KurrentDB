@@ -37,7 +37,7 @@ public static class KurrentConfigurationKeys {
 		OptionsKeys = typeof(ClusterVNodeOptions).GetProperties()
 			.Where(prop => prop.GetCustomAttribute<ClusterVNodeOptions.OptionGroupAttribute>() != null)
 			.SelectMany(
-				property => property.PropertyType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+				property => SectionMetadata.GetSectionType(property).GetProperties(BindingFlags.Public | BindingFlags.Instance))
 			.Select(x => x.Name)
 			.ToList();
 

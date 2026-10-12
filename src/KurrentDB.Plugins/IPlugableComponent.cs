@@ -11,6 +11,8 @@ namespace EventStore.Plugins;
 ///     Component that can be plugged into the main server.
 /// </summary>
 public interface IPlugableComponent {
+	public const string FeatureNamePrefix = "KurrentDB.Plugins";
+
 	/// <summary>
 	///     The name of the component.
 	/// </summary>

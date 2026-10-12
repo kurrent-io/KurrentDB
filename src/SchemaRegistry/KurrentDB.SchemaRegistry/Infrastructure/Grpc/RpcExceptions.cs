@@ -7,6 +7,7 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
+using KurrentDB.SchemaRegistry.Infrastructure;
 
 namespace KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 
@@ -46,7 +47,7 @@ public static class RpcExceptions {
             }
         };
 
-        var message = JsonSerializer.Serialize(failures);
+        var message = JsonSerializer.Serialize(failures, SchemaRegistryJsonContext.Default.IDictionaryStringStringArray);
 
         return Create(StatusCode.InvalidArgument, message, details);
     }
@@ -61,7 +62,7 @@ public static class RpcExceptions {
             }
         };
 
-        var message = JsonSerializer.Serialize(failures);
+        var message = JsonSerializer.Serialize(failures, SchemaRegistryJsonContext.Default.IDictionaryStringStringArray);
 
         return Create(StatusCode.InvalidArgument, message, details);
     }
@@ -82,7 +83,7 @@ public static class RpcExceptions {
             }
         };
 
-        var message = JsonSerializer.Serialize(failures);
+        var message = JsonSerializer.Serialize(failures, SchemaRegistryJsonContext.Default.IDictionaryStringStringArray);
 
         return Create(StatusCode.FailedPrecondition, message, details);
     }
@@ -97,7 +98,7 @@ public static class RpcExceptions {
             }
         };
 
-        var message = JsonSerializer.Serialize(failures);
+        var message = JsonSerializer.Serialize(failures, SchemaRegistryJsonContext.Default.IDictionaryStringStringArray);
 
         return Create(StatusCode.OutOfRange, message, details);
     }
@@ -109,7 +110,7 @@ public static class RpcExceptions {
             Metadata = { metadata }
         };
 
-        var message = JsonSerializer.Serialize(metadata);
+        var message = JsonSerializer.Serialize(metadata, SchemaRegistryJsonContext.Default.IDictionaryStringString);
 
         return Create(StatusCode.Unauthenticated, message, details);
     }
@@ -133,7 +134,7 @@ public static class RpcExceptions {
             }
         };
 
-        var message = JsonSerializer.Serialize(failures);
+        var message = JsonSerializer.Serialize(failures, SchemaRegistryJsonContext.Default.IDictionaryStringStringArray);
 
         return Create(StatusCode.PermissionDenied, message, errorInfo);
     }

@@ -9,6 +9,7 @@
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>true</InvariantGlobalization>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>

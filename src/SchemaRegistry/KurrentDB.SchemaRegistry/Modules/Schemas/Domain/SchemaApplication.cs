@@ -49,7 +49,6 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
         "Details.Compatibility"
     };
 
-    protected override Func<dynamic, string> GetEntityId    => cmd => cmd.SchemaName;
     protected override StreamTemplate        StreamTemplate => SchemasStreamTemplate;
 
     public SchemaApplication(ISchemaCompatibilityManager compatibilityManager, LookupSchemaNameByVersionId lookupSchemaName, GetUtcNow getUtcNow, IEventStore store) : base(store) {

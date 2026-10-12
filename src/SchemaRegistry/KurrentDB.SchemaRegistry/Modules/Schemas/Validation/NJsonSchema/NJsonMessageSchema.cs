@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json.Nodes;
-using Kurrent.Surge.Schema.Serializers.Json;
 using NJsonSchema;
 using NJsonSchema.Validation;
 using SchemaType = NJsonSchema.SchemaType;
@@ -10,11 +9,10 @@ using SchemaType = NJsonSchema.SchemaType;
 namespace Kurrent.Surge.Schema.Validation;
 
 [PublicAPI]
-public class NJsonMessageSchema(string schemaDefinition, JsonSchema schema, JsonSchemaValidatorSettings validatorSettings, SystemJsonSerializer serializer) : MessageSchema(schemaDefinition) {
+public class NJsonMessageSchema(string schemaDefinition, JsonSchema schema, JsonSchemaValidatorSettings validatorSettings) : MessageSchema(schemaDefinition) {
     internal JsonSchema Schema { get; } = schema;
 
     JsonSchemaValidatorSettings ValidatorSettings { get; } = validatorSettings;
-    SystemJsonSerializer        Serializer        { get; } = serializer;
 
     public override SchemaValidationResult Validate(string data) {
         try {
@@ -31,7 +29,7 @@ public class NJsonMessageSchema(string schemaDefinition, JsonSchema schema, Json
             throw new InvalidOperationException("Data cannot be empty.");
 
         try {
-            var json = ((JsonNode)Serializer.Deserialize(data.ToArray(), Type.Missing.GetType())!).ToJsonString();
+	        var json = JsonNode.Parse(data)?.ToJsonString() ?? "null";
             var errors = Schema.Validate(json, SchemaType.JsonSchema, ValidatorSettings);
             return SchemaValidationResult.Failure(errors.Map());
         }
@@ -39,12 +37,4 @@ public class NJsonMessageSchema(string schemaDefinition, JsonSchema schema, Json
             throw new SchemaValidationException(ex);
         }
     }
-
-    public override SchemaValidationResult Validate<T>(T data) where T : class {
-        Ensure.NotNull(data);
-        return Validate(Serializer.Serialize(data).Span);
-    }
-
-    public override SchemaCompatibilityResult IsCompatible(MessageSchema other, SchemaCompatibilityMode mode) =>
-        NJsonSchemaCompatibilityManager.CheckCompatibility(Schema, ((NJsonMessageSchema)other).Schema, mode);
 }

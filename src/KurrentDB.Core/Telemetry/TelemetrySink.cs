@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Core.Serialization;
 using Serilog;
 
 namespace KurrentDB.Core.Telemetry;
@@ -19,9 +20,8 @@ public class TelemetrySink : ITelemetrySink {
 	private const string ApiHost = "https://kurrent.io/telemetry";
 	private readonly bool _optout;
 	private readonly HttpClient _httpClient;
-	private readonly JsonSerializerOptions _serializerOptions = new() {
+	private static readonly JsonSerializerOptions IndentedOptions = new() {
 		WriteIndented = true,
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 	};
 
 	public TelemetrySink(bool optout) {
@@ -35,14 +35,14 @@ public class TelemetrySink : ITelemetrySink {
 	}
 
 	public async Task Flush(JsonObject data, CancellationToken token) {
-		var json = JsonSerializer.Serialize(data, _serializerOptions);
+		var json = data.ToJsonString(IndentedOptions);
 
 		if (_optout) {
 			_log.Information("Telemetry not sent; opted out: " + Environment.NewLine + json);
 		} else {
 			_log.Information("Sending telemetry data to {url} (visit for more information): " + Environment.NewLine + json, ApiHost);
 			try {
-				await _httpClient.PostAsync(ApiHost, JsonContent.Create(data), token);
+				await _httpClient.PostAsync(ApiHost, JsonContent.Create(data, CoreJsonContext.Default.JsonObject), token);
 			} catch (Exception ex) when (ex is not TaskCanceledException) {
 				_log.Error("Error when sending telemetry payload: {exception}", ex);
 			}

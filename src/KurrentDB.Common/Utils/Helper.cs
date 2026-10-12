@@ -33,10 +33,6 @@ public static class Helper {
 		}
 	}
 
-	public static string GetDefaultLogsDir() {
-		return Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "es-logs");
-	}
-
 	public static string FormatBinaryDump(byte[] logBulk) {
 		return FormatBinaryDump(new ArraySegment<byte>(logBulk ?? Empty.ByteArray));
 	}

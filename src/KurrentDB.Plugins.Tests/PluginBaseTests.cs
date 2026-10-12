@@ -44,7 +44,7 @@ public class PluginBaseTests {
 	[Fact]
 	public void plugin_diagnostics_snapshot_is_not_overriden_internally() {
 		// Arrange
-		var userDiagnosticsData = new Dictionary<string, object?> {
+		var userDiagnosticsData = new Dictionary<string, IConvertible?> {
 			["first_value"] = 1,
 			["second_value"] = 2
 		};
@@ -65,7 +65,7 @@ public class PluginBaseTests {
 		// Act & Assert
 		plugin.ConfigureApplication(app, app.Configuration);
 
-		var expectedDiagnosticsData = new Dictionary<string, object?>(userDiagnosticsData) {
+		var expectedDiagnosticsData = new Dictionary<string, IConvertible?>(userDiagnosticsData) {
 			["enabled"] = false
 		};
 

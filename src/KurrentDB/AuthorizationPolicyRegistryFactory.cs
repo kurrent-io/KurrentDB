@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DotNext.Collections.Generic;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Auth.StreamPolicyPlugin;
@@ -14,7 +15,6 @@ using KurrentDB.Core;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
-using KurrentDB.PluginHosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
@@ -26,21 +26,17 @@ public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 	private readonly Func<IPublisher, IAuthorizationPolicyRegistry> _createRegistry;
 	private IAuthorizationPolicyRegistry? _authorizationPolicyRegistry;
 
-	public AuthorizationPolicyRegistryFactory(ClusterVNodeOptions options, IConfiguration configuration, PluginLoader pluginLoader) {
+	public AuthorizationPolicyRegistryFactory(ClusterVNodeOptions options, IConfiguration configuration) {
 		if (options.Application.AuthDisabled()) {
 			_createRegistry = _ => new StaticAuthorizationPolicyRegistry([]);
 			return;
 		}
 
 		// Load up all policy selectors in the plugins directory
-		var factories = pluginLoader.Load<IPolicySelectorFactory>().ToList();
-		factories.Add(new StreamPolicySelectorFactory());
-
-		_pluginSelectorFactories = factories?
-			.Select(x => {
-				_logger.Information("Loaded Authorization Policy plugin: {plugin}.", x.CommandLineName);
-				return x;
-			}).ToArray() ?? [];
+		_pluginSelectorFactories = StreamPolicySelectorFactory.IsAllowed ? [new StreamPolicySelectorFactory()] : [];
+		_pluginSelectorFactories.ForEach(factory => {
+			_logger.Information("Loaded Authorization Policy plugin: {plugin}.", factory.CommandLineName);
+		});
 
 		// Set up the legacy policy selector factory
 		var allowAnonymousEndpointAccess = options.Application.AllowAnonymousEndpointAccess;

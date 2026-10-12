@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -57,7 +58,7 @@ public static class SystemStartupTasksServiceCollectionExtensions {
         );
     }
 
-    public static IServiceCollection AddSystemStartupTask<T>(this IServiceCollection services, string taskName) where T : class, ISystemStartupTask {
+    public static IServiceCollection AddSystemStartupTask<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services, string taskName) where T : class, ISystemStartupTask {
         if (string.IsNullOrWhiteSpace(taskName))
             throw new ArgumentException("Value cannot be null or whitespace.", nameof(taskName));
 
@@ -68,7 +69,7 @@ public static class SystemStartupTasksServiceCollectionExtensions {
         );
     }
 
-    public static IServiceCollection AddSystemStartupTask<T>(this IServiceCollection services) where T : class, ISystemStartupTask =>
+    public static IServiceCollection AddSystemStartupTask<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]T>(this IServiceCollection services) where T : class, ISystemStartupTask =>
         AddSystemStartupTask<T>(services, typeof(T).Name);
 
     class SystemStartupTaskWorker(string taskName, IServiceProvider serviceProvider, ISystemStartupTask startupTask)

@@ -9,12 +9,16 @@ namespace KurrentDB.SourceGenerators.Tests.Messaging.NestedDerived
 		private partial class A
 		{
 			public static string OriginalLabelStatic { get; } = "TestMessageGroup-NestedDerived-A";
-			public static string LabelStatic { get; set; } = "TestMessageGroup-NestedDerived-A";
+
+			private static string _labelStatic;
+			public static string LabelStatic { get => _labelStatic ??= ResolveLabel(OriginalLabelStatic); set => _labelStatic = value; }
 			public override string Label => LabelStatic;
 		}
 
 		public static string OriginalLabelStatic { get; } = "TestMessageGroup-NestedDerived-B";
-		public static string LabelStatic { get; set; } = "TestMessageGroup-NestedDerived-B";
+
+		private static string _labelStatic;
+		public static string LabelStatic { get => _labelStatic ??= ResolveLabel(OriginalLabelStatic); set => _labelStatic = value; }
 		public override string Label => LabelStatic;
 	}
 }

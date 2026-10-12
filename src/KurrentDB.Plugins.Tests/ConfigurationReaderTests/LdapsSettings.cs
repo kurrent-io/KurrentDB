@@ -1,9 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Microsoft.Extensions.Configuration;
+
 namespace EventStore.Plugins.Tests.ConfigurationReaderTests;
 
-public class LdapsSettings {
+public class LdapsSettings : IPluginConfigurationBinder<LdapsSettings> {
 	public string Host { get; set; } = null!;
 	public int Port { get; set; } = 636;
 	public bool ValidateServerCertificate { get; set; }
@@ -24,4 +26,7 @@ public class LdapsSettings {
 	public int PrincipalCacheDurationSec { get; set; } = 60;
 
 	public Dictionary<string, string> LdapGroupRoles { get; set; } = null!;
+
+	static LdapsSettings? IPluginConfigurationBinder<LdapsSettings>.Bind(IConfiguration configuration)
+		=> configuration.Get<LdapsSettings>();
 }

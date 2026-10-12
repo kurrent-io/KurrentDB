@@ -66,8 +66,8 @@ public class with_dns_discovery_disabled_and_no_gossip_seeds<TLogFormat, TStream
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class with_dns_discovery_disabled_and_gossip_seeds_defined<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
 	private EndPoint[] _gossipSeeds = {
-		new DnsEndPoint("127.0.1.10", 1111),
-		new DnsEndPoint("127.0.1.10", 1112),
+		new DnsEndPoint("node1", 1111),
+		new DnsEndPoint("node2", 1112),
 	};
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
@@ -80,13 +80,13 @@ public class with_dns_discovery_disabled_and_gossip_seeds_defined<TLogFormat, TS
 
 	[Test]
 	public void should_set_the_gossip_seeds() {
-		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GossipSeed);
+		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GetGossipSeed());
 	}
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class with_custom_gossip_seeds<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
-	private readonly DnsEndPoint[] _gossipSeeds = { new("127.0.1.15", 2112), new("127.0.1.15", 3112) };
+	private readonly IPEndPoint[] _gossipSeeds = { new(IPAddress.Parse("127.0.1.15"), 2112), new(IPAddress.Parse("127.0.1.15"), 3112) };
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 		options.WithGossipSeeds(_gossipSeeds);
@@ -98,7 +98,7 @@ public class with_custom_gossip_seeds<TLogFormat, TStreamId> : ClusterMemberScen
 
 	[Test]
 	public void should_set_the_gossip_seeds() {
-		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GossipSeed);
+		CollectionAssert.AreEqual(_gossipSeeds, _options.Cluster.GetGossipSeed());
 	}
 }
 

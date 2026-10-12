@@ -6,6 +6,7 @@
     <TargetFrameworks>net10.0</TargetFrameworks>
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>

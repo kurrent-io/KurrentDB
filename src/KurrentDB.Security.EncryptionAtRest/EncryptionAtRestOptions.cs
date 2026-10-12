@@ -6,27 +6,27 @@
 namespace KurrentDB.Security.EncryptionAtRest;
 
 public class EncryptionAtRestOptions {
-	public bool Enabled { get; init; }
+	public bool Enabled { get; set; }
 
-	public MasterKeyOptions MasterKey { get; init; } = new();
+	public MasterKeyOptions MasterKey { get; set; } = new();
 
-	public EncryptionOptions Encryption { get; init; } = new();
+	public EncryptionOptions Encryption { get; set; } = new();
 
 	public class EncryptionOptions {
-		public AesGcmOptions AesGcm { get; init; } = new();
+		public AesGcmOptions AesGcm { get; set; } = new();
 	}
 
 	public class MasterKeyOptions {
-		public FileConfiguratorOptions? File { get; init; }
+		public FileConfiguratorOptions? File { get; set; }
 	}
 
 	public class FileConfiguratorOptions {
-		public string KeyPath { get; init; } = "";
+		public string KeyPath { get; set; } = "";
 	}
 
 	public class AesGcmOptions {
-		public bool Enabled { get; init; }
-		public int KeySize { get; init; } = 256;
+		public bool Enabled { get; set; }
+		public int KeySize { get; set; } = 256;
 	}
 }
 

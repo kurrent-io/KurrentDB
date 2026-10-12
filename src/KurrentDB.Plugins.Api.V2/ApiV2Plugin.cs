@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
+using DotNext;
 using EventStore.Plugins;
 using Google.Protobuf.Reflection;
 using Google.Rpc;
@@ -21,7 +23,13 @@ using StreamsService = KurrentDB.Api.Streams.StreamsService;
 namespace KurrentDB.Plugins.Api.V2;
 
 [UsedImplicitly]
-public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
+public class ApiV2Plugin() : SubsystemsPlugin(Name) {
+	private new const string Name = "APIV2";
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.{Name}";
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         // Global gRPC interceptor (applies to every service, v1 and v2): on shutdown it translates the
         // cancellation of open streaming calls into a retryable UNAVAILABLE carrying the ServerShuttingDown
@@ -33,7 +41,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
             .AddGrpc(options => options.Interceptors.Add<ServerShuttingDownInterceptor>())
             .AddJsonTranscoding(options => {
                 options.TypeRegistry = TypeRegistry.FromFiles(
-                    KurrentDB.Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
+                    Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
                     ErrorsReflection.Descriptor,
                     RpcReflection.Descriptor,
                     BadRequest.Descriptor.File,

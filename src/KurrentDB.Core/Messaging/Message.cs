@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using KurrentDB.Core.Metrics;
 using Newtonsoft.Json;
 
 namespace KurrentDB.Core.Messaging;
@@ -29,6 +31,9 @@ public abstract partial class Message(CancellationToken token = default) {
 
 	[JsonIgnore]
 	public CancellationToken CancellationToken => token;
+
+	// Called by the generated LabelStatic of every concrete message type on first access
+	protected static string ResolveLabel(string originalLabel) => MessageLabelConfigurator.ResolveLabel(originalLabel);
 
 	/// <summary>
 	/// Returns the synchronization affinity for the current message.

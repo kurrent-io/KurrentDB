@@ -11,6 +11,7 @@ using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
 using Serilog;
 
 namespace KurrentDB.Core;
@@ -99,7 +100,7 @@ public static class ClusterVNodeOptionsExtensions {
 	public static ClusterVNodeOptions WithGossipSeeds(this ClusterVNodeOptions options, EndPoint[] gossipSeeds) =>
 		options with {
 			Cluster = options.Cluster with {
-				GossipSeed = gossipSeeds,
+				GossipSeed = GossipSeedConverter.ToString(gossipSeeds),
 				DiscoverViaDns = false,
 				ClusterDns = string.Empty
 			}
@@ -115,7 +116,7 @@ public static class ClusterVNodeOptionsExtensions {
 		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
 		options with {
 			Interface = options.Interface with {
-				NodeIp = endPoint.Address,
+				NodeIp = endPoint.Address.ToString(),
 			}
 		};
 
@@ -129,7 +130,7 @@ public static class ClusterVNodeOptionsExtensions {
 		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
 		options with {
 			Interface = options.Interface with {
-				ReplicationIp = endPoint.Address,
+				ReplicationIp = endPoint.Address.ToString(),
 				ReplicationPort = endPoint.Port,
 			}
 		};
@@ -144,7 +145,7 @@ public static class ClusterVNodeOptionsExtensions {
 		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
 		options with {
 			Interface = options.Interface with {
-				NodeIp = endPoint.Address,
+				NodeIp = endPoint.Address.ToString(),
 				NodePort = endPoint.Port
 			}
 		};

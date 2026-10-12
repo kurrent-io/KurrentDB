@@ -9,6 +9,7 @@ using System.Text;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
+using KurrentDB.Api.Infrastructure.Protobuf;
 using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 
@@ -21,7 +22,7 @@ public static partial class ApiErrors {
 		var message = $"Stream '{stream}' was not found.";
 		var details = new StreamNotFoundErrorDetails { Stream = stream };
 
-		return RpcExceptions.FromError(StreamsError.StreamNotFound, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamNotFound, message, details);
 	}
 
 	public static RpcException StreamAlreadyExists(string stream) {
@@ -29,7 +30,7 @@ public static partial class ApiErrors {
 
 		var message = $"Stream '{stream}' already exists.";
 		var details = new StreamAlreadyExistsErrorDetails { Stream = stream };
-		return RpcExceptions.FromError(StreamsError.StreamAlreadyExists, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamAlreadyExists, message, details);
 	}
 
 	public static RpcException StreamDeleted(string stream) {
@@ -41,7 +42,7 @@ public static partial class ApiErrors {
 
 		var details = new StreamDeletedErrorDetails { Stream = stream };
 
-		return RpcExceptions.FromError(StreamsError.StreamDeleted, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamDeleted, message, details);
 	}
 
 	public static RpcException StreamTombstoned(string stream) {
@@ -52,7 +53,7 @@ public static partial class ApiErrors {
 
 		var details = new StreamTombstonedErrorDetails { Stream = stream };
 
-		return RpcExceptions.FromError(StreamsError.StreamTombstoned, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamTombstoned, message, details);
 	}
 
 	public static RpcException StreamRevisionConflict(string stream, long expectedRevision, long actualRevision) {
@@ -69,7 +70,7 @@ public static partial class ApiErrors {
 			ActualRevision   = actualRevision
 		};
 
-		return RpcExceptions.FromError(StreamsError.StreamRevisionConflict, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamRevisionConflict, message, details);
 	}
 
 	public static RpcException StreamAlreadyInAppendSession(string stream) {
@@ -81,7 +82,7 @@ public static partial class ApiErrors {
         //KurrentDB.Protocol.V2.Streams.Errors.StreamsError.StreamAlreadyInAppendSessionErrorDetails
 		var details = new StreamAlreadyInAppendSessionErrorDetails { Stream = stream };
 
-		return RpcExceptions.FromError(StreamsError.StreamAlreadyInAppendSession, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.StreamAlreadyInAppendSession, message, details);
 	}
 
 	public static RpcException AppendRecordSizeExceeded(string stream, string recordId, int recordSize, int maxSize) {
@@ -102,7 +103,7 @@ public static partial class ApiErrors {
 			MaxSize  = maxSize
 		};
 
-		return RpcExceptions.FromError(StreamsError.AppendRecordSizeExceeded, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.AppendRecordSizeExceeded, message, details);
 	}
 
 	public static RpcException AppendTransactionSizeExceeded(int records, int size, int maxSize) {
@@ -120,12 +121,12 @@ public static partial class ApiErrors {
 			MaxSize = maxSize
 		};
 
-		return RpcExceptions.FromError(StreamsError.AppendTransactionSizeExceeded, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.AppendTransactionSizeExceeded, message, details);
 	}
 
     public static RpcException AppendTransactionNoRequests() {
         const string message = "Append session started, but no append requests were sent before ending the session.";
-        return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
+        return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.AppendSessionNoRequests, message);
     }
 
 	public static RpcException AppendConsistencyViolation(List<ConsistencyViolation> violations) {
@@ -165,7 +166,7 @@ public static partial class ApiErrors {
 			Violations = { violations }
 		};
 
-		return RpcExceptions.FromError(StreamsError.AppendConsistencyViolation, message, details);
+		return RpcExceptions.FromError<StreamsError, ErrorEnums>(StreamsError.AppendConsistencyViolation, message, details);
 
 		static string FormatMessage(List<ConsistencyViolation> violations) {
 			var builder = new StringBuilder("Append failed due to consistency violations.");

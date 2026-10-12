@@ -63,6 +63,17 @@ public record OptionMetadata(
 	}
 
 	private static JObject GetOptionSchema(PropertyInfo property, string? unitAttributeMessage) {
+		// Checked ahead of the property type: an option can be surfaced as a single delimited string
+		// and still be supplied as a configuration array.
+		if (property.GetCustomAttribute<ConfigurationArrayAttribute>() is not null) {
+			return new JObject {
+				["type"] = "array",
+				["items"] = new JObject {
+					["type"] = "string"
+				}
+			};
+		}
+
 		if (property.PropertyType.IsEnum) {
 			JArray enumValues = new JArray();
 			foreach (var item in property.PropertyType.GetEnumNames()) {

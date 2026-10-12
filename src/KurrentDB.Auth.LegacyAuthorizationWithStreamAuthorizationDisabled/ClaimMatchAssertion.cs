@@ -8,7 +8,7 @@ using EventStore.Plugins.Authorization;
 
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 
-public class ClaimMatchAssertion : IComparable<ClaimMatchAssertion>, IAssertion {
+public class ClaimMatchAssertion : IComparable<ClaimMatchAssertion>, IComparable<IAssertion>, IAssertion {
 	private readonly Claim _claim;
 
 	public ClaimMatchAssertion(Grant grant, Claim claim) {
@@ -46,4 +46,7 @@ public class ClaimMatchAssertion : IComparable<ClaimMatchAssertion>, IAssertion 
 			return type;
 		return string.CompareOrdinal(_claim.Value, other._claim.Value);
 	}
+
+	int IComparable<IAssertion>.CompareTo(IAssertion assertion)
+		=> CompareTo(assertion as ClaimMatchAssertion);
 }

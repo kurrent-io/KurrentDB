@@ -4,6 +4,7 @@
 using System;
 using System.Net;
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Core.Configuration;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Configuration;
@@ -179,8 +180,8 @@ public class ClusterVNodeOptionsValidatorTests {
 			KontrolPlane = new() {
 				IsKontrolPlaneNode = isKontrolPlaneNode,
 				IsDataPlaneNode = isDataPlaneNode,
-				KontrolPlaneBootstrapSeed = Seed,
-				KontrolPlaneApiSeed = Seed,
+				KontrolPlaneBootstrapSeed = GossipSeedConverter.ToString(Seed),
+				KontrolPlaneApiSeed = GossipSeedConverter.ToString(Seed),
 			},
 		};
 
@@ -206,8 +207,8 @@ public class ClusterVNodeOptionsValidatorTests {
 			KontrolPlane = new() {
 				IsKontrolPlaneNode = isKontrolPlaneNode,
 				IsDataPlaneNode = isDataPlaneNode,
-				KontrolPlaneBootstrapSeed = Seed,
-				KontrolPlaneApiSeed = Seed,
+				KontrolPlaneBootstrapSeed = GossipSeedConverter.ToString(Seed),
+				KontrolPlaneApiSeed = GossipSeedConverter.ToString(Seed),
 			},
 		};
 
@@ -230,7 +231,7 @@ public class ClusterVNodeOptionsValidatorTests {
 			KontrolPlane = new() {
 				IsKontrolPlaneNode = true,
 				IsDataPlaneNode = true,
-				KontrolPlaneBootstrapSeed = hasBootstrapSeed ? Seed : [],
+				KontrolPlaneBootstrapSeed = GossipSeedConverter.ToString(hasBootstrapSeed ? Seed : []),
 			},
 		};
 
@@ -249,7 +250,7 @@ public class ClusterVNodeOptionsValidatorTests {
 			},
 			KontrolPlane = new() {
 				IsDataPlaneNode = true,
-				KontrolPlaneApiSeed = hasApiSeed ? Seed : [],
+				KontrolPlaneApiSeed = GossipSeedConverter.ToString(hasApiSeed ? Seed : []),
 			},
 		};
 
@@ -313,8 +314,8 @@ public class ClusterVNodeOptionsValidatorTests {
 			KontrolPlane = new() {
 				IsKontrolPlaneNode = isKontrolPlaneNode,
 				IsDataPlaneNode = isDataPlaneNode,
-				KontrolPlaneBootstrapSeed = Seed,
-				KontrolPlaneApiSeed = Seed,
+				KontrolPlaneBootstrapSeed = GossipSeedConverter.ToString(Seed),
+				KontrolPlaneApiSeed = GossipSeedConverter.ToString(Seed),
 			},
 		};
 

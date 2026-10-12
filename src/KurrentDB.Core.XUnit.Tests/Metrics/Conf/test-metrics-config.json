@@ -116,7 +116,6 @@
 	},
 
 	"Queues": {
-		"Busy": true,
 		"Length": true,
 		// this is the most expensive metric, creating a histogram for each
 		// queue grouping and message type grouping as defined in the config below

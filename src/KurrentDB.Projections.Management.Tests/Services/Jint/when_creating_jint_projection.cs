@@ -24,14 +24,14 @@ class when_creating_jint_projection {
 
 	[Test, Category(_projectionType)]
 	public void it_can_be_created() {
-		using (_stateHandlerFactory.Create("projection", _projectionType, @"", true, null)) {
+		using (_stateHandlerFactory.Create("projection", _projectionType, @"", true, null, static (_, _, _) => null)) {
 		}
 	}
 
 	[Test, Category(_projectionType)]
 	public void js_syntax_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create("projection", _projectionType, @"log(1;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", _projectionType, @"log(1;", true, null, static (_, _, _) => null, logger: (s, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
@@ -41,7 +41,7 @@ class when_creating_jint_projection {
 	[Test, Category(_projectionType)]
 	public void js_exceptions_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create("projection", _projectionType, @"throw 123;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", _projectionType, @"throw 123;", true, null, static (_, _, _) => null, logger: (s, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
@@ -59,6 +59,7 @@ class when_creating_jint_projection {
                     ",
 				true,
 				null,
+				static (_, _, _) => null,
 				logger: (s, _) => { })) {
 			}
 		} catch (Exception ex) {
@@ -81,6 +82,7 @@ class when_creating_jint_projection {
                     ",
 				true,
 				null,
+				static (_, _, _) => null,
 				logger: Console.WriteLine)) {
 				h.Initialize();
 				string newState;
@@ -119,6 +121,7 @@ class when_creating_jint_projection {
                     ",
 				true,
 				null,
+				static (_, _, _) => null,
 				logger: Console.WriteLine)) {
 				h.Initialize();
 				string newState;
@@ -147,7 +150,7 @@ class when_creating_jint_projection {
                             while (true) i++;
                         }
                     });
-                ", true, null, logger: Console.WriteLine)) {
+                ", true, null, static (_, _, _) => null, logger: Console.WriteLine)) {
 					h.Initialize();
 					string newState;
 					EmittedEventEnvelope[] emittedevents;

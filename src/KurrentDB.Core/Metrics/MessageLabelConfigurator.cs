@@ -2,82 +2,51 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using KurrentDB.Common.Configuration;
 using Serilog;
 
 namespace KurrentDB.Core.Metrics;
 
-public class MessageLabelConfigurator {
-	private static readonly ILogger Log = Serilog.Log.ForContext<MessageLabelConfigurator>();
+public static class MessageLabelConfigurator {
+	private static readonly ILogger Log = Serilog.Log.ForContext(typeof(MessageLabelConfigurator));
 
-	public static void ConfigureMessageLabels(
-		MetricsConfiguration.LabelMappingCase[] configuration,
-		IEnumerable<Type> messageTypes) {
+	private static MetricsConfiguration.LabelMappingCase[] _configuration = [];
 
-		var labels = new HashSet<string>();
-
-		foreach (var messageType in messageTypes) {
-			if (TryConfigureMessageType(configuration, messageType, out var label)) {
-				labels.Add(label);
-			}
-		}
-
-		Log.Information("Metrics created {count} message type labels", labels.Count);
+	// Message labels are resolved lazily on first access (see Message.ResolveLabel), so this must be
+	// called before any message label is read. Labels that were already resolved are not affected.
+	public static void ConfigureMessageLabels(MetricsConfiguration.LabelMappingCase[] configuration) {
+		_configuration = configuration;
+		Log.Information("Metrics configured {count} message type label mappings", configuration.Length);
 	}
 
-	private static bool TryConfigureMessageType(
-		MetricsConfiguration.LabelMappingCase[] configuration,
-		Type messageType,
-		out string label) {
+	internal static string ResolveLabel(string originalLabel) => ResolveLabel(originalLabel, _configuration);
 
-		label = default;
-
-		if (messageType.IsAbstract)
-			return false;
-
-		var labelStaticProperty = messageType
-			.GetProperty("LabelStatic", BindingFlags.Static | BindingFlags.Public);
-
-		if (labelStaticProperty is null) {
-			Log.Warning($"{messageType} may be missing the DerivedMessage attribute.");
-			return false;
-		}
-
-		if (labelStaticProperty.GetValue(null) is not string oldLabel) {
-			oldLabel = "";
-		}
-
+	internal static string ResolveLabel(string originalLabel, ReadOnlySpan<MetricsConfiguration.LabelMappingCase> configuration) {
 		foreach (var @case in configuration) {
 			var pattern = $"^{@case.Regex}$";
-			var match = Regex.Match(input: oldLabel, pattern: pattern);
+			var match = Regex.Match(input: originalLabel, pattern: pattern);
 			if (match.Success) {
 				if (string.IsNullOrWhiteSpace(@case.Label)) {
 					Log.Warning(
 						"Label for message {message} matching pattern {pattern} was not specified.",
-						oldLabel, @case.Regex);
-					label = oldLabel;
-					return true;
+						originalLabel, @case.Regex);
+					return originalLabel;
 				}
 
-				label = Regex.Replace(
-					input: oldLabel,
+				var label = Regex.Replace(
+					input: originalLabel,
 					pattern: pattern,
 					replacement: @case.Label);
 
-				labelStaticProperty.SetValue(null, label);
-
 				Log.Verbose(
 					"Metrics matched message {old} with pattern {pattern} and set it to {new}",
-					oldLabel, @case.Regex, label);
+					originalLabel, @case.Regex, label);
 
-				return true;
+				return label;
 			}
 		}
 
-		label = oldLabel;
-		return true;
+		return originalLabel;
 	}
 }

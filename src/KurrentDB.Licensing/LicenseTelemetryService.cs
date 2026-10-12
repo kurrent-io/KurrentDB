@@ -8,11 +8,11 @@ namespace KurrentDB.Licensing;
 
 public class LicenseTelemetryService : IHostedService {
 	private readonly ILicenseService _licenseProvider;
-	private readonly Action<Dictionary<string, object?>> _publish;
+	private readonly Action<Dictionary<string, IConvertible?>> _publish;
 
 	public LicenseTelemetryService(
 		ILicenseService licenseProvider,
-		Action<Dictionary<string, object?>> publish) {
+		Action<Dictionary<string, IConvertible?>> publish) {
 
 		_licenseProvider = licenseProvider;
 		_publish = publish;

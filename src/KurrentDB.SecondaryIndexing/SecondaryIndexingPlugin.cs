@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
+using DotNext;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using Kurrent.Surge.Schema;
@@ -43,7 +44,11 @@ public static class SecondaryIndexingConstants {
 
 public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders)
 	: SubsystemsPlugin(name: PluginNames.SecondaryIndexes) {
-	[Experimental("SECONDARY_INDEX")]
+	private const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.{PluginNames.SecondaryIndexes}";
+
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
+
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration
 			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")

@@ -28,17 +28,19 @@ static class ErrorExtensions {
 	/// This ensures that clients can programmatically identify the error type and access
 	/// any structured details associated with the error.
 	/// </summary>
-	public static ErrorMetadata GetErrorMetadata<T>(this T errorCode) where T : struct, Enum {
+	public static ErrorMetadata GetErrorMetadata<TEnum, TEnumDef>(this TEnum errorCode)
+		where TEnum : struct, Enum
+		where TEnumDef : IErrorEnum<TEnum>, allows ref struct {
 		// use the enums namespace and the error code name as the cache key
         // because not only it is unique but it will also help us to find the details type
         // by appending "ErrorDetails" to the full name of the enum
-        return Annotations.GetOrAdd($"{typeof(T).Namespace}.{errorCode}", BuildErrorMetadata, errorCode);
+        return Annotations.GetOrAdd($"{typeof(TEnum).Namespace}.{errorCode}", BuildErrorMetadata, errorCode);
 
-		static ErrorMetadata BuildErrorMetadata(string key, T errorCode) {
-			var descriptor  = ProtobufEnums.System.GetEnumValueDescriptor(errorCode);
+		static ErrorMetadata BuildErrorMetadata(string key, TEnum errorCode) {
+			var descriptor  = ErrorEnums.GetEnumValueDescriptor<TEnum, TEnumDef>(errorCode);
 			var annotations = descriptor.GetErrorAnnotations();
             var domain      = descriptor.EnumDescriptor.Name.Replace("Error", "", OrdinalIgnoreCase).Replace("Errors", "", OrdinalIgnoreCase).ToLowerInvariant();
-            var detailsType = annotations.HasDetails ? GetDetailsType(key) : null;
+            var detailsType = annotations.HasDetails ? TEnumDef.GetDetailsType(errorCode) : null;
 
             var originalCode = GetOriginalErrorCode(errorCode);
             var code         = originalCode.Replace($"{descriptor.EnumDescriptor.Name.Underscore().ToUpperInvariant()}_", "");
@@ -54,26 +56,9 @@ static class ErrorExtensions {
 
             return err;
 
-			static string GetOriginalErrorCode(T errorCode) =>
-				errorCode.GetCustomAttribute<T, OriginalNameAttribute>()!.Name;
-
-			static Type? GetDetailsType(string key) {
-                string[] names = [
-                    $"{key}ErrorDetails",
-                    $"{key}Error",
-                    key,
-                    $"Google.Rpc.{key.Split(".")[^1]}"
-                ];
-
-				return AssemblyScanner
-					.UsingAssemblies([
-						typeof(T).Assembly,
-						typeof(Google.Rpc.BadRequest).Assembly])
-					.Scan()
-					.FirstOrDefault(t => names.Contains(t.FullName, StringComparer.Ordinal));
-			}
+			static string GetOriginalErrorCode(TEnum errorCode) =>
+				errorCode.GetCustomAttribute<TEnum, OriginalNameAttribute>()!.Name;
 		}
-
 	}
 }
 

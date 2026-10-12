@@ -24,7 +24,7 @@ public class PluginDiagnosticsDataTests {
 	public void can_get_default_value_from_data(dynamic expectedValue) =>
 		gets_default_value_from_data(expectedValue);
 
-	static void gets_value_from_data<T>(T expectedValue) {
+	static void gets_value_from_data<T>(T expectedValue) where T : IConvertible {
 		var sut = new PluginDiagnosticsData {
 			Data = new() { ["value"] = expectedValue }
 		};
