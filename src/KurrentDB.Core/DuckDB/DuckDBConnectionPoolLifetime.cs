@@ -22,20 +22,24 @@ namespace KurrentDB.Core.DuckDB;
 // Also produces additional pools on demand that the caller should dispose.
 public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
+	private readonly string _logsDir;
 	private readonly string _tempDirectory;
 	private readonly long _maxTempDirectorySizeBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
+	private readonly object _hardenLock = new();
 	[CanBeNull] private string _tempPath;
 
 	public DuckDBConnectionPool Shared { get; }
 
 	public DuckDBConnectionPoolLifetime(
 		TFChunkDbConfig config,
+		ClusterVNodeOptions nodeOptions,
 		IEnumerable<IDuckDBSetup> setups,
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
+		_logsDir = nodeOptions.GetLogsDirectory();
 		_tempDirectory = Path.GetFullPath(config.SqlEngineTempDirectory is { Length: > 0 } tempPath
 			? tempPath
 			: $"{_path}.tmp"); // the same directory DuckDB would pick by default. explicit so we can clean it up
@@ -54,11 +58,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 		_repeated = repeated;
 
-		Shared = CreatePool(isReadOnly: false, log: true);
-		using (Shared.Rent(out var connection)) {
-			foreach (var s in once)
-				s.Execute(connection);
-		}
+		Shared = CreatePool(isReadOnly: false, log: true, oneTime: once, allowedDirectories: [_logsDir]);
 
 		return;
 
@@ -69,25 +69,36 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 	}
 
-	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true, log: false); // no writes go through here so set read only
+	public DuckDBConnectionPool CreatePool() =>
+		CreatePool(isReadOnly: true, log: false, oneTime: [], allowedDirectories: []); // no writes go through here so set read only
 
-	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log) {
+	// The only way to obtain a pool - never returns one unlocked. Opens the first connection, runs
+	// the one-time setups on it, then hardens and locks the instance configuration.
+	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log,
+		IReadOnlyList<IDuckDBSetup> oneTime, IReadOnlyList<string> allowedDirectories) {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 			["temp_directory"] = _tempDirectory,
-			// security settings
+			// security settings; allowed_directories, external access and the config lock can't be
+			// carried in the connection string - DuckDB refuses to set allowed_directories before
+			// the database is started - so every pool applies them post-open via HardenInstance
 			["allow_community_extensions"] = "false",
-			["enable_external_access"] = "false",
-			["lock_configuration"] = "true",
 		};
 
 		if (_maxTempDirectorySizeBytes > 0L)
 			settings["max_temp_directory_size"] = $"{_maxTempDirectorySizeBytes}B";
 
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
+
+		using (pool.Rent(out var connection)) {
+			foreach (var s in oneTime)
+				s.Execute(connection);
+
+			HardenInstance(connection, allowedDirectories);
+		}
 
 		if (log)
 			_log.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
@@ -126,6 +137,34 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 					tempObj.Delete();
 				}
 			}
+		}
+	}
+
+	// Harden the underlying DuckDB instance once: allow-list, external access off, config lock - in
+	// that order (allowed_directories is only settable while external access is on), and only after
+	// the setups, which need the unlocked state. Pools with the same connection string share an
+	// instance, so a later pool finds it already locked with the same settings and skips;
+	// _hardenLock closes the check-then-set race.
+	private void HardenInstance(DuckDBAdvancedConnection connection, IReadOnlyList<string> allowedDirectories) {
+		lock (_hardenLock) {
+			if (IsLocked(connection))
+				return;
+
+			var dirs = string.Join(", ", allowedDirectories.Select(d => $"'{d.Replace('\\', '/').Replace("'", "''")}'"));
+			connection.ExecuteAdHocNonQuery(
+				$"SET allowed_directories=[{dirs}]; SET enable_external_access=false; SET lock_configuration=true;",
+				multipleStatements: true);
+		}
+
+		return;
+
+		static bool IsLocked(DuckDBAdvancedConnection connection) {
+			using var result = connection.ExecuteAdHocQuery("SELECT current_setting('lock_configuration')::VARCHAR"u8);
+			while (result.TryFetch(out var chunk))
+				using (chunk)
+					if (chunk.TryRead(out var row))
+						return row.ReadString() == "true";
+			return false;
 		}
 	}
 
