@@ -153,6 +153,13 @@ public static class Operations {
 		}
 	}
 
+	public static class AuthorizationPolicies {
+		const string Resource = "authorization/stream-policy";
+
+		public static readonly OperationDefinition Read = new(Resource, "read");
+		public static readonly OperationDefinition Update = new(Resource, "update");
+	}
+
 	public static class UserIndexes {
 		const string Resource = "user-indexes";
 
