@@ -66,7 +66,7 @@ public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 
 		// There are no plugins and a default policy type wasn't configured.
 		// Don't use the stream based registry
-		if (_pluginSelectorFactories.Length == 0) {
+		if (_pluginSelectorFactories is []) {
 			_logger.Information("No authorization policy plugins found. Only ACLs will be used.");
 			_createRegistry = publisher => new StaticAuthorizationPolicyRegistry([legacyPolicyFactory.Create(publisher)]);
 			return;

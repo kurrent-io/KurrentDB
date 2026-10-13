@@ -2,6 +2,8 @@
   <PropertyGroup>
     <RootNamespace>KurrentDB</RootNamespace>
     <Description>Assembles a KurrentDB node and the web application around it, for any host that runs one.</Description>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,7 +40,6 @@
     <ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
     <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
 
-    <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
     <ProjectReference Include="..\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />
     <ProjectReference Include="..\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
   </ItemGroup>

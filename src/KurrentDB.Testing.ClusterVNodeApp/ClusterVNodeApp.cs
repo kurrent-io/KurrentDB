@@ -12,6 +12,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Messages;
+using KurrentDB.Plugins.Connectors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -105,7 +106,8 @@ public class ClusterVNodeApp : IAsyncDisposable {
 	/// Initializes a new instance of the <see cref="ClusterVNodeApp"/> class.
 	/// </summary>
 	public ClusterVNodeApp(Action<ClusterVNodeOptions, IServiceCollection>? configureServices = null, Dictionary<string, object?>? overrides = null) {
-		ServerOptions = GetOptions(DefaultSettings, overrides);
+		ServerOptions = GetOptions(DefaultSettings, overrides)
+			.WithPlugableComponent(new ConnectorsPlugin());
 
         if (ServerOptions.DevMode.Dev) {
             const string logMessage = """
