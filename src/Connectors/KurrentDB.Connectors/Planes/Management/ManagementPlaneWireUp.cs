@@ -4,9 +4,6 @@
 // ReSharper disable InconsistentNaming
 
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Google.Protobuf.Reflection;
 using KurrentDB.Connect.Connectors;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Connectors.Infrastructure;
@@ -27,11 +24,11 @@ using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
 using KurrentDB.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Surge.Eventuous;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -55,35 +52,15 @@ public static class ManagementPlaneWireUp {
 
         services
             .AddGrpc()
-            .AddJsonTranscoding(options => {
-                options.TypeRegistry = TypeRegistry.FromMessages(
-                    BadRequest.Descriptor,
-                    ErrorInfo.Descriptor,
-                    DebugInfo.Descriptor,
-                    PreconditionFailure.Descriptor,
-                    QuotaFailure.Descriptor,
-                    ResourceInfo.Descriptor,
-                    RetryInfo.Descriptor
-                );
-            });
-
-        services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
-            // https://github.com/dotnet/aspnetcore/issues/50401
-            // TODO: Refactor into an extension method
-            string[] props = ["UnarySerializerOptions", "ServerStreamingSerializerOptions"];
-
-            foreach (var name in props) {
-                var prop = options.GetType().GetProperty(name, BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (prop?.GetValue(options) is not JsonSerializerOptions serializerOptions) continue;
-
-                serializerOptions.PropertyNamingPolicy        = JsonNamingPolicy.CamelCase;
-                serializerOptions.DictionaryKeyPolicy         = JsonNamingPolicy.CamelCase;
-                serializerOptions.PropertyNameCaseInsensitive = true;
-                serializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-                serializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-            }
-        });
+            .AddKurrentJsonTranscoding([
+                BadRequest.Descriptor,
+                ErrorInfo.Descriptor,
+                DebugInfo.Descriptor,
+                PreconditionFailure.Descriptor,
+                QuotaFailure.Descriptor,
+                ResourceInfo.Descriptor,
+                RetryInfo.Descriptor,
+            ]);
 
         services
             .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly())

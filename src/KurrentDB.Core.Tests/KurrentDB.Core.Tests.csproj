@@ -6,6 +6,13 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.OpenApi.Readers" />
+		<!-- KurrentDB.Core generates Google.Rpc.Code and Google.Rpc.Status from ../Protos/Grpc and makes
+		     them visible here through InternalsVisibleTo. Google.Api.CommonProtos declares the same types
+		     and reaches this project through Core's Microsoft.AspNetCore.Grpc.JsonTranscoding reference,
+		     so naming either one is CS0433. The compile-time reference is the only part that collides. -->
+		<PackageReference Include="Google.Api.CommonProtos">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>

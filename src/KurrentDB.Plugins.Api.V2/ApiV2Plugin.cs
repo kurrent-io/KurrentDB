@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DotNext;
 using EventStore.Plugins;
-using Google.Protobuf.Reflection;
 using Google.Rpc;
 using Grpc.AspNetCore.Server;
 using Kurrent.Rpc;
@@ -15,6 +14,7 @@ using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Modules.Indexes;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,19 +39,18 @@ public class ApiV2Plugin() : SubsystemsPlugin(Name) {
 
         services
             .AddGrpc(options => options.Interceptors.Add<ServerShuttingDownInterceptor>())
-            .AddJsonTranscoding(options => {
-                options.TypeRegistry = TypeRegistry.FromFiles(
-                    Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
-                    ErrorsReflection.Descriptor,
-                    RpcReflection.Descriptor,
-                    BadRequest.Descriptor.File,
-                    ErrorInfo.Descriptor.File,
-                    DebugInfo.Descriptor.File,
-                    PreconditionFailure.Descriptor.File,
-                    QuotaFailure.Descriptor.File,
-                    ResourceInfo.Descriptor.File,
-                    RetryInfo.Descriptor.File);
-            })
+            .AddKurrentJsonTranscoding([
+                Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
+                ErrorsReflection.Descriptor,
+                RpcReflection.Descriptor,
+                BadRequest.Descriptor.File,
+                ErrorInfo.Descriptor.File,
+                DebugInfo.Descriptor.File,
+                PreconditionFailure.Descriptor.File,
+                QuotaFailure.Descriptor.File,
+                ResourceInfo.Descriptor.File,
+                RetryInfo.Descriptor.File,
+            ])
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)
             .WithGrpcService<IndexesService>()
             .WithGrpcService<StreamsService>(

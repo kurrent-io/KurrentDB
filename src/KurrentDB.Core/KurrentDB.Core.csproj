@@ -25,6 +25,15 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
+		<!-- Microsoft.AspNetCore.Grpc.JsonTranscoding brings in Google.Api.CommonProtos, which declares its
+		     own Google.Rpc.Status. This project generates one too, from ../Protos/Grpc/status.proto, and
+		     extends it in Services/Transport/Grpc/Status.cs - so both are visible here and every file that
+		     names the type reports CS0436. The assembly is still needed at runtime; it is only the
+		     compile-time reference that collides. -->
+		<PackageReference Include="Google.Api.CommonProtos">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
