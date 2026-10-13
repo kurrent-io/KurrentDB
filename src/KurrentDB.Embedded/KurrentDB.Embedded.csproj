@@ -6,6 +6,7 @@
 		<Description>Runs a single-node KurrentDB server in-process, reachable over a UNIX domain socket.</Description>
 		<IsPackable>true</IsPackable>
 		<IsTrimmable>true</IsTrimmable>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<!-- This is the only package we publish. Every other project in the solution is IsPackable=false,
 			 so their assemblies are bundled into lib/ below rather than becoming package dependencies that
 			 could never resolve. Suppressing the project reference suppresses the transitive flow of its
@@ -35,6 +36,7 @@
 		<None Include="..\KurrentDB.Common\Utils\version.properties" Link="version.properties"
 			  Pack="true" PackagePath="contentFiles/any/any/" PackageCopyToOutput="true" />
 
+		<None Include="README.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" Visible="false" />
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
