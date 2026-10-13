@@ -23,7 +23,7 @@
 		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="..\KurrentDB\logconfig.json">
+	  <None Include="..\KurrentDB.Hosting\logconfig.json">
 	    <Link>logconfig.json</Link>
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

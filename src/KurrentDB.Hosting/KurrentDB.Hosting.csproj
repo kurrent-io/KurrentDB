@@ -21,6 +21,10 @@
       <Link>version.properties</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
+    <None Include="logconfig.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="metricsconfig.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="kestrelsettings.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

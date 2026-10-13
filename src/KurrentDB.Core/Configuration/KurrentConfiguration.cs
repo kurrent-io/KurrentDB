@@ -71,6 +71,18 @@ public static class KurrentConfiguration {
 		return Build(optionsWithLegacyDefaults, args, environment);
 	}
 
+	// Embedded equivalent to Build. Not configured from as many sources.
+	public static IConfigurationRoot BuildEmbedded(Func<IConfigurationBuilder, IConfigurationBuilder> configure) {
+		var builder = new ConfigurationBuilder()
+			.AddKurrentDefaultValues()
+			// metricsconfig.json needs loading into the KurrentDB:Metrics section.
+			.AddSection($"{KurrentConfigurationKeys.Prefix}:Metrics",
+				x => x.AddKurrentConfigFile("metricsconfig.json", true, true))
+			// logconfig.json is not located in a config/ directory, and puts itself in its own section
+			.AddKurrentConfigFile("logconfig.json", true, true);
+		return configure(builder).Build();
+	}
+
 	private static (string Path, bool Optional) ResolveConfigurationFile(
 		LocationOptionWithLegacyDefault[] optionsWithLegacyDefaults, string[] args, IDictionary environment) {
 		var configuration = new ConfigurationBuilder()

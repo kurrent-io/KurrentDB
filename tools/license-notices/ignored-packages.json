@@ -1,6 +1,7 @@
 [
   "EventStore.*",
   "Kurrent.*",
+  "KurrentDB.*",
   "Microsoft.*",
   "NETStandard.Library",
   "runtime.*",
