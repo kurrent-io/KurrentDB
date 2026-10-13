@@ -10,7 +10,6 @@
 	<ItemGroup>
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="Grpc.Net.Client" />
-		<PackageReference Include="KurrentDB.Client" />
 		<PackageReference Include="Serilog.Extensions.Logging" />
 	</ItemGroup>
 

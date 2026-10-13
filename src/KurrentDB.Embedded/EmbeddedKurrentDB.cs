@@ -3,7 +3,6 @@
 
 using DotNext.Threading;
 using Grpc.Net.Client;
-using KurrentDB.Client;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Core;
@@ -193,18 +192,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		await _web.StopAsync(cancellationToken);
 		_state = State.Stopped;
-	}
-
-	/// <summary>
-	/// Settings for the KurrentDB .NET client that reach this node over its socket.
-	/// </summary>
-	public KurrentDBClientSettings CreateClientSettings() {
-		var settings = KurrentDBClientSettings.Create("kurrentdb://localhost?tls=false");
-
-		var socketPath = UnixSocketPath;
-		settings.CreateHttpMessageHandler = () => UnixDomainSocket.CreateHandler(socketPath);
-
-		return settings;
 	}
 
 	/// <summary>

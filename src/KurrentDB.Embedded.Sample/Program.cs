@@ -38,7 +38,9 @@ internal static class Program {
 				db.UnixSocketPath);
 
 			// The regular .NET client, pointed at the socket. Nothing else about using it changes.
-			await using var client = new KurrentDBClient(db.CreateClientSettings());
+			var settings = KurrentDBClientSettings.Create("kurrentdb://localhost?tls=false");
+			settings.CreateHttpMessageHandler = () => UnixDomainSocket.CreateHandler(db.UnixSocketPath);
+			await using var client = new KurrentDBClient(settings);
 
 			try {
 				var data = new SampleData();

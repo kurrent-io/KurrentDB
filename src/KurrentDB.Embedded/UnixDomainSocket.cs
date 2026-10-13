@@ -10,7 +10,7 @@ namespace KurrentDB.Embedded;
 /// The client side of the embedded server's UNIX domain socket, and the file-permission handling that
 /// keeps it to the user who started the database.
 /// </summary>
-static class UnixDomainSocket {
+public static class UnixDomainSocket {
 	/// <summary>
 	/// Creates a handler that dials the socket at <paramref name="socketPath"/> instead of resolving and
 	/// connecting to the address it is given. The address then only supplies the scheme and the
