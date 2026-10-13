@@ -225,7 +225,18 @@ public static class ClusterVNodeOptionsValidator {
 		}
 	}
 
-	public static bool ValidateForStartup(ClusterVNodeOptions options) {
+	public static bool ValidateForStartup(ClusterVNodeOptions options) =>
+		ValidateForStartup(options, out _);
+
+	/// <summary>
+	/// As <see cref="ValidateForStartup(ClusterVNodeOptions)"/>, and hands the reason back rather than only
+	/// logging it. A host that embeds the node leaves the static Serilog logger to whoever owns the process,
+	/// so what is logged here may go nowhere and "see the log" is no answer at all.
+	/// </summary>
+	/// <param name="error">Why the options were rejected, or null if they were not.</param>
+	public static bool ValidateForStartup(ClusterVNodeOptions options, out string error) {
+		error = null;
+
 		if (options.Cluster is { DiscoverViaDns: false, ClusterSize: 1 } && options.Cluster.GetGossipSeed() is []) {
 			Log.Information(
 				"DNS discovery is disabled, but no gossip seed endpoints have been specified. Since "
@@ -236,17 +247,20 @@ public static class ClusterVNodeOptionsValidator {
 		var environmentOnlyOptions = options.CheckForEnvironmentOnlyOptions();
 		if (environmentOnlyOptions != null) {
 			Log.Error("Invalid Option {EnvironmentOnlyOptions}", environmentOnlyOptions);
+			error = $"Invalid option. {environmentOnlyOptions}";
 			return false;
 		}
 
 		if (options.Application.AuthDisabled() || options.Auth.AuthenticationType != Opts.AuthenticationTypeDefault) {
 			if (options.DefaultUser.DefaultAdminPassword != SystemUsers.DefaultAdminPassword) {
-				Log.Error("Cannot set default admin password when not using the internal authentication.");
+				error = "Cannot set default admin password when not using the internal authentication.";
+				Log.Error(error);
 				return false;
 			}
 
 			if (options.DefaultUser.DefaultOpsPassword != SystemUsers.DefaultOpsPassword) {
-				Log.Error("Cannot set default ops password when not using the internal authentication.");
+				error = "Cannot set default ops password when not using the internal authentication.";
+				Log.Error(error);
 				return false;
 			}
 		}

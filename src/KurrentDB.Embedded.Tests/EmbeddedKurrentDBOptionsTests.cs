@@ -4,6 +4,7 @@
 using System.Net;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
+using KurrentDB.Core;
 using KurrentDB.Core.Services.Monitoring;
 
 namespace KurrentDB.Embedded.Tests;
@@ -55,6 +56,34 @@ public class EmbeddedKurrentDBOptionsTests {
 	}
 
 	[Test]
+	[Arguments("KurrentDB:Db")]
+	[Arguments("kurrentdb:db")] // configuration keys are matched without regard to case
+	public async Task refuses_to_let_a_caller_move_the_database(string key) {
+		var dataDirectory = TestPaths.NewDataDirectory();
+		var elsewhere = TestPaths.NewDataDirectory();
+
+		using var prepared = new Cleanup(dataDirectory);
+		using var other = new Cleanup(elsewhere);
+
+		// the directory it is given is created for the node, narrowed to this user and measured against what
+		// a socket address will hold. A database somewhere else would have had none of that done to it, and
+		// DataDirectory would go on naming the one that was prepared and never used
+		var options = TestPaths.Options(dataDirectory) with {
+			DatabaseOptions = new Dictionary<string, string?> {
+				[key] = elsewhere
+			}
+		};
+
+		Should.Throw<ArgumentException>(() => new EmbeddedKurrentDB(options));
+
+		// and it said so before preparing anything, or opening a database anywhere
+		Directory.Exists(dataDirectory).ShouldBeFalse();
+		Directory.Exists(elsewhere).ShouldBeFalse();
+
+		await Task.CompletedTask;
+	}
+
+	[Test]
 	public async Task reports_telemetry_unless_told_not_to() {
 		var dataDirectory = TestPaths.NewDataDirectory();
 
@@ -93,7 +122,11 @@ public class EmbeddedKurrentDBOptionsTests {
 			}
 		};
 
-		Should.Throw<InvalidConfigurationException>(() => new EmbeddedKurrentDB(options));
+		var exception = Should.Throw<InvalidConfigurationException>(() => new EmbeddedKurrentDB(options));
+
+		// the node reports this through the static Serilog logger, which an embedded host need not have set
+		// up, so the reason has to travel with the exception rather than be left in a log nobody wrote
+		exception.Message.ShouldContain(nameof(ClusterVNodeOptions.Application.TelemetryOptout));
 
 		await Task.CompletedTask;
 	}

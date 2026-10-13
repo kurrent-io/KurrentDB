@@ -24,5 +24,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Embedded\KurrentDB.Embedded.csproj" />
+		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
 	</ItemGroup>
 </Project>

@@ -37,12 +37,14 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 	ClusterVNodeHostedService? _hostedService;
 	WebApplication? _web;
+	Task? _stopping;
 
 	string? _unixSocketPath;
 
 	public EmbeddedKurrentDB(EmbeddedKurrentDBOptions options) {
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentException.ThrowIfNullOrWhiteSpace(options.DataDirectory);
+		EnsureTheDatabaseDirectoryIsNotMoved(options);
 
 		_options = options;
 
@@ -67,22 +69,56 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			])
 			.AddInMemoryCollection(options.DatabaseOptions));
 
-		ClusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configuration);
+		try {
+			ClusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configuration);
 
-		LoggerConfiguration = KurrentLoggerConfiguration
-			.ApplyLogLevels(new LoggerConfiguration(), ClusterVNodeOptions.ConfigurationRoot!);
+			LoggerConfiguration = KurrentLoggerConfiguration
+				.ApplyLogLevels(new LoggerConfiguration(), ClusterVNodeOptions.ConfigurationRoot!);
 
-		if (!ClusterVNodeOptionsValidator.ValidateForStartup(ClusterVNodeOptions)) {
-			throw new InvalidConfigurationException(
-				"The embedded database cannot start with this configuration. The errors logged above say why.");
+			// the reason comes back rather than being logged: an embedded node leaves the static Serilog
+			// logger to whoever owns the process, and a host that has not set one up would be told to read a
+			// log that was never written
+			if (!ClusterVNodeOptionsValidator.ValidateForStartup(ClusterVNodeOptions, out var invalid)) {
+				throw new InvalidConfigurationException(
+					$"The embedded database cannot start with this configuration. {invalid}");
+			}
+
+			// a node with no database directory does not listen on a socket, which would leave this one with
+			// no way in at all
+			if (ClusterVNodeOptions.Database.MemDb) {
+				throw new InvalidOperationException(
+					"An embedded KurrentDB cannot run with an in-memory database: it is reached over a UNIX domain " +
+					"socket, and the node only creates one when it has a database directory.");
+			}
+		} catch {
+			// a constructor that throws leaves nobody holding the database, and so nobody to dispose the
+			// configuration it had already built
+			DisposeConfiguration();
+			throw;
 		}
+	}
 
-		// a node with no database directory does not listen on a socket, which would leave this one with
-		// no way in at all
-		if (ClusterVNodeOptions.Database.MemDb) {
-			throw new InvalidOperationException(
-				"An embedded KurrentDB cannot run with an in-memory database: it is reached over a UNIX domain " +
-				"socket, and the node only creates one when it has a database directory.");
+	/// <summary>
+	/// The database directory is not the caller's to move. This one is created for the node, restricted to
+	/// this user, and checked against the length a socket address allows, because the socket that reaches
+	/// the node is bound inside it. A directory named through <see cref="EmbeddedKurrentDBOptions.DatabaseOptions"/>
+	/// would have had none of that done to it, and <see cref="DataDirectory"/> would still be reporting the
+	/// one that was prepared and then left unused.
+	/// </summary>
+	static void EnsureTheDatabaseDirectoryIsNotMoved(EmbeddedKurrentDBOptions options) {
+		const string databaseDirectoryKey = $"{KurrentConfigurationKeys.Prefix}:Db";
+
+		// configuration keys are matched without regard to case, so a caller's key does not have to look
+		// like ours to take precedence over it
+		foreach (var key in options.DatabaseOptions.Keys) {
+			if (!string.Equals(key, databaseDirectoryKey, StringComparison.OrdinalIgnoreCase))
+				continue;
+
+			throw new ArgumentException(
+				$"'{key}' cannot be set through {nameof(EmbeddedKurrentDBOptions.DatabaseOptions)}: it would move " +
+				"the database, and the socket that reaches it, out of the directory prepared for them. Give the " +
+				$"directory as {nameof(EmbeddedKurrentDBOptions.DataDirectory)} instead.",
+				nameof(options));
 		}
 	}
 
@@ -109,6 +145,10 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 	internal IServiceProvider Services =>
 		_web?.Services
+		?? throw new InvalidOperationException("The embedded database has not been started.");
+
+	internal ClusterVNode Node =>
+		_hostedService?.Node
 		?? throw new InvalidOperationException("The embedded database has not been started.");
 
 	/// <summary>
@@ -183,14 +223,27 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Stops the node, assuming <see cref="_lifecycle"/> is held. The node answers a second stop with a
-	/// warning, so only the first one through here reaches it.
+	/// Stops the node, assuming <see cref="_lifecycle"/> is held, and waits for it to finish.
 	/// </summary>
+	/// <remarks>
+	/// The node honours one stop and one only: a second <see cref="ClusterVNode.StopAsync"/> logs a warning
+	/// and returns straight away, without waiting for the first to finish. So the shutdown is started once
+	/// and kept, and every later caller waits on that same task rather than asking again and being told
+	/// nothing is left to do.
+	///
+	/// The caller's token bounds the wait, not the shutdown. A node that has begun shutting down cannot be
+	/// made to carry on, and abandoning the host mid-shutdown would leave disposal free to close the
+	/// database underneath a node still writing to it. <see cref="HostOptions.ShutdownTimeout"/>, set in
+	/// <see cref="BuildWebApplication"/>, is what bounds the shutdown itself.
+	/// </remarks>
 	async Task StopWhileLockedAsync(CancellationToken cancellationToken) {
 		if (_state is not State.Running || _web is null)
 			return;
 
-		await _web.StopAsync(cancellationToken);
+		_stopping ??= _web.StopAsync(CancellationToken.None);
+
+		await _stopping.WaitAsync(cancellationToken);
+
 		_state = State.Stopped;
 	}
 
@@ -254,7 +307,18 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				UnixDomainSocket.Delete(socketPath);
 		} finally {
 			_state = State.Disposed;
+			DisposeConfiguration();
 		}
+	}
+
+	/// <summary>
+	/// Releases the configuration this database built for itself. The web host chains it rather than
+	/// taking it over, so nothing else ever lets go of the file watchers its providers hold open.
+	/// </summary>
+	void DisposeConfiguration() {
+		// IConfigurationRoot does not carry IDisposable, though what ConfigurationBuilder returns does
+		if (_configuration is IDisposable disposable)
+			disposable.Dispose();
 	}
 
 	/// <summary>

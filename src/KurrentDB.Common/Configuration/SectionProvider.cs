@@ -42,6 +42,7 @@ public sealed class SectionProvider : ConfigurationProvider, IDisposable {
 
 	public void Dispose() {
 		_registration.Dispose();
+		(_configuration as IDisposable)?.Dispose();
 	}
 
 	public override void Load() {

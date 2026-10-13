@@ -16,6 +16,9 @@ using RuntimeInformation = System.Runtime.RuntimeInformation;
 namespace KurrentDB;
 
 public static class KestrelHelpers {
+	/// <summary>The file the node binds its UNIX domain socket to, inside the database directory.</summary>
+	public const string UnixSocketFileName = "kurrent.sock";
+
 	/// <returns>True if a UNIX domain socket was opened, with <paramref name="unixSocket"/> naming it.</returns>
 	public static bool TryConfigureListeners(
 		KestrelServerOptions server,
@@ -60,7 +63,7 @@ public static class KestrelHelpers {
 
 		try {
 			var legacyUnixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
-			unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "kurrent.sock"));
+			unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, UnixSocketFileName));
 
 			CleanupStaleSocket(legacyUnixSocket);
 			CleanupStaleSocket(unixSocket);
