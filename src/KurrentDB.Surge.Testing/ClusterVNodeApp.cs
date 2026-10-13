@@ -12,6 +12,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Messages;
+using KurrentDB.Plugins.Connectors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -45,7 +46,8 @@ public class ClusterVNodeApp : IAsyncDisposable {
             ? DefaultSettings.ToDictionary().With(x => overrides.ForEach((key, value) => x[key] = value))
             : DefaultSettings;
 
-        var options = GetClusterVNodeOptions(settings);
+        var options = GetClusterVNodeOptions(settings)
+            .WithPlugableComponent(new ConnectorsPlugin());
 
         var esdb = new ClusterVNodeHostedService(options, new OptionsCertificateProvider(), options.ConfigurationRoot);
 

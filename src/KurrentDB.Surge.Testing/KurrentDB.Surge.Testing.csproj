@@ -58,6 +58,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
 	</ItemGroup>
 </Project>

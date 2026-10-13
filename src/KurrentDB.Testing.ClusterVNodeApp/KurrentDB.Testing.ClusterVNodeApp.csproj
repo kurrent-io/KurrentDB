@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Connectors\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
+    <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
     <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
     <ProjectReference Include="..\KurrentDB.Hosting\KurrentDB.Hosting.csproj" />
   </ItemGroup>

@@ -97,7 +97,7 @@ try {
 		exitCodeSource.SetResult(code);
 	});
 
-	options.RegisterNonTrimmablePlugins();
+	options = options.RegisterNonTrimmablePlugins();
 	var hostedService = new ClusterVNodeHostedService(options, certificateProvider, configuration);
 	await Run(hostedService);
 
@@ -182,6 +182,6 @@ void ConfigureThreadPool() {
 }
 
 file static class NonTrimmablePlugins {
-	public static void RegisterNonTrimmablePlugins(this ClusterVNodeOptions options)
-		=> options.WithPlugableComponent(new ConnectorsPlugin());
+	public static ClusterVNodeOptions RegisterNonTrimmablePlugins(this ClusterVNodeOptions options) =>
+		options.WithPlugableComponent(new ConnectorsPlugin());
 }
