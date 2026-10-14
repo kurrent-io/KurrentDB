@@ -27,7 +27,7 @@
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 
-		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 		<PackageReference Include="YamlDotnet" Version="13.7.1" />
 		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-8g4q-xg66-9fp4 -->
