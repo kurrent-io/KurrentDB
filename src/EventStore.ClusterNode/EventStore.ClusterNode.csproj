@@ -6,6 +6,9 @@
 		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
 	</PropertyGroup>
 	<ItemGroup>
+		<RuntimeHostConfigurationOption Include="System.Threading.Mutex.UnsafeDefaultMutexScopeGlobal" Value="true" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="SharpDotYaml.Extensions.Configuration" Version="0.3.0" />
 		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
