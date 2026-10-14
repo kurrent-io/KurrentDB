@@ -122,7 +122,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	public ISubscriber MainBus => _outputBus;
 
 	private VNodeFSM CreateFSM() {
-		var stm = new VNodeFSMBuilder(new(this, in _state))
+		var fsmBuilder = new VNodeFSMBuilder(new(this, in _state))
 			.InAnyState()
 			.When<SystemMessage.StateChangeMessage>()
 				.Do(m => Application.Exit(ExitCode.Error,
@@ -233,7 +233,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.TransactionStart>().Do(HandleAsNonLeader)
 			.When<ClientMessage.TransactionWrite>().Do(HandleAsNonLeader)
 			.When<ClientMessage.TransactionCommit>().Do(HandleAsNonLeader)
-			.When<ClientMessage.DeleteStream>().Do(HandleAsNonLeader)
+			.When<ClientMessage.DeleteStream>().Do(HandleAsNonLeader);
+
+		var stm = fsmBuilder
 			.InAnyState()
 			.When<ClientMessage.NotHandled>().ForwardTo(_outputBus)
 			.When<ClientMessage.ReadEventCompleted>().ForwardTo(_outputBus)
