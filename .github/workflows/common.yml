@@ -83,3 +83,9 @@ jobs:
         printf 'Waiting for cluster'
         timeout 60 bash -c -- 'until $(curl --output /dev/null --silent --insecure --fail https://localhost:2113/health/live); do printf '.'; sleep 2; done'
         docker compose down
+    -
+      name: Docker Compose Logs
+      if: failure()
+      run: |
+        docker compose ps --all
+        docker compose logs --no-color --timestamps
