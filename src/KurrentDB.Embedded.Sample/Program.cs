@@ -53,6 +53,8 @@ internal static class Program {
 				await new ReadSamples(client, data).RunAsync(ct);
 				Log.Information("Reading Indexes...");
 				await new IndexSamples(client, data).RunAsync(ct);
+				Log.Information("Querying with Flight SQL...");
+				await new FlightSqlSamples(db).RunAsync(ct);
 				Log.Information("Subscribing...");
 				await new SubscriptionSamples(client, data).RunAsync(ct);
 				Log.Information("Managing...");

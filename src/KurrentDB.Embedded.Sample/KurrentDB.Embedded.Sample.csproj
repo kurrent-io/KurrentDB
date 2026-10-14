@@ -10,6 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Apache.Arrow.Flight.Sql" />
 		<PackageReference Include="KurrentDB.Client" />
 		<PackageReference Include="Serilog.Sinks.Console" />
 	</ItemGroup>
