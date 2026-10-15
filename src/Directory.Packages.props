@@ -127,7 +127,7 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.3.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.2" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.3" />
-    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
+    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.30" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.15.0" />
