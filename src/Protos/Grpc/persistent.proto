@@ -21,6 +21,7 @@ message ReadReq {
 		Options options = 1;
 		Ack ack = 2;
 		Nack nack = 3;
+		Stop stop = 4;
 	}
 
 	message Options {
@@ -59,6 +60,11 @@ message ReadReq {
 			Skip = 3;
 			Stop = 4;
 		}
+	}
+
+	// Removes the consumer from the subscription's consumer pool while keeping
+	// the gRPC stream open so in-flight events can still be acked or nacked.
+	message Stop {
 	}
 }
 
