@@ -9,6 +9,7 @@ using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.Transport.Grpc;
 
 // ReSharper disable once CheckNamespace
@@ -76,6 +77,9 @@ internal partial class Operations {
 	}
 
 	public override async Task<Empty> RestartPersistentSubscriptions(Empty request, ServerCallContext context) {
+		if (!PersistentSubscriptionsFeature.IsAllowed)
+			throw new RpcException(new Status(StatusCode.Unimplemented, PersistentSubscriptionsUnavailable.Reason));
+
 		var restart = new TaskCompletionSource<bool>();
 		var envelope = new CallbackEnvelope(OnMessage);
 

@@ -1121,6 +1121,7 @@ public class ClusterVNode<TStreamId> :
 			options,
 			new Dictionary<string, bool> {
 				["projections"] = options.Projection.RunProjections != ProjectionType.None || options.DevMode.Dev,
+				["persistentSubscriptions"] = PersistentSubscriptionsFeature.IsAllowed,
 				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.AuthDisabled(),
 				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
 			},
@@ -1310,6 +1311,8 @@ public class ClusterVNode<TStreamId> :
 			perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscription);
 			perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionPushToClients>(persistentSubscription);
 			perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
+		} else {
+			PersistentSubscriptionsUnavailable.SubscribeTo(_mainBus);
 		}
 
 		// STORAGE SCAVENGER
