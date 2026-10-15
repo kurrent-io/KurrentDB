@@ -355,6 +355,11 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			host.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
 		});
 
+		// the default console lifetime would stop the node on SIGTERM or Ctrl+C at the same moment as the
+		// application embedding it, while that application may still be reading and writing during its own
+		// shutdown. The application stops the node instead, once it is done with it.
+		builder.Services.AddSingleton<IHostLifetime, EmbeddedHostLifetime>();
+
 		builder.WebHost.ConfigureKestrel(server => {
 			// the node picks the socket path — the database directory, which is the data directory — and
 			// reports it back. The constructor has ruled out the in-memory database, so what is left is an
