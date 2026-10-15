@@ -21,6 +21,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
@@ -157,7 +158,8 @@ public class ClusterVNodeStartup<TStreamId>
 
 		app.MapLegacyPipeline(_httpService, internalDispatcher, forcePlainTextMetrics);
 
-		app.MapGrpcService<PersistentSubscriptions>();
+		if (PersistentSubscriptionsFeature.IsAllowed)
+			app.MapGrpcService<PersistentSubscriptions>();
 		app.MapGrpcService<Users>();
 		app.MapGrpcService<Streams<TStreamId>>();
 		app.MapGrpcService<ClusterGossip>();
@@ -257,6 +259,9 @@ public class ClusterVNodeStartup<TStreamId>
 		services
 			.TryAddSingleton(TimeProvider.System);
 
+		if (PersistentSubscriptionsFeature.IsAllowed)
+			services.AddSingleton(new PersistentSubscriptions(_mainQueue, _authorizationProvider));
+
 		services
 			.AddSingleton(_options)
 			.AddSingleton(_metricsConfiguration)
@@ -268,7 +273,6 @@ public class ClusterVNodeStartup<TStreamId>
 				Ensure.Positive(_options.Application.MaxAppendEventSize),
 				TimeSpan.FromMilliseconds(_options.Database.WriteTimeoutMs),
 				_expiryStrategy, _trackers.GrpcTrackers, _authorizationProvider))
-			.AddSingleton(new PersistentSubscriptions(_mainQueue, _authorizationProvider))
 			.AddSingleton(new Users(_mainQueue, _authorizationProvider))
 			.AddSingleton(new Operations(_mainQueue, _authorizationProvider))
 			.AddSingleton(new ClusterGossip(_mainQueue, _authorizationProvider, _clusterDns,

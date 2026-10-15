@@ -3,6 +3,7 @@
 
 @using KurrentDB.Components.Cluster
 @using KurrentDB.Components.Shared
+@using KurrentDB.Core.Services.PersistentSubscription
 @using KurrentDB.UI.Theme
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -19,7 +20,9 @@
 	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Data</MudText>
 	<MudNavLink Href="/ui/streams" Match="NavLinkMatch.All" Icon="@KurrentIcons.Stream">Stream Browser</MudNavLink>
 	<MudNavLink Href="/ui/projections" Match="NavLinkMatch.All" Icon="@KurrentIcons.Projections">Projections</MudNavLink>
-	<MudNavLink Href="/ui/persistent-subscriptions" Match="NavLinkMatch.All" Icon="@KurrentIcons.PersistentSubscriptions">Persistent Subscriptions</MudNavLink>
+	@if (PersistentSubscriptionsFeature.IsAllowed) {
+		<MudNavLink Href="/ui/persistent-subscriptions" Match="NavLinkMatch.All" Icon="@KurrentIcons.PersistentSubscriptions">Persistent Subscriptions</MudNavLink>
+	}
 	<MudNavLink Href="/ui/query" Match="NavLinkMatch.All" Icon="@KurrentIcons.Search" data-enhance-nav="false">
 		Query
 	</MudNavLink>

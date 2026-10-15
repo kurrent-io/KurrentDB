@@ -57,7 +57,12 @@ public class ClusterVNodeHostedService : IHostedService {
 			? ProjectionType.System
 			: options.Projection.RunProjections;
 		var startStandardProjections = options.Projection.StartStandardProjections || options.DevMode.Dev;
-		_options = projectionMode >= ProjectionType.System
+
+		if (projectionMode >= ProjectionType.System && !ProjectionsSubsystem.IsAllowed)
+			throw new InvalidOperationException(
+				$"Could not run projections ({projectionMode}): this build does not include them. Set RunProjections to None.");
+
+		_options = ProjectionsSubsystem.IsAllowed && projectionMode >= ProjectionType.System
 			? options.WithPlugableComponent(new ProjectionsSubsystem(
 				new ProjectionSubsystemOptions(
 					options.Projection.ProjectionThreads,
@@ -113,7 +118,7 @@ public class ClusterVNodeHostedService : IHostedService {
 				throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Unexpected log format specified.");
 		}
 
-		var enabledNodeSubsystems = projectionMode >= ProjectionType.System
+		var enabledNodeSubsystems = ProjectionsSubsystem.IsAllowed && projectionMode >= ProjectionType.System
 			? new[] { NodeSubsystems.Projections }
 			: Array.Empty<NodeSubsystems>();
 

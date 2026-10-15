@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
 using DotNext;
+using EventStore.Plugins;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Projections.Core.Services.Grpc;
@@ -52,6 +54,12 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	IHandle<ProjectionSubsystemMessage.IODispatcherDrained> {
 
 	static readonly ILogger Logger = Log.ForContext<ProjectionsSubsystem>();
+
+	public const string FeatureName = $"{IPlugableComponent.FeatureNamePrefix}.Projections";
+
+	/// <summary>Whether this build runs projections. When the switch is off, a trimmed application drops them.</summary>
+	[FeatureSwitchDefinition(FeatureName)]
+	public static bool IsAllowed { get; } = AppContext.IsFeatureSupported(FeatureName);
 
 	public const int VERSION = ProjectionConstants.SubsystemVersion;
 	public const int CONTENT_TYPE_VALIDATION_VERSION = 4;
