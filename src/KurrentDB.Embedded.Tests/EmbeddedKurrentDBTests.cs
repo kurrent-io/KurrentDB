@@ -85,6 +85,15 @@ public class EmbeddedKurrentDBTests {
 		await Task.CompletedTask;
 	}
 
+	// the console lifetime is the one that stops a host on SIGTERM or Ctrl+C; with it, a signal to the
+	// process would stop the node at the same moment as the application still using it
+	[Test]
+	public async Task leaves_the_process_signals_to_the_embedding_application() {
+		Fixture.Database.Services.GetRequiredService<IHostLifetime>().ShouldBeOfType<EmbeddedHostLifetime>();
+
+		await Task.CompletedTask;
+	}
+
 	[Test]
 	public async Task restricts_the_socket_to_its_owner(CancellationToken cancellationToken) {
 		if (OperatingSystem.IsWindows())
