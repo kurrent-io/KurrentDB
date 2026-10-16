@@ -253,11 +253,16 @@ public class CompleteProcessTests {
 
 		simulator.Reacts(
 			Reacts.OnEvent<Events.NodeScavengeStarted>(@event => {
-				simulator.Scavenger.SetScavengeStatus(@event.ScavengeId, ScavengeStatus.Success);
+				simulator.LocalScavenger.SetScavengeStatus(@event.ScavengeId, ScavengeStatus.Success);
 				simulator.EnqueueCommands(Command.ReceiveGossip(singleNode.InstanceId, [singleNode]));
 			}));
 
 		await simulator.Run(tokenSource.Token).WaitAsync(TimeSpan.FromSeconds(2));
+
+		// the node is scavenged in-process, not over HTTP to the endpoint it advertises: an embedded node does not
+		// listen on one
+		Assert.Single(simulator.LocalScavenger.Scavenges);
+		Assert.Empty(simulator.Scavenger.Scavenges);
 
 		simulator.AssertSnapshots([
 			Matches.MatchEvent<Events.ClusterScavengeStarted>((_, snapshot) => {

@@ -9,6 +9,10 @@ No ports are listened on by default.
 A connection over the UNIX domain socket is automatically authenticated as the system account without need for credentials, and has full administrative access to the database.
 The socket and data both need suitable file system permissions; these get configured to be accessible by owner only.
 
+## Auto-scavenge
+
+The auto-scavenge plugin is enabled but has no schedule, so the node is not scavenged until you give it one, for example by sending `POST /auto-scavenge/configure` with `{"schedule": "0 3 * * *"}` over the socket.
+
 ## Sample
 
 https://github.com/kurrent-io/KurrentDB/tree/v26.3.0-alpha.6/src/KurrentDB.Embedded.Sample

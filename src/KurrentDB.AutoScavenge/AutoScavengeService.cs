@@ -24,7 +24,8 @@ internal class AutoScavengeService : IDisposable {
 	private readonly IClient _client;
 	private readonly IOperationsClient _operationsClient;
 	private readonly Channel<ICommand> _commands;
-	private readonly INodeScavenger _scavenger;
+	private readonly INodeScavenger _remoteScavenger;
+	private readonly INodeScavenger _localScavenger;
 	private readonly IGossipAware _gossipHandler;
 
 	public AutoScavengeService(
@@ -32,7 +33,8 @@ internal class AutoScavengeService : IDisposable {
 		IClient client,
 		IOperationsClient operationsClient,
 		Channel<ICommand> commands,
-		INodeScavenger scavenger,
+		INodeScavenger remoteScavenger,
+		INodeScavenger localScavenger,
 		IGossipAware gossipHandler,
 		CancellationTokenSource cts) {
 
@@ -40,7 +42,8 @@ internal class AutoScavengeService : IDisposable {
 		_client = client;
 		_operationsClient = operationsClient;
 		_commands = commands;
-		_scavenger = scavenger;
+		_remoteScavenger = remoteScavenger;
+		_localScavenger = localScavenger;
 		_gossipHandler = gossipHandler;
 		_cts = cts;
 	}
@@ -58,7 +61,7 @@ internal class AutoScavengeService : IDisposable {
 
 	private async Task Process(CancellationToken token) {
 		var source = new ClientSource(_client);
-		var machine = new AutoScavengeProcessManager(_options.ClusterSize, new TimeProvider(), source, _operationsClient, _scavenger);
+		var machine = new AutoScavengeProcessManager(_options.ClusterSize, new TimeProvider(), source, _operationsClient, _remoteScavenger, _localScavenger);
 
 		await foreach (var commandFromChannel in _commands.Reader.ReadAllAsync(token)) {
 			// if an additional command was yielded execute it now, do not queue it to the channel.

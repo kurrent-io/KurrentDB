@@ -8,4 +8,10 @@ namespace KurrentDB.AutoScavenge.Tests;
 public class DummyOperationClient : IOperationsClient {
 	public void Resign() {
 	}
+
+	public Task<Guid?> StartScavengeAsync(CancellationToken token) => throw new NotSupportedException();
+
+	public Task<LastScavenge> GetLastScavengeAsync(CancellationToken token) => throw new NotSupportedException();
+
+	public Task<bool> StopScavengeAsync(Guid? scavengeId, CancellationToken token) => throw new NotSupportedException();
 }

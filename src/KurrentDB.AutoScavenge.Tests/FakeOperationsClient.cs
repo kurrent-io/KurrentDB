@@ -10,4 +10,10 @@ public class FakeOperationsClient : IOperationsClient {
 	public void Resign() {
 		ResignationIssued = true;
 	}
+
+	public Task<Guid?> StartScavengeAsync(CancellationToken token) => throw new NotSupportedException();
+
+	public Task<LastScavenge> GetLastScavengeAsync(CancellationToken token) => throw new NotSupportedException();
+
+	public Task<bool> StopScavengeAsync(Guid? scavengeId, CancellationToken token) => throw new NotSupportedException();
 }

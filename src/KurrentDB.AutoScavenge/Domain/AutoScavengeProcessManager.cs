@@ -21,13 +21,20 @@ namespace KurrentDB.AutoScavenge.Domain;
 /// <param name="source">
 /// Accesses the configuration and events related to the auto scavenge process.
 /// </param>
+/// <param name="remoteScavenger">
+/// Scavenges the other nodes of the cluster.
+/// </param>
+/// <param name="localScavenger">
+/// Scavenges this node in-process, so that it does not have to reach itself over the network.
+/// </param>
 public class AutoScavengeProcessManager {
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengeProcessManager>();
 
 	readonly ITimeProvider _timeProvider;
 	readonly ISource _source;
 	readonly IOperationsClient _operationClient;
-	readonly INodeScavenger _scavenger;
+	readonly INodeScavenger _remoteScavenger;
+	readonly INodeScavenger _localScavenger;
 	readonly int _clusterSize;
 
 	readonly Queue<IEvent> _uncommittedEvents = [];
@@ -47,12 +54,14 @@ public class AutoScavengeProcessManager {
 		ITimeProvider timeProvider,
 		ISource source,
 		IOperationsClient operationsClient,
-		INodeScavenger scavenger) {
+		INodeScavenger remoteScavenger,
+		INodeScavenger localScavenger) {
 
 		_timeProvider = timeProvider;
 		_source = source;
 		_operationClient = operationsClient;
-		_scavenger = scavenger;
+		_remoteScavenger = remoteScavenger;
+		_localScavenger = localScavenger;
 		_clusterSize = clusterSize;
 	}
 
@@ -284,7 +293,7 @@ public class AutoScavengeProcessManager {
 				return;
 			}
 
-			var success = await _scavenger.TryPauseScavengeAsync(
+			var success = await ScavengerFor(designatedNode.Value).TryPauseScavengeAsync(
 				designatedNode.Value.Address,
 				designatedNode.Value.Port,
 				nodeScavengeId, token);
@@ -302,7 +311,7 @@ public class AutoScavengeProcessManager {
 		async ValueTask CheckOnTheNodeScavenge(NodeId designatedNode, Guid nodeScavengeId) {
 			ScavengeStatus status;
 
-			status = await _scavenger.TryGetScavengeAsync(
+			status = await ScavengerFor(designatedNode).TryGetScavengeAsync(
 				designatedNode.Address,
 				designatedNode.Port,
 				nodeScavengeId,
@@ -355,7 +364,7 @@ public class AutoScavengeProcessManager {
 				return;
 			}
 
-			var scavengeId = await _scavenger.TryStartScavengeAsync(designatedNode.Address, designatedNode.Port, token);
+			var scavengeId = await ScavengerFor(designatedNode).TryStartScavengeAsync(designatedNode.Address, designatedNode.Port, token);
 
 			if (scavengeId == null)
 				// The idea is to let another gossip message come in and trigger the assessment again.
@@ -395,6 +404,12 @@ public class AutoScavengeProcessManager {
 			return ValueTask.CompletedTask;
 		}
 	}
+
+	// This node is scavenged in-process rather than over HTTP: it may not listen on the endpoint it advertises (an
+	// embedded node serves only a unix socket). In a cluster the leader resigns rather than start a scavenge on
+	// itself, so this mostly matters to a single node.
+	private INodeScavenger ScavengerFor(NodeId node) =>
+		node == _nodeId ? _localScavenger : _remoteScavenger;
 
 	/// <summary>
 	/// Determines the next best candidate for the auto scavenge process.

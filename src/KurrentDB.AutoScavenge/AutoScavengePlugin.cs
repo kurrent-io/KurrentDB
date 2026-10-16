@@ -90,12 +90,14 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 			var client = provider.GetRequiredService<IClient>();
 			var wrapper = provider.GetRequiredService<HttpClientWrapper>();
 			var dispatcher = provider.GetRequiredService<AutoScavengeClientDispatcher>();
+			var operationsClient = provider.GetRequiredService<IOperationsClient>();
 			return new AutoScavengeService(
 				options: _options,
 				client: client,
-				operationsClient: provider.GetRequiredService<IOperationsClient>(),
+				operationsClient: operationsClient,
 				commands: _commands,
-				scavenger: new HttpNodeScavenger(wrapper, client),
+				remoteScavenger: new HttpNodeScavenger(wrapper, client),
+				localScavenger: new LocalNodeScavenger(operationsClient, client),
 				dispatcher,
 				cts: _cts);
 		});

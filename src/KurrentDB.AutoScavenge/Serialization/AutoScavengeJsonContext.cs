@@ -26,7 +26,7 @@ namespace KurrentDB.AutoScavenge.Serialization;
 [JsonSerializable(typeof(Events.Paused))]
 [JsonSerializable(typeof(Events.Resumed))]
 [JsonSerializable(typeof(HttpNodeScavenger.ScavengeRecord))]
-[JsonSerializable(typeof(HttpNodeScavenger.ScavengeRecordCompleted))]
+[JsonSerializable(typeof(ScavengeLog.ScavengeRecordCompleted))]
 [JsonSerializable(typeof(HttpNodeScavenger.LastScavengeStatusResponse))]
 [JsonSerializable(typeof(ProxyAutoScavengeClient.ConfigureRequest))]
 internal partial class AutoScavengeJsonContext : JsonSerializerContext;
