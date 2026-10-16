@@ -18,9 +18,9 @@ public interface IOperationsClient {
 	void Resign();
 
 	/// <summary>
-	/// Starts a scavenge on this node.
+	/// Starts a scavenge on this node, unless one is already running.
 	/// </summary>
-	/// <returns>The id of the started scavenge, or null if the node did not start one (e.g. one is already running)</returns>
+	/// <returns>The id of the started or already running scavenge, or null if the node could not start one</returns>
 	Task<Guid?> StartScavengeAsync(CancellationToken token);
 
 	/// <summary>

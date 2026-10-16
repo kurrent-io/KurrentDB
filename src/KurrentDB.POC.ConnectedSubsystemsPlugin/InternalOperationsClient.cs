@@ -37,7 +37,10 @@ public class InternalOperationsClient : IOperationsClient {
 
 		return await envelope.Task.WaitAsync(token) switch {
 			ClientMessage.ScavengeDatabaseStartedResponse started => Guid.Parse(started.ScavengeId),
-			ClientMessage.ScavengeDatabaseInProgressResponse => null,
+			// a scavenge that is already running is as good as one we started, and it may well be one we started
+			// whose reply came too late. the node answers the same way when the chunks are locked, with no id
+			ClientMessage.ScavengeDatabaseInProgressResponse inProgress =>
+				Guid.TryParse(inProgress.ScavengeId, out var running) && running != Guid.Empty ? running : null,
 			var response => throw UnexpectedResponse(response),
 		};
 	}

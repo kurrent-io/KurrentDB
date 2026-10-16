@@ -32,9 +32,9 @@ public class LocalNodeScavenger : INodeScavenger {
 		try {
 			var scavengeId = await _operationsClient.StartScavengeAsync(timeout.Token);
 			if (scavengeId is null)
-				Log.Information("Node scavenge was not started on this node {Host}:{Port}: a scavenge is already running or the chunks are locked", host, port);
+				Log.Information("Node scavenge was not started on this node {Host}:{Port}: the chunks are locked", host, port);
 			else
-				Log.Information("Started node scavenge on this node {Host}:{Port}. ScavengeId: {ScavengeId}", host, port, scavengeId);
+				Log.Information("Node scavenge is running on this node {Host}:{Port}. ScavengeId: {ScavengeId}", host, port, scavengeId);
 			return scavengeId;
 
 		} catch (Exception ex) {
