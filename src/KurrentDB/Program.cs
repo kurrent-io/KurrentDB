@@ -91,7 +91,7 @@ try {
 
 	using var cts = new CancellationTokenSource();
 	var token = cts.Token;
-	Application.RegisterExitAction(code => {
+	Application.RegisterExitAction((code, _) => {
 		// add a small delay to allow the host to start up in case there's a premature shutdown
 		cts.CancelAfter(TimeSpan.FromSeconds(1));
 		exitCodeSource.SetResult(code);

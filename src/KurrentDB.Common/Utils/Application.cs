@@ -15,12 +15,12 @@ public enum ExitCode {
 public class Application {
 	private static readonly ILogger Log = Serilog.Log.ForContext<Application>();
 
-	private static Action<int> _exit = delegate {
+	private static Action<int, string> _exit = delegate {
 	};
 
 	private static int _exited;
 
-	public static void RegisterExitAction(Action<int> exitAction) {
+	public static void RegisterExitAction(Action<int, string> exitAction) {
 		Ensure.NotNull(exitAction, "exitAction");
 
 		_exit = exitAction;
@@ -43,6 +43,6 @@ public class Application {
 				Log.Information("Exiting with exit code: {exitCode}.\nExit reason: {e}", exitCode, reason);
 		}
 
-		_exit?.Invoke(exitCode);
+		_exit?.Invoke(exitCode, reason);
 	}
 }
