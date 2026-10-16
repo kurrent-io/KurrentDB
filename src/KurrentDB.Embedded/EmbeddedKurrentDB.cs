@@ -5,6 +5,7 @@ using DotNext.Threading;
 using Grpc.Net.Client;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration;
@@ -33,6 +34,8 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	readonly IConfigurationRoot _configuration;
 
 	readonly AsyncExclusiveLock _lifecycle = new();
+
+	readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	State _state;
 
@@ -142,6 +145,15 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		Volatile.Read(ref _unixSocketPath)
 		?? throw new InvalidOperationException("The embedded database has not been started.");
 
+	/// <summary>
+	/// Completes successfully once <see cref="StopAsync"/> or <see cref="DisposeAsync"/> has stopped the
+	/// database, or once the node has shut itself down cleanly, for example when asked to through its HTTP API.
+	/// Faults if it failed to start, or if the node asks to exit with an error, for example on a fatal storage error.
+	/// TODO: at the moment the node will carry on running until it is stopped/disposed by the host application.
+	/// TODO: at the moment license error also counts as successful completion but shouldn't
+	/// </summary>
+	public Task Completion => _completion.Task;
+
 	internal ClusterVNodeOptions ClusterVNodeOptions { get; }
 
 	internal IServiceProvider Services =>
@@ -179,6 +191,9 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 			_state = State.Running;
 
+			// TODO: only works for one embedded node
+			Application.RegisterExitAction(OnNodeRequestedExit);
+
 			try {
 				// opening the database is synchronous and can take a while, and there is no reason to make
 				// the caller's thread wait through it
@@ -196,8 +211,22 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				// so it is restricted to the user who started the database
 				UnixDomainSocket.RestrictToOwner(UnixSocketPath);
 
-				await readiness.WaitAsync(_options.StartupTimeout, cancellationToken);
-			} catch {
+				// a node that exits while starting fails the start now rather than at the timeout, even when
+				// it exits cleanly, as it does after truncating the database
+				var completedTask = await Task.WhenAny([
+					readiness.WaitAsync(_options.StartupTimeout, cancellationToken),
+					Completion,
+				]);
+
+				await completedTask;
+
+				if (completedTask == Completion) {
+					throw new InvalidOperationException(
+						"The embedded database shut down while it was starting. See the log for why.");
+				}
+			} catch (Exception ex) {
+				_completion.TrySetException(ex);
+
 				// a node that failed to start is not one anybody can use, and it is holding the database:
 				// let go of whatever did open, which leaves this one disposed and refusing another attempt
 				await TearDownAsync();
@@ -208,6 +237,17 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		}
 
 		Log.Information("Embedded KurrentDB is ready on {unixSocket}", UnixSocketPath);
+	}
+
+	// Called when the node wants to exit. On a fatal error the node is still running at this
+	// point: the host application must stop or dispose the node (TODO: improve on this).
+	void OnNodeRequestedExit(int exitCode, string reason) {
+		if (exitCode is (int)ExitCode.Success) {
+			_completion.TrySetResult();
+		} else {
+			_completion.TrySetException(new InvalidOperationException(
+				$"The embedded database asked to exit with exit code {exitCode} and must be disposed: {reason}"));
+		}
 	}
 
 	/// <summary>
@@ -246,6 +286,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		await _stopping.WaitAsync(cancellationToken);
 
 		_state = State.Stopped;
+		_completion.TrySetResult();
 	}
 
 	/// <summary>
@@ -308,6 +349,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				UnixDomainSocket.Delete(socketPath);
 		} finally {
 			_state = State.Disposed;
+			_completion.TrySetResult();
 			DisposeConfiguration();
 		}
 	}

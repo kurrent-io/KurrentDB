@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DotNext.Threading;
 using KurrentDB.Client;
 using Serilog;
 
@@ -61,7 +60,7 @@ internal static class Program {
 				await new StreamManagementSamples(client, data).RunAsync(ct);
 
 				Log.Information("Done. Press Ctrl+C to stop.");
-				await ct.WaitAsync();
+				await db.Completion.WaitAsync(ct);
 			} catch (OperationCanceledException) {
 				// Ctrl+C
 			}
