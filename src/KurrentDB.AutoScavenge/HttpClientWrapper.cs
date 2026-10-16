@@ -10,14 +10,24 @@ public class HttpClientWrapper {
 	public HttpClient HttpClient { get; }
 	public string Protocol { get; }
 
-	public HttpClientWrapper(EventStoreOptions options, INodeHttpClientFactory nodeHttpClientFactory) {
-		var nodeHttpClient =
-			nodeHttpClientFactory.CreateHttpClient(options.DiscoverViaDns ? [options.ClusterDns] : null);
+	public HttpClientWrapper(EventStoreOptions options, INodeHttpClientFactory nodeHttpClientFactory)
+		: this(
+			nodeHttpClientFactory.CreateHttpClient(options.DiscoverViaDns ? [options.ClusterDns] : null),
+			protocol: options.TlsDisabled() ? "http" : "https") {
+	}
 
-		Protocol = options.TlsDisabled() ? "http" : "https";
+	private HttpClientWrapper(HttpClient httpClient, string protocol) {
+		HttpClient = httpClient;
+		Protocol = protocol;
 
-		HttpClient = nodeHttpClient;
 		HttpClient.DefaultRequestHeaders.Accept.Add(new("application/json"));
 		HttpClient.Timeout = TimeSpan.FromSeconds(1);
 	}
+
+	/// <summary>
+	/// A client for this node only, connecting the way its host provides rather than to the endpoint the node
+	/// advertises. That connection is cleartext whatever the node's TLS settings.
+	/// </summary>
+	public static HttpClientWrapper ForLocalNode(ILocalNodeHttpHandlerFactory localNodeHttpHandlerFactory) =>
+		new(new HttpClient(localNodeHttpHandlerFactory.CreateHandler()), protocol: "http");
 }

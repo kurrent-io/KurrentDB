@@ -11,6 +11,7 @@ using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -383,6 +384,9 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		NodeWebApplication.ConfigureServices(builder.Services, hostedService);
 
+		builder.Services.AddSingleton<ILocalNodeHttpHandlerFactory>(
+			new LocalNodeHttpHandlerFactory(KestrelHelpers.GetUnixSocketPath(hostedService)));
+
 		// last, so that it covers the host's hosted services as well as the node's
 		NodeWebApplication.LogHostedServiceLifecycle(builder.Services);
 
@@ -391,6 +395,10 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		NodeWebApplication.Configure(app, hostedService);
 
 		return app;
+	}
+
+	sealed class LocalNodeHttpHandlerFactory(string socketPath) : ILocalNodeHttpHandlerFactory {
+		public HttpMessageHandler CreateHandler() => UnixDomainSocket.CreateHandler(socketPath);
 	}
 
 	/// <summary>

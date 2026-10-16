@@ -19,6 +19,9 @@ public static class KestrelHelpers {
 	/// <summary>The file the node binds its UNIX domain socket to, inside the database directory.</summary>
 	public const string UnixSocketFileName = "kurrent.sock";
 
+	public static string GetUnixSocketPath(ClusterVNodeHostedService hostedService) =>
+		Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, UnixSocketFileName));
+
 	/// <returns>True if a UNIX domain socket was opened, with <paramref name="unixSocket"/> naming it.</returns>
 	public static bool TryConfigureListeners(
 		KestrelServerOptions server,
@@ -63,7 +66,7 @@ public static class KestrelHelpers {
 
 		try {
 			var legacyUnixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
-			unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, UnixSocketFileName));
+			unixSocket = GetUnixSocketPath(hostedService);
 
 			CleanupStaleSocket(legacyUnixSocket);
 			CleanupStaleSocket(unixSocket);
