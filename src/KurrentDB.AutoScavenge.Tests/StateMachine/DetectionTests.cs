@@ -112,7 +112,7 @@ public class DetectionTests {
 
 		simulator.Reacts(
 			Reacts.OnEvent<Events.NodeScavengeStarted>(@event => {
-				simulator.Scavenger.SetScavengeStatus(@event.ScavengeId, ScavengeStatus.Success);
+				simulator.LocalScavenger.SetScavengeStatus(@event.ScavengeId, ScavengeStatus.Success);
 			}));
 
 		await simulator.Run(tokenSource.Token);

@@ -28,7 +28,15 @@ public class Simulator {
 
 	public DateTime Now => Time.Now;
 
+	/// <summary>
+	/// Scavenges the other nodes of the cluster.
+	/// </summary>
 	public FakeScavenger Scavenger { get; } = new();
+
+	/// <summary>
+	/// Scavenges the node the state machine runs in.
+	/// </summary>
+	public FakeScavenger LocalScavenger { get; } = new();
 
 	public FakeOperationsClient OperationsClient { get; } = new();
 
@@ -36,7 +44,8 @@ public class Simulator {
 
 
 	public Simulator(int clusterSize) {
-		_machine = new AutoScavengeProcessManager(clusterSize, Time, _source, OperationsClient, Scavenger);
+		_machine = new AutoScavengeProcessManager(clusterSize, Time, _source, OperationsClient,
+			remoteScavenger: Scavenger, localScavenger: LocalScavenger);
 	}
 
 	/// <summary>

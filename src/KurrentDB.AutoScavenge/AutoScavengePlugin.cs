@@ -90,12 +90,22 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScave
 			var client = provider.GetRequiredService<IClient>();
 			var wrapper = provider.GetRequiredService<HttpClientWrapper>();
 			var dispatcher = provider.GetRequiredService<AutoScavengeClientDispatcher>();
+			var remoteScavenger = new HttpNodeScavenger(wrapper, client);
+
+			// only registered by a host that has a way for the node to reach itself other than the endpoint it
+			// advertises. Without one, that endpoint is how this node is reached, as any other node is.
+			var localNodeHttpHandlerFactory = provider.GetService<ILocalNodeHttpHandlerFactory>();
+			var localScavenger = localNodeHttpHandlerFactory is null
+				? remoteScavenger
+				: new HttpNodeScavenger(HttpClientWrapper.ForLocalNode(localNodeHttpHandlerFactory), client);
+
 			return new AutoScavengeService(
 				options: _options,
 				client: client,
 				operationsClient: provider.GetRequiredService<IOperationsClient>(),
 				commands: _commands,
-				scavenger: new HttpNodeScavenger(wrapper, client),
+				remoteScavenger: remoteScavenger,
+				localScavenger: localScavenger,
 				dispatcher,
 				cts: _cts);
 		});
