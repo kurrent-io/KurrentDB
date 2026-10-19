@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.2.
 
+## [26.2.3](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.3)
+
+19 October 2026
+
+### Subscriptions: Fixed error logs when a subscription ends because the node cannot serve it (PR [#5801](https://github.com/kurrent-io/KurrentDB/pull/5801))
+
+When a subscription ended because the node was not ready, too busy, or not the leader, the server logged an error with a full stack trace. It now logs a single warning with the reason, for example `Subscription ... terminated: Server is not ready.` Clients receive the same response as before.
+
 ## [26.2.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.2.2)
 
 7 October 2026
