@@ -589,11 +589,9 @@ public partial class TFChunk : IChunkBlob {
 
 	// we add an item to the pool because the pool being entirely empty means we may be uncaching (see GetReaderWorkItem)
 	// returns the number of readers created
-	private int CreateInMemReaderStreams() {
-		const int CountCreated = 1;
-		Interlocked.Add(ref _memStreamCount, CountCreated);
+	private void CreateInMemReaderStreams() {
+		Interlocked.Add(ref _memStreamCount, 1);
 		_memStreams.TryReturn(new(_sharedMemStream, _cachedDataTransformed ? _transform.Read : IdentityChunkReadTransform.Instance));
-		return CountCreated;
 	}
 
 	private async ValueTask CreateInMemChunk(ChunkHeader chunkHeader, int fileSize, ReadOnlyMemory<byte> transformHeader, CancellationToken token) {
@@ -898,11 +896,10 @@ public partial class TFChunk : IChunkBlob {
 			}
 
 			_sharedMemStream = CreateSharedMemoryStream();
-			var countCreated = CreateInMemReaderStreams();
+			CreateInMemReaderStreams();
 
 			if (_selfdestructin54321) {
-				if (Interlocked.Add(ref _memStreamCount, -countCreated) is 0)
-					FreeCachedDataUnsafe();
+				TryDestructMemStreamsUnsafe();
 				Log.Debug("CACHING ABORTED for TFChunk {chunk} as TFChunk was probably marked for deletion.", this);
 				return;
 			}
