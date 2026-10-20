@@ -4,6 +4,7 @@
 using System;
 using System.Buffers;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using DotNext.IO;
 using KurrentDB.Common.Utils;
 using KurrentDB.LogCommon;

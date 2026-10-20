@@ -19,7 +19,7 @@ public static class StatsSql {
 
 		public record struct Result(long StreamCount, long EventCount);
 
-		public static BindingContext Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
+		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
 
 		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(rowid)::bigint from idx_all"u8;
 
@@ -31,7 +31,7 @@ public static class StatsSql {
 
 		public record struct Result(long StreamCount, long EventCount);
 
-		public static BindingContext Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
+		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
 
 		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(rowid)::bigint from idx_all where category = $1"u8;
 
@@ -43,7 +43,7 @@ public static class StatsSql {
 
 		public record struct Result(string EventType, long NumEvents, DateTime FirstAdded, DateTime LastAdded);
 
-		public static BindingContext Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
+		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""

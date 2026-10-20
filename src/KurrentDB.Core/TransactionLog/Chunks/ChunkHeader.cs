@@ -133,7 +133,7 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 	}
 
 	public static async ValueTask<ChunkHeader> FromStream(Stream stream, CancellationToken token) {
-		using var buffer = Memory.AllocateExactly<byte>(Size);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(Size);
 		return await stream.ReadAsync<ChunkHeader>(buffer.Memory, token);
 	}
 

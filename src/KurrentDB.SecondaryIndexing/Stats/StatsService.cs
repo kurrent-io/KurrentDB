@@ -17,12 +17,6 @@ public class StatsService(DuckDBConnectionPool db) {
 		}
 	}
 
-	// note: very expensive. count(distinct stream) over idx_all
-	public (long StreamCount, long EventCount) GetTotalStats() {
-		var result = db.QueryFirstOrDefault<GetTotalStats.Result, GetTotalStats>();
-		return result == null ? (0, 0) : (result.Value.StreamCount, result.Value.EventCount);
-	}
-
 	// note: very expensive. count(distinct stream) over idx_all filtered by category
 	public List<GetCategoryStats.Result> GetCategoryStats(string category)
 		=> string.IsNullOrWhiteSpace(category)

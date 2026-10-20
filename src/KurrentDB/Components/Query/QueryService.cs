@@ -1,14 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dapper;
-using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
 namespace KurrentDB.Components.Query;
@@ -125,18 +123,5 @@ public static partial class QueryService {
 		[JsonPropertyName("error_message")] public string ErrorMessage { get; init; } = "";
 		[JsonPropertyName("error_subtype")] public string ErrorSubtype { get; init; } = "";
 		[JsonPropertyName("position")] public string Position { get; init; }
-	}
-
-	public struct Sql2Json : IQuery<Sql2Json.Args, Sql2Json.Result> {
-		public record struct Args(string Sql);
-
-		public record struct Result(string Json);
-
-		public static BindingContext Bind(in Args args, PreparedStatement statement)
-			=> new(statement) { args.Sql };
-
-		public static ReadOnlySpan<byte> CommandText => "select json_serialize_sql($1::varchar)"u8;
-
-		public static Result Parse(ref DataChunk.Row row) => new(row.TryReadString());
 	}
 }

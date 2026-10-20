@@ -114,7 +114,7 @@ public interface IChunkHandle : IFlushable, IDisposable {
 			} else {
 				// Do sync over async without any optimizations to make it just works.
 				// In practice, no one should call synchronous write
-				var bufferCopy = Memory.AllocateExactly<byte>(buffer.Length);
+				var bufferCopy = MemoryAllocator<byte>.Default.AllocateExactly(buffer.Length);
 				var timeoutToken = GetTimeoutToken(ReadTimeout);
 				var task = ReadAsync(bufferCopy.Memory, offset, timeoutToken);
 				try {

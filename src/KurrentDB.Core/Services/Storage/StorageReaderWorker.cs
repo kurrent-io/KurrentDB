@@ -48,7 +48,7 @@ public partial class StorageReaderWorker<TStreamId> :
 	private const int MaxPageSize = 4096;
 
 	private readonly Message _scheduleBatchPeriodCompletion;
-	private Atomic.Boolean _expiryPeriodRunning;
+	private bool _expiryPeriodRunning;
 	private long _messagesExpiredInPeriod;
 
 	public StorageReaderWorker(
@@ -156,7 +156,7 @@ public partial class StorageReaderWorker<TStreamId> :
 	}
 
 	public void Handle(StorageMessage.BatchLogExpiredMessages message) {
-		_expiryPeriodRunning.Value = false;
+		Volatile.Write(ref _expiryPeriodRunning, false);
 		var count = Interlocked.Exchange(ref _messagesExpiredInPeriod, 0);
 		Log.Warning("StorageReader {0} read operations expired during the period", count);
 	}
@@ -171,7 +171,7 @@ public partial class StorageReaderWorker<TStreamId> :
 		if (count == MaxDetailedExpiriesPerPeriod + 1)
 			Log.Warning("StorageReaderWorker: High rate of expired read messages detected. Stopping detailed expiry logs for remainder of period.");
 
-		if (_expiryPeriodRunning.FalseToTrue())
+		if (Interlocked.FalseToTrue(ref _expiryPeriodRunning))
 			_publisher.Publish(_scheduleBatchPeriodCompletion);
 
 		return count <= MaxDetailedExpiriesPerPeriod;
