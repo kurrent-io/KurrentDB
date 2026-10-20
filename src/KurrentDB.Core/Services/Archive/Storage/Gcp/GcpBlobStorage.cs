@@ -46,7 +46,7 @@ public class GcpBlobStorage : IBlobStorage {
 					Range = GetRange(offset, buffer.Length)
 				}, cancellationToken: ct);
 
-			return (int)destination.Length; // the cast is safe, because Stream.Length cannot be greater than Memory<byte>.Length
+			return (int)destination.Position; // the cast is safe, because Stream.Position cannot be greater than Memory<byte>.Length
 		} catch (GoogleApiException ex) when (
 			ex.HttpStatusCode is HttpStatusCode.NotFound &&
 			ex.Error.ErrorResponseContent.StartsWith("No such object:")) {
