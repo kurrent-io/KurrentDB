@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Core.Services.Archive.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -56,12 +57,11 @@ class ArchiveReaderEmptyChunks(long chunkSize, long chunksInArchive) : IArchiveS
 			logicalDataSize: chunkSize,
 			mapSize: 0);
 
-		using var wholeChunkFile = Memory.AllocateExactly<byte>(FileSize);
+		using var wholeChunkFile = MemoryAllocator<byte>.Default.AllocateExactly(FileSize);
 		SpanWriter<byte> writer = new(wholeChunkFile.Span);
 		writer.Write(header);
 		writer.Write(footer);
 
-		wholeChunkFile.Span[(int)offset..].CopyTo(buffer.Span, out var writtenCount);
-		return writtenCount;
+		return wholeChunkFile.Span[(int)offset..] >>> buffer.Span;
 	}
 }

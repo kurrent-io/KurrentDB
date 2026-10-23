@@ -47,7 +47,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private ulong _sequenceId;
 	private TFPos _lastPosition;
 	private Appender _appender;
-	private Atomic.Boolean _committing;
+	private bool _committing;
 
 	public string IndexName { get; }
 
@@ -127,15 +127,15 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
 		using (var row = _appender.CreateRow()) {
-			row.Append(preparePosition);
+			row.Add(preparePosition);
 
 			if (commitPosition.HasValue && preparePosition != commitPosition)
-				row.Append(commitPosition.Value);
+				row.Add(commitPosition.Value);
 			else
-				row.Append(DBNull.Value);
+				row.Add(DBNull.Value);
 
-			row.Append(eventNumber);
-			row.Append(created);
+			row.Add(eventNumber);
+			row.Add(created);
 			field?.AppendTo(row);
 		}
 
@@ -223,7 +223,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	/// </summary>
 	/// <param name="clearInflight">Tells you whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
 	private void Commit(bool clearInflight) {
-		if (IsDisposed || !_committing.FalseToTrue())
+		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
@@ -234,7 +234,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			_log.LogUserIndexFailedToCommit(ex, IndexName, _inFlightRecords.Count);
 			throw;
 		} finally {
-			_committing.TrueToFalse();
+			Volatile.Write(ref _committing, false);
 		}
 
 		if (clearInflight) {

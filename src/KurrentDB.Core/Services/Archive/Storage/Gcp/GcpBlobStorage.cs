@@ -5,11 +5,8 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext;
-using DotNext.Buffers;
 using DotNext.IO;
 using Google;
 using Google.Cloud.Storage.V1;
@@ -39,7 +36,7 @@ public class GcpBlobStorage : IBlobStorage {
 		if (buffer.IsEmpty)
 			return 0;
 
-		var destination = StreamSource.AsSynchronousStream(new MemoryWriter(buffer));
+		var destination = Stream.Create(buffer);
 		try {
 			await _storageClient.DownloadObjectAsync(
 				bucket: _options.Bucket,
@@ -49,7 +46,7 @@ public class GcpBlobStorage : IBlobStorage {
 					Range = GetRange(offset, buffer.Length)
 				}, cancellationToken: ct);
 
-			return (int)destination.Length; // the cast is safe, because Stream.Length cannot be greater than Memory<byte>.Length
+			return (int)destination.Position; // the cast is safe, because Stream.Position cannot be greater than Memory<byte>.Length
 		} catch (GoogleApiException ex) when (
 			ex.HttpStatusCode is HttpStatusCode.NotFound &&
 			ex.Error.ErrorResponseContent.StartsWith("No such object:")) {
@@ -86,34 +83,4 @@ public class GcpBlobStorage : IBlobStorage {
 	private static RangeHeaderValue GetRange(long offset, int length) => new(
 		from: offset,
 		to: offset + length - 1L);
-
-	[StructLayout(LayoutKind.Auto)]
-	private struct MemoryWriter(Memory<byte> output) : IReadOnlySpanConsumer<byte>, IFlushable {
-		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> input) => Copy(input);
-
-		// We need to replace default interface implementation because .NET Runtime
-		// causes boxing when calling default impl on structs
-		ValueTask ISupplier<ReadOnlyMemory<byte>, CancellationToken, ValueTask>.
-			Invoke(ReadOnlyMemory<byte> input, CancellationToken token) {
-			var task = ValueTask.CompletedTask;
-			try {
-				Copy(input.Span);
-			} catch (Exception e) {
-				task = ValueTask.FromException(e);
-			}
-
-			return task;
-		}
-
-		private void Copy(ReadOnlySpan<byte> input) {
-			input.CopyTo(output.Span);
-			output = output.Slice(input.Length);
-		}
-
-		readonly void IFlushable.Flush() {
-			// nothing to do
-		}
-
-		readonly Task IFlushable.FlushAsync(CancellationToken token) => Task.CompletedTask;
-	}
 }

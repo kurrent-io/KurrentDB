@@ -11,7 +11,7 @@ internal static class CategorySql {
 	/// Get index records for a given category where log position is greater the start position
 	/// </summary>
 	public struct CategoryIndexQueryExcl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Category,
 				args.StartPosition,
@@ -29,7 +29,7 @@ internal static class CategorySql {
 	/// Get index records for a given category where the log position is greater or equal the start position
 	/// </summary>
 	public struct CategoryIndexQueryIncl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Category,
 				args.StartPosition,
@@ -47,7 +47,7 @@ internal static class CategorySql {
 	/// Get index records for a given category where log position is less the start position
 	/// </summary>
 	public struct CategoryIndexBackQueryExcl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Category,
 				args.StartPosition,
@@ -64,7 +64,7 @@ internal static class CategorySql {
 	/// Get index records for a given category where the log position is less or equal the start position
 	/// </summary>
 	public struct CategoryIndexBackQueryIncl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Category,
 				args.StartPosition,

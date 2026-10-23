@@ -23,7 +23,7 @@ public class ArchiveStorage(
 
 	public async ValueTask<long> GetCheckpoint(CancellationToken ct) {
 		try {
-			using var buffer = Memory.AllocateExactly<byte>(sizeof(long));
+			using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(sizeof(long));
 			await blobStorage.ReadAsync(archiveCheckpointFile, buffer.Memory, offset: 0, ct);
 			var checkpoint = BinaryPrimitives.ReadInt64LittleEndian(buffer.Span);
 			return checkpoint;
@@ -52,8 +52,8 @@ public class ArchiveStorage(
 	}
 
 	public async ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) {
-		var buffer = Memory.AllocateExactly<byte>(sizeof(long));
-		var stream = StreamSource.AsStream(buffer.Memory);
+		var buffer = MemoryAllocator<byte>.Default.AllocateExactly(sizeof(long));
+		var stream = Stream.Create(buffer.Memory);
 		try {
 			BinaryPrimitives.WriteInt64LittleEndian(buffer.Span, checkpoint);
 			await blobStorage.StoreAsync(stream, archiveCheckpointFile, ct);

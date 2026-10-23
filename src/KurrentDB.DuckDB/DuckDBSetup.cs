@@ -12,10 +12,10 @@ public interface IDuckDBSetup {
 }
 
 public abstract class DuckDBOneTimeSetup : IDuckDBSetup {
-	private Atomic.Boolean _created;
+	private bool _created;
 
 	public void Execute(DuckDBConnection connection) {
-		if (!_created.FalseToTrue()) {
+		if (!Interlocked.FalseToTrue(ref _created)) {
 			return;
 		}
 		ExecuteCore(connection);

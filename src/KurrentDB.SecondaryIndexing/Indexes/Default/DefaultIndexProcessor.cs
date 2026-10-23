@@ -88,26 +88,26 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		using (var row = _appender.CreateRow()) {
-			row.Append(logPosition);
+			row.Add(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition)
-				row.Append(commitPosition.Value);
+				row.Add(commitPosition.Value);
 			else
-				row.Append(DBNull.Value);
-			row.Append(eventNumber);
-			row.Append(created);
-			row.Append(DBNull.Value); // expires
-			row.Append(stream);
-			row.Append(streamHash);
-			row.Append(schemaName);
-			row.Append(category);
-			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
+				row.Add(DBNull.Value);
+			row.Add(eventNumber);
+			row.Add(created);
+			row.Add(DBNull.Value); // expires
+			row.Add(stream);
+			row.Add(streamHash);
+			row.Add(schemaName);
+			row.Add(category);
+			row.Add(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 			if (schemaId != null) {
-				row.Append(schemaId);
+				row.Add(schemaId);
 			} else {
-				row.Append(DBNull.Value);
+				row.Add(DBNull.Value);
 			}
 
-			row.Append(schemaFormat);
+			row.Add(schemaFormat);
 		}
 
 		_inFlightRecords.Append(logPosition, commitPosition ?? logPosition, category, schemaName, resolvedEvent.Event.EventStreamId,
@@ -130,16 +130,15 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public TFPos GetLastPosition() => LastIndexedPosition;
 
 	private (TFPos, DateTimeOffset) ReadLastIndexedRecord() {
-		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null
-			? (new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition),
-				DateTimeOffset.FromUnixTimeMilliseconds(result.Value.Timestamp))
+		return _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().TryGet(out var result)
+			? (new(result.CommitPosition ?? result.PreparePosition, result.PreparePosition),
+				DateTimeOffset.FromUnixTimeMilliseconds(result.Timestamp))
 			: (TFPos.Invalid, DateTimeOffset.MinValue);
 	}
 
 	public SecondaryIndexProgressTracker Tracker { get; }
 
-	private Atomic.Boolean _committing;
+	private bool _committing;
 
 	public void Commit() => Commit(true);
 
@@ -148,7 +147,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	/// </summary>
 	/// <param name="clearInflight">Tells you whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
 	internal void Commit(bool clearInflight) {
-		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
+		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
@@ -159,7 +158,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 				_inFlightRecords.Count, LastIndexedPosition);
 			throw;
 		} finally {
-			_committing.TrueToFalse();
+			Volatile.Write(ref _committing, false);
 		}
 
 		if (clearInflight) {

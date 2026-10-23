@@ -63,7 +63,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 	private async ValueTask<FileStream> CreateFile(string fileName, int fileSize) {
 		var path = Path.Combine(LocalPath, fileName);
-		using var content = Memory.AllocateExactly<byte>(fileSize);
+		using var content = MemoryAllocator<byte>.Default.AllocateExactly(fileSize);
 		RandomNumberGenerator.Fill(content.Span);
 		var fs = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 512,
 			FileOptions.Asynchronous);
@@ -92,7 +92,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 		var localContent = await File.ReadAllBytesAsync(localPath);
 
 		// read the uploaded file
-		using var buffer = Memory.AllocateExactly<byte>(fileSize);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(fileSize);
 		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: 0, CancellationToken.None);
 
 		// then
@@ -122,7 +122,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 		var start = localContent.Length / 2;
 		var end = localContent.Length;
 		var length = end - start;
-		using var buffer = Memory.AllocateExactly<byte>(length);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(length);
 		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
 
 		// then
@@ -150,7 +150,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 		// read the uploaded file partially with a buffer that goes past the end of the file
 		var start = localContent.Length / 2;
-		using var buffer = Memory.AllocateExactly<byte>(localContent.Length);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(localContent.Length);
 		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
 
 		// then
@@ -178,7 +178,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 		// read past the end of the uploaded file
 		var start = localContent.Length;
-		using var buffer = Memory.AllocateExactly<byte>(localContent.Length);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(localContent.Length);
 		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
 
 		// then
