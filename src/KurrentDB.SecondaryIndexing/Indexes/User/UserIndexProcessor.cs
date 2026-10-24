@@ -213,19 +213,17 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 		(TFPos pos, DateTimeOffset timestamp) result = (TFPos.Invalid, DateTimeOffset.MinValue);
 
 		var checkpointArgs = new GetCheckpointQueryArgs(IndexName);
-		var checkpoint = _sql.GetCheckpoint(_connection, checkpointArgs);
-		if (checkpoint != null) {
-			var pos = new TFPos(checkpoint.Value.CommitPosition ?? checkpoint.Value.PreparePosition, checkpoint.Value.PreparePosition);
-			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(checkpoint.Value.Timestamp);
+		if (UserIndexSql.GetCheckpoint(_connection, checkpointArgs) is { } checkpoint) {
+			var pos = new TFPos(checkpoint.CommitPosition ?? checkpoint.PreparePosition, checkpoint.PreparePosition);
+			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(checkpoint.Timestamp);
 			_log.LogUserIndexLoadedCheckpoint(IndexName, pos, timestamp);
 
 			result = (pos, timestamp);
 		}
 
-		var lastIndexed = _sql.GetLastIndexedRecord(_connection);
-		if (lastIndexed != null) {
-			var pos = new TFPos(lastIndexed.Value.CommitPosition ?? lastIndexed.Value.PreparePosition, lastIndexed.Value.PreparePosition);
-			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(lastIndexed.Value.Timestamp);
+		if (_sql.GetLastIndexedRecord(_connection) is { } lastIndexed) {
+			var pos = new TFPos(lastIndexed.CommitPosition ?? lastIndexed.PreparePosition, lastIndexed.PreparePosition);
+			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(lastIndexed.Timestamp);
 			_log.LogUserIndexLoadedLastIndexedPosition(IndexName, pos, timestamp);
 
 			if (pos > result.pos)
