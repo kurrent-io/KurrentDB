@@ -6,6 +6,34 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.0.
 
+## [26.0.4](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.4)
+
+27 October 2026
+
+### Increased the maximum number of chunks (PR [#5721](https://github.com/kurrent-io/KurrentDB/pull/5721))
+
+A database can now contain up to 600,000 logical chunks, raised from 400,000. With the default chunk size this increases the maximum logical size of the transaction log from approximately 100 TiB to 150 TiB. As before, the server logs warnings and then errors as the database approaches the limit, and shuts down if the limit is reached.
+
+### Projections: Fixed projections stalling after a failed checkpoint write (PR [#5702](https://github.com/kurrent-io/KurrentDB/pull/5702))
+
+A projection whose checkpoint write did not succeed, for example because it timed out while the node was under load, stopped processing events entirely. The projection neither retried the write nor faulted: it stayed in the `Writing` state indefinitely, with only an `Error while processing message ... in queued handler 'Projection Core #N'` entry in the log to indicate a problem, and had to be restarted to recover. The fix restores the original behavior: the checkpoint write is retried, and the projection is faulted once the retries are exhausted. This regression was introduced in 25.1.0.
+
+### Persistent Subscriptions: Fixed consumers stalling after a failed parked message write (PR [#5702](https://github.com/kurrent-io/KurrentDB/pull/5702))
+
+When a message could not be written to a subscription's parked message stream, the write was not retried and the consumer permanently lost one of its in-flight message slots. After enough failures the consumer stopped receiving messages altogether until it reconnected. Affected messages never reached the parked stream, and because the subscription checkpoint had already advanced past them, they were lost if the node restarted before the consumer reconnected. As before the regression, the write is retried, and exhausting the retries is reported with a `Possible message loss` error. This regression was introduced in 25.1.0.
+
+### Connectors: Fixed sink resource cleanup when a connector stops unexpectedly
+
+Connectors now release their sink resources on every stop path, including a processing error or a leadership change. Previously, cleanup only ran when a connector was stopped through the API.
+
+### Connectors: Fixed connectors failing after reading a large number of events (PR [#5768](https://github.com/kurrent-io/KurrentDB/pull/5768))
+
+After the leader had read roughly 500 million events, it stopped managing connectors with a `Position tracker capacity would exceed maximum (1000000)` error, and ignored requests to start or stop connectors until it was restarted or a new leader was elected. Sink connectors with a JsonPath filter had a related problem: they stopped saving their checkpoint at the first event the filter skipped, so they redelivered events after a restart and eventually failed with the same error. Both now run indefinitely and keep their checkpoints up to date.
+
+### Connectors: Reduced disk reads after leader election (PR [#5769](https://github.com/kurrent-io/KurrentDB/pull/5769))
+
+When a node becomes leader, it reads the log to determine which connectors should be running. Previously, it could reread a large portion of the log after each election, even when no connectors had changed or none were configured. The leader now records its progress regularly, so a new leader only reads recent events. The first election after upgrading may still read from the last recorded position.
+
 ## [26.0.3](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.3)
 
 13 May 2026
