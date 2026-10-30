@@ -150,8 +150,9 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 
 		public static StateHandle Allocate(string? state) {
 			var length = state is null ? 0 : Encoding.UTF8.GetByteCount(state);
-			var header = new Pointer<Header>(Marshal.AllocHGlobal(Unsafe.SizeOf<Header>() + length));
-			header.Value = new() { Length = state is null ? NullLength : length };
+			var header = new Pointer<Header>(Marshal.AllocHGlobal(Unsafe.SizeOf<Header>() + length)) {
+				Value = new() { Length = state is null ? NullLength : length }
+			};
 			var handle = new StateHandle(header);
 			if (state is not null)
 				Encoding.UTF8.GetBytes(state, handle.Payload);
