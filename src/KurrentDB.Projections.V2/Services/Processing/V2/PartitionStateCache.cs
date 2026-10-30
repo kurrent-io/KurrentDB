@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.Caching;
+using DotNext.Threading;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
@@ -34,8 +35,8 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 		};
 	}
 
-	public long Evictions => Interlocked.Read(ref _evictions);
-	public long Count => Interlocked.Read(ref _count);
+	public long Evictions => Atomic.Read(ref _evictions);
+	public long Count => Atomic.Read(ref _count);
 
 	public bool TryGet(string key, out string? value) {
 		if (_cache.TryRead(key, out var session)) {
