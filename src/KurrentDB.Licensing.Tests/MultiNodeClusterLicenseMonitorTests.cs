@@ -38,6 +38,17 @@ public sealed class MultiNodeClusterLicenseMonitorTests {
 	}
 
 	[Fact]
+	public async Task given_cluster_when_rejected_then_message_links_to_announcement() {
+		var rejection = await MonitorAsync(
+			isSingleNode: false,
+			new FakeLicenseService("SOME_OTHER_ENTITLEMENT"),
+			RejectionTimeout);
+
+		Assert.NotNull(rejection);
+		Assert.Contains(MultiNodeClusterLicenseMonitor.AnnouncementUrl, rejection.Message);
+	}
+
+	[Fact]
 	public async Task given_single_node_when_license_without_entitlement_then_does_not_reject() {
 		Assert.Null(await MonitorAsync(
 			isSingleNode: true,
