@@ -417,6 +417,15 @@ public class PersistentSubscription {
 		}
 	}
 
+	// Removes the consumer from the consumer pool but keeps the client around
+	// so its in-flight events can still be acked or nacked over the open
+	// connection. New events are routed only to the remaining active consumers.
+	public bool StopClient(Guid correlationId) {
+		lock (_lock) {
+			return _pushClients.StopClient(correlationId);
+		}
+	}
+
 	public void TryMarkCheckpoint(bool isTimeCheck) {
 		lock (_lock) {
 			if (!TryGetStreamBuffer(out var streamBuffer))
