@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
@@ -15,6 +16,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.Settings;
 using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
+using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToIndexCompleted;
 using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.AllOptionOneofCase;
@@ -118,6 +120,48 @@ internal partial class PersistentSubscriptions {
 					_ => throw InvalidArgument(request.Options.All.FilterOptionCase)
 				};
 
+				// Detect index-targeted filter and route to index service
+				if (request.Options.All.FilterOptionCase == CreateReq.Types.AllOptions.FilterOptionOneofCase.Filter) {
+					var f = request.Options.All.Filter;
+					var isStreamId = f.FilterCase == CreateReq.Types.AllOptions.Types.FilterOptions.FilterOneofCase.StreamIdentifier;
+					if (FilterRouting.TryGetIndexName(
+						isStreamId,
+						isStreamId ? f.StreamIdentifier.Regex : null,
+						isStreamId ? (IReadOnlyList<string>)f.StreamIdentifier.Prefix : [],
+						out var indexName)) {
+						streamId = indexName;
+						_publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToIndex(
+							correlationId,
+							correlationId,
+							new CallbackEnvelope(HandleCreatePersistentSubscriptionCompleted),
+							request.Options.GroupName,
+							indexName,
+							settings.ResolveLinks,
+							new TFPos(startPosition.ToInt64().commitPosition, startPosition.ToInt64().preparePosition),
+							settings.MessageTimeoutCase switch {
+								MessageTimeoutOneofCase.MessageTimeoutMs => settings.MessageTimeoutMs,
+								MessageTimeoutOneofCase.MessageTimeoutTicks => (int)TimeSpan.FromTicks(settings.MessageTimeoutTicks).TotalMilliseconds,
+								_ => 0
+							},
+							settings.ExtraStatistics,
+							settings.MaxRetryCount,
+							settings.HistoryBufferSize,
+							settings.LiveBufferSize,
+							settings.ReadBatchSize,
+							settings.CheckpointAfterCase switch {
+								CheckpointAfterOneofCase.CheckpointAfterMs => settings.CheckpointAfterMs,
+								CheckpointAfterOneofCase.CheckpointAfterTicks => (int)TimeSpan.FromTicks(settings.CheckpointAfterTicks).TotalMilliseconds,
+								_ => 0
+							},
+							settings.MinCheckpointCount,
+							settings.MaxCheckpointCount,
+							settings.MaxSubscriberCount,
+							consumerStrategy,
+							user));
+						break;
+					}
+				}
+
 				streamId = SystemStreams.AllStream;
 				_publisher.Publish(
 					new ClientMessage.CreatePersistentSubscriptionToAll(
@@ -171,6 +215,35 @@ internal partial class PersistentSubscriptions {
 		void HandleCreatePersistentSubscriptionCompleted(Message message) {
 			if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 				createPersistentSubscriptionSource.TrySetException(ex);
+				return;
+			}
+
+			if (SystemStreams.IsIndexStream(streamId)) {
+				if (message is ClientMessage.CreatePersistentSubscriptionToIndexCompleted completedIndex) {
+					switch (completedIndex.Result) {
+						case CreatePersistentSubscriptionToIndexResult.Success:
+							createPersistentSubscriptionSource.TrySetResult(new CreateResp());
+							return;
+						case CreatePersistentSubscriptionToIndexResult.Fail:
+							createPersistentSubscriptionSource.TrySetException(
+								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completedIndex.Reason)
+							);
+							return;
+						case CreatePersistentSubscriptionToIndexResult.AlreadyExists:
+							createPersistentSubscriptionSource.TrySetException(PersistentSubscriptionExists(streamId, request.Options.GroupName));
+							return;
+						case CreatePersistentSubscriptionToIndexResult.AccessDenied:
+							createPersistentSubscriptionSource.TrySetException(AccessDenied());
+							return;
+						default:
+							createPersistentSubscriptionSource.TrySetException(UnknownError(completedIndex.Result));
+							return;
+					}
+				}
+
+				createPersistentSubscriptionSource.TrySetException(
+					UnknownMessage<ClientMessage.CreatePersistentSubscriptionToIndexCompleted>(message)
+				);
 				return;
 			}
 
