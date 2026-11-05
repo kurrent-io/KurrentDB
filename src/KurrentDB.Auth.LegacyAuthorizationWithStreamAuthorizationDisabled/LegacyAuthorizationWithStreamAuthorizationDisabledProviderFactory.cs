@@ -94,6 +94,8 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.Add(Operations.Users.Read, new OrAssertion(isAdmin, matchUsername));
 		policy.Add(Operations.Users.ChangePassword, matchUsername);
 
+		policy.Add(Operations.AuthorizationPolicies.Read, isAdmin);
+		policy.Add(Operations.AuthorizationPolicies.Update, isAdmin);
 
 		policy.RequireAuthenticated(Operations.Projections.List);
 
