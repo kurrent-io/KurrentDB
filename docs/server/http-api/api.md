@@ -564,7 +564,7 @@ Returns all subscriptions from all streams.
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistant subscription|None|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistent subscription|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 |401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
 
@@ -706,7 +706,7 @@ curl -X POST https://kurrent.io/subscriptions/{stream}/{subscription} \
 ```
 
  `POST /subscriptions/{stream}/{subscription}`
-*Update a persistant subscription*
+*Update a persistent subscription*
 
 You can edit the settings of an existing subscription while it is running. This will drop the current subscribers and will reset the subscription internally.
 
@@ -922,7 +922,7 @@ Clients must acknowledge (or not acknowledge) messages in the competing consumer
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistant subscription|None|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistent subscription|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 |401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
 
@@ -960,7 +960,7 @@ Clients must acknowledge (or not acknowledge) messages in the competing consumer
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistant subscription|None|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistent subscription|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 |401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
 
@@ -1008,7 +1008,7 @@ Clients must acknowledge (or not acknowledge) messages in the competing consumer
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistant subscription|None|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistent subscription|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 |401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
 
@@ -1056,7 +1056,7 @@ Clients must acknowledge (or not acknowledge) messages in the competing consumer
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistant subscription|None|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|New persistent subscription|None|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 |401|[Unauthorized](https://tools.ietf.org/html/rfc7235#section-3.1)|Unauthorized|None|
 
