@@ -3,8 +3,12 @@
 
 namespace KurrentDB.SecondaryIndexing.Query;
 
-partial class QueryEngine : IDatabaseSchemaProvider {
+partial class QueryEngine {
+	private const string SystemSchema = "kdb";
+	private const string UserIndicesSchema = "usr";
+	private const string DefaultIndexTableName = "records";
+
 	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => userIndex.Indices
-		.Select(static indexName => new TableInfo { Schema = UserIndicesSchema, Name = indexName })
-		.Append(new() { Schema = SystemSchema, Name = DefaultIndexTableName });
+		.Select(static indexName => new TableInfo(UserIndicesSchema, indexName))
+		.Append(new(SystemSchema, DefaultIndexTableName));
 }

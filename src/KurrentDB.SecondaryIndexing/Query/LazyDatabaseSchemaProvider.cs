@@ -10,7 +10,7 @@ namespace KurrentDB.SecondaryIndexing.Query;
 internal sealed class LazyDatabaseSchemaProvider(IServiceProvider provider) : IDatabaseSchemaProvider {
 	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	private IDatabaseSchemaProvider Provider
-		=> field ??= provider.GetRequiredService<QueryEngine>();
+		=> field ??= provider.GetRequiredService<IQueryEngine>();
 
 	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => Provider.Tables;
 }

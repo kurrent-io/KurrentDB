@@ -14,11 +14,6 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Query;
 
 partial class QueryEngine {
-	private const string SystemSchema = "kdb";
-	private const string UserIndicesSchema = "usr";
-	private const string DefaultIndexTableName = "records";
-	private const string DefaultIndexTableFullName = $"{SystemSchema}.{DefaultIndexTableName}";
-
 	private const string CatalogNameProperty = "catalog_name";
 	private const string SchemaNameProperty = "schema_name";
 	private const string TableNameProperty = "table_name";
