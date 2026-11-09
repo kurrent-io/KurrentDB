@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.XUnit.Tests;
+using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -17,7 +18,7 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 
 		DuckDb = new($"Data Source={dbPath};");
 
-		var schema = new IndexingDbSchema(GetEvents);
+		var schema = new IndexingDbSchema(GetEvents, new FakeDatabaseSchemaProvider());
 		using (DuckDb.Rent(out var connection)) {
 			schema.Execute(connection);
 		}
@@ -36,4 +37,8 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 		DuckDb.Dispose();
 		await base.DisposeAsync();
 	}
+}
+
+file sealed class FakeDatabaseSchemaProvider : IDatabaseSchemaProvider {
+	IEnumerable<string> IDatabaseSchemaProvider.Tables => [];
 }

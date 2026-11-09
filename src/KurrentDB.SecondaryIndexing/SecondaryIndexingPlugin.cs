@@ -55,6 +55,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<UserIndexStreamNameMap>();
 		services.AddSingleton<UserIndexQueryService>();
 		services.AddSingleton<QueryEngine>();
+		services.AddSingleton<IDatabaseSchemaProvider, LazyDatabaseSchemaProvider>();
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();

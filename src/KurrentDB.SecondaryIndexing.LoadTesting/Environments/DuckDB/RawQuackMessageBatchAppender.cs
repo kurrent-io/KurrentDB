@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -25,7 +26,9 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 	public RawQuackMessageBatchAppender(DuckDBConnectionPool db, DuckDbTestEnvironmentOptions options) {
 		_commitSize = options.CommitSize;
-		var schema = new IndexingDbSchema(static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator());
+		var schema = new IndexingDbSchema(
+			static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator(),
+			new FakeDatabaseSchemaProvider());
 
 		using (db.Rent(out var rentedConn)) {
 			schema.Execute(rentedConn);
