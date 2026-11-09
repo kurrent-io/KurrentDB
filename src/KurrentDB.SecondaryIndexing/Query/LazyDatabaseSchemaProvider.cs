@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics;
+using Apache.Arrow;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing.Query;
@@ -13,4 +14,6 @@ internal sealed class LazyDatabaseSchemaProvider(IServiceProvider provider) : ID
 		=> field ??= provider.GetRequiredService<IQueryEngine>();
 
 	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => Provider.Tables;
+
+	Schema IDatabaseSchemaProvider.GetTableSchema(TableInfo table) => Provider.GetTableSchema(table);
 }

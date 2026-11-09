@@ -41,4 +41,8 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 
 file sealed class FakeDatabaseSchemaProvider : IDatabaseSchemaProvider {
 	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => [];
+
+	// there are no tables, so no table can be asked for
+	Apache.Arrow.Schema IDatabaseSchemaProvider.GetTableSchema(TableInfo table)
+		=> throw new NotSupportedException($"Table {table} doesn't exist");
 }
