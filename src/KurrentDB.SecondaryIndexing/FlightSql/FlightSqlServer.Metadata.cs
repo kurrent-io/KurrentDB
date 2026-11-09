@@ -22,11 +22,11 @@ partial class FlightSqlServer {
 		=> new(schema, descriptor, [new FlightEndpoint(new FlightTicket(PackToAny(command)), [])]);
 
 	private Task WriteDbSchemasAsync(CommandGetDbSchemas command, FlightServerRecordBatchStreamWriter writer) {
-		IEnumerable<string> schemas = MatchesCatalog(command.HasCatalog, command.Catalog)
+		IEnumerable<string> schemas = MatchesCatalog(command.Catalog)
 			? engine.Tables
 				.Select(static table => table.Schema)
 				.Distinct()
-				.Where(schema => MatchesPattern(command.HasDbSchemaFilterPattern, command.DbSchemaFilterPattern, schema))
+				.Where(schema => MatchesPattern(command.DbSchemaFilterPattern, schema))
 				.Order(StringComparer.Ordinal)
 			: [];
 
@@ -37,15 +37,16 @@ partial class FlightSqlServer {
 			schemaNames.Append(schema);
 		}
 
-		return WriteBatchAsync(writer, FlightSqlServerHelpers.DbSchemaFlightSchema, schemaNames.Length, catalogNames.Build(), schemaNames.Build());
+		return WriteBatchAsync(writer, FlightSqlServerHelpers.DbSchemaFlightSchema, schemaNames.Length, catalogNames.Build(),
+			schemaNames.Build());
 	}
 
 	private Task WriteTablesAsync(CommandGetTables command, FlightServerRecordBatchStreamWriter writer) {
-		IEnumerable<TableInfo> tables = MatchesCatalog(command.HasCatalog, command.Catalog)
+		IEnumerable<TableInfo> tables = MatchesCatalog(command.Catalog)
 		             && (command.TableTypes.Count is 0 || command.TableTypes.Contains(TableType))
 			? engine.Tables
-				.Where(table => MatchesPattern(command.HasDbSchemaFilterPattern, command.DbSchemaFilterPattern, table.Schema))
-				.Where(table => MatchesPattern(command.HasTableNameFilterPattern, command.TableNameFilterPattern, table.Name))
+				.Where(table => MatchesPattern(command.DbSchemaFilterPattern, table.Schema))
+				.Where(table => MatchesPattern(command.TableNameFilterPattern, table.Name))
 				.OrderBy(static table => table.Schema, StringComparer.Ordinal)
 				.ThenBy(static table => table.Name, StringComparer.Ordinal)
 			: [];
@@ -81,13 +82,13 @@ partial class FlightSqlServer {
 	}
 
 	// Tables have no catalog: an empty string filters for tables without one, the same as no filter
-	private static bool MatchesCatalog(bool hasCatalog, string catalog)
-		=> !hasCatalog || catalog.Length is 0;
+	private static bool MatchesCatalog(ReadOnlySpan<char> catalog)
+		=> catalog.IsEmpty;
 
 	// An empty pattern is the same as no pattern: some clients (e.g. FlightSqlClient.GetTablesAsync) send
 	// string.Empty instead of leaving the field unset, and no schema or table name is empty anyway
-	private static bool MatchesPattern(bool hasPattern, string pattern, string value)
-		=> !hasPattern || pattern.Length is 0 || IsLikeMatch(value, pattern);
+	private static bool MatchesPattern(ReadOnlySpan<char> pattern, ReadOnlySpan<char> value)
+		=> pattern.IsEmpty || IsLikeMatch(value, pattern);
 
 	// SQL LIKE semantics used by the Flight SQL filter patterns: '%' matches any substring,
 	// '_' matches any single character, '\' escapes the next character (JDBC search string escape)
