@@ -12,5 +12,5 @@ internal sealed class LazyDatabaseSchemaProvider(IServiceProvider provider) : ID
 	private IDatabaseSchemaProvider Provider
 		=> field ??= provider.GetRequiredService<QueryEngine>();
 
-	IEnumerable<string> IDatabaseSchemaProvider.Tables => Provider.Tables;
+	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => Provider.Tables;
 }

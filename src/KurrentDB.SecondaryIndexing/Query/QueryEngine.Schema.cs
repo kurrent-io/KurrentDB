@@ -4,7 +4,7 @@
 namespace KurrentDB.SecondaryIndexing.Query;
 
 partial class QueryEngine : IDatabaseSchemaProvider {
-	IEnumerable<string> IDatabaseSchemaProvider.Tables => userIndex.Indices
-		.Select(static indexName => string.Concat(UserIndicesSchema, ".", indexName))
-		.Append(DefaultIndexTableFullName);
+	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => userIndex.Indices
+		.Select(static indexName => new TableInfo { Schema = UserIndicesSchema, Name = indexName })
+		.Append(new() { Schema = SystemSchema, Name = DefaultIndexTableName });
 }

@@ -16,7 +16,7 @@ internal sealed class QueryTablesFunction(IDatabaseSchemaProvider provider) : Ta
 
 	protected override void Bind(BindingContext context) {
 		context.AddColumn("name"u8, DuckDBType.Varchar);
-		var tables = new List<string>(provider.Tables);
+		var tables = new List<string>(provider.Tables.Select(static info => info.FullName));
 		context.SetExpectedRowsCountHint(tables.Count, exact: true);
 		context.SetUserData(tables);
 	}
@@ -42,10 +42,9 @@ internal sealed class QueryTablesFunction(IDatabaseSchemaProvider provider) : Ta
 			column.SetValue(actualColumnCount, enumerator.Current);
 		}
 
-		if (actualColumnCount is 0) {
+		if (actualColumnCount is 0)
 			enumerator.Dispose();
-		} else {
-			builder.RowCount = actualColumnCount;
-		}
+
+		builder.RowCount = actualColumnCount;
 	}
 }

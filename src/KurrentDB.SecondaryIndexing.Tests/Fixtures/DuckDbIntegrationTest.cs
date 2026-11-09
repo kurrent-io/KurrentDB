@@ -40,5 +40,5 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 }
 
 file sealed class FakeDatabaseSchemaProvider : IDatabaseSchemaProvider {
-	IEnumerable<string> IDatabaseSchemaProvider.Tables => [];
+	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => [];
 }

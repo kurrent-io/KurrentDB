@@ -6,5 +6,5 @@ using KurrentDB.SecondaryIndexing.Query;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 
 internal sealed class FakeDatabaseSchemaProvider : IDatabaseSchemaProvider {
-	IEnumerable<string> IDatabaseSchemaProvider.Tables => [];
+	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => [];
 }
