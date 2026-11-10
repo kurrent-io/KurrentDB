@@ -3,7 +3,6 @@
 
 using System.Text;
 using Apache.Arrow;
-using DotNext;
 using DotNext.Buffers;
 using Kurrent.Quack;
 using Kurrent.Quack.Arrow;
@@ -33,15 +32,14 @@ partial class QueryEngine {
 			_ => throw new UnsupportedSchemaException(table.Schema),
 		};
 
-		// The buffer holds "SELECT * FROM <view>". The view name is encoded once, right after the prefix,
-		// so the same bytes are both the snapshot lookup key and the tail of the query.
-		var bufferSize = SelectQueryUtf8.Length + Encoding.UTF8.GetByteCount(viewName);
+		// The buffer holds 'SELECT * FROM "<view>"'. The view name is quoted because user index names may contain '-'
+		// (view names never contain '"', see UserIndexSql.GetViewNameFor). It is encoded once, between the quotes,
+		// so the unquoted bytes are the snapshot lookup key and the whole buffer is the query.
+		var bufferSize = SelectQueryUtf8.Length + Encoding.UTF8.GetByteCount(viewName) + 2;
 		using var buffer = (uint)bufferSize <= (uint)SpanOwner<byte>.StackallocThreshold
 			? stackalloc byte[bufferSize]
 			: new SpanOwner<byte>(bufferSize);
-		SelectQueryUtf8.CopyTo(buffer.Span);
-		var viewNameLength = Encoding.UTF8.GetBytes(viewName, buffer.Span.Slice(SelectQueryUtf8.Length));
-		ReadOnlySpan<byte> queryUtf8 = buffer.Span.Slice(0, SelectQueryUtf8.Length + viewNameLength);
+		var queryUtf8 = EncodeQuery(viewName, buffer.Span, out var viewNameUtf8);
 
 		using var rental = sharedPool.Rent(out var connection);
 		var options = connection.GetArrowOptions();
@@ -52,7 +50,7 @@ partial class QueryEngine {
 			// capture the snapshot the same way the query execution does, so the view binds identically
 			if (isDefaultIndex) {
 				snapshot.Snapshot = defaultIndex.CaptureSnapshot(connection);
-			} else if (!userIndex.TryCaptureSnapshot(queryUtf8.Slice(SelectQueryUtf8.Length), connection, out snapshot.ReadLock,
+			} else if (!userIndex.TryCaptureSnapshot(viewNameUtf8, connection, out snapshot.ReadLock,
 				           out snapshot.Snapshot)) {
 				throw new UserIndexNotFoundException(table.Name);
 			}
@@ -66,6 +64,22 @@ partial class QueryEngine {
 				snapshot.Dispose();
 
 			options.Dispose();
+		}
+
+		static ReadOnlySpan<byte> EncodeQuery(ReadOnlySpan<char> viewName, Span<byte> buffer, out ReadOnlySpan<byte> viewNameUtf8) {
+			const byte quote = (byte)'"';
+
+			var writer = new SpanWriter<byte>(buffer);
+			writer += SelectQueryUtf8;
+			writer += quote;
+
+			var viewNameOffset = writer.WrittenCount;
+			var viewNameLength = Encoding.UTF8.GetBytes(viewName, writer.RemainingSpan);
+			writer.Advance(viewNameLength);
+			writer += quote;
+
+			viewNameUtf8 = writer.WrittenSpan.Slice(viewNameOffset, viewNameLength);
+			return writer.WrittenSpan;
 		}
 	}
 }
