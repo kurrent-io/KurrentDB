@@ -94,10 +94,10 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		}
 	}
 
-	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery)
+	public Schema GetQuerySchema(ReadOnlySpan<byte> preparedQuery)
 		=> GetArrowSchema<Schema, StatementSchemaReflector>(preparedQuery);
 
-	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema) {
+	public Schema GetQuerySchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema) {
 		(var datasetSchema, parametersSchema) = GetArrowSchema<(Schema, Schema), StatementSchemaReflector>(preparedQuery);
 		return datasetSchema;
 	}

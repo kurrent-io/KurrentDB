@@ -8,23 +8,26 @@ using Kurrent.Quack.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.DuckDB;
+using KurrentDB.SecondaryIndexing.Query;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public partial class IndexingDbSchema(
 	Func<long[], ClaimsPrincipal, IEnumerator<ReadResponse>> eventsProvider,
+	IDatabaseSchemaProvider schemaProvider,
 	ILoggerFactory? loggerFactory = null) : DuckDBOneTimeSetup {
 	private static readonly Assembly Assembly = typeof(IndexingDbSchema).Assembly;
 
-	public IndexingDbSchema(IPublisher publisher)
-		: this(publisher.GetEnumerator) {
+	public IndexingDbSchema(IPublisher publisher, IDatabaseSchemaProvider schemaProvider)
+		: this(publisher.GetEnumerator, schemaProvider) {
 	}
 
 	protected override void ExecuteCore(DuckDBAdvancedConnection connection) {
 		BufferedView.EnableSupport(connection);
 		new Indexes.User.ExpandRecordFunction(eventsProvider).Register(connection);
 		new Indexes.Default.ExpandRecordFunction(eventsProvider).Register(connection);
+		new QueryTablesFunction(schemaProvider).Register(connection);
 
 		PerformMigration(connection, logger: loggerFactory);
 	}

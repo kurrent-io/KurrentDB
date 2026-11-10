@@ -1,0 +1,91 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using System.Text;
+using Apache.Arrow;
+using DotNext.Buffers;
+using Kurrent.Quack;
+using Kurrent.Quack.Arrow;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.User;
+using KurrentDB.SecondaryIndexing.Indexes.User.Management;
+
+namespace KurrentDB.SecondaryIndexing.Query;
+
+partial class QueryEngine {
+	private static ReadOnlySpan<byte> SelectQueryUtf8 => "SELECT * FROM "u8;
+
+	private const string SystemSchema = "kdb";
+	private const string UserIndicesSchema = "usr";
+	private const string DefaultIndexTableName = "records";
+
+	IEnumerable<TableInfo> IDatabaseSchemaProvider.Tables => userIndex.Indices
+		.Select(static indexName => new TableInfo(UserIndicesSchema, indexName))
+		.Append(new(SystemSchema, DefaultIndexTableName));
+
+	// Maps the table to its view directly instead of parsing and rewriting a query
+	Schema IDatabaseSchemaProvider.GetTableSchema(TableInfo table) {
+		var (viewName, isDefaultIndex) = table.Schema switch {
+			SystemSchema when table.Name is DefaultIndexTableName => (DefaultSql.DefaultIndexViewName, true),
+			SystemSchema => throw new UnsupportedSystemTableException(table.Name),
+			UserIndicesSchema => (UserIndexSql.GetViewNameFor(table.Name), false),
+			_ => throw new UnsupportedSchemaException(table.Schema),
+		};
+
+		// The buffer holds 'SELECT * FROM "<view>"'. The view name is quoted because user index names may contain '-'
+		// (view names never contain '"', see UserIndexSql.GetViewNameFor). It is encoded once, between the quotes,
+		// so the unquoted bytes are the snapshot lookup key and the whole buffer is the query.
+		// +2 for the quotes, +1 for the null terminator
+		var bufferSize = SelectQueryUtf8.Length + Encoding.UTF8.GetByteCount(viewName) + 3;
+		using var buffer = (uint)bufferSize <= (uint)SpanOwner<byte>.StackallocThreshold
+			? stackalloc byte[bufferSize]
+			: new SpanOwner<byte>(bufferSize);
+		var queryUtf8 = EncodeQuery(viewName, buffer.Span, out var viewNameUtf8);
+
+		using var rental = sharedPool.Rent(out var connection);
+		var options = connection.GetArrowOptions();
+		var snapshot = default(SnapshotInfo);
+		var hasSnapshot = false;
+		var statement = default(PreparedStatement);
+		try {
+			// capture the snapshot the same way the query execution does, so the view binds identically
+			if (isDefaultIndex) {
+				snapshot.Snapshot = defaultIndex.CaptureSnapshot(connection);
+			} else if (!userIndex.TryCaptureSnapshot(viewNameUtf8, connection, out snapshot.ReadLock,
+				           out snapshot.Snapshot)) {
+				throw new UserIndexNotFoundException(table.Name);
+			}
+
+			hasSnapshot = true;
+			statement = new(connection, queryUtf8);
+			return statement.GetArrowSchema(options);
+		} finally {
+			statement.Dispose();
+			if (hasSnapshot)
+				snapshot.Dispose();
+
+			options.Dispose();
+		}
+
+		static ReadOnlySpan<byte> EncodeQuery(ReadOnlySpan<char> viewName, Span<byte> buffer, out ReadOnlySpan<byte> viewNameUtf8) {
+			const byte quote = (byte)'"';
+
+			var writer = new SpanWriter<byte>(buffer);
+			writer += SelectQueryUtf8;
+			writer += quote;
+
+			var viewNameOffset = writer.WrittenCount;
+			var viewNameLength = Encoding.UTF8.GetBytes(viewName, writer.RemainingSpan);
+			writer.Advance(viewNameLength);
+			writer += quote;
+
+			// PreparedStatement passes only the pointer to duckdb_prepare, which reads a C string,
+			// so the query must be followed by a null terminator. It is not part of the returned span.
+			var queryLength = writer.WrittenCount;
+			writer += 0;
+
+			viewNameUtf8 = writer.WrittenSpan.Slice(viewNameOffset, viewNameLength);
+			return writer.WrittenSpan.Slice(0, queryLength);
+		}
+	}
+}

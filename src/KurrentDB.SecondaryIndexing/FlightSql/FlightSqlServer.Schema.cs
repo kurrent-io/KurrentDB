@@ -24,7 +24,7 @@ partial class FlightSqlServer {
 				buffer.Dispose();
 				buffer = tmp;
 
-				task = Task.FromResult(engine.GetArrowSchema(buffer.Span));
+				task = Task.FromResult(engine.GetQuerySchema(buffer.Span));
 			} catch (Exception e) {
 				task = Task.FromException<Schema>(e);
 			} finally {
