@@ -7,6 +7,7 @@ using Apache.Arrow.Flight.Server;
 using Apache.Arrow.Flight.Sql;
 using Arrow.Flight.Protocol.Sql;
 using Google.Protobuf;
+using KurrentDB.SecondaryIndexing.Indexes.User.Management;
 using KurrentDB.SecondaryIndexing.Query;
 using FlightSqlServerHelpers = Apache.Arrow.Flight.Sql.FlightSqlServer;
 
@@ -57,11 +58,23 @@ partial class FlightSqlServer {
 		var tableTypes = new StringArray.Builder();
 		var tableSchemas = command.IncludeSchema ? new BinaryArray.Builder() : null;
 		foreach (var table in tables) {
+			// Resolve the schema before appending anything, so a skipped table leaves no partial row
+			if (tableSchemas is not null) {
+				Schema tableSchema;
+				try {
+					tableSchema = engine.GetTableSchema(table);
+				} catch (UserIndexNotFoundException) {
+					// the user index was deleted after the table list was taken
+					continue;
+				}
+
+				tableSchemas.Append(SchemaExtensions.SerializeSchema(tableSchema).AsSpan());
+			}
+
 			catalogNames.AppendNull();
 			schemaNames.Append(table.Schema);
 			tableNames.Append(table.Name);
 			tableTypes.Append(TableType);
-			tableSchemas?.Append(SchemaExtensions.SerializeSchema(engine.GetTableSchema(table)).AsSpan());
 		}
 
 		var schema = FlightSqlServerHelpers.GetTableSchema(command.IncludeSchema);
