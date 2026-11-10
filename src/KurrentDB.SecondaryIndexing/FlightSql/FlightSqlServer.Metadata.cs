@@ -43,10 +43,10 @@ partial class FlightSqlServer {
 
 	private Task WriteTablesAsync(CommandGetTables command, FlightServerRecordBatchStreamWriter writer) {
 		IEnumerable<TableInfo> tables = MatchesCatalog(command.Catalog)
-		             && (command.TableTypes.Count is 0 || command.TableTypes.Contains(TableType))
+		                                && (command.TableTypes is [] || command.TableTypes.Contains(TableType))
 			? engine.Tables
-				.Where(table => MatchesPattern(command.DbSchemaFilterPattern, table.Schema))
-				.Where(table => MatchesPattern(command.TableNameFilterPattern, table.Name))
+				.Where(table => MatchesPattern(command.DbSchemaFilterPattern, table.Schema)
+				                && MatchesPattern(command.TableNameFilterPattern, table.Name))
 				.OrderBy(static table => table.Schema, StringComparer.Ordinal)
 				.ThenBy(static table => table.Name, StringComparer.Ordinal)
 			: [];
