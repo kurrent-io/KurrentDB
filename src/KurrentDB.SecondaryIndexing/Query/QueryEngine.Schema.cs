@@ -35,7 +35,8 @@ partial class QueryEngine {
 		// The buffer holds 'SELECT * FROM "<view>"'. The view name is quoted because user index names may contain '-'
 		// (view names never contain '"', see UserIndexSql.GetViewNameFor). It is encoded once, between the quotes,
 		// so the unquoted bytes are the snapshot lookup key and the whole buffer is the query.
-		var bufferSize = SelectQueryUtf8.Length + Encoding.UTF8.GetByteCount(viewName) + 2;
+		// +2 for the quotes, +1 for the null terminator
+		var bufferSize = SelectQueryUtf8.Length + Encoding.UTF8.GetByteCount(viewName) + 3;
 		using var buffer = (uint)bufferSize <= (uint)SpanOwner<byte>.StackallocThreshold
 			? stackalloc byte[bufferSize]
 			: new SpanOwner<byte>(bufferSize);
@@ -78,8 +79,13 @@ partial class QueryEngine {
 			writer.Advance(viewNameLength);
 			writer += quote;
 
+			// PreparedStatement passes only the pointer to duckdb_prepare, which reads a C string,
+			// so the query must be followed by a null terminator. It is not part of the returned span.
+			var queryLength = writer.WrittenCount;
+			writer += 0;
+
 			viewNameUtf8 = writer.WrittenSpan.Slice(viewNameOffset, viewNameLength);
-			return writer.WrittenSpan;
+			return writer.WrittenSpan.Slice(0, queryLength);
 		}
 	}
 }
