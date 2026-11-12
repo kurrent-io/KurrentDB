@@ -85,18 +85,17 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 				using (current) {
 					if (current.Value.ContentEquals(state))
 						return;
+
+					// ReplaceAsync below removes this record. It's flagged so that its retirement, which
+					// may happen later on the eviction thread, isn't counted as an eviction. It can't be
+					// retired while the session is open, so OnRetired is guaranteed to see the flag.
+					current.Value.MarkReplaced();
 				}
 			}
 
-			// Records are immutable once inserted, so an overwrite removes the old record first.
-			// It's flagged so that its retirement, which may happen later on the eviction thread,
-			// isn't counted as an eviction.
-			if (await _cache.TryRemoveAsync(cacheKey, ct) is { } removed) {
-				using (removed) {
-					removed.Value.MarkReplaced();
-				}
-			}
-
+			// Records are immutable once inserted, so ReplaceAsync removes the old record and the
+			// session inserts the new one, both under the bucket lock. Readers don't take the lock,
+			// so they can still miss the key between the removal and SetValue.
 			// Sync Dispose, not DisposeAsync: DotNext recommends sync disposal on non-rate-limited
 			// caches because DisposeAsync serializes writers behind a single promotion thread.
 			using (var session = await _cache.ReplaceAsync(cacheKey, ct)) {
