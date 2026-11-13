@@ -4,11 +4,13 @@
 #nullable enable
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Diagnostics.Metrics;
@@ -75,24 +77,26 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 
 	public async ValueTask Set(string key, string? value, CancellationToken ct) {
 		var cacheKey = RandomAccessCache.AsKey(key);
+
+		// State handlers re-serialize the state on every event, so an unchanged state arrives
+		// as a new string with the same content. Skip the write to avoid remove + insert.
+		// The comparison doesn't allocate, so an unchanged state costs no unmanaged allocation.
+		// A partition key is written by a single partition processor, so the record can't
+		// change between this check and the replacement below.
+		if (_cache.TryRead(cacheKey, out var current)) {
+			using (current) {
+				if (current.Value.ContentEquals(value))
+					return;
+
+				// ReplaceAsync below removes this record. It's flagged so that its retirement, which
+				// may happen later on the eviction thread, isn't counted as an eviction. It can't be
+				// retired while the session is open, so OnRetired is guaranteed to see the flag.
+				current.Value.MarkReplaced();
+			}
+		}
+
 		var state = StateHandle.Allocate(value);
 		try {
-			// State handlers re-serialize the state on every event, so an unchanged state arrives
-			// as a new string with the same content. Skip the write to avoid remove + insert.
-			// A partition key is written by a single partition processor, so the record can't
-			// change between this check and the replacement below.
-			if (_cache.TryRead(cacheKey, out var current)) {
-				using (current) {
-					if (current.Value.ContentEquals(state))
-						return;
-
-					// ReplaceAsync below removes this record. It's flagged so that its retirement, which
-					// may happen later on the eviction thread, isn't counted as an eviction. It can't be
-					// retired while the session is open, so OnRetired is guaranteed to see the flag.
-					current.Value.MarkReplaced();
-				}
-			}
-
 			// Records are immutable once inserted, so ReplaceAsync removes the old record and the
 			// session inserts the new one, both under the bucket lock. Readers don't take the lock,
 			// so they can still miss the key between the removal and SetValue.
@@ -134,6 +138,8 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 
 	// Header of the unmanaged block that holds the partition state: [Header][UTF-8 bytes].
 	// The length prefix allows decoding without scanning for a terminator, and allows null state (Length < 0).
+	// Storing the state as UTF-16 would make the code simpler, since it could be copied and compared
+	// as chars without transcoding, but it would double the memory for mostly ASCII JSON states.
 	private struct Header {
 		public int Length;
 		public bool Replaced;
@@ -142,6 +148,7 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 	// Owning handle to the unmanaged block. Freed exactly once, by OnRetired.
 	private readonly struct StateHandle : IDisposable {
 		private const int NullLength = -1;
+		private const int ComparisonBufferSize = 256;
 
 		private readonly Pointer<Header> _header;
 
@@ -171,8 +178,26 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 			? null
 			: Encoding.UTF8.GetString(Payload);
 
-		public bool ContentEquals(StateHandle other)
-			=> Header.Length == other.Header.Length && Payload.SequenceEqual(other.Payload);
+		// Compares without allocating: encodes the state in chunks into a stack buffer and
+		// compares each chunk with the stored bytes, stopping at the first difference
+		public bool ContentEquals(string? state) {
+			if (state is null || Header.Length is NullLength)
+				return state is null && Header.Length is NullLength;
+
+			ReadOnlySpan<byte> payload = Payload;
+			var chars = state.AsSpan();
+			Span<byte> buffer = stackalloc byte[ComparisonBufferSize];
+			while (true) {
+				var status = Utf8.FromUtf16(chars, buffer, out var read, out var written);
+				if (written > payload.Length || !buffer[..written].SequenceEqual(payload[..written]))
+					return false;
+
+				payload = payload[written..];
+				chars = chars[read..];
+				if (status is not OperationStatus.DestinationTooSmall)
+					return status is OperationStatus.Done && payload.IsEmpty;
+			}
+		}
 
 		// No-op for the default handle
 		public void Dispose() => Marshal.FreeHGlobal(_header.Address);
