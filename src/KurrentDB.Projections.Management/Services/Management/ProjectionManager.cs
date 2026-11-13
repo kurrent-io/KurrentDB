@@ -714,6 +714,7 @@ public class ProjectionManager
 
 		_logger.Debug("PROJECTIONS: Reading Existing Projections from {stream}", ProjectionNamesBuilder.ProjectionsRegistrationStream);
 		var corrId = Guid.NewGuid();
+		var instanceCorrelationId = _instanceCorrelationId;
 		_readForwardDispatcher.Publish(
 			new ClientMessage.ReadStreamEventsForward(
 				corrId,
@@ -728,7 +729,17 @@ public class ProjectionManager
 				user: SystemAccounts.System,
 				replyOnExpired: false,
 				expires: ClientMessage.ReadRequestMessage.NeverExpires),
-			m => OnProjectionsListReadCompleted(m, registeredProjections, from, completedAction));
+			m => {
+				// the manager may have been stopped (or stopped and restarted) while the read was in flight;
+				// a stale result must not repopulate _projections
+				if (!_started || _instanceCorrelationId != instanceCorrelationId) {
+					_logger.Debug(
+						"PROJECTIONS: Ignoring the result of a read of {stream} issued by a stopped instance. Correlation: {correlation}",
+						ProjectionNamesBuilder.ProjectionsRegistrationStream, instanceCorrelationId);
+					return;
+				}
+				OnProjectionsListReadCompleted(m, registeredProjections, from, completedAction);
+			});
 	}
 
 	private void OnProjectionsListReadCompleted(
