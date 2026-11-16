@@ -38,7 +38,36 @@ public class PartitionStateCacheTests {
 
 		cache.TryGet("k", out var value);
 		await Assert.That(value).IsEqualTo("v2");
-		await Assert.That(cache.Count).IsEqualTo(1L);
+		await Assert.That(await WaitForCount(cache, 1L)).IsEqualTo(1L);
+	}
+
+	[Test]
+	public async Task set_with_equal_value_keeps_value() {
+		await using var cache = new PartitionStateCache(capacity: 4, name: "test", projectionName: "p");
+
+		await cache.Set("k", "{\"count\":1}", CancellationToken.None);
+		// a different instance with the same content, as produced by re-serialization
+		await cache.Set("k", new string("{\"count\":1}".AsSpan()), CancellationToken.None);
+
+		var hit = cache.TryGet("k", out var value);
+		await Assert.That(hit).IsTrue();
+		await Assert.That(value).IsEqualTo("{\"count\":1}");
+		await Assert.That(await WaitForCount(cache, 1L)).IsEqualTo(1L);
+		await Assert.That(cache.Evictions).IsEqualTo(0L);
+	}
+
+	[Test]
+	[Arguments(null, "")]
+	[Arguments("", null)]
+	public async Task null_and_empty_values_are_distinct(string? first, string? second) {
+		await using var cache = new PartitionStateCache(capacity: 4, name: "test", projectionName: "p");
+
+		await cache.Set("k", first, CancellationToken.None);
+		await cache.Set("k", second, CancellationToken.None);
+
+		cache.TryGet("k", out var value);
+		await Assert.That(value).IsEqualTo(second);
+		await Assert.That(await WaitForCount(cache, 1L)).IsEqualTo(1L);
 	}
 
 	[Test]
@@ -85,5 +114,15 @@ public class PartitionStateCacheTests {
 		}));
 
 		await Task.WhenAll(writers.Concat(readers));
+	}
+
+	// Count reflects allocated entries, and a replaced entry is released asynchronously
+	// by the background eviction thread once nothing references it.
+	private static async Task<long> WaitForCount(PartitionStateCache cache, long expected) {
+		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+		while (cache.Count != expected && !cts.Token.IsCancellationRequested)
+			await Task.Delay(10, CancellationToken.None);
+
+		return cache.Count;
 	}
 }
