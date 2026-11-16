@@ -37,7 +37,7 @@ internal sealed class QueryTablesFunction(IDatabaseSchemaProvider provider) : Ta
 		var enumerator = InitializationContext
 			                 .GetUserData<IEnumerator<string>>(context, isThreadLocal: true).Value
 		                 ?? throw new UnreachableException("Iterator of tables must be set.");
-		var maxRowCount = DataChunk.MaxRowCount;
+		var maxRowCount = builder.RowCount = int.CreateSaturating(DataChunk.MaxRowCount);
 		int actualRowCount;
 
 		var column = builder[0];
