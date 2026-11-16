@@ -145,14 +145,13 @@ partial class QueryEngine {
 		if (tableReference[SchemaNameProperty]?.ToString() is { Length: > 0 } schemaName)
 			throw new UnsupportedSchemaException(schemaName);
 
-		// the parser keeps the identifier quoted: SHOW TABLES serializes as table_name = "\"tables\""
-		var tableName = tableReference[TableNameProperty]?.ToString() ?? string.Empty;
-		switch (tableName) {
+		switch (tableReference[TableNameProperty]?.ToString()) {
+			// the parser keeps the identifier quoted: SHOW TABLES serializes as table_name = "\"tables\""
 			case "tables" or "\"tables\"":
 				ReplaceShowTablesWithFunctionCall(tableReference.AsObject());
 				break;
 			default:
-				throw new UnsupportedSystemTableException(tableName);
+				throw new UnsupportedMetaQueryException();
 		}
 	}
 
