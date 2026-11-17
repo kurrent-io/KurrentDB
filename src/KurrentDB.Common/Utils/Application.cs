@@ -15,15 +15,33 @@ public enum ExitCode {
 public class Application {
 	private static readonly ILogger Log = Serilog.Log.ForContext<Application>();
 
-	private static Action<int, string> _exit = delegate {
+	private static readonly Action<int, string> NoExitAction = delegate {
 	};
+
+	private static Action<int, string> _exit = NoExitAction;
 
 	private static int _exited;
 
-	public static void RegisterExitAction(Action<int, string> exitAction) {
+	/// <summary>
+	/// Sets what happens when the node asks to exit, replacing whatever was set before.
+	/// </summary>
+	/// <returns>
+	/// Disposing it takes the action away again and lets the next one registered be called, so that a host
+	/// running one node after another in the same process hears from each of them. It does nothing once a
+	/// different action has replaced this one.
+	/// </returns>
+	public static IDisposable RegisterExitAction(Action<int, string> exitAction) {
 		Ensure.NotNull(exitAction, "exitAction");
 
 		_exit = exitAction;
+		return new ExitActionRegistration(exitAction);
+	}
+
+	private sealed class ExitActionRegistration(Action<int, string> exitAction) : IDisposable {
+		public void Dispose() {
+			if (ReferenceEquals(Interlocked.CompareExchange(ref _exit, NoExitAction, exitAction), exitAction))
+				Interlocked.Exchange(ref _exited, 0);
+		}
 	}
 
 	public static void ExitSilent(int exitCode, string reason) => Exit(exitCode, reason, true);

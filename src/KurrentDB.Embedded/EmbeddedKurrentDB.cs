@@ -42,6 +42,8 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	ClusterVNodeHostedService? _hostedService;
 	WebApplication? _web;
 	Task? _stopping;
+	volatile bool _stopRequested;
+	IDisposable? _exitRegistration;
 
 	string? _unixSocketPath;
 
@@ -191,8 +193,9 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 			_state = State.Running;
 
-			// TODO: only works for one embedded node
-			Application.RegisterExitAction(OnNodeRequestedExit);
+			// TODO: only works for one embedded node at a time. The registration is undone on teardown so
+			// that a node started after this one has gone is heard from.
+			_exitRegistration = Application.RegisterExitAction(OnNodeRequestedExit);
 
 			try {
 				// opening the database is synchronous and can take a while, and there is no reason to make
@@ -281,6 +284,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		if (_state is not State.Running || _web is null)
 			return;
 
+		_stopRequested = true;
 		_stopping ??= _web.StopAsync(CancellationToken.None);
 
 		await _stopping.WaitAsync(cancellationToken);
@@ -337,6 +341,11 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			if (_web is not null)
 				await _web.DisposeAsync();
 
+			// before the database lets go of its lock: once it has, another database may take the directory
+			// and bind a socket of its own at the same path, which this must not then delete
+			if (Volatile.Read(ref _unixSocketPath) is { } socketPath)
+				UnixDomainSocket.Delete(socketPath);
+
 			// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
 			// the start that failed after the node was constructed: the constructor opens the checkpoints
 			// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
@@ -344,10 +353,9 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			// carries on cannot.
 			if (_hostedService is not null)
 				await _hostedService.Node.Db.DisposeAsync();
-
-			if (Volatile.Read(ref _unixSocketPath) is { } socketPath)
-				UnixDomainSocket.Delete(socketPath);
 		} finally {
+			_exitRegistration?.Dispose();
+			_exitRegistration = null;
 			_state = State.Disposed;
 			_completion.TrySetResult();
 			DisposeConfiguration();
@@ -372,7 +380,7 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		Created,
 		Running,
 		Stopped,
-		Disposed
+		Disposed,
 	}
 
 	WebApplication BuildWebApplication(
@@ -383,9 +391,12 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
 			// the application name is left to the host: the admin UI's static assets are published next to
 			// the assemblies of whichever application is hosting the node, under that application's name
-			ContentRootPath = AppContext.BaseDirectory
+			ContentRootPath = AppContext.BaseDirectory,
 		});
 
+		// the builder has read the host application's appsettings.json and the whole environment, which
+		// belong to the host and not to the node. Remove those configuration sources.
+		builder.Configuration.Sources.Clear();
 		builder.Configuration.AddConfiguration(configuration);
 		NodePreflight.WriteHostEnvironment(builder.Environment);
 
@@ -433,6 +444,15 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		NodeWebApplication.LogHostedServiceLifecycle(builder.Services);
 
 		var app = builder.Build();
+
+		// a background service that fails asks the host to stop, and nobody else is listening for that: the
+		// application would carry on using a node that is no longer whole
+		app.Lifetime.ApplicationStopping.Register(() => {
+			if (!_stopRequested) {
+				_completion.TrySetException(new InvalidOperationException(
+					"The embedded database stopped unexpectedly and must be disposed. See the log for why."));
+			}
+		});
 
 		NodeWebApplication.Configure(app, hostedService);
 
