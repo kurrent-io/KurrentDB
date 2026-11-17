@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 
@@ -29,14 +28,15 @@ public static class UnixDomainSocket {
 					throw;
 				}
 			},
-			// a catch-up subscription should not have to share one connection's concurrent stream limit with
-			// the appends the same process is making
-			EnableMultipleHttp2Connections = true
+			EnableMultipleHttp2Connections = true,
 			// no keep-alive pings: there is no network path to keep open, and nothing in between to time the
 			// connection out
 		};
 
-	const UnixFileMode OwnerOnly = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+	const UnixFileMode OwnerOnly =
+		UnixFileMode.UserRead |
+		UnixFileMode.UserWrite |
+		UnixFileMode.UserExecute;
 
 	// A socket address carries its path in sockaddr_un.sun_path, a fixed 108 bytes on Linux and Windows
 	// and 104 on macOS, and the path is stored there with a terminating NUL. So a socket path can be one
@@ -62,14 +62,12 @@ public static class UnixDomainSocket {
 
 		EnsureTheSocketPathFits(fullPath, nameof(path));
 
-		var existed = Directory.Exists(fullPath);
-
 		if (OperatingSystem.IsWindows()) {
 			Directory.CreateDirectory(fullPath);
 			return fullPath;
 		}
 
-		if (!existed) {
+		if (!Directory.Exists(fullPath)) {
 			Directory.CreateDirectory(fullPath, OwnerOnly);
 			return fullPath;
 		}

@@ -199,9 +199,9 @@ public class EmbeddedKurrentDBDataDirectoryTests {
 }
 
 /// <summary>
-/// The exclusive database lock is a named mutex, and a mutex can only be released by the thread that took
-/// it. If the embedded database released it from the wrong thread, a second node on the same directory in
-/// the same process would not be able to take it.
+/// The exclusive database lock is a file handle held open for as long as the database is. If the embedded
+/// database did not let go of it, a second node on the same directory in the same process would not be able
+/// to take it.
 /// </summary>
 [Timeout(300_000)]
 public class EmbeddedKurrentDBRestartTests {

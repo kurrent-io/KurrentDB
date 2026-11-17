@@ -592,7 +592,7 @@ public partial record ClusterVNodeOptions {
 		public long SqlEngineTempDirectorySizeLimit { get; set; }
 
 		[Description("Memory limit in bytes for embedded DuckDB. Zero uses 25% of runtime-available memory.")]
-		public long SqlEngineMemoryLimit { get; init; }
+		public long SqlEngineMemoryLimit { get; set; }
 
 		[Description("Directory for embedded DuckDB to write temp files. " +
 					 "Must not be used for other files, *.tmp files will automatically be removed. " +

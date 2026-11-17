@@ -10,14 +10,11 @@ internal static class Program {
 	public static async Task Main(string[] args) {
 		var ct = ConsoleCancellation();
 
-		// DatabaseOptions is the way through to anything the server understands that this library has no
-		// opinion about. The keys are flat: KurrentDB:WriteTimeoutMs, even though the server groups that
-		// option under Database — KurrentDB:Database:WriteTimeoutMs would bind nothing, and would not be
-		// reported either, because a nested key is how plugin configuration reaches its plugin
-		// (KurrentDB:Licensing:LicenseKey).
 		await using (var db = new EmbeddedKurrentDB(new() {
 			DataDirectory = Path.Combine(Directory.GetCurrentDirectory(), "kdb-embedded"),
 			DatabaseOptions = new Dictionary<string, string?> {
+				// same structure as the regular database yaml config (the yaml is
+				// automatically nested into the KurrentDB space)
 				["KurrentDB:WriteTimeoutMs"] = "5000",
 				["KurrentDB:PrepareTimeoutMs"] = "5000",
 				["KurrentDB:CommitTimeoutMs"] = "5000",
