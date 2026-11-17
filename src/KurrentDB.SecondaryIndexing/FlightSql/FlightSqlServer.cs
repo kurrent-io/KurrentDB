@@ -82,11 +82,11 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 				await PrepareQueryAsync(query, request, context.CancellationToken),
 			CommandPreparedStatementQuery query => await GetPreparedStatementSchemaAsync(query.PreparedStatementHandle, state, request,
 				context.CancellationToken),
+			CommandGetDbSchemas command => GetMetadataInfo(command, FlightSqlServerHelpers.DbSchemaFlightSchema, request),
+			CommandGetTables command => GetMetadataInfo(command, FlightSqlServerHelpers.GetTableSchema(command.IncludeSchema), request),
+			CommandGetTableTypes command => GetMetadataInfo(command, FlightSqlServerHelpers.TableTypesSchema, request),
 			CommandGetSqlInfo or
 			CommandGetCatalogs or
-			CommandGetDbSchemas or
-			CommandGetTables or
-			CommandGetTableTypes or
 			CommandGetPrimaryKeys or
 			CommandGetExportedKeys or
 			CommandGetImportedKeys or
@@ -108,6 +108,12 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 		if (parsedTicket.Is(BytesValue.Descriptor)) {
 			// execute plain query
 			await ExecuteQueryAsync(parsedTicket.Unpack<BytesValue>().Value, responseStream, context.CancellationToken);
+		} else if (parsedTicket.Is(CommandGetDbSchemas.Descriptor)) {
+			await WriteDbSchemasAsync(parsedTicket.Unpack<CommandGetDbSchemas>(), responseStream);
+		} else if (parsedTicket.Is(CommandGetTables.Descriptor)) {
+			await WriteTablesAsync(parsedTicket.Unpack<CommandGetTables>(), responseStream);
+		} else if (parsedTicket.Is(CommandGetTableTypes.Descriptor)) {
+			await WriteTableTypesAsync(responseStream);
 		} else if (context.GetHttpContext().Features.Get<ConnectionState>() is not { } state) {
 			throw WrongServerState();
 		} else if (parsedTicket.Is(CommandPreparedStatementQuery.Descriptor)) {
@@ -198,6 +204,9 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 				query.PreparedStatementHandle.Memory,
 				state,
 				context.CancellationToken),
+			CommandGetDbSchemas => FlightSqlServerHelpers.DbSchemaFlightSchema,
+			CommandGetTables command => FlightSqlServerHelpers.GetTableSchema(command.IncludeSchema),
+			CommandGetTableTypes => FlightSqlServerHelpers.TableTypesSchema,
 			_ => throw FeatureNotSupported(),
 		};
 	}

@@ -121,6 +121,117 @@ public class FlightSqlTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
+	// The ADBC FlightSQL driver for .NET doesn't implement GetObjects/GetTableSchema/GetTableTypes
+	// (they throw NotImplementedException), so the metadata commands are tested with FlightSqlClient directly.
+	[Fact]
+	public async Task GetDbSchemas() {
+		using var channel = GrpcChannel.ForAddress(HostingAddress);
+		var client = new FlightSqlClient(new FlightClient(channel));
+		var token = TestContext.Current.CancellationToken;
+
+		var info = await client.GetDbSchemasAsync(cancellationToken: token);
+		Assert.Equal(FlightSqlServer.DbSchemaFlightSchema.FieldsList.Select(static f => f.Name), info.Schema.FieldsList.Select(static f => f.Name));
+		Assert.Contains("kdb", await ReadStringColumnAsync(client, info, "db_schema_name"));
+
+		info = await client.GetDbSchemasAsync(dbSchemaFilterPattern: "k_b", cancellationToken: token);
+		Assert.Equal(["kdb"], await ReadStringColumnAsync(client, info, "db_schema_name"));
+
+		info = await client.GetDbSchemasAsync(dbSchemaFilterPattern: "missing%", cancellationToken: token);
+		Assert.Empty(await ReadStringColumnAsync(client, info, "db_schema_name"));
+
+		info = await client.GetDbSchemasAsync(catalog: "missing", cancellationToken: token);
+		Assert.Empty(await ReadStringColumnAsync(client, info, "db_schema_name"));
+	}
+
+	[Fact]
+	public async Task GetTables() {
+		using var channel = GrpcChannel.ForAddress(HostingAddress);
+		var client = new FlightSqlClient(new FlightClient(channel));
+		var token = TestContext.Current.CancellationToken;
+
+		var info = Assert.Single(await client.GetTablesAsync(cancellationToken: token));
+		Assert.Null(info.Schema.GetFieldByName("table_schema"));
+		var rows = await ReadTablesAsync(client, info);
+		Assert.Contains(("kdb", "records", "TABLE"), rows);
+
+		info = Assert.Single(await client.GetTablesAsync(dbSchemaFilterPattern: "kdb", tableFilterPattern: "rec%", cancellationToken: token));
+		Assert.Equal([("kdb", "records", "TABLE")], await ReadTablesAsync(client, info));
+
+		info = Assert.Single(await client.GetTablesAsync(tableFilterPattern: "missing%", cancellationToken: token));
+		Assert.Empty(await ReadTablesAsync(client, info));
+
+		info = Assert.Single(await client.GetTablesAsync(tableTypes: ["VIEW"], cancellationToken: token));
+		Assert.Empty(await ReadTablesAsync(client, info));
+	}
+
+	[Fact]
+	public async Task GetTablesWithSchema() {
+		using var channel = GrpcChannel.ForAddress(HostingAddress);
+		var client = new FlightSqlClient(new FlightClient(channel));
+		var token = TestContext.Current.CancellationToken;
+
+		var info = Assert.Single(await client.GetTablesAsync(
+			dbSchemaFilterPattern: "kdb",
+			tableFilterPattern: "records",
+			includeSchema: true,
+			cancellationToken: token));
+		Assert.NotNull(info.Schema.GetFieldByName("table_schema"));
+
+		var schemas = new List<Schema>();
+		await foreach (var batch in client.DoGetAsync(Assert.Single(info.Endpoints).Ticket, cancellationToken: token)) {
+			using (batch) {
+				var column = (BinaryArray)batch.Column("table_schema");
+				for (var i = 0; i < column.Length; i++) {
+					schemas.Add(SchemaExtensions.DeserializeSchema(column.GetBytes(i).ToArray()));
+				}
+			}
+		}
+
+		var schema = Assert.Single(schemas);
+		Assert.NotNull(schema.GetFieldByName("log_position"));
+	}
+
+	[Fact]
+	public async Task GetTableTypes() {
+		using var channel = GrpcChannel.ForAddress(HostingAddress);
+		var client = new FlightSqlClient(new FlightClient(channel));
+
+		var info = await client.GetTableTypesAsync(cancellationToken: TestContext.Current.CancellationToken);
+		Assert.Equal(["TABLE"], await ReadStringColumnAsync(client, info, "table_type"));
+	}
+
+	private static async Task<List<string?>> ReadStringColumnAsync(FlightSqlClient client, FlightInfo info, string columnName) {
+		var values = new List<string?>();
+		await foreach (var batch in client.DoGetAsync(Assert.Single(info.Endpoints).Ticket, cancellationToken: TestContext.Current.CancellationToken)) {
+			using (batch) {
+				var column = (StringArray)batch.Column(columnName);
+				for (var i = 0; i < column.Length; i++) {
+					values.Add(column.GetString(i));
+				}
+			}
+		}
+
+		return values;
+	}
+
+	private static async Task<List<(string?, string?, string?)>> ReadTablesAsync(FlightSqlClient client, FlightInfo info) {
+		var rows = new List<(string?, string?, string?)>();
+		await foreach (var batch in client.DoGetAsync(Assert.Single(info.Endpoints).Ticket, cancellationToken: TestContext.Current.CancellationToken)) {
+			using (batch) {
+				var catalogs = (StringArray)batch.Column("catalog_name");
+				var schemas = (StringArray)batch.Column("db_schema_name");
+				var tables = (StringArray)batch.Column("table_name");
+				var types = (StringArray)batch.Column("table_type");
+				for (var i = 0; i < batch.Length; i++) {
+					Assert.True(catalogs.IsNull(i));
+					rows.Add((schemas.GetString(i), tables.GetString(i), types.GetString(i)));
+				}
+			}
+		}
+
+		return rows;
+	}
+
 	private string HostingAddress {
 		get {
 			var urls = Fixture

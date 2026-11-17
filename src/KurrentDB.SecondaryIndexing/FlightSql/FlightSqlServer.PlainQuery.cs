@@ -63,7 +63,7 @@ partial class FlightSqlServer {
 		var encodedQuery = new BytesValue { Value = preparedQuery };
 		var ep = new FlightEndpoint(new FlightTicket(PackToAny(encodedQuery)), []);
 		return new(
-			discoverSchema ? engine.GetArrowSchema(preparedQuery.Span) : new([], []),
+			discoverSchema ? engine.GetQuerySchema(preparedQuery.Span) : new([], []),
 			descriptor,
 			[ep]);
 	}

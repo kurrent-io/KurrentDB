@@ -62,6 +62,8 @@ public partial class UserIndexEngineSubscription(
 		}
 	}
 
+	public IEnumerable<string> Indices => _userIndexes.Keys;
+
 	public async Task Stop() {
 		using (_cts)
 			await _cts.CancelAsync();

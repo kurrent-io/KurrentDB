@@ -72,3 +72,9 @@ public sealed class UnsupportedSystemTableException : QueryPreparationException 
 
 	public string TableName { get; }
 }
+
+public sealed class UnsupportedMetaQueryException : QueryPreparationException {
+	internal UnsupportedMetaQueryException()
+		: base("DESCRIBE, SHOW ALL TABLES, and similar queries are not supported") {
+	}
+}
