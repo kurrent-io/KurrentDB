@@ -56,6 +56,27 @@ public class PartitionStateCacheTests {
 		await Assert.That(cache.Evictions).IsEqualTo(0L);
 	}
 
+	// The comparison runs in chunks, so cover states longer than one chunk, with multi-byte
+	// characters crossing chunk boundaries, that differ only at the start or the end
+	[Test]
+	[Arguments("y", "x")] // differs at the start
+	[Arguments("x", "y")] // differs at the end
+	[Arguments("x", "")] // shorter
+	[Arguments("x", "xx")] // longer
+	[Arguments("x", "x")] // equal
+	public async Task set_compares_long_values(string start, string end) {
+		await using var cache = new PartitionStateCache(capacity: 4, name: "test", projectionName: "p");
+		var body = string.Concat(Enumerable.Repeat("café 東京 ", 200));
+		var first = $"x{body}x";
+		var second = $"{start}{body}{end}";
+
+		await cache.Set("k", first, CancellationToken.None);
+		await cache.Set("k", new string(second.AsSpan()), CancellationToken.None);
+
+		cache.TryGet("k", out var value);
+		await Assert.That(value).IsEqualTo(second);
+	}
+
 	[Test]
 	[Arguments(null, "")]
 	[Arguments("", null)]
