@@ -37,6 +37,12 @@ public class WorkspaceFilterTests {
 	}
 
 	[Test]
+	public async Task Js_Filter_Reads_Properties_Without_Regard_To_Case() {
+		var filter = WorkspaceFilter.Compile([new FilterRule("ticket-", "rec => rec.value.org === 'acme'")]);
+		await Assert.That(Eval(filter, "ticket-1", new { Org = "acme" })).IsEqualTo(FilterResult.Match);
+	}
+
+	[Test]
 	public async Task First_Matching_Prefix_Wins() {
 		// The broad rule (no filter) is reached first and short-circuits, so the narrower
 		// rule's filter never runs.
