@@ -3,6 +3,7 @@
 
 using System.Diagnostics.Metrics;
 using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 using DotNext;
 using DotNext.Runtime.InteropServices;
 using DotNext.Threading;
@@ -76,7 +77,7 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 		_engine.SetValue("skip", new object());
 		_skip = _engine.Evaluate("skip");
 
-		_evaluator = new JsRecordEvaluator(_engine);
+		_evaluator = new JsRecordEvaluator(_engine, new JsonNodeOptions());
 
 		_filter = JsRecordEvaluator.Compile(_engine, jsEventFilter);
 		_fieldSelectors = new Function?[fields.Count];

@@ -44,7 +44,7 @@ public class JsRecord {
 	Func<JsonNode?> DeserializeValue { get; set; } = null!;
 	Func<JsonNode?> DeserializeProps { get; set; } = null!;
 
-	internal void Remap(EventRecord evt, ulong sequence) {
+	internal void Remap(EventRecord evt, ulong sequence, JsonNodeOptions nodeOptions) {
 		Id         = $"{evt.EventId}";
 		Sequence   = sequence;
 		Redacted   = evt.Flags.HasFlag(PrepareFlags.IsRedacted);
@@ -54,11 +54,11 @@ public class JsRecord {
 		Schema.Format = Enum.Parse<JsSchemaFormat>(evt.SchemaFormat);
 
 		DeserializeValue = !evt.Data.IsEmpty && !Redacted && Schema.Format is JsSchemaFormat.Json
-			? () => JsonNode.Parse(evt.Data.Span)
+			? () => JsonNode.Parse(evt.Data.Span, nodeOptions)
 			: static () => null;
 
 		DeserializeProps = !evt.Metadata.IsEmpty
-			? () => JsonNode.Parse(evt.Metadata.Span)
+			? () => JsonNode.Parse(evt.Metadata.Span, nodeOptions)
 			: static () => null;
 
 		Position.LogPosition    = evt.LogPosition;

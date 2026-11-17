@@ -5,6 +5,7 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using Jint;
 using Jint.Native;
@@ -14,13 +15,19 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.Scripting;
 
 public class JsRecordEvaluator {
+	readonly JsonNodeOptions _nodeOptions;
 	readonly JsRecord _record;
 	readonly JsValue _jsValue;
 
 	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsRecord))]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsSchemaInfo))]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(JsRecordPosition))]
-	public JsRecordEvaluator(Engine engine) {
+	/// <param name="nodeOptions">
+	/// How the record's value and properties are parsed, notably whether a script reads their properties
+	/// without regard to case.
+	/// </param>
+	public JsRecordEvaluator(Engine engine, JsonNodeOptions nodeOptions) {
+		_nodeOptions = nodeOptions;
 		_record = new();
 		_jsValue = JsValue.FromObjectWithType(engine, _record, typeof(JsRecord));
 	}
@@ -29,7 +36,7 @@ public class JsRecordEvaluator {
 		MapRecord(re.OriginalEvent, sequence);
 
 	public void MapRecord(EventRecord record, ulong sequence) =>
-		_record.Remap(record, sequence);
+		_record.Remap(record, sequence, _nodeOptions);
 
 	public bool Match(Function? filter) =>
 		filter?.Call(_jsValue).AsBoolean() ?? true;
