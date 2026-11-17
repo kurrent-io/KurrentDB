@@ -350,9 +350,16 @@ public class ClusterVNode<TStreamId> :
 		NodeInfo = new VNodeInfo(instanceId.Value, debugIndex, intTcp, intSecIp, extTcp, extSecIp,
 			httpEndPoint, options.Cluster.ReadOnlyReplica);
 
+		// From here the constructor holds the exclusive lock on the database directory and its open
+		// checkpoints, and until it returns nobody else has a reference through which to let go of them. A
+		// constructor that throws would leave the directory locked to every node constructed on it again in
+		// this process, which an application embedding the node may well do.
+		using var releaseDbOnFailure = new ReleaseDbOnFailure();
+
 		var dbConfig = CreateDbConfig(
 			out var statsHelper,
 			out var readerThreadsCount);
+		releaseDbOnFailure.Config = dbConfig;
 
 		var trackers = new Trackers();
 		var indexPath = options.Database.Index ?? Path.Combine(dbConfig.Path, ESConsts.DefaultIndexDirectoryName);
@@ -440,6 +447,7 @@ public class ClusterVNode<TStreamId> :
 				dbLock = new ExclusiveDbLock(dbPath);
 				if (!dbLock.Acquire())
 					throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{dbPath}'.");
+				releaseDbOnFailure.Lock = dbLock;
 
 				var indexPath = options.Database.Index ?? Path.Combine(dbPath, ESConsts.DefaultIndexDirectoryName);
 				Log.Information("Index Path set to {indexPath}", indexPath);
@@ -1916,6 +1924,8 @@ public class ClusterVNode<TStreamId> :
 		var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
 		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
+
+		releaseDbOnFailure.Constructed();
 	}
 
 	static long GenerateDatabaseTag() => Random.Shared.NextInt64(1, long.MaxValue);
@@ -2242,4 +2252,35 @@ file sealed class KontrollerSslOptions(
 
 	public override SslClientAuthenticationOptions CreateClientOptions(EndPoint serverAddress) =>
 		createClientOptions(serverAddress);
+}
+
+/// <summary>
+/// Lets go of the database a <see cref="ClusterVNode{TStreamId}"/> constructor had opened, unless the
+/// constructor got as far as <see cref="Constructed"/>: from then on the node closes it as it shuts down.
+/// </summary>
+file sealed class ReleaseDbOnFailure : IDisposable {
+	bool _constructed;
+
+	public ExclusiveDbLock Lock { get; set; }
+	public TFChunkDbConfig Config { get; set; }
+
+	public void Constructed() => _constructed = true;
+
+	public void Dispose() {
+		if (_constructed)
+			return;
+
+		if (Config is not null) {
+			Config.DatabaseTag.Close(flush: false);
+			Config.WriterCheckpoint.Close(flush: false);
+			Config.ChaserCheckpoint.Close(flush: false);
+			Config.EpochCheckpoint.Close(flush: false);
+			Config.TruncateCheckpoint.Close(flush: false);
+			Config.ProposalCheckpoint.Close(flush: false);
+			Config.StreamExistenceFilterCheckpoint.Close(flush: false);
+		}
+
+		// nothing was started that could still be writing, so the lock can go
+		Lock?.Dispose();
+	}
 }
