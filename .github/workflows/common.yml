@@ -33,8 +33,20 @@ jobs:
       run: |
         cd src
         dotnet restore
-        dotnet list package --vulnerable --include-transitive | tee vulnerabilities.txt
-        ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerabilities.txt
+        # Advisories consciously accepted while awaiting an upstream fix.
+        # GHSA-2m69-gcr7-jv3q: CVE-2025-6965, SQLitePCLRaw e_sqlite3 2.1.6 (transitive via
+        # Microsoft.Data.Sqlite 8.0.29, pinned in src/EventStore.Core/EventStore.Core.csproj because
+        # 8.0.30+ requires glibc 2.34, which is not available on RHEL 8 or Ubuntu 20.04).
+        ALLOWED_ADVISORIES='GHSA-2m69-gcr7-jv3q'
+        # Each vulnerable finding prints an advisory URL line. Fail only if a finding remains
+        # after dropping the allowlisted advisories.
+        if grep -E 'https://github\.com/advisories/' vulnerabilities.txt | grep -vF "$ALLOWED_ADVISORIES" | grep -q .; then
+          echo "::error::Unsuppressed vulnerable packages found:"
+          grep -E 'https://github\.com/advisories/' vulnerabilities.txt | grep -vF "$ALLOWED_ADVISORIES"
+          exit 1
+        fi
+        echo "No unsuppressed vulnerable packages."
   protolock:
     runs-on: ubuntu-latest
     name: ci/github/protolock
