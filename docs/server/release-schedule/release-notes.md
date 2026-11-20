@@ -14,10 +14,6 @@ This page contains the release notes for EventStoreDB 24.10
 
 24.10.16 could not run scavenges on RHEL 8 or Ubuntu 20.04. The scavenge would immediately fail due to the version of glibc. This has been fixed.
 
-### Fixed node failing to start after a .NET runtime update (PR [#5789](https://github.com/kurrent-io/KurrentDB/pull/5789))
-
-A .NET runtime update made the lock that prevents two nodes from opening the same database specific to each user, stored under the user's home directory. A node running as a user without a home directory, such as the `kurrent` user in the container image, could fail to acquire the lock and not start. The lock is machine-wide again, as before, so it still prevents a node running as a different user from opening the same database.
-
 ### Connectors: Fixed connectors failing after reading a large number of events
 
 After the leader had read roughly 500 million events, it stopped managing connectors with a `Position tracker capacity would exceed maximum (1000000)` error, and ignored requests to start or stop connectors until it was restarted or a new leader was elected. Sink connectors with a JsonPath filter had a related problem: they stopped saving their checkpoint at the first event the filter skipped, so they redelivered events after a restart and eventually failed with the same error. Both now run indefinitely and keep their checkpoints up to date.
