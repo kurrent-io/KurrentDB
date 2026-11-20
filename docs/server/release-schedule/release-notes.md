@@ -6,6 +6,22 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.17](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.17)
+
+20 November 2026
+
+### Scavenging: Fixed scavenge on older Linux distributions (PR [#5814](https://github.com/kurrent-io/KurrentDB/pull/5814))
+
+24.10.16 could not run scavenges on RHEL 8 or Ubuntu 20.04. The scavenge would immediately fail due to the version of glibc. This has been fixed.
+
+### Connectors: Fixed connectors failing after reading a large number of events
+
+After the leader had read roughly 500 million events, it stopped managing connectors with a `Position tracker capacity would exceed maximum (1000000)` error, and ignored requests to start or stop connectors until it was restarted or a new leader was elected. Sink connectors with a JsonPath filter had a related problem: they stopped saving their checkpoint at the first event the filter skipped, so they redelivered events after a restart and eventually failed with the same error. Both now run indefinitely and keep their checkpoints up to date.
+
+### Connectors: Reduced disk reads after leader election
+
+When a node becomes leader, it reads the log to determine which connectors should be running. Previously, it could reread a large portion of the log after each election, even when no connectors had changed or none were configured. The leader now records its progress regularly, so a new leader only reads recent events. The first election after upgrading may still read from the last recorded position.
+
 ## [24.10.16](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.16)
 
 1 September 2026
