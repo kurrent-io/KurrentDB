@@ -22,10 +22,6 @@ After the leader had read roughly 500 million events, it stopped managing connec
 
 When a node becomes leader, it reads the log to determine which connectors should be running. Previously, it could reread a large portion of the log after each election, even when no connectors had changed or none were configured. The leader now records its progress regularly, so a new leader only reads recent events. The first election after upgrading may still read from the last recorded position.
 
-### Update dependency patch version due to CVEs (PR [#5784](https://github.com/kurrent-io/KurrentDB/pull/5784))
-
-`System.Security.Cryptography.Pkcs` has been upgraded from 8.0.0 to 8.0.2 (patch upgrade) due to `GHSA-2fmv-rv2c-59x7`.
-
 ## [24.10.16](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.16)
 
 1 September 2026
