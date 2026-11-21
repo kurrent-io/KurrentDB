@@ -60,14 +60,6 @@ public class when_a_stale_projections_list_read_completes_after_the_manager_was_
 		_manager.Handle(new ProjectionSubsystemMessage.StartComponents(_firstInstance));
 		_staleRead = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Single();
 		_manager.Handle(new ProjectionSubsystemMessage.StopComponents(_firstInstance));
-
-		// the read issued before Stop() is answered only now
-		Handle(_staleRead);
-		_createdWhileStopped = _consumer.HandledMessages
-			.OfType<CoreProjectionManagementMessage.CreateAndPrepare>().Count();
-
-		// the next leader election starts a new instance, which reads the registration stream again
-		_manager.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 	}
 
 	[TearDown]
@@ -77,6 +69,14 @@ public class when_a_stale_projections_list_read_completes_after_the_manager_was_
 
 	[Test]
 	public void ignores_the_stale_read_while_stopped_and_loads_the_projections_on_the_next_start() {
+		// the read issued before Stop() is answered only now
+		Handle(_staleRead);
+		_createdWhileStopped = _consumer.HandledMessages
+			.OfType<CoreProjectionManagementMessage.CreateAndPrepare>().Count();
+
+		// the next leader election starts a new instance, which reads the registration stream again
+		_manager.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
+
 		Assert.AreEqual(0, _createdWhileStopped, "a stale read must not create projections while the manager is stopped");
 
 		_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null));
@@ -85,6 +85,35 @@ public class when_a_stale_projections_list_read_completes_after_the_manager_was_
 			.Select(p => p.Name)
 			.ToArray();
 		CollectionAssert.Contains(names, "projection1");
+		Assert.AreEqual(1, _consumer.HandledMessages
+			.OfType<CoreProjectionManagementMessage.CreateAndPrepare>().Count(c => c.Name == "projection1"));
+	}
+
+	private string[] ProjectionNames() {
+		_consumer.HandledMessages.RemoveAll(m => m is ProjectionManagementMessage.Statistics);
+		_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null));
+		return _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
+			.SelectMany(s => s.Projections)
+			.Select(p => p.Name)
+			.ToArray();
+	}
+
+	[Test]
+	public void ignores_the_stale_read_delivered_after_a_restart_and_loads_the_projections_from_the_new_read() {
+		// keep the new instance's read pending so the stale result arrives first
+		TimeOutReadToStreamOnce(ProjectionNamesBuilder.ProjectionsRegistrationStream);
+		_manager.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
+		var newRead = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last();
+		Assert.AreNotSame(_staleRead, newRead);
+
+		Handle(_staleRead);
+		Assert.AreEqual(0, _consumer.HandledMessages
+			.OfType<CoreProjectionManagementMessage.CreateAndPrepare>().Count(),
+			"a stale read must not create projections for the new instance");
+		CollectionAssert.IsEmpty(ProjectionNames(), "a stale read must not register projections for the new instance");
+
+		Handle(newRead);
+		CollectionAssert.Contains(ProjectionNames(), "projection1");
 		Assert.AreEqual(1, _consumer.HandledMessages
 			.OfType<CoreProjectionManagementMessage.CreateAndPrepare>().Count(c => c.Name == "projection1"));
 	}
