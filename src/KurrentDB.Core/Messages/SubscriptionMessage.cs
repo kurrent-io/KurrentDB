@@ -2,8 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.PersistentSubscription;
 
 namespace KurrentDB.Core.Messages;
 
@@ -88,5 +90,29 @@ public static partial class SubscriptionMessage {
 
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsStopped : Message {
+	}
+
+	[DerivedMessage(CoreMessage.Subscription)]
+	public partial class PersistentSubscriptionIndexEntriesLoaded : Message {
+		public readonly IReadOnlyList<PersistentSubscriptionEntry> IndexEntries;
+
+		public PersistentSubscriptionIndexEntriesLoaded(IReadOnlyList<PersistentSubscriptionEntry> indexEntries) {
+			IndexEntries = indexEntries;
+		}
+	}
+
+	/// <summary>
+	/// Notifies the main PersistentSubscriptionService that an index subscription entry
+	/// was created or deleted, so it can update its config for forwarding lookups.
+	/// </summary>
+	[DerivedMessage(CoreMessage.Subscription)]
+	public partial class PersistentSubscriptionIndexEntryChanged : Message {
+		public readonly PersistentSubscriptionEntry Entry;
+		public readonly bool IsDelete;
+
+		public PersistentSubscriptionIndexEntryChanged(PersistentSubscriptionEntry entry, bool isDelete) {
+			Entry = entry;
+			IsDelete = isDelete;
+		}
 	}
 }
