@@ -176,81 +176,12 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	public async Task StartAsync(CancellationToken cancellationToken = default) {
 		await _lifecycle.AcquireAsync(cancellationToken);
 		try {
-			ObjectDisposedException.ThrowIf(_state is State.Disposed, this);
-
-			if (_state is not State.Created) {
-				throw new InvalidOperationException(
-					"An embedded database runs once. The node and the host it runs in are both single-use, " +
-					"so starting it again after it has run is not possible: construct another " +
-					$"{nameof(EmbeddedKurrentDB)} on the same data directory instead.");
-			}
-
-			if (!NodePreflight.TryPrepare(ClusterVNodeOptions, out var cannotStart))
-				throw new InvalidOperationException(cannotStart);
-
-			if (!CertificateProviders.TryCreate(ClusterVNodeOptions, out var certificateProvider, out var noCertificate))
-				throw new InvalidOperationException(noCertificate);
-
-			_state = State.Running;
-
-			// TODO: only works for one embedded node at a time. The registration is undone on teardown so
-			// that a node started after this one has gone is heard from.
-			_exitRegistration = Application.RegisterExitAction(OnNodeRequestedExit);
-
-			try {
-				// opening the database is synchronous and can take a while, and there is no reason to make
-				// the caller's thread wait through it
-				_hostedService = await Task.Run(
-					() => new ClusterVNodeHostedService(ClusterVNodeOptions, certificateProvider, _configuration),
-					cancellationToken);
-
-				_web = BuildWebApplication(_options, _configuration, _hostedService);
-
-				using var readiness = new ReadinessProbe(_hostedService.Node.MainBus);
-
-				await _web.StartAsync(cancellationToken);
-
-				// the socket is bound by now: a connection over it is authenticated as the system account,
-				// so it is restricted to the user who started the database
-				UnixDomainSocket.RestrictToOwner(UnixSocketPath);
-
-				// a node that exits while starting fails the start now rather than at the timeout, even when
-				// it exits cleanly, as it does after truncating the database
-				var completedTask = await Task.WhenAny([
-					readiness.WaitAsync(_options.StartupTimeout, cancellationToken),
-					Completion,
-				]);
-
-				await completedTask;
-
-				if (completedTask == Completion) {
-					throw new InvalidOperationException(
-						"The embedded database shut down while it was starting. See the log for why.");
-				}
-			} catch (Exception ex) {
-				_completion.TrySetException(ex);
-
-				// a node that failed to start is not one anybody can use, and it is holding the database:
-				// let go of whatever did open, which leaves this one disposed and refusing another attempt
-				await TearDownAsync();
-				throw;
-			}
+			await StartWhileLockedAsync(cancellationToken);
 		} finally {
 			_lifecycle.Release();
 		}
 
 		Log.Information("Embedded KurrentDB is ready on {unixSocket}", UnixSocketPath);
-	}
-
-	// Called when the node wants to exit. On a fatal error the node is still running at this
-	// point: the host application must stop or dispose the node (TODO: improve on this).
-	void OnNodeRequestedExit(int exitCode, string reason) {
-		if (exitCode is (int)ExitCode.Success) {
-			_completion.TrySetResult();
-		} else {
-			_completion.TrySetException(new InvalidOperationException(
-				$"The embedded database asked to exit with exit code {exitCode} and must be disposed: {reason}"));
-		}
 	}
 
 	/// <summary>
@@ -264,51 +195,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		} finally {
 			_lifecycle.Release();
 		}
-	}
-
-	/// <summary>
-	/// Stops the node, assuming <see cref="_lifecycle"/> is held, and waits for it to finish.
-	/// </summary>
-	/// <remarks>
-	/// The node honours one stop and one only: a second <see cref="ClusterVNode.StopAsync"/> logs a warning
-	/// and returns straight away, without waiting for the first to finish. So the shutdown is started once
-	/// and kept, and every later caller waits on that same task rather than asking again and being told
-	/// nothing is left to do.
-	///
-	/// The caller's token bounds the wait, not the shutdown. A node that has begun shutting down cannot be
-	/// made to carry on, and abandoning the host mid-shutdown would leave disposal free to close the
-	/// database underneath a node still writing to it. <see cref="HostOptions.ShutdownTimeout"/>, set in
-	/// <see cref="BuildWebApplication"/>, is what bounds the shutdown itself.
-	/// </remarks>
-	async Task StopWhileLockedAsync(CancellationToken cancellationToken) {
-		if (_state is not State.Running || _web is null)
-			return;
-
-		_stopRequested = true;
-		_stopping ??= _web.StopAsync(CancellationToken.None);
-
-		await _stopping.WaitAsync(cancellationToken);
-
-		_state = State.Stopped;
-		_completion.TrySetResult();
-	}
-
-	/// <summary>
-	/// A gRPC channel to this node over its socket, for use with the generated service clients.
-	/// </summary>
-	/// <remarks>
-	/// The caller owns the channel and should dispose it. As with <see cref="CreateClientSettings"/>, the
-	/// address is a placeholder: the handler dials the socket.
-	/// </remarks>
-	public GrpcChannel CreateChannel(Action<GrpcChannelOptions>? configure = null) {
-		var channelOptions = new GrpcChannelOptions {
-			HttpHandler = UnixDomainSocket.CreateHandler(UnixSocketPath),
-			DisposeHttpClient = true,
-		};
-
-		configure?.Invoke(channelOptions);
-
-		return GrpcChannel.ForAddress("http://localhost", channelOptions);
 	}
 
 	/// <summary>
@@ -326,61 +212,95 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Lets go of everything that was opened, in the reverse of the order it was opened in, and leaves the
-	/// database disposed however that goes. Assumes <see cref="_lifecycle"/> is held, and copes with a
-	/// start that only got part of the way.
+	/// A gRPC channel to this node over its socket, for use with the generated service clients.
 	/// </summary>
-	async Task TearDownAsync() {
+	/// <remarks>
+	/// The caller owns the channel and should dispose it.
+	/// The address is a placeholder: the handler dials the socket.
+	/// </remarks>
+	public GrpcChannel CreateChannel(Action<GrpcChannelOptions>? configure = null) {
+		var channelOptions = new GrpcChannelOptions {
+			HttpHandler = UnixDomainSocket.CreateHandler(UnixSocketPath),
+			DisposeHttpClient = true,
+		};
+
+		configure?.Invoke(channelOptions);
+
+		return GrpcChannel.ForAddress("http://localhost", channelOptions);
+	}
+
+	// requires _lifecycle to be held
+	async Task StartWhileLockedAsync(CancellationToken cancellationToken) {
+		ObjectDisposedException.ThrowIf(_state is State.Disposed, this);
+
+		if (_state is not State.Created) {
+			throw new InvalidOperationException(
+				"An embedded database runs once. The node and the host it runs in are both single-use, " +
+				"so starting it again after it has run is not possible: construct another " +
+				$"{nameof(EmbeddedKurrentDB)} on the same data directory instead.");
+		}
+
+		if (!NodePreflight.TryPrepare(ClusterVNodeOptions, out var cannotStart))
+			throw new InvalidOperationException(cannotStart);
+
+		if (!CertificateProviders.TryCreate(ClusterVNodeOptions, out var certificateProvider, out var noCertificate))
+			throw new InvalidOperationException(noCertificate);
+
+		_state = State.Running;
+
+		// TODO: only works for one embedded node at a time. The registration is undone on teardown so
+		// that a node started after this one has gone is heard from.
+		_exitRegistration = Application.RegisterExitAction(OnNodeRequestedExit);
+
 		try {
-			try {
-				await StopWhileLockedAsync(CancellationToken.None);
-			} catch (Exception ex) {
-				Log.Warning(ex, "The embedded database did not stop cleanly.");
+			// opening the database is synchronous and can take a while, and there is no reason to make
+			// the caller's thread wait through it
+			_hostedService = await Task.Run(
+				() => new ClusterVNodeHostedService(ClusterVNodeOptions, certificateProvider, _configuration),
+				cancellationToken);
+
+			_web = BuildWebApplication(_options, _configuration, _hostedService);
+
+			using var readiness = new ReadinessProbe(_hostedService.Node.MainBus);
+
+			await _web.StartAsync(cancellationToken);
+
+			// the socket is bound by now: a connection over it is authenticated as the system account,
+			// so it is restricted to the user who started the database
+			UnixDomainSocket.RestrictToOwner(UnixSocketPath);
+
+			// a node that exits while starting fails the start now rather than at the timeout, even when
+			// it exits cleanly, as it does after truncating the database
+			var completedTask = await Task.WhenAny([
+				readiness.WaitAsync(_options.StartupTimeout, cancellationToken),
+				Completion,
+			]);
+
+			await completedTask;
+
+			if (completedTask == Completion) {
+				throw new InvalidOperationException(
+					"The embedded database shut down while it was starting. See the log for why.");
 			}
+		} catch (Exception ex) {
+			_completion.TrySetException(ex);
 
-			if (_web is not null)
-				await _web.DisposeAsync();
-
-			// before the database lets go of its lock: once it has, another database may take the directory
-			// and bind a socket of its own at the same path, which this must not then delete
-			if (Volatile.Read(ref _unixSocketPath) is { } socketPath)
-				UnixDomainSocket.Delete(socketPath);
-
-			// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
-			// the start that failed after the node was constructed: the constructor opens the checkpoints
-			// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
-			// The server executable can leave that to process exit; a host that embeds the database and
-			// carries on cannot.
-			if (_hostedService is not null)
-				await _hostedService.Node.Db.DisposeAsync();
-		} finally {
-			_exitRegistration?.Dispose();
-			_exitRegistration = null;
-			_state = State.Disposed;
-			_completion.TrySetResult();
-			DisposeConfiguration();
+			// a node that failed to start is not one anybody can use, and it is holding the database:
+			// let go of whatever did open, which leaves this one disposed and refusing another attempt
+			await TearDownAsync();
+			throw;
 		}
 	}
 
-	/// <summary>
-	/// Releases the configuration this database built for itself. The web host chains it rather than
-	/// taking it over, so nothing else ever lets go of the file watchers its providers hold open.
-	/// </summary>
-	void DisposeConfiguration() {
-		// IConfigurationRoot does not carry IDisposable, though what ConfigurationBuilder returns does
-		if (_configuration is IDisposable disposable)
-			disposable.Dispose();
-	}
-
-	/// <summary>
-	/// The states an embedded database moves through, in order and only forwards. It runs once: both the
-	/// node and the host it runs in are single-use, so there is no way back to <see cref="Created"/>.
-	/// </summary>
-	enum State {
-		Created,
-		Running,
-		Stopped,
-		Disposed,
+	// Called when the node wants to exit. On a fatal error the node is still running at this
+	// point: the host application must stop or dispose the node (TODO: improve on this).
+	void OnNodeRequestedExit(int exitCode, string reason) {
+		if (exitCode is (int)ExitCode.Success) {
+			_completion.TrySetResult();
+		} else {
+			_completion.TrySetException(new InvalidOperationException(
+				$"The embedded database asked to exit with exit code {exitCode} and must be disposed: {reason}"));
+		}
 	}
 
 	WebApplication BuildWebApplication(
@@ -457,6 +377,91 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		NodeWebApplication.Configure(app, hostedService);
 
 		return app;
+	}
+
+	/// <summary>
+	/// Stops the node, assuming <see cref="_lifecycle"/> is held, and waits for it to finish.
+	/// </summary>
+	/// <remarks>
+	/// The node honours one stop and one only: a second <see cref="ClusterVNode.StopAsync"/> logs a warning
+	/// and returns straight away, without waiting for the first to finish. So the shutdown is started once
+	/// and kept, and every later caller waits on that same task rather than asking again and being told
+	/// nothing is left to do.
+	///
+	/// The caller's token bounds the wait, not the shutdown. A node that has begun shutting down cannot be
+	/// made to carry on, and abandoning the host mid-shutdown would leave disposal free to close the
+	/// database underneath a node still writing to it. <see cref="HostOptions.ShutdownTimeout"/>, set in
+	/// <see cref="BuildWebApplication"/>, is what bounds the shutdown itself.
+	/// </remarks>
+	async Task StopWhileLockedAsync(CancellationToken cancellationToken) {
+		if (_state is not State.Running || _web is null)
+			return;
+
+		_stopRequested = true;
+		_stopping ??= _web.StopAsync(CancellationToken.None);
+
+		await _stopping.WaitAsync(cancellationToken);
+
+		_state = State.Stopped;
+		_completion.TrySetResult();
+	}
+
+	/// <summary>
+	/// Lets go of everything that was opened, in the reverse of the order it was opened in, and leaves the
+	/// database disposed however that goes. Assumes <see cref="_lifecycle"/> is held, and copes with a
+	/// start that only got part of the way.
+	/// </summary>
+	async Task TearDownAsync() {
+		try {
+			try {
+				await StopWhileLockedAsync(CancellationToken.None);
+			} catch (Exception ex) {
+				Log.Warning(ex, "The embedded database did not stop cleanly.");
+			}
+
+			if (_web is not null)
+				await _web.DisposeAsync();
+
+			// before the database lets go of its lock: once it has, another database may take the directory
+			// and bind a socket of its own at the same path, which this must not then delete
+			if (Volatile.Read(ref _unixSocketPath) is { } socketPath)
+				UnixDomainSocket.Delete(socketPath);
+
+			// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
+			// the start that failed after the node was constructed: the constructor opens the checkpoints
+			// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
+			// The server executable can leave that to process exit; a host that embeds the database and
+			// carries on cannot.
+			if (_hostedService is not null)
+				await _hostedService.Node.Db.DisposeAsync();
+		} finally {
+			_exitRegistration?.Dispose();
+			_exitRegistration = null;
+			_state = State.Disposed;
+			_completion.TrySetResult();
+			DisposeConfiguration();
+		}
+	}
+
+	/// <summary>
+	/// Releases the configuration this database built for itself. The web host chains it rather than
+	/// taking it over, so nothing else ever lets go of the file watchers its providers hold open.
+	/// </summary>
+	void DisposeConfiguration() {
+		// IConfigurationRoot does not carry IDisposable, though what ConfigurationBuilder returns does
+		if (_configuration is IDisposable disposable)
+			disposable.Dispose();
+	}
+
+	/// <summary>
+	/// The states an embedded database moves through, in order and only forwards. It runs once: both the
+	/// node and the host it runs in are single-use, so there is no way back to <see cref="Created"/>.
+	/// </summary>
+	enum State {
+		Created,
+		Running,
+		Stopped,
+		Disposed,
 	}
 
 	sealed class LocalNodeHttpHandlerFactory(string socketPath) : ILocalNodeHttpHandlerFactory {
