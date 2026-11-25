@@ -119,12 +119,4 @@ public static class UnixDomainSocket {
 
 		File.SetUnixFileMode(socketPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 	}
-
-	public static void Delete(string socketPath) {
-		try {
-			File.Delete(socketPath);
-		} catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
-			// the next start cleans up a socket file left behind
-		}
-	}
 }

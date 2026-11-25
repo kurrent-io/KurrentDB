@@ -422,11 +422,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 			if (_web is not null)
 				await _web.DisposeAsync();
 
-			// before the database lets go of its lock: once it has, another database may take the directory
-			// and bind a socket of its own at the same path, which this must not then delete
-			if (Volatile.Read(ref _unixSocketPath) is { } socketPath)
-				UnixDomainSocket.Delete(socketPath);
-
 			// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
 			// the start that failed after the node was constructed: the constructor opens the checkpoints
 			// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
