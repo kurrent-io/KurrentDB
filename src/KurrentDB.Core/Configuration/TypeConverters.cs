@@ -51,6 +51,7 @@ public class GossipEndPointConverter : TypeConverter {
 	// IPEndPoint.ToString() brackets IPv6 addresses ("[::1]:2113"), which Parse accepts
 	public static string ToString(EndPoint ep) => ep switch {
 		IPEndPoint ip => ip.ToString(),
+		DnsEndPoint dns when dns.Host.Contains(':') => $"[{dns.Host}]:{dns.Port}",
 		DnsEndPoint dns => $"{dns.Host}:{dns.Port}",
 		_ => ep.ToString() ?? string.Empty,
 	};
