@@ -84,10 +84,31 @@ public class GossipSeedConverter : ArrayConverter {
 		return gossipEndPoints;
 	}
 
-	public static IReadOnlyList<EndPoint> Parse(IConfigurationSection section) {
-		return section.Get<string[]>() is { Length: > 0 } elements
-			? Array.ConvertAll(elements, GossipEndPointConverter.Parse)
-			: [];
+	// A seed can be supplied as a delimited scalar ("KurrentDB:GossipSeed") or as an array of child keys
+	// ("KurrentDB:GossipSeed:0", ...). Configuration merges per key, so when different providers use different
+	// forms the section carries both the scalar and the children. Precedence follows the usual configuration
+	// rule: the provider added last that supplies the seed in either form wins. Within a single provider
+	// the array wins. Returns the array elements when the winning provider supplies an array, or null when it
+	// supplies a scalar or no provider supplies the seed, in which case the regular scalar binding applies.
+	public static IReadOnlyList<EndPoint>? ParseArray(IConfigurationRoot root, string key) {
+		foreach (var provider in root.Providers.Reverse()) {
+			var children = provider.GetChildKeys([], key).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+			if (children is not []) {
+				Array.Sort(children, ConfigurationKeyComparer.Instance);
+				var result = new List<EndPoint>(children.Length);
+				foreach (var child in children) {
+					if (provider.TryGet(ConfigurationPath.Combine(key, child), out var element) && element is not null)
+						result.Add(GossipEndPointConverter.Parse(element));
+				}
+
+				return result;
+			}
+
+			if (provider.TryGet(key, out var value) && value is not null)
+				return null;
+		}
+
+		return null;
 	}
 }
 
