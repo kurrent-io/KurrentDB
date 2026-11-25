@@ -9,7 +9,8 @@ namespace KurrentDB.Embedded;
 [PublicAPI]
 public sealed record EmbeddedKurrentDBOptions {
 	/// <summary>
-	/// The directory the database is written to. It is created, owner-only, if it does not exist.
+	/// The directory the database is written to. It is created if it does not exist, and on Linux and macOS
+	/// is restricted to the current user. On Windows its permissions are left as they are.
 	/// </summary>
 	public required string DataDirectory { get; init; }
 
