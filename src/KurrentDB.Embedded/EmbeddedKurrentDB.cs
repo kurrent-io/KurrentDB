@@ -326,7 +326,11 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 
 		builder.Services.Configure<HostOptions>(host => {
 			host.ShutdownTimeout = ClusterVNode.ShutdownTimeout + TimeSpan.FromSeconds(1);
+#if DEBUG
 			host.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+#else
+			host.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+#endif
 		});
 
 		// the default console lifetime would stop the node on SIGTERM or Ctrl+C at the same moment as the
