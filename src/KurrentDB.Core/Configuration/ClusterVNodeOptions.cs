@@ -17,6 +17,7 @@ using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
@@ -77,8 +78,8 @@ public partial record ClusterVNodeOptions {
 			Certificate = configuration.BindOptions<CertificateOptions>(),
 			CertificateFile = configuration.BindOptions<CertificateFileOptions>(),
 			CertificateStore = configuration.BindOptions<CertificateStoreOptions>(),
-			KontrolPlane = configuration.BindOptions<KontrolPlaneOptions>(),
-			Cluster = configuration.BindOptions<ClusterOptions>(),
+			KontrolPlane = configuration.BindOptions<KontrolPlaneOptions>().WithSeedArrays(configurationRoot),
+			Cluster = configuration.BindOptions<ClusterOptions>().WithSeedArrays(configurationRoot),
 			Database = configuration.BindOptions<DatabaseOptions>(),
 			Grpc = configuration.BindOptions<GrpcOptions>(),
 			Interface = configuration.BindOptions<InterfaceOptions>(),
@@ -90,6 +91,16 @@ public partial record ClusterVNodeOptions {
 		};
 
 		return options;
+	}
+
+	// null means the seed is not supplied as an array by the provider that takes precedence, so the scalar binding stands
+	private static IReadOnlyList<EndPoint>? ParseSeedArray(IConfigurationRoot configurationRoot, string option) {
+		var key = $"{KurrentConfigurationKeys.Prefix}:{option}";
+		try {
+			return GossipSeedConverter.ParseArray(configurationRoot, key);
+		} catch (Exception ex) {
+			throw new InvalidConfigurationException($"Failed to convert configuration value at '{key}'. {ex.Message.TrimEnd('.')}.");
+		}
 	}
 
 	[Description("Default User Options")]
@@ -354,17 +365,15 @@ public partial record ClusterVNodeOptions {
 		 Unit("ms")]
 		public int KontrolPlaneAppointmentTimeoutMs { get; set; } = 1_000;
 
-		static KontrolPlaneOptions IConfigurationBinder<KontrolPlaneOptions>.Bind(IConfiguration configuration) {
-			var options = configuration.Get<KontrolPlaneOptions>()!;
+		// Binds the seeds supplied as scalars. Seeds supplied as arrays are applied by WithSeedArrays,
+		// which needs the configuration root to tell which provider takes precedence.
+		static KontrolPlaneOptions IConfigurationBinder<KontrolPlaneOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<KontrolPlaneOptions>()!;
 
-			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(KontrolPlaneBootstrapSeed))) is { Count: > 0 } bootstrapSeed)
-				options._bootstrapSeed = bootstrapSeed;
-
-			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(KontrolPlaneApiSeed))) is { Count: > 0 } apiSeed)
-				options._apiSeed = apiSeed;
-
-			return options;
-		}
+		internal KontrolPlaneOptions WithSeedArrays(IConfigurationRoot configurationRoot) => this with {
+			_bootstrapSeed = ParseSeedArray(configurationRoot, nameof(KontrolPlaneBootstrapSeed)) ?? _bootstrapSeed,
+			_apiSeed = ParseSeedArray(configurationRoot, nameof(KontrolPlaneApiSeed)) ?? _apiSeed,
+		};
 	}
 
 	[Description("Cluster Options")]
@@ -436,14 +445,14 @@ public partial record ClusterVNodeOptions {
 
 		public int QuorumSize => ClusterSize == 1 ? 1 : ClusterSize / 2 + 1;
 
-		static ClusterOptions IConfigurationBinder<ClusterOptions>.Bind(IConfiguration configuration) {
-			var options = configuration.Get<ClusterOptions>()!;
+		// Binds the seed supplied as a scalar. A seed supplied as an array is applied by WithSeedArrays,
+		// which needs the configuration root to tell which provider takes precedence.
+		static ClusterOptions IConfigurationBinder<ClusterOptions>.Bind(IConfiguration configuration)
+			=> configuration.Get<ClusterOptions>()!;
 
-			if (GossipSeedConverter.Parse(configuration.GetSection(nameof(GossipSeed))) is { Count: > 0 } gossipSeed)
-				options._gossipSeed = gossipSeed;
-
-			return options;
-		}
+		internal ClusterOptions WithSeedArrays(IConfigurationRoot configurationRoot) => this with {
+			_gossipSeed = ParseSeedArray(configurationRoot, nameof(GossipSeed)) ?? _gossipSeed,
+		};
 	}
 
 	[Description("Database Options")]

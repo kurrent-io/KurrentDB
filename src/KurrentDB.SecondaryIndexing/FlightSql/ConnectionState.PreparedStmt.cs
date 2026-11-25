@@ -136,7 +136,7 @@ partial class ConnectionState {
 		try {
 			var preparedQuery = engine
 				.PrepareQuery(buffer.Span, new() { UseDigitalSignature = false });
-			return new(preparedQuery, engine.GetArrowSchema(preparedQuery.Span, out parameters));
+			return new(preparedQuery, engine.GetQuerySchema(preparedQuery.Span, out parameters));
 		} finally {
 			buffer.Dispose();
 		}

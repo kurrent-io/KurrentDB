@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
@@ -28,11 +29,13 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 		await ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), forwards);
 	}
 
-	[Fact]
-	public async Task ReadFromDefaultIndexUsingQueryEngine() {
+	[Theory]
+	[InlineData("SELECT metadata FROM kdb.records")]
+	[InlineData("SHOW TABLES")]
+	public async Task ReadFromDefaultIndexUsingQueryEngine(string query) {
 		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
 		using var preparedSql = engine.PrepareQuery(
-			"SELECT metadata FROM kdb.records"u8,
+			Encoding.UTF8.GetBytes(query),
 			new() { UseDigitalSignature = true });
 
 		var consumer = new RowCountReader();

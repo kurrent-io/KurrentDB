@@ -228,6 +228,49 @@ public class ClusterVNodeOptionsTests {
 		});
 	}
 
+	[Fact]
+	public void gossip_seed_scalar_from_later_provider_overrides_earlier_array() {
+		var config = new ConfigurationBuilder()
+			.AddKurrentDefaultValues()
+			.AddSection(KurrentPrefix, b => b
+				.AddInMemoryCollection([
+					new("GossipSeed:0", "127.0.0.1:1113"),
+					new("GossipSeed:1", "some-host:1114"),
+				]))
+			.AddKurrentEnvironmentVariables(($"{KurrentEnvVarPrefix}_GOSSIP_SEED", "other-host:2113"))
+			.Build();
+
+		var options = ClusterVNodeOptions.FromConfiguration(config);
+
+		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(new EndPoint[] {
+			new DnsEndPoint("other-host", 2113),
+		});
+	}
+
+	[Fact]
+	public void seed_array_from_later_provider_overrides_earlier_scalar() {
+		var config = new ConfigurationBuilder()
+			.AddKurrentDefaultValues()
+			.AddKurrentEnvironmentVariables(
+				($"{KurrentEnvVarPrefix}_GOSSIP_SEED", "other-host:2113"),
+				($"{KurrentEnvVarPrefix}_KONTROL_PLANE_API_SEED", "other-host:3113"))
+			.AddSection(KurrentPrefix, b => b
+				.AddInMemoryCollection([
+					new("GossipSeed:0", "127.0.0.1:1113"),
+					new("KontrolPlaneApiSeed:0", "127.0.0.1:3114"),
+				]))
+			.Build();
+
+		var options = ClusterVNodeOptions.FromConfiguration(config);
+
+		options.Cluster.GetGossipSeed().Should().BeEquivalentTo(new EndPoint[] {
+			new IPEndPoint(IPAddress.Loopback, 1113),
+		});
+		options.KontrolPlane.GetKontrolPlaneApiSeed().Should().BeEquivalentTo(new EndPoint[] {
+			new IPEndPoint(IPAddress.Loopback, 3114),
+		});
+	}
+
 	[Theory]
 	[InlineData(true, "127.0.0.1", "You must specify the port number.")]
 	[InlineData(true, "127.0.0.1:3.1415", "Invalid format for the port number: 3.1415.")]

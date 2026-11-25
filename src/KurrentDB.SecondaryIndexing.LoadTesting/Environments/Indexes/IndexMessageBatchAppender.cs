@@ -7,6 +7,7 @@ using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
@@ -25,7 +26,9 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 
 		var publisher = new FakePublisher();
-		var schema = new IndexingDbSchema(static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator());
+		var schema = new IndexingDbSchema(
+			static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator(),
+			new FakeDatabaseSchemaProvider());
 		using (db.Rent(out var connection)) {
 			schema.Execute(connection);
 		}

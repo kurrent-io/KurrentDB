@@ -6,7 +6,7 @@ using DotNext.Buffers;
 
 namespace KurrentDB.SecondaryIndexing.Query;
 
-public interface IQueryEngine {
+public interface IQueryEngine : IDatabaseSchemaProvider {
 	/// <summary>
 	/// Prepares the query for execution.
 	/// </summary>
@@ -34,7 +34,7 @@ public interface IQueryEngine {
 	/// </summary>
 	/// <param name="preparedQuery">The prepared query.</param>
 	/// <returns>The schema of the query result dataset.</returns>
-	Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery);
+	Schema GetQuerySchema(ReadOnlySpan<byte> preparedQuery);
 
 	/// <summary>
 	/// Gets Arrow schema for the query.
@@ -42,5 +42,5 @@ public interface IQueryEngine {
 	/// <param name="preparedQuery">The prepared query.</param>
 	/// <param name="parametersSchema">The schema of the parameters.</param>
 	/// <returns>The schema of the query result dataset.</returns>
-	Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema);
+	Schema GetQuerySchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema);
 }

@@ -55,16 +55,24 @@ public abstract class ReadResponseException : Exception {
 		public static UnknownError Create<T>(T result, [CanBeNull] string errorMessage = null) => new(typeof(T), result, errorMessage);
 	}
 
-	public abstract class NotHandled {
-		public class ServerNotReady : ReadResponseException;
-
-		public class ServerBusy : ReadResponseException;
-
-		public class LeaderInfo(string host, int port) : ReadResponseException {
-			public string Host { get; } = host;
-			public int Port { get; } = port;
+	public abstract class NotHandled : ReadResponseException {
+		public class ServerNotReady : NotHandled {
+			public override string Message => "Server is not ready";
 		}
 
-		public class NoLeaderInfo : ReadResponseException;
+		public class ServerBusy : NotHandled {
+			public override string Message => "Server is too busy";
+		}
+
+		public class LeaderInfo(string host, int port) : NotHandled {
+			public string Host { get; } = host;
+			public int Port { get; } = port;
+
+			public override string Message => $"Server is not the leader, leader is at {Host}:{Port}";
+		}
+
+		public class NoLeaderInfo : NotHandled {
+			public override string Message => "Server is not the leader, leader is unknown";
+		}
 	}
 }

@@ -4,43 +4,69 @@
 #nullable enable
 
 using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Diagnostics.Metrics;
 using DotNext.Runtime.Caching;
+using DotNext.Runtime.InteropServices;
+using DotNext.Threading;
 using Serilog;
+using Serilog.Events;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
+/// <summary>
+/// Partition state cache that keeps keys and values in unmanaged memory, so the number of
+/// cached partitions doesn't contribute to GC heap size or pause times.
+/// </summary>
 public sealed class PartitionStateCache : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionStateCache>();
 
-	// RandomAccessCache requires TValue : notnull, so we wrap nullable strings in a record.
-	private readonly record struct CachedValue(string? State);
-
-	private readonly RandomAccessCache<string, CachedValue> _cache;
+	private readonly RandomAccessCache<StateHandle> _cache;
+	private readonly string _id = Guid.NewGuid().ToString();
+	private readonly UpDownCounterObserver<long> _entries;
+	private readonly MeterListener _listener;
 	private readonly string _name;
 	private readonly string _projectionName;
 	private long _evictions;
-	private long _count;
 
 	public PartitionStateCache(int capacity, string name, string projectionName) {
 		if (capacity <= 0)
 			throw new ArgumentOutOfRangeException(nameof(capacity), capacity, "Capacity must be positive");
 		_name = name;
 		_projectionName = projectionName;
-		_cache = new RandomAccessCache<string, CachedValue>(capacity) {
-			Eviction = OnEviction,
-			KeyComparer = StringComparer.Ordinal,
+		_entries = new(_id.IsThisCache);
+		_listener = new MeterListenerBuilder()
+			.Observe(IsEntriesCount, _entries)
+			.Build();
+		_listener.Start();
+
+		// Keys are compared as raw UTF-16 bytes (see RandomAccessCache.AsKey), which is ordinal comparison.
+		_cache = new RandomAccessCache<StateHandle>(capacity) {
+			Eviction = OnRetired,
+			MeasurementTags = new() { { MeasurementHelpers.CacheIdTag, _id } },
 		};
+
+		static bool IsEntriesCount(Instrument instrument) =>
+			instrument.Meter.Name is "DotNext.Runtime.Caching.RandomAccessCache.Unmanaged" && instrument.Name is "entries-count";
 	}
 
-	public long Evictions => Interlocked.Read(ref _evictions);
-	public long Count => Interlocked.Read(ref _count);
+	public long Evictions => Atomic.Read(ref _evictions);
+
+	// Allocated entries, including evicted or replaced ones that are still waiting to be released
+	public long Count => _entries.Value;
 
 	public bool TryGet(string key, out string? value) {
-		if (_cache.TryRead(key, out var session)) {
+		if (_cache.TryRead(RandomAccessCache.AsKey(key), out var session)) {
 			using (session) {
-				value = session.Value.State;
+				value = session.Value.Decode();
 				return true;
 			}
 		}
@@ -50,21 +76,144 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 	}
 
 	public async ValueTask Set(string key, string? value, CancellationToken ct) {
-		// Sync Dispose, not DisposeAsync: DotNext recommends sync disposal on non-rate-limited
-		// caches because DisposeAsync serializes writers behind a single promotion thread.
-		using var session = await _cache.ChangeAsync(key, ct);
-		var isNew = !session.TryGetValue(out _);
-		session.SetValue(new CachedValue(value));
-		if (isNew)
-			Interlocked.Increment(ref _count);
+		var cacheKey = RandomAccessCache.AsKey(key);
+
+		// State handlers re-serialize the state on every event, so an unchanged state arrives
+		// as a new string with the same content. Skip the write to avoid remove + insert.
+		// The comparison doesn't allocate, so an unchanged state costs no unmanaged allocation.
+		// A partition key is written by a single partition processor, so the record can't
+		// change between this check and the replacement below.
+		if (_cache.TryRead(cacheKey, out var current)) {
+			using (current) {
+				if (current.Value.ContentEquals(value))
+					return;
+
+				// ReplaceAsync below removes this record. It's flagged so that its retirement, which
+				// may happen later on the eviction thread, isn't counted as an eviction. It can't be
+				// retired while the session is open, so OnRetired is guaranteed to see the flag.
+				current.Value.MarkReplaced();
+			}
+		}
+
+		var state = StateHandle.Allocate(value);
+		try {
+			// Records are immutable once inserted, so ReplaceAsync removes the old record and the
+			// session inserts the new one, both under the bucket lock. Readers don't take the lock,
+			// so they can still miss the key between the removal and SetValue.
+			// Sync Dispose, not DisposeAsync: DotNext recommends sync disposal on non-rate-limited
+			// caches because DisposeAsync serializes writers behind a single promotion thread.
+			using (var session = await _cache.ReplaceAsync(cacheKey, ct)) {
+				session.SetValue(state);
+			}
+
+			// The cache owns the state now, it's released by OnRetired
+			state = default;
+		} finally {
+			state.Dispose();
+		}
 	}
 
-	public ValueTask DisposeAsync() => _cache.DisposeAsync();
+	// Releases the remaining records through OnRetired, which frees their unmanaged state.
+	public async ValueTask DisposeAsync() {
+		await _cache.DisposeAsync();
+		_listener.Dispose();
+	}
 
-	private void OnEviction(string key, CachedValue _) {
-		Interlocked.Increment(ref _evictions);
-		Interlocked.Decrement(ref _count);
-		Log.Verbose("Partition state cache {Cache} for projection {Projection} evicted partition {Partition}",
-			_name, _projectionName, key);
+	// Called once per record when it's evicted or replaced and no sessions reference it anymore,
+	// so freeing the state here can't race with a reader.
+	private void OnRetired(ReadOnlySpan<byte> key, StateHandle state) {
+		try {
+			if (state.IsReplaced)
+				return;
+
+			Interlocked.Increment(ref _evictions);
+			if (Log.IsEnabled(LogEventLevel.Verbose)) {
+				Log.Verbose("Partition state cache {Cache} for projection {Projection} evicted partition {Partition}",
+					_name, _projectionName, MemoryMarshal.Cast<byte, char>(key).ToString());
+			}
+		} finally {
+			state.Dispose();
+		}
+	}
+
+	// Header of the unmanaged block that holds the partition state: [Header][UTF-8 bytes].
+	// The length prefix allows decoding without scanning for a terminator, and allows null state (Length < 0).
+	// Storing the state as UTF-16 would make the code simpler, since it could be copied and compared
+	// as chars without transcoding, but it would double the memory for mostly ASCII JSON states.
+	private struct Header {
+		public int Length;
+		public bool Replaced;
+	}
+
+	// Owning handle to the unmanaged block. Freed exactly once, by OnRetired.
+	private readonly struct StateHandle : IDisposable {
+		private const int NullLength = -1;
+		private const int ComparisonBufferSize = 256;
+
+		private readonly Pointer<Header> _header;
+
+		private StateHandle(Pointer<Header> header) => _header = header;
+
+		public static StateHandle Allocate(string? state) {
+			var length = state is null ? 0 : Encoding.UTF8.GetByteCount(state);
+			var header = new Pointer<Header>(Marshal.AllocHGlobal(Unsafe.SizeOf<Header>() + length)) {
+				Value = new() { Length = state is null ? NullLength : length }
+			};
+			var handle = new StateHandle(header);
+			if (state is not null)
+				Encoding.UTF8.GetBytes(state, handle.Payload);
+
+			return handle;
+		}
+
+		private ref Header Header => ref _header.Value;
+
+		private Span<byte> Payload => ((Pointer<byte>)(_header + 1)).AsSpan(int.Max(Header.Length, 0));
+
+		public bool IsReplaced => Volatile.Read(in Header.Replaced);
+
+		public void MarkReplaced() => Volatile.Write(ref Header.Replaced, true);
+
+		public string? Decode() => Header.Length is NullLength
+			? null
+			: Encoding.UTF8.GetString(Payload);
+
+		// Compares without allocating: encodes the state in chunks into a stack buffer and
+		// compares each chunk with the stored bytes, stopping at the first difference
+		public bool ContentEquals(string? state) {
+			if (state is null || Header.Length is NullLength)
+				return state is null && Header.Length is NullLength;
+
+			ReadOnlySpan<byte> payload = Payload;
+			var chars = state.AsSpan();
+			Span<byte> buffer = stackalloc byte[ComparisonBufferSize];
+			while (true) {
+				var status = Utf8.FromUtf16(chars, buffer, out var read, out var written);
+				if (written > payload.Length || !buffer[..written].SequenceEqual(payload[..written]))
+					return false;
+
+				payload = payload[written..];
+				chars = chars[read..];
+				if (status is not OperationStatus.DestinationTooSmall)
+					return status is OperationStatus.Done && payload.IsEmpty;
+			}
+		}
+
+		// No-op for the default handle
+		public void Dispose() => Marshal.FreeHGlobal(_header.Address);
+	}
+}
+
+file static class MeasurementHelpers {
+	// The meter is shared by all unmanaged caches, so the measurements of this cache are tagged with a unique id
+	public const string CacheIdTag = "kurrentdb.partition-state-cache.id";
+
+	public static bool IsThisCache(this string tag, UpDownCounter<long> instrument, ReadOnlySpan<KeyValuePair<string, object?>> tags) {
+		foreach (var (key, value) in tags) {
+			if (key is CacheIdTag)
+				return ReferenceEquals(value, tag);
+		}
+
+		return false;
 	}
 }
