@@ -129,7 +129,7 @@ file sealed record RestoreOutput(IReadOnlyCollection<string> BundledAssemblies, 
 
 		foreach (var library in libraries.Values)
 			if (TypeOf(library) == "project")
-				bundled.AddRange(AssembliesOf(library));
+				bundled.AddRange(AssembliesOf(library, "compile", "runtime"));
 
 		// A dependency the project reference suppresses (PrivateAssets=all) is one pack leaves out of the
 		// package, so it provides nothing here either.
@@ -151,7 +151,8 @@ file sealed record RestoreOutput(IReadOnlyCollection<string> BundledAssemblies, 
 			if (!visited.Add(id) || !libraries.TryGetValue(id, out var library) || TypeOf(library) != "package")
 				continue;
 
-			declared.AddRange(AssembliesOf(library));
+			// runtime only: a reference assembly lets a project compile, but nothing in it can be loaded
+			declared.AddRange(AssembliesOf(library, "runtime"));
 
 			if (library.TryGetProperty("dependencies", out var dependencies))
 				foreach (var dependency in dependencies.EnumerateObject())
@@ -165,11 +166,11 @@ file sealed record RestoreOutput(IReadOnlyCollection<string> BundledAssemblies, 
 		library.TryGetProperty("type", out var kind) ? kind.GetString() : null;
 
 	/// <summary>
-	/// The assembly names a resolved library contributes. Compile and runtime are both read because a
-	/// package can provide one without the other, and "_._" is the placeholder for neither.
+	/// The assembly names a resolved library contributes as the given kinds of asset. "_._" is the
+	/// placeholder for none.
 	/// </summary>
-	static IEnumerable<string> AssembliesOf(JsonElement library) =>
-		new[] { "compile", "runtime" }
+	static IEnumerable<string> AssembliesOf(JsonElement library, params string[] assetKinds) =>
+		assetKinds
 			.Where(x => library.TryGetProperty(x, out _))
 			.SelectMany(x => library.GetProperty(x).EnumerateObject())
 			.Where(x => !x.Name.EndsWith("_._", StringComparison.Ordinal))

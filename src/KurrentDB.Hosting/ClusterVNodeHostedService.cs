@@ -53,9 +53,12 @@ public class ClusterVNodeHostedService : IHostedService {
 
 		options = LoadSubsystemsPlugins(options);
 
-		var projectionMode = options.DevMode.Dev && options.Projection.RunProjections == ProjectionType.None
-			? ProjectionType.System
-			: options.Projection.RunProjections;
+		// dev mode turns projections on as a convenience, which a build without them simply goes without:
+		// only asking for them outright refuses to start below
+		var projectionMode =
+			options.DevMode.Dev && options.Projection.RunProjections == ProjectionType.None && ProjectionsSubsystem.IsAllowed
+				? ProjectionType.System
+				: options.Projection.RunProjections;
 		var startStandardProjections = options.Projection.StartStandardProjections || options.DevMode.Dev;
 
 		if (projectionMode >= ProjectionType.System && !ProjectionsSubsystem.IsAllowed)

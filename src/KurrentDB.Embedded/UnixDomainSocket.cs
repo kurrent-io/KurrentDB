@@ -67,10 +67,9 @@ public static class UnixDomainSocket {
 			return fullPath;
 		}
 
-		if (!Directory.Exists(fullPath)) {
-			Directory.CreateDirectory(fullPath, OwnerOnly);
-			return fullPath;
-		}
+		// does nothing to a directory that is already there, whoever made it and however, so even a
+		// directory made here is checked below: another user may have made it first
+		Directory.CreateDirectory(fullPath, OwnerOnly);
 
 		var mode = File.GetUnixFileMode(fullPath);
 

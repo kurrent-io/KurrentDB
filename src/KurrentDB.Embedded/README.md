@@ -16,6 +16,7 @@ https://github.com/kurrent-io/KurrentDB/tree/v26.3.0-alpha.6/src/KurrentDB.Embed
 ## Limitations
 
 - Running more than one node at a time in a single process is not yet supported: they would share the same logging and metrics output, and a fatal error in any of them would be reported to the most recently started one. Running them one after another is fine.
+- Opening a database directory again in the same process after stopping it can occasionally fail: if reads were still in progress when it closed, it keeps its lock on the directory until the process exits. Opening one database and keeping it open for the lifetime of the application is unaffected.
 - The nodes largely log via the static Serilog logger. The `EmbeddedKurrentDB` type has a `LoggerConfiguration` instance property which you can use to create a logger and assign to `Serilog.Log.Logger`.
 - Some of this package's dependencies bring in `System.Linq.Async`, whose extension methods clash with the async LINQ methods built into .NET 10. If calls such as `ToListAsync()` on an `IAsyncEnumerable<T>` fail to compile as ambiguous, reference the package directly and exclude its compile assets. It is still needed at runtime.
 

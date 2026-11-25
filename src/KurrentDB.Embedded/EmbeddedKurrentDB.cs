@@ -240,12 +240,6 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				$"{nameof(EmbeddedKurrentDB)} on the same data directory instead.");
 		}
 
-		if (!NodePreflight.TryPrepare(ClusterVNodeOptions, out var cannotStart))
-			throw new InvalidOperationException(cannotStart);
-
-		if (!CertificateProviders.TryCreate(ClusterVNodeOptions, out var certificateProvider, out var noCertificate))
-			throw new InvalidOperationException(noCertificate);
-
 		_state = State.Running;
 
 		// TODO: only works for one embedded node at a time. The registration is undone on teardown so
@@ -253,6 +247,12 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 		_exitRegistration = Application.RegisterExitAction(OnNodeRequestedExit);
 
 		try {
+			if (!NodePreflight.TryPrepare(ClusterVNodeOptions, out var cannotStart))
+				throw new InvalidOperationException(cannotStart);
+
+			if (!CertificateProviders.TryCreate(ClusterVNodeOptions, out var certificateProvider, out var noCertificate))
+				throw new InvalidOperationException(noCertificate);
+
 			// opening the database is synchronous and can take a while, and there is no reason to make
 			// the caller's thread wait through it
 			_hostedService = await Task.Run(
@@ -423,16 +423,19 @@ public sealed class EmbeddedKurrentDB : IAsyncDisposable {
 				Log.Warning(ex, "The embedded database did not stop cleanly.");
 			}
 
-			if (_web is not null)
-				await _web.DisposeAsync();
-
-			// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
-			// the start that failed after the node was constructed: the constructor opens the checkpoints
-			// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
-			// The server executable can leave that to process exit; a host that embeds the database and
-			// carries on cannot.
-			if (_hostedService is not null)
-				await _hostedService.Node.Db.DisposeAsync();
+			try {
+				if (_web is not null)
+					await _web.DisposeAsync();
+			} finally {
+				// A node closes its own database as it shuts down, and closing twice is a no-op. This is for
+				// the start that failed after the node was constructed: the constructor opens the checkpoints
+				// and takes the exclusive lock on the directory, and nothing else would ever let go of them.
+				// The server executable can leave that to process exit; a host that embeds the database and
+				// carries on cannot. It is closed even when the web host fails to dispose, since this
+				// instance is left disposed either way and nothing would get another chance to close it.
+				if (_hostedService is not null)
+					await _hostedService.Node.Db.DisposeAsync();
+			}
 		} finally {
 			_exitRegistration?.Dispose();
 			_exitRegistration = null;

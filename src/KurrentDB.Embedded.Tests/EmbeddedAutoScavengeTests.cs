@@ -57,14 +57,12 @@ public class EmbeddedAutoScavengeTests {
 				(await ReadAll(client, $"$scavenges-{scavengeId}", cancellationToken))
 				.Any(e => e.Event.EventType == "$scavengeCompleted"), cancellationToken);
 
-			// and the cycle finishes, ready for the next one
+			// and the cycle finishes. Not checked through /auto-scavenge/status: the schedule is still on, so
+			// the next cycle may already have begun by the time that is read.
 			await Eventually(async () => {
 				var events = await ReadAll(client, "$auto-scavenges", cancellationToken);
 				return events.Any(e => e.Event.EventType == "$cluster-scavenge-completed");
 			}, cancellationToken);
-
-			var status = await http.GetFromJsonAsync<JsonElement>("/auto-scavenge/status", cancellationToken);
-			status.GetProperty("state").GetString().ShouldBe("Waiting");
 		} finally {
 			TestPaths.Delete(dataDirectory);
 		}

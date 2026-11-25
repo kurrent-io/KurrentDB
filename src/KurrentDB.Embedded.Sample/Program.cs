@@ -26,19 +26,19 @@ internal static class Program {
 				.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
 				.CreateLogger();
 
-			await db.StartAsync();
-
-			Log.Information(
-				"Started the embedded database in {DataDirectory}. Connect to unix domain socket {UnixSocket}",
-				db.DataDirectory,
-				db.UnixSocketPath);
-
-			// The regular .NET client, pointed at the socket. Nothing else about using it changes.
-			var settings = KurrentDBClientSettings.Create("kurrentdb://localhost?tls=false");
-			settings.CreateHttpMessageHandler = () => UnixDomainSocket.CreateHandler(db.UnixSocketPath);
-			await using var client = new KurrentDBClient(settings);
-
 			try {
+				await db.StartAsync(ct);
+
+				Log.Information(
+					"Started the embedded database in {DataDirectory}. Connect to unix domain socket {UnixSocket}",
+					db.DataDirectory,
+					db.UnixSocketPath);
+
+				// The regular .NET client, pointed at the socket. Nothing else about using it changes.
+				var settings = KurrentDBClientSettings.Create("kurrentdb://localhost?tls=false");
+				settings.CreateHttpMessageHandler = () => UnixDomainSocket.CreateHandler(db.UnixSocketPath);
+				await using var client = new KurrentDBClient(settings);
+
 				var data = new SampleData();
 
 				Log.Information("Running the samples for run {runId}", data.RunId);

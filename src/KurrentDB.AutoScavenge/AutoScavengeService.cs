@@ -26,6 +26,7 @@ internal class AutoScavengeService : IDisposable {
 	private readonly Channel<ICommand> _commands;
 	private readonly INodeScavenger _remoteScavenger;
 	private readonly INodeScavenger _localScavenger;
+	private readonly HttpClient? _ownedLocalNodeClient;
 	private readonly IGossipAware _gossipHandler;
 
 	public AutoScavengeService(
@@ -35,6 +36,7 @@ internal class AutoScavengeService : IDisposable {
 		Channel<ICommand> commands,
 		INodeScavenger remoteScavenger,
 		INodeScavenger localScavenger,
+		HttpClient? ownedLocalNodeClient,
 		IGossipAware gossipHandler,
 		CancellationTokenSource cts) {
 
@@ -44,6 +46,7 @@ internal class AutoScavengeService : IDisposable {
 		_commands = commands;
 		_remoteScavenger = remoteScavenger;
 		_localScavenger = localScavenger;
+		_ownedLocalNodeClient = ownedLocalNodeClient;
 		_gossipHandler = gossipHandler;
 		_cts = cts;
 	}
@@ -57,6 +60,7 @@ internal class AutoScavengeService : IDisposable {
 
 	public void Dispose() {
 		_cts.Cancel();
+		_ownedLocalNodeClient?.Dispose();
 	}
 
 	private async Task Process(CancellationToken token) {
