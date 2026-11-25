@@ -146,6 +146,8 @@ public sealed class UserIndexEngine :
 
 	public IndexSubscriptionResult TryParseIndexSubscription(string indexStream, out string indexKey, out IReadOnlyList<KeyValuePair<string, string>> constraints) =>
 		_subscription.TryParseIndexSubscription(indexStream, out indexKey, out constraints);
+
+	public IEnumerable<string> Indices => _subscription.Indices;
 }
 
 static partial class UserIndexEngineLogMessages {

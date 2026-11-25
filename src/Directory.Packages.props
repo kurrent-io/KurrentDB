@@ -15,11 +15,11 @@
     <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="6.9.0" />
-    <PackageVersion Include="DotNext.IO" Version="6.9.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.9.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="6.9.0" />
-    <PackageVersion Include="DotNext.Net.Cluster" Version="6.9.0" />
+    <PackageVersion Include="DotNext" Version="6.12.2" />
+    <PackageVersion Include="DotNext.IO" Version="6.12.2" />
+    <PackageVersion Include="DotNext.Threading" Version="6.12.2" />
+    <PackageVersion Include="DotNext.Unsafe" Version="6.12.2" />
+    <PackageVersion Include="DotNext.Net.Cluster" Version="6.12.2" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
@@ -127,7 +127,7 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.3.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.2" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.3" />
-    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
+    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.30" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.15.0" />
@@ -188,8 +188,8 @@
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
     <PackageVersion Include="System.Numerics.Tensors" Version="10.0.0" />
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.10" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
     <!-- Match the 22.x Wrappers pulled transitively by FluentStorage. -->
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="22.1.1" />

@@ -31,7 +31,15 @@ public class ExclusiveDbLock : IDisposable {
 
 		try {
 			_dbMutex?.Dispose();
-			_dbMutex = new Mutex(initiallyOwned: true, name: MutexName, createdNew: out _acquired);
+			_dbMutex = new Mutex(
+				initiallyOwned: true,
+				name: MutexName,
+				// Opt back in to behaviour that was the default before .NET 10.0.13.
+				options: new NamedWaitHandleOptions {
+					CurrentUserOnly = false,
+					CurrentSessionOnly = false,
+				},
+				createdNew: out _acquired);
 			_dbMutex.WaitOne(TimeSpan.FromSeconds(5));
 		} catch (AbandonedMutexException exc) {
 			Log.Warning(exc,

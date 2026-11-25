@@ -3,6 +3,7 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using DotNext;
 using Kurrent.Quack;
 using KurrentDB.SecondaryIndexing.Storage;
 
@@ -49,15 +50,15 @@ internal sealed partial class UserIndexSql {
 		}
 	}
 
-	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, in GetCheckpointQueryArgs args)
-		=> connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(in args).ValueOrDefault;
+	public static GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, in GetCheckpointQueryArgs args)
+		=> connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(in args).OrNull();
 
 	public static void SetCheckpoint(DuckDBAdvancedConnection connection, in SetCheckpointQueryArgs args)
 		=> connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(in args);
 
 	public GetLastIndexedRecordResult? GetLastIndexedRecord(DuckDBAdvancedConnection connection) {
 		var query = new GetLastIndexedRecordQuery(TableName);
-		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault().ValueOrDefault;
+		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault().OrNull();
 	}
 
 	public void ReadUserIndexForwardsQuery(DuckDBAdvancedConnection connection,
