@@ -147,6 +147,7 @@ Keep the description short. Cover only:
 - **Motivation**, and the **impact** if it fixes a bug
 - **Major design decisions** that aren't obvious from the code
 - **Justification** for anything controversial (benchmark results go here)
+- **Risk**: what behaviour could change and how likely it is to break something, calling out data format, client or cluster compatibility, upgrade/downgrade, config defaults or hot-path performance when touched. Omit it for changes that can't affect runtime behaviour
 
 Don't add a "Changes" section: the code holds the individual changes and should make sense by itself. Don't add a "Test plan" section: CI and the unit tests running is taken for granted.
 
