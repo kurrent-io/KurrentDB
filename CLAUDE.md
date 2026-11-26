@@ -141,7 +141,7 @@ Per-event or per-checkpoint log messages must NOT be `Information`.
 
 ## Pull Request Descriptions
 
-Keep the description short. Open with what matters to the reader before any technical detail: for a bug fix, who is affected and how much (e.g. Release vs Debug builds), so people know whether to worry. Cover only:
+Keep the description short. Cover only:
 
 - **What** the change is, if the title doesn't already make it obvious
 - **Motivation**, and the **impact** if it fixes a bug
