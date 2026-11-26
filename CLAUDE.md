@@ -63,11 +63,11 @@ Uses `ISystemClient` for writes (not raw `IPublisher`), `IReadStrategy` for read
 - **Bus dispatch thread**: `CallbackEnvelope` callbacks run here. **Never use `CallbackEnvelope` + `TaskCompletionSource` to await a response** — use `TcsEnvelope<T>` instead (uses `RunContinuationsAsynchronously`).
 - **Fire-and-forget tasks**: `_ = SomeAsync()` must not call back into non-thread-safe objects.
 
-### DotNext Threading Utilities
+### Threading Utilities
 
-- `TcsEnvelope<T>`: Safe async await for bus responses
-- `AsyncExclusiveLock`: Ensure only one operation in flight (e.g., checkpointing)
-- `[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]`: Start async method on new thread, don't capture caller's sync context. Use for background loops.
+- `TcsEnvelope<T>` (`KurrentDB.Core.Messaging`): Safe async await for bus responses
+- `AsyncExclusiveLock` (DotNext): Ensure only one operation in flight (e.g., checkpointing)
+- `[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]` (DotNext): Start the async method on the thread pool instead of synchronously on the caller, without capturing the caller's sync context. Use for background loops.
 
 ### Lifecycle Rules
 
