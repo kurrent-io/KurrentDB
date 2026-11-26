@@ -141,6 +141,8 @@ Keep the description short. Cover only:
 
 Don't add a "Changes" section: the code holds the individual changes and should make sense by itself. Don't add a "Test plan" section: CI and the unit tests running is taken for granted.
 
+If how a bug happened isn't obvious, it's fine to explain it, but make clear that's what is being described: say it's the behaviour before the change and use the past tense for it, keeping the present tense for how things work after the change.
+
 ## MCP Servers
 
 - **Microsoft Docs**: `microsoft_docs_search`, `microsoft_docs_fetch` — query for .NET/Azure docs
