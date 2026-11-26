@@ -92,6 +92,15 @@ public class MemSizerTests {
 		Assert.AreEqual(mem, MemSizer.SizeOf(arr));
 	}
 
+	// the first time a dictionary type is created on a thread can incur one-off allocations
+	// (e.g. comparer initialization) that would otherwise be attributed to whichever measurement
+	// runs first, depending on what earlier tests already did on this thread.
+	// warm up the exact measured path so that only the dictionary itself is measured.
+	private static void WarmUpDictionary<TKey, TValue>() {
+		MemUsage.Calculate(() => new Dictionary<TKey, TValue>(3));
+		MemUsage.Calculate(() => new Dictionary<TKey, TValue>(7));
+	}
+
 	[TestCase("key", "value")]
 	[TestCase("key", 12)]
 	[TestCase("key", 12L)]
@@ -100,6 +109,7 @@ public class MemSizerTests {
 	[TestCase("key", true)]
 	[TestCase(12, true)]
 	public void dictionary_entry_size_is_correct_with_primitives<TKey, TValue>(TKey key, TValue value) {
+		WarmUpDictionary<TKey, TValue>();
 		var mem3 = MemUsage.Calculate(() => new Dictionary<TKey, TValue>(3));
 		var mem7 = MemUsage.Calculate(() => new Dictionary<TKey, TValue>(7));
 
@@ -109,6 +119,7 @@ public class MemSizerTests {
 
 	[Test]
 	public void dictionary_entry_size_is_correct_with_object() {
+		WarmUpDictionary<string, TestObject2>();
 		var mem3 = MemUsage.Calculate(() => new Dictionary<string, TestObject2>(3));
 		var mem7 = MemUsage.Calculate(() => new Dictionary<string, TestObject2>(7));
 
@@ -117,6 +128,7 @@ public class MemSizerTests {
 
 	[Test]
 	public void dictionary_entry_size_is_correct_with_struct() {
+		WarmUpDictionary<string, TestStruct>();
 		var mem3 = MemUsage.Calculate(() => new Dictionary<string, TestStruct>(3));
 		var mem7 = MemUsage.Calculate(() => new Dictionary<string, TestStruct>(7));
 
