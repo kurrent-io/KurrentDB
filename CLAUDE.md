@@ -34,16 +34,6 @@ KurrentDB is an event-native database. .NET 10.0, 90+ projects, plugin-based arc
 
 **Key areas**: Core engine, Plugin system, API v2, Projections (V1 + V2), Secondary Indexing (DuckDB), Schema Registry, Connectors. See `.claude/docs/architecture.md` for full details.
 
-### Active Development Areas
-
-- **API v2** (`src/KurrentDB.Api.V2/`) — next-gen API, evolving rapidly. See `.claude/docs/api-v2-patterns.md`
-- **Projections V2** (`src/KurrentDB.Projections.V2/`) — next-gen projection engine with partitioned processing
-- **Schema Registry** (`src/SchemaRegistry/`) — event validation and schema management
-- **Secondary Indexing** (`src/KurrentDB.SecondaryIndexing/`) — DuckDB-backed query optimization
-- **Embedded server** (`src/KurrentDB.Embedded/`) — runs a single-node server in-process. `src/KurrentDB.Hosting/` assembles the node and its web application for both the server executable and the embedded server
-- **Admin UI** (`src/KurrentDB/Components/`) — Blazor Server UI running inside the server process. See `src/KurrentDB/CLAUDE.md`
-- **Kontext** (`src/KurrentDB.Kontext/`) — agent memory and RAG library
-
 ### Projections V2 Engine
 
 Key components and their threading model:
