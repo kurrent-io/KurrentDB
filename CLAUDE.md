@@ -136,6 +136,17 @@ public Foo(IPublisher publisher, IPublisher mainBus) {
 
 Per-event or per-checkpoint log messages must NOT be `Information`.
 
+## Pull Request Descriptions
+
+Keep the description short. Open with what matters to the reader before any technical detail: for a bug fix, who is affected and how much (e.g. Release vs Debug builds), so people know whether to worry. Cover only:
+
+- **What** the change is, if the title doesn't already make it obvious
+- **Motivation**, and the **impact** if it fixes a bug
+- **Major design decisions** that aren't obvious from the code
+- **Justification** for anything controversial (benchmark results go here)
+
+Don't add a "Changes" section: the code holds the individual changes and should make sense by itself. Don't add a "Test plan" section: CI and the unit tests running is taken for granted.
+
 ## MCP Servers
 
 - **Microsoft Docs**: `microsoft_docs_search`, `microsoft_docs_fetch` — query for .NET/Azure docs
