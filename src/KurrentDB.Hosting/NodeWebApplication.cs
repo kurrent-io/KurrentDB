@@ -25,7 +25,7 @@ public static class NodeWebApplication {
 	// call once every hosted service has been registered, the host's own included: it decorates what is
 	// already there.
 	public static void LogHostedServiceLifecycle(IServiceCollection services) =>
-		services.Decorate<IHostedService, HostedServiceLifecycleDecorator>();
+		services.Decorate<IHostedService>(HostedServiceLifecycleDecorator.Decorate);
 
 	public static void Configure(WebApplication app, ClusterVNodeHostedService hostedService) =>
 		hostedService.Node.Startup.Configure(app);
