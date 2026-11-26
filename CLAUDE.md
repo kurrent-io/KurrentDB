@@ -26,7 +26,7 @@ Detailed reference docs live in `.claude/docs/` — fetch them when working in a
 ### Development Server
 - `dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log`
 - HTTP/gRPC: 2113, Internal TCP: 1112
-- Admin UI: `http://localhost:2113` | Legacy: `http://localhost:2113/web`
+- Admin UI: `https://localhost:2113` (`--dev` serves HTTPS with dev certificates)
 
 ## Architecture (Summary)
 
