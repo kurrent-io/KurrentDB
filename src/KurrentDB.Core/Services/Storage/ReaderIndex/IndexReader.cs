@@ -255,6 +255,10 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 				lastEventNumber: lastEventNumber,
 				isEndOfStream: true);
 
+		// The index can already contain events appended after lastEventNumber was read from the cache.
+		// Cap the range at lastEventNumber so the result never contains events past the lastEventNumber it reports.
+		endEventNumber = Math.Min(endEventNumber, lastEventNumber);
+
 		if (metadata.MaxAge.HasValue) {
 			return await ForStreamWithMaxAge(streamId, streamName,
 				fromEventNumber, maxCount,
@@ -321,6 +325,11 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			var results = new ResultsDeduplicator(maxCount, skipIndexScanOnRead);
 
 			for (int i = 0; i < indexEntries.Count; i++) {
+				// the gap loop above can move the range past lastEventNumber, because TryGetNextEntry matches on the
+				// stream hash and can return a colliding stream's entry. Leave out our own entries past lastEventNumber.
+				if (indexEntries[i].Version > lastEventNumber)
+					continue;
+
 				if (await ReadPrepareInternal(indexEntries[i].Position, token) is not { } prepare ||
 				    !StreamIdComparer.Equals(prepare.EventStreamId, streamId)) {
 					continue;
@@ -368,7 +377,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			var high = lastEventNumber;
 			while (low <= high) {
 				var mid = low + ((high - low) / 2);
-				indexEntries = tableIndex.GetRange(streamId, mid, mid + maxCount - 1);
+				indexEntries = tableIndex.GetRange(streamId, mid, Math.Min(mid + maxCount - 1, lastEventNumber));
 				if (indexEntries.Count > 0) {
 					nextEventNumber = indexEntries[0].Version + 1;
 				} else {
@@ -611,7 +620,14 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			startEventNumber = minEventNumber;
 		}
 
-		var recordsQuery = _tableIndex.GetRange(streamId, startEventNumber, endEventNumber)
+		// The index can already contain events appended after lastEventNumber was read from the cache.
+		// Cap the range at lastEventNumber so the result never contains events past the lastEventNumber it reports.
+		var rangeEndEventNumber = Math.Min(endEventNumber, lastEventNumber);
+		IReadOnlyList<IndexEntry> indexEntries = startEventNumber <= rangeEndEventNumber
+			? _tableIndex.GetRange(streamId, startEventNumber, rangeEndEventNumber)
+			: [];
+
+		var recordsQuery = indexEntries
 			.ToAsyncEnumerable()
 			.Select(async (x, ct) => new { x.Version, Prepare = await ReadPrepareInternal(x.Position, ct) })
 			.Where(x => x.Prepare is not null && StreamIdComparer.Equals(x.Prepare.EventStreamId, streamId));
