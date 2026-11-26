@@ -156,7 +156,7 @@ Don't add a "Changes" section: the code holds the individual changes and should 
 - **Context7**: Library documentation and code examples
 - Config: `.claude/settings.json` (committed), `.claude/settings.local.json` (local)
 
-## Configuration Defaults (v25.1)
+## Configuration Defaults
 
 - **SecondaryIndexing:Enabled** — `true`
 - **ServerGC** — `true`
