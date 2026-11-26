@@ -26,20 +26,13 @@ Detailed reference docs live in `.claude/docs/` — fetch them when working in a
 ### Development Server
 - `dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log`
 - HTTP/gRPC: 2113, Internal TCP: 1112
-- Admin UI: `http://localhost:2113` | Legacy: `http://localhost:2113/web`
+- Admin UI: `https://localhost:2113` (`--dev` serves HTTPS with dev certificates)
 
 ## Architecture (Summary)
 
 KurrentDB is an event-native database. .NET 10.0, 90+ projects, plugin-based architecture.
 
 **Key areas**: Core engine, Plugin system, API v2, Projections (V1 + V2), Secondary Indexing (DuckDB), Schema Registry, Connectors. See `.claude/docs/architecture.md` for full details.
-
-### Active Development Areas
-
-- **API v2** (`src/KurrentDB.Api.V2/`) — next-gen API, evolving rapidly. See `.claude/docs/api-v2-patterns.md`
-- **Projections V2** (`src/KurrentDB.Projections.V2/`) — next-gen projection engine with partitioned processing
-- **Schema Registry** (`src/SchemaRegistry/`) — event validation and schema management
-- **Secondary Indexing** (`src/KurrentDB.SecondaryIndexing/`) — DuckDB-backed query optimization
 
 ### Projections V2 Engine
 
@@ -63,11 +56,11 @@ Uses `ISystemClient` for writes (not raw `IPublisher`), `IReadStrategy` for read
 - **Bus dispatch thread**: `CallbackEnvelope` callbacks run here. **Never use `CallbackEnvelope` + `TaskCompletionSource` to await a response** — use `TcsEnvelope<T>` instead (uses `RunContinuationsAsynchronously`).
 - **Fire-and-forget tasks**: `_ = SomeAsync()` must not call back into non-thread-safe objects.
 
-### DotNext Threading Utilities
+### Threading Utilities
 
-- `TcsEnvelope<T>`: Safe async await for bus responses
-- `AsyncExclusiveLock`: Ensure only one operation in flight (e.g., checkpointing)
-- `[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]`: Start async method on new thread, don't capture caller's sync context. Use for background loops.
+- `TcsEnvelope<T>` (`KurrentDB.Core.Messaging`): Safe async await for bus responses
+- `AsyncExclusiveLock` (DotNext): Ensure only one operation in flight (e.g., checkpointing)
+- `[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]` (DotNext): Start the async method on the thread pool instead of synchronously on the caller, without capturing the caller's sync context. Use for background loops.
 
 ### Lifecycle Rules
 
@@ -136,13 +129,25 @@ public Foo(IPublisher publisher, IPublisher mainBus) {
 
 Per-event or per-checkpoint log messages must NOT be `Information`.
 
+## Pull Request Descriptions
+
+Keep the description short. Cover only:
+
+- **What** the change is, if the title doesn't already make it obvious
+- **Motivation**, and the **impact** if it fixes a bug
+- **Major design decisions** that aren't obvious from the code
+- **Justification** for anything controversial (benchmark results go here)
+- **Risk**: what behaviour could change and how likely it is to break something, calling out data format, client or cluster compatibility, upgrade/downgrade, config defaults or hot-path performance when touched. Omit it for changes that can't affect runtime behaviour
+
+Don't add a "Changes" section: the code holds the individual changes and should make sense by itself. Don't add a "Test plan" section: CI and the unit tests running is taken for granted.
+
 ## MCP Servers
 
 - **Microsoft Docs**: `microsoft_docs_search`, `microsoft_docs_fetch` — query for .NET/Azure docs
 - **Context7**: Library documentation and code examples
 - Config: `.claude/settings.json` (committed), `.claude/settings.local.json` (local)
 
-## Configuration Defaults (v25.1)
+## Configuration Defaults
 
 - **SecondaryIndexing:Enabled** — `true`
 - **ServerGC** — `true`
