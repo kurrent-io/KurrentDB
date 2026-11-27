@@ -39,7 +39,7 @@ public abstract class PTableQueryBenchmarksBase {
 	public void Setup() {
 		_data = PTableBenchmarkData.Generate(IndexSize);
 		Table = Core.Index.PTable.FromFile(
-			_data.CreateFile(Version),
+			_data.CreateFile(Version, cacheDepth: 16),
 			PTableBenchmarkData.InitialReaders,
 			PTableBenchmarkData.MaxReaders,
 			cacheDepth: 16,

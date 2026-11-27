@@ -61,14 +61,7 @@ public class when_creating_ptable_from_memtable : SpecificationWithFile {
 
 	[Test]
 	public void the_file_gets_created_and_can_be_read() {
-		var indexEntrySize = PTable.IndexEntryV4Size;
-		if (_ptableVersion == PTableVersions.IndexV1) {
-			indexEntrySize = PTable.IndexEntryV1Size;
-		} else if (_ptableVersion == PTableVersions.IndexV2) {
-			indexEntrySize = PTable.IndexEntryV2Size;
-		} else if (_ptableVersion == PTableVersions.IndexV3) {
-			indexEntrySize = PTable.IndexEntryV3Size;
-		}
+		int indexEntrySize = PTable.GetIndexEntrySize(_ptableVersion);
 
 		var table = new HashListMemTable(_ptableVersion, maxSize: 10);
 		table.Add(0x010100000000, 0x0001, 0x0001);
